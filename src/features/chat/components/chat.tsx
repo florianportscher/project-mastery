@@ -45,7 +45,11 @@ import {
 } from "@/features/study";
 import { messageText } from "@/lib/ai/reply";
 import { cn } from "@/lib/utils";
-import { replyActivity, THINKING } from "@/features/chat/domain/reply-activity";
+import {
+  BUSY,
+  replyActivity,
+  THINKING,
+} from "@/features/chat/domain/reply-activity";
 import { useChatList } from "@/features/chat/hooks/use-chat-list";
 import { useMessageAttachments } from "@/features/chat/hooks/use-message-attachments";
 import {
@@ -156,6 +160,8 @@ export function Chat({
   });
   const { noteChatActivity, relabelChat } = useChatList();
   const titled = useRef(chat.title !== null);
+  // Whether the reply waits to be asked again, as the provider is busy.
+  const [busy, setBusy] = useState(false);
   const {
     messages,
     sendMessage,
@@ -166,7 +172,12 @@ export function Chat({
     error,
     clearError,
   } = useChat<ChatUIMessage>({
+    onData: (part) => {
+      if (part.type === "data-busy") setBusy(true);
+    },
+    onError: () => setBusy(false),
     onFinish: ({ message, isAbort }) => {
+      setBusy(false);
       // The server stores a stopped reply as stopped; show it so now too.
       if (isAbort && message.role === "assistant") {
         setMessages((current) =>
@@ -241,19 +252,7 @@ export function Chat({
   const ended =
     chat.ended || endedHere || error?.message === sessionEndedMessage;
   const lastMessage = messages.at(-1);
-  // Until the first reply brings the session's facts, a new Chat counts
-  // from when it opened.
-  const [openedAt] = useState(() => new Date().toISOString());
-  const strip =
-    sessionStrip(messages) ??
-    (isNew && messages.length > 0
-      ? {
-          topic: null,
-          dots: [],
-          startedAt: openedAt,
-          plannedMinutes: minutes ?? null,
-        }
-      : null);
+  const strip = sessionStrip(messages);
   // The replies loaded with the Chat; any other arrived while it was open.
   const storedIds = useMemo(
     () => new Set(chat.messages.map(({ id }) => id)),
@@ -392,7 +391,9 @@ export function Chat({
             {status === "submitted" && lastMessage?.role === "user" && (
               <Message from="assistant">
                 <MessageContent>
-                  <Shimmer className="text-sm">{THINKING}</Shimmer>
+                  <Shimmer className="text-sm">
+                    {busy ? BUSY : THINKING}
+                  </Shimmer>
                 </MessageContent>
                 <MessageActionRow from="assistant" text="" hidden />
               </Message>

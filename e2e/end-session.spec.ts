@@ -44,11 +44,11 @@ test("a session from the Today card: a question answered in the input is graded,
   await page.getByRole("button", { name: "End session" }).click();
   const checked = page
     .getByRole("region", { name: "Session summary" })
-    .getByRole("list", { name: "KCs checked" })
+    .getByRole("list", { name: "What you worked on" })
     .getByRole("listitem");
   await expect(checked).toHaveCount(1);
   await expect(checked).toContainText("Thrust equation");
-  await expect(checked).toContainText("Full");
+  await expect(checked).toContainText("On your own");
 });
 
 test("End session makes the Chat read-only, and Start new session opens a new one", async ({

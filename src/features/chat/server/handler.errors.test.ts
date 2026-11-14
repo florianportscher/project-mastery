@@ -11,6 +11,7 @@ import {
   COURSE,
   db,
   userMessage,
+  post,
   send,
   storedMessages,
   seedChat,
@@ -113,6 +114,21 @@ describe("a reply the Gateway's per-minute limit refused", () => {
     expect(reply.error).toBeUndefined();
     expect(model.doStreamCalls).toHaveLength(2);
     expect(reply.text).toContain("Back again.");
+  });
+
+  test("tells the client to say the AI is busy before the second try", async () => {
+    useMockModels({ chat: failingThenAnswering(1) });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const response = await post({
+      chatId: randomUUID(),
+      courseId: COURSE,
+      message: userMessage("Hi"),
+    });
+    const raw = await response.text();
+
+    expect(raw).toContain('"type":"data-busy"');
+    expect(raw).toContain("Back");
   });
 
   test("fails after a second refusal", async () => {

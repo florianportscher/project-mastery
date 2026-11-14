@@ -10,6 +10,7 @@ import {
   validateUIMessages,
   type LanguageModelUsage,
   type ToolSet,
+  type UIMessageChunk,
 } from "ai";
 import { after } from "next/server";
 import { chatReplySettings, withTutorContext } from "@/features/chat/ai/reply";
@@ -336,89 +337,118 @@ async function streamReply({
         }),
     );
 
-  return createUIMessageStreamResponse({
-    stream: toUIMessageStream<ToolSet, ChatUIMessage>({
-      // A call the Gateway's per-minute limit refused before the reply had
-      // content is tried once more.
-      stream: retryRateLimited(async () => (await startReply()).stream),
-      originalMessages: messages,
-      generateMessageId: () => replyId,
-      messageMetadata: ({ part }) =>
-        // The context goes on `start`, before any tool call, so a streaming
-        // reply can show it at once.
-        part.type === "start"
-          ? { modelId, tutorContext: tutoring.context }
-          : part.type === "finish-step"
-            ? { modelId: answeringModel(settings, part.response.modelId) }
-            : part.type === "finish"
-              ? {
-                  usage: replyUsage(
-                    modelId,
-                    tokenUsage(part.totalUsage),
-                    false,
-                  ),
-                }
-              : undefined,
-      onError: chatReplyErrorMessage,
-      // Runs before the response ends, so the client sees the recorded usage
-      // once the reply has finished.
-      onEnd: async ({ responseMessage, isAborted, isCancelled, outcome }) => {
-        const stopped = isAborted || isCancelled === true;
-        await recordReplyUsage(supabase, {
-          task: "chat",
-          modelId,
-          reported: reportedUsage,
-          input: [
-            settings.instructions,
-            contextText,
-            ...messages.map(({ parts }) => messageText(parts)),
-          ].join("\n"),
-          output: messageText(responseMessage.parts),
-          files: sentMaterials(messages, materials),
-          chatId: chat.id,
-          replyId,
-        });
-
-        if (outcome.status === "failed") return;
-        // A stopped reply with nothing to show is dropped; one with a
-        // finished tool call is kept, as the call's rows (a question, its
-        // grading) are stored and its card reads them from the reply.
-        if (
-          stopped &&
-          messageText(responseMessage.parts) === "" &&
-          !responseMessage.parts.some(
-            (part) => isToolUIPart(part) && part.state === "output-available",
-          )
-        ) {
-          return;
-        }
-        try {
-          const kept = await saveReply(supabase, chat.id, history.at(-1)!.id, {
-            ...responseMessage,
-            id: replyId,
-            metadata: {
-              modelId,
-              tutorContext: tutoring.context,
-              ...(stopped && { stopped }),
-            },
-          });
-          if (!kept) return;
-        } catch (error) {
-          console.error("Saving the Chat reply failed:", error);
-          return;
-        }
-
-        // After the first reply, before the response ends, so the client
-        // can show the title once the reply has finished.
-        if (chat.title === null) {
-          await titleChat(supabase, {
-            chatId: chat.id,
-            userId,
-            firstMessage: messageGist(messages[0]?.parts ?? []),
-          });
-        }
+  // The reply's chunks, with a `busy` notice in front of a wait for the limit.
+  let announceBusy = () => {};
+  const withBusyNotice = (chunks: ReadableStream<UIMessageChunk>) => {
+    const reader = chunks.getReader();
+    return new ReadableStream<UIMessageChunk>({
+      start: (controller) => {
+        announceBusy = () =>
+          controller.enqueue({ type: "data-busy", data: {}, transient: true });
       },
-    }),
+      pull: async (controller) => {
+        const { done, value } = await reader.read();
+        if (done) controller.close();
+        else controller.enqueue(value);
+      },
+      cancel: (reason) => reader.cancel(reason),
+    });
+  };
+
+  return createUIMessageStreamResponse({
+    stream: withBusyNotice(
+      toUIMessageStream<ToolSet, ChatUIMessage>({
+        // A call the Gateway's per-minute limit refused before the reply had
+        // content is tried once more.
+        stream: retryRateLimited(
+          async () => (await startReply()).stream,
+          undefined,
+          () => announceBusy(),
+        ),
+        originalMessages: messages,
+        generateMessageId: () => replyId,
+        messageMetadata: ({ part }) =>
+          // The context goes on `start`, before any tool call, so a streaming
+          // reply can show it at once.
+          part.type === "start"
+            ? { modelId, tutorContext: tutoring.context }
+            : part.type === "finish-step"
+              ? { modelId: answeringModel(settings, part.response.modelId) }
+              : part.type === "finish"
+                ? {
+                    usage: replyUsage(
+                      modelId,
+                      tokenUsage(part.totalUsage),
+                      false,
+                    ),
+                  }
+                : undefined,
+        onError: chatReplyErrorMessage,
+        // Runs before the response ends, so the client sees the recorded usage
+        // once the reply has finished.
+        onEnd: async ({ responseMessage, isAborted, isCancelled, outcome }) => {
+          const stopped = isAborted || isCancelled === true;
+          await recordReplyUsage(supabase, {
+            task: "chat",
+            modelId,
+            reported: reportedUsage,
+            input: [
+              settings.instructions,
+              contextText,
+              ...messages.map(({ parts }) => messageText(parts)),
+            ].join("\n"),
+            output: messageText(responseMessage.parts),
+            files: sentMaterials(messages, materials),
+            chatId: chat.id,
+            replyId,
+          });
+
+          if (outcome.status === "failed") return;
+          // A stopped reply with nothing to show is dropped; one with a
+          // finished tool call is kept, as the call's rows (a question, its
+          // grading) are stored and its card reads them from the reply.
+          if (
+            stopped &&
+            messageText(responseMessage.parts) === "" &&
+            !responseMessage.parts.some(
+              (part) => isToolUIPart(part) && part.state === "output-available",
+            )
+          ) {
+            return;
+          }
+          try {
+            const kept = await saveReply(
+              supabase,
+              chat.id,
+              history.at(-1)!.id,
+              {
+                ...responseMessage,
+                id: replyId,
+                metadata: {
+                  modelId,
+                  tutorContext: tutoring.context,
+                  ...(stopped && { stopped }),
+                },
+              },
+            );
+            if (!kept) return;
+          } catch (error) {
+            console.error("Saving the Chat reply failed:", error);
+            return;
+          }
+
+          // After the first reply, before the response ends, so the client
+          // can show the title once the reply has finished.
+          if (chat.title === null) {
+            await titleChat(supabase, {
+              chatId: chat.id,
+              userId,
+              firstMessage: messageGist(messages[0]?.parts ?? []),
+            });
+          }
+        },
+      }),
+    ),
     // Lets `onEnd` run when the client disconnects mid-reply.
     consumeSseStream: consumeStream,
   });
