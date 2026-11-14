@@ -1,7 +1,9 @@
 // @vitest-environment node
-import { MockLanguageModelV4 } from "ai/test";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { useMockModels } from "@/lib/ai/testing";
+import {
+  DRAFT,
+  useGenerateModel,
+} from "@/features/study/workflows/generate-problems-testing";
 import { markAdminClient } from "@/lib/supabase/admin-brand";
 import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
 import type { Supabase } from "@/lib/supabase/types";
@@ -92,6 +94,11 @@ let db = createDb();
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => markAdminClient(db as unknown as Supabase),
 }));
+const sleep = vi.hoisted(() => vi.fn(async (ms: number) => void ms));
+vi.mock("workflow", async (original) => ({
+  ...(await original<typeof import("workflow")>()),
+  sleep,
+}));
 const startWorkflow = vi.fn(async () => ({}));
 vi.mock("workflow/api", () => ({ start: startWorkflow }));
 
@@ -103,46 +110,6 @@ beforeEach(() => {
   db = createDb();
   startWorkflow.mockClear();
 });
-
-/** A draft whose numbers all come from its program; fits either schema. */
-const DRAFT = {
-  change: "new_values",
-  statement:
-    "A turbojet takes in {{mass_flow}} at {{v_0}}, which leaves at {{v_e}}. Compute the thrust.",
-  solution: "$F = \\dot m (v_e - v_0)$, so the thrust is {{thrust_kN}}.",
-  program:
-    "mass_flow = 50 kg/s\nv_0 = 250 m/s\nv_e = 600 m/s\nthrust_kN = to(mass_flow * (v_e - v_0), kN)",
-  finalAnswers: [{ variable: "thrust_kN", unit: "kN" }],
-};
-
-const usage = {
-  inputTokens: {
-    total: 10,
-    noCache: 10,
-    cacheRead: undefined,
-    cacheWrite: undefined,
-  },
-  outputTokens: { total: 20, text: 20, reasoning: undefined },
-};
-
-/** A `generate` model answering in turn, the last answer from then on. */
-function useGenerateModel(...answers: Array<object | Error>) {
-  let call = 0;
-  const model = new MockLanguageModelV4({
-    doGenerate: async () => {
-      const answer = answers[Math.min(call++, answers.length - 1)]!;
-      if (answer instanceof Error) throw answer;
-      return {
-        content: [{ type: "text", text: JSON.stringify(answer) }],
-        finishReason: { unified: "stop", raw: undefined },
-        usage,
-        warnings: [],
-      };
-    },
-  });
-  useMockModels({ generate: model });
-  return model;
-}
 
 /**
  * A Course whose Topic has `kcIds` and whose one Exercise, testing k1, the
@@ -547,6 +514,24 @@ test("a reached Daily limit leaves the rest queued, and the next run writes them
     "ready",
     "ready",
     "ready",
+  ]);
+});
+
+test("a run naming a Topic waits 5 minutes, then queues the review stock and the Topic's", async () => {
+  seedCourse(["k2"], ["k1"]); // k1 is due; k2 belongs to the Topic
+  seedRun("topic");
+  const model = useGenerateModel(DRAFT);
+  sleep.mockImplementationOnce(async () => {
+    expect(model.doGenerateCalls).toHaveLength(0);
+  });
+
+  await generateProblems(COURSE);
+
+  expect(sleep).toHaveBeenCalledWith(5 * 60 * 1000);
+  expect(db.tables.problems.map((p) => [p.topic_id, kcsOf(p.id)])).toEqual([
+    [null, ["k1"]],
+    [TOPIC, ["k2"]],
+    [TOPIC, ["k2"]],
   ]);
 });
 

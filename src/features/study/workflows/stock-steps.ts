@@ -119,13 +119,27 @@ export async function planProblems(
       ),
     ],
   };
-  const planned =
+  // The review stock first, then, for a run that names a Topic, its stock on
+  // top of what the review stock planned.
+  const review = planReviewStock(
+    await dueKcs(supabase, courseId, map.kcs, now),
+    input,
+  );
+  const topic =
     stock === "topic"
-      ? planTopicStock(
-          topics.find(({ id }) => id === topicId)?.kcs ?? [],
-          input,
-        )
-      : planReviewStock(await dueKcs(supabase, courseId, map.kcs, now), input);
+      ? planTopicStock(topics.find(({ id }) => id === topicId)?.kcs ?? [], {
+          exercises: input.exercises.map((e) => ({
+            ...e,
+            hasVariant:
+              e.hasVariant ||
+              review.some(
+                (p) => p.source === "variant" && p.exerciseId === e.id,
+              ),
+          })),
+          unseen: [...input.unseen, ...review],
+        })
+      : [];
+  const planned = [...review, ...topic];
 
   const difficulty = new Map([
     ...map.exercises.map((e) => [e.id, e.difficulty] as const),
@@ -139,7 +153,7 @@ export async function planProblems(
         owner,
         course_id: courseId,
         status: "queued",
-        topic_id: stock === "topic" ? topicId : null,
+        topic_id: topic.includes(problem) ? topicId : null,
       };
       if (problem.source === "variant") {
         const original = exercise.get(problem.exerciseId)!;

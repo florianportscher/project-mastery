@@ -119,7 +119,6 @@ export async function loadTutorContext(
     notes: { topics: topicNotes, memory, briefNotes, materialNotes },
     mock,
   });
-  const next = study.ranked.find((item) => item.kind === "topic");
   return {
     context,
     map,
@@ -127,8 +126,6 @@ export async function loadTutorContext(
     reserved,
     topics: study.topics,
     exam: study.exam,
-    /** The ranking's next Topic, whose Problem stock a first reply tops up. */
-    nextTopicId: next?.topicId ?? null,
   };
 }
 

@@ -1,12 +1,32 @@
 import "server-only";
 import { start } from "workflow/api";
+import { loadStudy } from "@/features/study/server/study-state";
 import { generateProblems } from "@/features/study/workflows/generate-problems";
 import type { Supabase } from "@/lib/supabase/types";
 
 /**
+ * After a Study session ended, starts generating the Course's review stock
+ * and the stock of the Ranking's next Topic, in one run. A Course whose
+ * ranking cannot be read gets the review stock alone.
+ */
+export async function queueSessionEndGeneration(
+  supabase: Supabase,
+  courseId: string,
+): Promise<void> {
+  let topicId: string | null = null;
+  try {
+    const { ranked } = await loadStudy(supabase, courseId, new Date());
+    const next = ranked.find((item) => item.kind === "topic");
+    topicId = next?.topicId ?? null;
+  } catch (error) {
+    console.error("Reading the next Topic failed:", error);
+  }
+  await queueProblemGeneration(supabase, courseId, topicId);
+}
+
+/**
  * Starts generating Problems for the signed-in Student's Course (#183):
- * the stock of a Topic whose Learn session just started, or the review
- * stock when `topicId` is null, after a Study session ended. A run already
+ * the review stock, and the stock of `topicId` as well when it is given. A run already
  * running drops the call (`queue_problem_run`). It never throws, so a
  * trigger cannot fail the Student's reply or action: errors are logged, and
  * a run whose workflow cannot start is released.

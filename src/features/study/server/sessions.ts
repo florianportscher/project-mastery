@@ -131,7 +131,7 @@ export async function setSessionMock(
 
 /**
  * Ends the Chat's running Study session at `at`, starts generating the
- * Course's review stock (#183) and starts closing the session (#187).
+ * Course's review stock and its next Topic's (#183) and starts closing the session (#187).
  * False when there is none to end: no session, or one that ended already.
  */
 export async function endSession(
@@ -151,15 +151,14 @@ export async function endSession(
   // Loaded on use: `workflow/api` fails to import in the component tests
   // that reach this module through the Server Actions
   // (docs/agents/notes/workflow-imports.md).
-  const [{ queueProblemGeneration }, { startSessionClose }] = await Promise.all(
-    [
+  const [{ queueSessionEndGeneration }, { startSessionClose }] =
+    await Promise.all([
       import("@/features/study/server/problem-generation"),
       import("@/features/study/server/session-close"),
-    ],
-  );
+    ]);
   // The close starts first: it never throws, and a failing generation
   // queue must not leave the session without its notes.
   await startSessionClose(ended.id);
-  await queueProblemGeneration(supabase, ended.course_id, null);
+  await queueSessionEndGeneration(supabase, ended.course_id);
   return true;
 }

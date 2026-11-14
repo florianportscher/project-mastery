@@ -92,10 +92,8 @@ describe("the tutor context", () => {
     expect(context).toContain(
       `Thrust (Topic id ${MAP.topic}): in plan, 0 of 2 learned`,
     );
-    // The first reply tops up the next Topic's Problem stock.
-    expect(db.tables.problem_runs).toEqual([
-      { course_id: COURSE, topic_id: MAP.topic },
-    ]);
+    // A first reply queues no generate run: the session's end does.
+    expect(db.tables.problem_runs).toEqual([]);
   });
 
   test("is sent on the reply's start and saved with it", async () => {

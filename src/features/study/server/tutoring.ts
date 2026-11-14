@@ -44,17 +44,13 @@ const SOURCES_PER_KC = 3;
  * the Student's session client: the tutor context (#251) and the tools,
  * which ask and grade Questions in the Chat's Study session. Read on every
  * reply, so both are current. `openedSections` are the Reading sections
- * the Chat's `showReading` calls opened. On the session's first reply it
- * tops up the Problem stock of the ranking's next Topic.
+ * the Chat's `showReading` calls opened.
  */
 export async function startTutoring(
   supabase: Supabase,
   courseId: string,
   chatId: string,
-  {
-    openedSections,
-    firstReply,
-  }: { openedSections: string[]; firstReply: boolean },
+  { openedSections }: { openedSections: string[] },
 ): Promise<{ context: TutorContext; tools: TutorTools }> {
   const session = await loadTutorSession(supabase, chatId);
   const loaded = await loadTutorContext(
@@ -62,13 +58,6 @@ export async function startTutoring(
     { courseId, session, openedSections },
     new Date(),
   );
-  if (firstReply && loaded.nextTopicId !== null) {
-    // Loaded on use: `workflow/api` fails to import in the component tests
-    // (docs/agents/notes/workflow-imports.md).
-    const { queueProblemGeneration } =
-      await import("@/features/study/server/problem-generation");
-    await queueProblemGeneration(supabase, courseId, loaded.nextTopicId);
-  }
   return {
     context: loaded.context,
     tools: tutorTools(
