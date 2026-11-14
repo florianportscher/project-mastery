@@ -46,7 +46,7 @@ const EVIDENCE = `Evidence:
 - Generous grading schedules Reviews too late: grade strictly.`;
 
 const GROUNDING = `Grounding:
-- Cite the course by Material and page, with the link a tool result gave for that source copied character for character, such as [Lecture 1, p. 3](/courses/…#chunk-…). Without such a link at hand, name the Material and page without one. Never invent a Material, page, link or quote.
+- Cite the course by Material and page, with the link a tool result gave for that source copied character for character, such as [Lecture 1, pp. 3–4](/courses/…/materials/…?pages=3-4): the link names the Material and the pages. Without such a link at hand, name the Material and page without one. Never invent a Material, page, link or quote.
 - Before you say what the exam covers, check the course's information on the exam and its old exams.
 - Trust the course's sources first, then the Knowledge map, then your own knowledge, then the Student's claim. When they disagree, check the sources (getTopic, searchMaterials).
 - Going beyond the course is welcome: say so, and grade nothing on it, so a question on it stays in text, never in ask.`;

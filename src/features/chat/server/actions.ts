@@ -14,6 +14,7 @@ import {
   sourceNotFoundMessage,
 } from "@/features/chat/schemas";
 import type { ChatSource, SourceRequest } from "@/features/chat/types";
+import { findMaterialPages } from "@/features/courses/server";
 import { findChunkSpan } from "@/features/ingestion/server";
 import { findReadingSection } from "@/features/knowledge-map/server";
 import {
@@ -101,17 +102,35 @@ export async function deleteChat(input: {
  * A source of the Course for the source pane, read as the Student: a
  * Reading section's or a cited chunk's Material and pages. A source of another Course, or another Student's, is not found.
  */
-export async function openSource(input: {
-  courseId: string;
-  kind: SourceRequest["kind"];
-  id: string;
-}): Promise<ActionResult<ChatSource>> {
+export async function openSource(
+  input: { courseId: string } & SourceRequest,
+): Promise<ActionResult<ChatSource>> {
   const parsed = parseActionInput(openSourceSchema, input);
   if (!parsed.ok) return sourceNotFound;
   if (!(await getUser())) return signedOut;
   const supabase = await createClient();
-  const { courseId, kind, id } = parsed.data;
+  const request = parsed.data;
+  const { courseId } = request;
 
+  if (request.kind === "pages") {
+    const { materialId, pageFrom, pageTo } = request;
+    const material = await findMaterialPages(supabase, courseId, materialId);
+    if (!material) return sourceNotFound;
+    const missing =
+      pageTo < pageFrom ||
+      (material.pagesTotal !== null && pageTo > material.pagesTotal);
+    return {
+      ok: true,
+      data: {
+        materialId,
+        materialName: material.name,
+        ...(missing
+          ? { pageFrom: 1, pageTo: 1, pageNotFound: true }
+          : { pageFrom, pageTo }),
+      },
+    };
+  }
+  const { kind, id } = request;
   if (kind === "section") {
     const section = await findReadingSection(supabase, courseId, id);
     if (!section) return sourceNotFound;

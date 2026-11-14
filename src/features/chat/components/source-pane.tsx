@@ -5,7 +5,10 @@ import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { pagesLabel } from "@/features/chat/domain/sources";
+import {
+  pageNotFoundMessage,
+  pagesLabel,
+} from "@/features/chat/domain/sources";
 import { SourcePaneContext } from "@/features/chat/hooks/use-source-pane";
 import { openSource } from "@/features/chat/server/actions";
 import type { ChatSource, SourceRequest } from "@/features/chat/types";
@@ -65,7 +68,7 @@ export function SourcePane({
   // Keyed, so opening another source loads it afresh.
   const view = (
     <SourceView
-      key={`${request.kind}:${request.id}`}
+      key={sourceKey(request)}
       courseId={courseId}
       request={request}
       onClose={onClose}
@@ -98,6 +101,12 @@ export function SourcePane({
   );
 }
 
+function sourceKey(request: SourceRequest): string {
+  return request.kind === "pages"
+    ? `pages:${request.materialId}:${request.pageFrom}-${request.pageTo}`
+    : `${request.kind}:${request.id}`;
+}
+
 function SourceView({
   courseId,
   request,
@@ -108,11 +117,10 @@ function SourceView({
   onClose: () => void;
 }) {
   const [loaded, setLoaded] = useState<Loaded>({ status: "loading" });
-  const { kind, id } = request;
 
   useEffect(() => {
     let current = true;
-    void openSource({ courseId, kind, id }).then(
+    void openSource({ courseId, ...request }).then(
       (result) => {
         if (!current) return;
         setLoaded(
@@ -131,7 +139,7 @@ function SourceView({
     return () => {
       current = false;
     };
-  }, [courseId, kind, id]);
+  }, [courseId, request]);
 
   const source = loaded.status === "open" ? loaded.source : null;
   return (
@@ -144,7 +152,9 @@ function SourceView({
                 {source.materialName}
               </h2>
               <p className="text-xs text-muted-foreground">
-                {pagesLabel(source.pageFrom, source.pageTo)}
+                {source.pageNotFound
+                  ? pageNotFoundMessage
+                  : pagesLabel(source.pageFrom, source.pageTo)}
               </p>
             </>
           )}

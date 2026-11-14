@@ -75,6 +75,42 @@ test("a citation click opens the cited page in the pane, and Close closes it", a
   expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
 });
 
+test("a page link opens the Material at the cited pages", async () => {
+  const link = `/courses/${COURSE}/materials/${MATERIAL}?pages=3-5`;
+  render(<Harness text={`See [Lecture 7, pp. 3–5](${link}).`} />);
+
+  fireEvent.click(screen.getByRole("link", { name: "Lecture 7, pp. 3–5" }));
+
+  expect(await screen.findByText("File Lecture 7 at page 3")).toBeVisible();
+  expect(openSource).toHaveBeenCalledWith({
+    courseId: COURSE,
+    kind: "pages",
+    materialId: MATERIAL,
+    pageFrom: 3,
+    pageTo: 5,
+  });
+});
+
+test("a cited page the Material lacks shows the note at page 1", async () => {
+  openSource.mockResolvedValue({
+    ok: true,
+    data: {
+      materialId: MATERIAL,
+      materialName: "Lecture 7",
+      pageFrom: 1,
+      pageTo: 1,
+      pageNotFound: true,
+    },
+  });
+  const link = `/courses/${COURSE}/materials/${MATERIAL}?pages=99`;
+  render(<Harness text={`See [Lecture 7, p. 99](${link}).`} />);
+
+  fireEvent.click(screen.getByRole("link", { name: "Lecture 7, p. 99" }));
+
+  expect(await screen.findByText("File Lecture 7 at page 1")).toBeVisible();
+  expect(screen.getByText("The cited page wasn't found.")).toBeVisible();
+});
+
 test("a modifier click follows the citation instead", () => {
   render(<Harness text={`See [Lecture 7](${citation}).`} />);
   const link = screen.getByRole("link", { name: "Lecture 7" });

@@ -14,10 +14,19 @@ export function materialsPath(courseId: string): string {
   return `${COURSE_LIST_PATH}/${courseId}/materials`;
 }
 
-/** The chunk view of a parsed Material. */
+/**
+ * The chunk view of a parsed Material. With `pages`, the link also names the
+ * pages it cites (`?pages=10-11`, or `?pages=10`), which a Chat's source pane
+ * opens.
+ */
 export function materialChunksPath(
   courseId: string,
   materialId: string,
+  pages?: { from: number; to: number },
 ): string {
-  return `${materialsPath(courseId)}/${materialId}`;
+  const path = `${materialsPath(courseId)}/${materialId}`;
+  if (!pages) return path;
+  const range =
+    pages.from === pages.to ? `${pages.from}` : `${pages.from}-${pages.to}`;
+  return `${path}?pages=${range}`;
 }

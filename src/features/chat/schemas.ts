@@ -123,11 +123,19 @@ export const deleteChatSchema = chatIdSchema.extend({
 });
 
 /** Opening a source in the source pane (`SourceRequest`). */
-export const openSourceSchema = z.object({
-  courseId: z.uuid(),
-  kind: z.enum(["section", "chunk"]),
-  id: z.uuid(),
-});
-
+export const openSourceSchema = z.discriminatedUnion("kind", [
+  z.object({
+    courseId: z.uuid(),
+    kind: z.enum(["section", "chunk"]),
+    id: z.uuid(),
+  }),
+  z.object({
+    courseId: z.uuid(),
+    kind: z.literal("pages"),
+    materialId: z.uuid(),
+    pageFrom: z.number().int().min(1),
+    pageTo: z.number().int().min(1),
+  }),
+]);
 /** What the source pane shows for a source that is missing or not the Course's. */
 export const sourceNotFoundMessage = "This source could not be found.";

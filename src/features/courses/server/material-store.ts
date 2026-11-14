@@ -283,6 +283,26 @@ export async function signFileUrl(
   return data.signedUrl;
 }
 
+/**
+ * A Material of the Course with its page count (null while not parsed), or
+ * null when the Course has no such Material. On a Student's session client,
+ * Row Level Security leaves out another Student's Materials.
+ */
+export async function findMaterialPages(
+  supabase: Supabase,
+  courseId: string,
+  materialId: string,
+): Promise<{ name: string; pagesTotal: number | null } | null> {
+  const { data, error } = await supabase
+    .from("materials")
+    .select("name, pages_total")
+    .eq("course_id", courseId)
+    .eq("id", materialId)
+    .maybeSingle();
+  if (error) failed("Loading the Material", error);
+  return data && { name: data.name, pagesTotal: data.pages_total ?? null };
+}
+
 /** The Course's Materials in Course order. */
 export async function listMaterials(
   supabase: Supabase,

@@ -229,7 +229,7 @@ describe("ask with a problemId", () => {
     }>;
     const output = parts.find(({ type }) => type === "tool-ask")!.output!;
     expect(output.problem).toMatchObject({
-      page: { link: expect.stringContaining("#") },
+      page: { link: expect.stringContaining("?pages=") },
       generatedProblemId: null,
     });
     expect(output.problem.statement).not.toBe("");
@@ -438,9 +438,7 @@ describe("findProblems", () => {
     expect(result).toContain("from the Materials");
     // No solution in the Materials: the AI solves it with the Student.
     expect(result).toContain("none in the Materials");
-    expect(result).toContain(
-      `/courses/${COURSE}/materials/${EXAM}#chunk-${chunkOf(1)}`,
-    );
+    expect(result).toContain(`/courses/${COURSE}/materials/${EXAM}?pages=1`);
     expect(result).toContain("Thrust equation");
   });
 
