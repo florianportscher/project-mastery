@@ -56,7 +56,7 @@ describe("the tutor context", () => {
     const [first, second] = [0, 1].map((call) => model.doStreamCalls[call]!);
     const system = (call: typeof first) =>
       call!.prompt.find(({ role }) => role === "system")?.content;
-    expect(system(first)).toContain("Find out before you teach");
+    expect(system(first)).toContain("The Student does the thinking");
     expect(system(first)).toBe(system(second));
     const [earlier, newest] = userTexts(model, 1);
     expect(earlier).toBe("Hi");

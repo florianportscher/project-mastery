@@ -25,6 +25,8 @@ export const setupSchema = z
     /** Days from today to the exam. */
     examInDays: z.number().int().min(0).default(42),
     goal: z.enum(["pass", "good_grade", "master_everything"]).optional(),
+    /** The session length the Student chose; left out for Open. */
+    minutes: z.union([z.literal(15), z.literal(30), z.literal(45)]).optional(),
     /** The Memory's lines, dated `daysAgo`. */
     memory: z
       .array(z.object({ daysAgo: z.number().min(0), text: z.string() }))
@@ -101,6 +103,8 @@ export type SetupPlan = {
   goal: string | null;
   /** The graded mock this Chat's session goes through. */
   sessionMockId: string | null;
+  /** The session length the Student chose; null for Open. */
+  plannedMinutes: number | null;
 };
 
 /**
@@ -321,6 +325,7 @@ export function setupRows(
       .map((table) => ({ table, rows: rows[table]! })),
     goal: setup.goal ?? null,
     sessionMockId,
+    plannedMinutes: setup.minutes ?? null,
   };
 }
 
