@@ -3,8 +3,8 @@
 import { type KeyboardEvent, type PointerEvent, useState } from "react";
 
 const STORAGE_KEY = "source-pane-width";
-export const MIN_FRACTION = 0.25;
-export const MAX_FRACTION = 0.7;
+const MIN_FRACTION = 0.25;
+const MAX_FRACTION = 0.7;
 const KEY_STEP = 0.02;
 
 const clamp = (fraction: number) =>
@@ -84,9 +84,6 @@ export function PaneDivider({
       role="separator"
       aria-orientation="vertical"
       aria-label="Resize source"
-      aria-valuemin={Math.round(MIN_FRACTION * 100)}
-      aria-valuemax={Math.round(MAX_FRACTION * 100)}
-      aria-valuenow={fraction === null ? undefined : Math.round(fraction * 100)}
       tabIndex={0}
       className="-mr-1 w-2 shrink-0 cursor-col-resize touch-none self-stretch transition-colors hover:bg-border focus-visible:bg-border focus-visible:outline-none"
       onPointerDown={(event) => {

@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { respondInChat } from "@/features/chat/server";
+import {
+  findMaterialPages,
+  materialChunksPath,
+} from "@/features/courses/server";
 import type { GradedKc } from "@/features/study/server";
 import { signInAsUser } from "@/lib/supabase/admin";
 import type { AdminSupabase, Supabase } from "@/lib/supabase/types";
@@ -42,6 +46,46 @@ function namesTool(text: string, name: string): boolean {
 /** The Student's wish to read first, in a fourth Chat (#179). */
 const READING_REQUEST =
   "I'd like to read the course's pages on this before we start.";
+
+/** A request that makes the AI cite pages (#300). */
+const CITATION_REQUEST =
+  "Where in the script are the central definitions of this course? Give me the pages.";
+
+/**
+ * Checks each markdown link of `text`: it parses as a Material + page link of
+ * the Course, and its Material exists with those pages, as `openSource` finds.
+ */
+async function checkCitations(
+  client: Supabase,
+  courseId: string,
+  text: string,
+): Promise<{ links: number; problems: string[] }> {
+  const hrefs = [...text.matchAll(/\]\(([^)\s]+)\)/g)].map((m) => m[1]!);
+  const problems: string[] = [];
+  for (const href of hrefs) {
+    // The pane's parser (`citedSource`) needs the client-safe courses API,
+    // which fails outside Next.js: the same form is matched here.
+    const form = new RegExp(
+      `^${materialChunksPath(courseId, "([0-9a-f-]{36})")}\\?pages=(\\d+)(?:-(\\d+))?$`,
+      "i",
+    ).exec(href);
+    if (!form) {
+      problems.push(`${href} is no page link of the Course`);
+      continue;
+    }
+    const pageFrom = Number(form[2]);
+    const pageTo = form[3] === undefined ? pageFrom : Number(form[3]);
+    const material = await findMaterialPages(client, courseId, form[1]!);
+    if (!material) problems.push(`${href}: no such Material`);
+    else if (
+      pageTo < pageFrom ||
+      (material.pagesTotal !== null && pageTo > material.pagesTotal)
+    ) {
+      problems.push(`${href}: pages outside the Material`);
+    }
+  }
+  return { links: hrefs.length, problems };
+}
 
 /** A preference worth keeping in the Memory (#107). */
 const PREFERENCE = "I learn best with examples before formulas.";
@@ -232,7 +276,7 @@ export const tutorSmoke: SmokeCheck = {
   // The spec's budget. The check counts `ai_usage` rows, and a reply's steps
   // are recorded as one row (task `chat`), with a title per Chat the only
   // others.
-  maxCalls: 15,
+  maxCalls: 18,
   async run({ supabase, studentId }) {
     const gold = await seedGoldCourse(supabase, studentId);
     const course = { id: gold.courseId };
@@ -345,6 +389,17 @@ export const tutorSmoke: SmokeCheck = {
     );
     const opened = sixth.readings.at(-1);
 
+    // In a fifth Chat, the Student asks where something is defined: the links
+    // of the reply must be Material + page links that open (#300).
+    const citeChat = { chatId: randomUUID(), courseId: course.id };
+    const seventh = await sendMessage(
+      client,
+      studentId,
+      citeChat,
+      CITATION_REQUEST,
+    );
+    const citations = await checkCitations(client, course.id, seventh.text);
+
     // An asked question with its answer and the attempts its grade stored.
     const loadQuestion = async (questionId: string | undefined) => {
       if (!questionId) return null;
@@ -367,7 +422,16 @@ export const tutorSmoke: SmokeCheck = {
     const askedKcs = graded?.question_kcs.map(({ kc_id }) => kc_id) ?? [];
 
     // A link's target holds ids, but the Student sees only its label.
-    const replies = [opening, first, second, third, fourth, fifth, sixth];
+    const replies = [
+      opening,
+      first,
+      second,
+      third,
+      fourth,
+      fifth,
+      sixth,
+      seventh,
+    ];
     const shown = replies
       .map((reply) => reply.text)
       .join("\n")
@@ -455,6 +519,11 @@ export const tutorSmoke: SmokeCheck = {
         "the wish to read opened a section with a purpose through showReading",
         opened !== undefined && opened.purpose.trim() !== "",
         `${describe(sixth.calls)}; ${JSON.stringify(opened ?? null)}`,
+      ),
+      result(
+        "every link of the citation reply is a Material + page link that opens",
+        citations.links > 0 && citations.problems.length === 0,
+        `${citations.links} links; ${citations.problems.join("; ")}`,
       ),
       result(
         "no ids or tool names in the text",

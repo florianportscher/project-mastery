@@ -301,7 +301,7 @@ export function PdfViewerCore({
             >
               <MinusIcon />
             </Button>
-            <span aria-live="polite" className="w-10 text-center tabular-nums">
+            <span className="w-10 text-center tabular-nums">
               {Math.round(zoom * 100)}%
             </span>
             <Button
