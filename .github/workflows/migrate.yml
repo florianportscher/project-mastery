@@ -29,7 +29,6 @@ jobs:
       && github.event.pull_request.head.repo.full_name == github.repository
       && github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     environment: database-staging
     concurrency:
       group: migrate-staging
@@ -43,17 +42,23 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          if ! supabase db push --remote="$SUPABASE_DB_URL" --yes 2>&1 | tee push.log; then
-            version=$(grep -oE '[0-9]{14}' push.log | head -1)
-            echo "::error::Staging holds migration ${version:-<see log>} that this branch lacks. It belongs to another PR that was tried on staging. Merge main into the branch once that PR is merged."
-            exit 1
+          status=0
+          supabase db push --remote="$SUPABASE_DB_URL" --yes > push.log 2>&1 || status=$?
+          cat push.log
+          if [ "$status" -ne 0 ]; then
+            if grep -q DbPushMissingLocalError push.log; then
+              version=$(grep -oE 'reverted [0-9]{14}' push.log | head -1 | cut -d' ' -f2)
+              echo "::error::Staging holds migration ${version:-<see log>} that this branch lacks. It belongs to another PR that was tried on staging. Merge main into the branch once that PR is merged."
+            else
+              echo "::error::supabase db push failed (exit $status), see the log above."
+            fi
+            exit "$status"
           fi
 
   production:
     name: Migrate production
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     environment: database-production
     concurrency:
       group: migrate-production
