@@ -105,7 +105,7 @@ A Student's _pin_ or _skip_ of a Topic, one at a time. A pinned Topic is always 
 _Avoid_: Favourite, hide, exclude (an excluded Material is something else)
 
 **Today card**:
-The head of the Ranking, on the Course map and in a new Chat: the due Reviews with their minutes, then the next Topic with its minutes, or the first 5 items in the final stretch. Its buttons open a new Chat that sends a first message as the Student: "Let's start.", "Let's review." when Reviews are due and "Exam problems please." once a KC is taught.
+The head of the Ranking, on the Course map and in a new Chat: the due Reviews with their minutes, then the next Topic with its minutes, or the first 5 items in the final stretch. The Student picks the session's length there: 15, 30 or 45 minutes, or Open, preselected with their last choice in the Course. Its buttons open a new Chat of that length that sends a first message as the Student: "Let's start.", "Let's review." when Reviews are due and "Exam problems please." once a KC is taught.
 _Avoid_: Dashboard, daily plan, agenda
 
 **AI**:
@@ -121,7 +121,7 @@ The pane beside a Chat that shows a Material's own pages, at a Reading section o
 _Avoid_: Viewer, reader, side panel
 
 **Study session**:
-One sitting of study with a start and an end: a Chat, or a Mock exam. Every Chat is one kind of session, ended by the Student, a Session rating or 2 idle hours, and then closed by one model call that writes its notes.
+One sitting of study with a start and an end: a Chat, or a Mock exam. Every Chat is one kind of session, ended by the Student, a Session rating or 2 idle hours, and then closed by one model call that writes its notes. A Chat's session has a length the Student chose on the Today card, or none (Open), and a shape the AI follows: an opening with a goal and a plan, teaching a few KCs at a time with one larger task, and a final check on everything new with a short recap.
 _Avoid_: Lesson, sitting, session alone when a Chat is meant
 
 **Session rating**:

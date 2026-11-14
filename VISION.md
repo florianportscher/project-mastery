@@ -22,7 +22,7 @@ This is what takes the fun out of studying: hours of effort with little visible 
 
 ## Principles
 
-1. **The student does the thinking.** The AI asks more than it tells: retrieval, problem solving, self-explanation. Explanations unlock the student's own work; they never replace it.
+1. **The student does the thinking.** The AI explains enough for the student's own work to start, then hands it over: retrieval, problem solving, self-explanation. Explanations unlock the student's own work; they never replace it.
 2. **Learning science by default.** Spaced retrieval, interleaving, worked examples that fade into independent practice, feedback on the reasoning and not just the final answer. The student never needs to know these terms; the app simply works this way.
 3. **Long-term mastery wins; the exam date sets the mode.** With weeks to go, the plan builds durable knowledge, and the app supplies the consistency that is hard to keep up alone. With days to go, it switches to triage: highest exam relevance × weakest mastery first.
 4. **Grounded in the course.** The uploaded materials are the primary source, cited down to the slide or page. Questions that go deeper or beyond them are welcome and get answered, clearly marked as going beyond the course.
