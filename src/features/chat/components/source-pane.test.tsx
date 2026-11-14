@@ -15,10 +15,25 @@ vi.mock("@/features/chat/server/actions", () => ({
 vi.mock("@/features/courses", async () => ({
   ...(await vi.importActual<object>("@/features/courses/domain/course-paths")),
   ...(await vi.importActual<object>("@/features/courses/schemas")),
-  MaterialFile: ({ name, page }: { name: string; page?: number }) => (
-    <p>
-      File {name} at page {page}
-    </p>
+  MaterialFile: ({
+    name,
+    page,
+    marked,
+  }: {
+    name: string;
+    page?: number;
+    marked?: { from: number; to: number };
+  }) => (
+    <>
+      <p>
+        File {name} at page {page}
+      </p>
+      {marked && (
+        <p>
+          Marked {marked.from}-{marked.to}
+        </p>
+      )}
+    </>
   ),
 }));
 // Wide: the pane sits beside the Chat.
@@ -82,6 +97,7 @@ test("a page link opens the Material at the cited pages", async () => {
   fireEvent.click(screen.getByRole("link", { name: "Lecture 7, pp. 3–5" }));
 
   expect(await screen.findByText("File Lecture 7 at page 3")).toBeVisible();
+  expect(screen.getByText("Marked 3-5")).toBeVisible();
   expect(openSource).toHaveBeenCalledWith({
     courseId: COURSE,
     kind: "pages",
@@ -109,6 +125,7 @@ test("a cited page the Material lacks shows the note at page 1", async () => {
 
   expect(await screen.findByText("File Lecture 7 at page 1")).toBeVisible();
   expect(screen.getByText("The cited page wasn't found.")).toBeVisible();
+  expect(screen.queryByText(/^Marked/)).not.toBeInTheDocument();
 });
 
 test("a modifier click follows the citation instead", () => {

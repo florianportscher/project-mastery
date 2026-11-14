@@ -168,7 +168,7 @@ function SourceView({
           <XIcon />
         </Button>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <div className="min-h-0 flex-1 overflow-auto p-4 pb-2">
         {loaded.status === "loading" && (
           <Skeleton className="aspect-[1/1.414] w-full" />
         )}
@@ -182,6 +182,11 @@ function SourceView({
             materialId={source.materialId}
             name={source.materialName}
             page={source.pageFrom}
+            marked={
+              source.pageNotFound
+                ? undefined
+                : { from: source.pageFrom, to: source.pageTo }
+            }
           />
         )}
       </div>

@@ -21,6 +21,7 @@ export function MaterialFile({
   name,
   page,
   onPageChange,
+  marked,
 }: {
   materialId: string;
   /** The Material's name, the image's alternative text. */
@@ -29,6 +30,8 @@ export function MaterialFile({
   page?: number;
   /** Called with the PDF page the Student turns to. */
   onPageChange?: (page: number) => void;
+  /** PDF pages to mark as cited. */
+  marked?: { from: number; to: number };
 }) {
   const [opened, setOpened] = useState<Opened>({ status: "loading" });
 
@@ -70,6 +73,8 @@ export function MaterialFile({
       file={opened.url}
       defaultPage={page}
       onPageChange={onPageChange}
+      marked={marked}
+      className="h-full"
     />
   ) : (
     <div className="relative h-[70dvh] w-full">
