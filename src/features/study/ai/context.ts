@@ -165,6 +165,18 @@ function topicBlock(topic: ProposedTopic): string {
           ]
         : []),
       `Unseen Problems: ${topic.unseenProblems}`,
+      ...(topic.facts.buildingTopics.length > 0
+        ? [
+            `Later Topics that build on it: ${topic.facts.buildingTopics.join(", ")}`,
+          ]
+        : []),
+      `Old-exam Exercises that test its KCs: ${topic.facts.oldExamExercises}`,
+      ...topic.kcs.flatMap((kc) => {
+        const builds = topic.facts.kcBuildsOn[kc.id];
+        return builds?.length
+          ? [`${kc.name} builds on: ${builds.join(", ")}`]
+          : [];
+      }),
     ]),
   ].join("\n");
 }

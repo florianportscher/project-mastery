@@ -17,6 +17,7 @@ import {
   type Goal,
   type KcRecall,
 } from "@/features/study/domain/replay";
+import type { TopicFacts } from "@/features/study/domain/topic-facts";
 import type {
   ContextKc,
   ContextMockTask,
@@ -85,6 +86,8 @@ export type TutorContextInput = {
   readings: Map<string, ReadingSectionView[]>;
   /** The KCs of each unseen Problem of the Course. */
   unseenProblems: Array<{ kcs: string[] }>;
+  /** Each Topic's facts (`topicFacts`), by Topic id. */
+  topicFacts: Map<string, TopicFacts>;
   notes: {
     /** By Topic id. */
     topics: Map<string, string>;
@@ -268,6 +271,11 @@ function propose(
           unseenProblems: input.unseenProblems.filter(({ kcs }) =>
             kcs.some((id) => topic.kcs.includes(id)),
           ).length,
+          facts: input.topicFacts.get(topic.id) ?? {
+            buildingTopics: [],
+            oldExamExercises: 0,
+            kcBuildsOn: {},
+          },
         }
       : null,
   };

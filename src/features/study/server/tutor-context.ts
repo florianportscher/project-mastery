@@ -1,10 +1,14 @@
 import "server-only";
 import { getBriefNotes } from "@/features/brief/server";
+import { loadChunkMaterials } from "@/features/ingestion/server";
 import {
+  buildTopicGraph,
   loadKcAssumes,
   loadReadingSections,
+  loadTopicTree,
   topicAnchors,
 } from "@/features/knowledge-map/server";
+import { topicFacts } from "@/features/study/domain/topic-facts";
 import { tutorContext } from "@/features/study/domain/tutor-context";
 import { loadAskedProblems } from "@/features/study/server/attempts";
 import { loadMemory } from "@/features/study/server/memory";
@@ -58,6 +62,8 @@ export async function loadTutorContext(
     ready,
     questions,
     mock,
+    topicTree,
+    chunkMaterials,
   ] = await Promise.all([
     loadStudy(supabase, courseId, now),
     loadReadingSections(supabase, courseId),
@@ -70,6 +76,8 @@ export async function loadTutorContext(
     loadReadyProblems(supabase, courseId),
     session ? loadSessionQuestions(supabase, session.id) : [],
     session?.mockId ? loadMockTasks(supabase, session.mockId) : null,
+    loadTopicTree(supabase, courseId),
+    loadChunkMaterials(supabase, courseId),
   ]);
   // The reserved exam stays unseen: the tutor never gets its chunks.
   const map = withoutReserved(study.map, reserved);
@@ -88,6 +96,21 @@ export async function loadTutorContext(
     ]),
   );
   const allSections = [...sectionViews.values()].flat();
+  const kcNames = new Map(map.kcs.map((kc) => [kc.id, kc.name]));
+  const facts = topicFacts({
+    topics: study.topics,
+    kcNames,
+    arrows: buildTopicGraph(
+      topicTree.map((topic) => ({
+        ...topic,
+        kcs: topic.kcs.map((id) => ({ id, name: kcNames.get(id) ?? id })),
+      })),
+      map,
+    ).edges,
+    prerequisites: map.prerequisites,
+    exercises: map.exercises,
+    examChunkIds: chunkMaterials.examChunkIds,
+  });
 
   const context: TutorContext = tutorContext({
     now,
@@ -117,6 +140,7 @@ export async function loadTutorContext(
       ...map.exercises.filter(({ id }) => !asked.has(id)),
       ...ready.filter(({ id }) => !asked.has(id)),
     ],
+    topicFacts: facts,
     notes: { topics: topicNotes, memory, briefNotes, materialNotes },
     mock,
   });
@@ -127,6 +151,7 @@ export async function loadTutorContext(
     reserved,
     topics: study.topics,
     exam: study.exam,
+    topicFacts: facts,
   };
 }
 

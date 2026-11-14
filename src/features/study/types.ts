@@ -6,6 +6,7 @@ import type { MockStatus } from "@/features/study/domain/mock-paths";
 import type { Pace, Progress, TopicScope } from "@/features/study/domain/plan";
 import type { ProblemSource } from "@/features/study/domain/exercises";
 import type { KcBand, RecallBand } from "@/features/study/domain/recall-band";
+import type { TopicFacts } from "@/features/study/domain/topic-facts";
 
 export type {
   AttemptHelp,
@@ -126,6 +127,7 @@ export type ProposedTopic = {
   readings: ReadingSectionView[];
   /** The unseen Problems that test any of its KCs. */
   unseenProblems: number;
+  facts: TopicFacts;
 };
 
 /** A Topic as one line of the tutor context. */
@@ -288,13 +290,13 @@ export type ProblemView = {
 };
 
 /**
- * A KC of a graded Question as `grade` returns it, with its new band.
+ * A KC of a graded Question as `grade` returns it: its stored result.
  */
 export type GradedKc = {
   id: string;
   name: string;
   result: AttemptResult;
-} & KcBand;
+};
 
 /** A Reading section as the AI is told of it. */
 export type ReadingSectionView = {
@@ -323,6 +325,8 @@ export type SessionSummary = {
     id: string;
     name: string;
     result: AttemptResult;
+    /** The help of that Attempt. */
+    help: AttemptHelp;
     /** As YYYY-MM-DD; null without a card. */
     nextReview: string | null;
   }>;
@@ -351,10 +355,15 @@ export type TopicView = {
     recallToday: number | null;
     /** What it assumes from outside the Materials. */
     assumes: Array<{ name: string; description: string }>;
+    /** The KCs of the same Topic it builds on, by name. */
+    buildsOn: string[];
     /** Up to 3, in reading order; none for a KC not asked for. */
     sources: SourceChunkView[];
   }>;
   anchors: Array<{ id: string; name: string; band: RecallBand }> | null;
+  /** Later Topics that build on it and old-exam Exercises that test it. */
+  buildingTopics: string[] | null;
+  oldExamExercises: number | null;
   /** In order. */
   readingSections: ReadingSectionView[] | null;
 };

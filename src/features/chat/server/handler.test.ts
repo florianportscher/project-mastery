@@ -485,15 +485,12 @@ describe("a question", () => {
       kcs: [
         {
           id: MAP.thrust,
-          // Recall is read at the end of today, so the band hangs on the
-          // hour the test runs.
-          band: expect.stringMatching(/^(strong|fading)$/),
-          nextReview: new Date(Date.now() + 2 * 86_400_000)
-            .toISOString()
-            .slice(0, 10),
-          recallToday: expect.any(Number),
+          result: "partial",
         },
       ],
+      help: expect.any(String),
     });
+    expect(gradePart?.output).not.toHaveProperty("kcs.0.band");
+    expect(gradePart?.output).not.toHaveProperty("kcs.0.nextReview");
   });
 });

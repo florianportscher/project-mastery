@@ -19,13 +19,14 @@ import {
   PromptInputActionMenuTrigger,
   PromptInputBody,
   PromptInputFooter,
-  PromptInputHeader,
   PromptInputProvider,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { AttachmentChips } from "@/features/chat/components/attachment-chips";
+import { QuickReplies } from "@/features/chat/components/quick-replies";
 import { ReplyError } from "@/features/chat/components/reply-error";
 import { AttachedMaterials } from "@/features/chat/components/attached-materials";
 import { ContextAction } from "@/features/chat/components/context-action";
@@ -39,6 +40,7 @@ import { chatPath, newChatPath } from "@/features/chat/domain/chat-paths";
 import {
   CloseCard,
   EndSessionButton,
+  QUICK_REPLIES,
   sessionEndedMessage,
 } from "@/features/study";
 import { messageText } from "@/lib/ai/reply";
@@ -56,7 +58,6 @@ import type { ChatUIMessage, ChatWithMessages } from "@/features/chat/types";
 import { WithSourcePane } from "@/features/chat/components/source-pane";
 import {
   MATERIAL_MEDIA_TYPES,
-  MaterialChip,
   MaterialPicker,
   MaterialViewer,
   type MaterialListItem,
@@ -438,50 +439,23 @@ export function Chat({
               }}
             />
             {/* Controlled, so a refused message stays in the input. */}
+            <QuickReplies
+              replies={QUICK_REPLIES}
+              visible={
+                !isBusy &&
+                !limitReached &&
+                messages.some(({ role }) => role === "assistant")
+              }
+              onSend={(text) =>
+                void sendMessage({ parts: [{ type: "text", text }] })
+              }
+            />
             <PromptInputProvider>
               <PromptInput onSubmit={handleSubmit}>
-                {(attached.length > 0 || uploading) && (
-                  <PromptInputHeader aria-label="Attached materials">
-                    {attached.map((material) => (
-                      <MaterialChip
-                        key={material.materialId}
-                        name={
-                          materialsById.get(material.materialId)?.name ??
-                          material.name
-                        }
-                        mediaType={material.mediaType}
-                        onRemove={() => detach(material.materialId)}
-                      />
-                    ))}
-                    {uploads.map((upload) => (
-                      <MaterialChip
-                        key={upload.key}
-                        name={upload.filename}
-                        mediaType={upload.mediaType}
-                        progress={
-                          upload.status === "failed"
-                            ? undefined
-                            : upload.progress
-                        }
-                        error={
-                          upload.status === "failed"
-                            ? upload.message
-                            : undefined
-                        }
-                        onRetry={
-                          upload.canRetry
-                            ? () => retryUpload(upload.key)
-                            : undefined
-                        }
-                        onRemove={
-                          upload.status === "registering"
-                            ? undefined
-                            : () => removeUpload(upload.key)
-                        }
-                      />
-                    ))}
-                  </PromptInputHeader>
-                )}
+                <AttachmentChips
+                  {...{ attached, detach, materialsById, uploads }}
+                  {...{ uploading, retryUpload, removeUpload }}
+                />
                 <PromptInputBody>
                   <PromptInputTextarea
                     aria-label="Message"

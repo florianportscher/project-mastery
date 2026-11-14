@@ -60,6 +60,16 @@ function build(overrides: Partial<TutorContextInput> = {}) {
     },
     readings: new Map([["t1", [{ id: "r1", label: "Lecture 1, p. 2" }]]]),
     unseenProblems: [{ kcs: ["k2"] }, { kcs: ["k3"] }],
+    topicFacts: new Map([
+      [
+        "t1",
+        {
+          buildingTopics: ["Topic t2", "Topic t3"],
+          oldExamExercises: 4,
+          kcBuildsOn: { k2: ["KC k1"] },
+        },
+      ],
+    ]),
     notes: {
       topics: new Map([
         ["t1", "Mixes up k1 and k2."],
@@ -94,6 +104,9 @@ test("a first session proposes the next Topic with its sections, stock and notes
   expect(text).toContain("KCs: KC k1 (KC id k1; new); KC k2 (KC id k2; new)");
   expect(text).toContain("Reading sections: Lecture 1, p. 2 (section id r1)");
   expect(text).toContain("Unseen Problems: 1");
+  expect(text).toContain("Later Topics that build on it: Topic t2, Topic t3");
+  expect(text).toContain("Old-exam Exercises that test its KCs: 4");
+  expect(text).toContain("KC k2 builds on: KC k1");
   expect(text).toContain("## Topic notes: Topic t1\nMixes up k1 and k2.");
   expect(text).not.toContain("Never shown.");
   expect(text).not.toContain("## Last session");

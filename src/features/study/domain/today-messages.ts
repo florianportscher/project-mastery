@@ -9,6 +9,14 @@ export const TODAY_MESSAGES = {
   exam: "Exam problems please.",
 } as const;
 
+/** The fixed messages the Chat's quick replies send as the Student. */
+export const QUICK_REPLIES = [
+  "Explain it differently.",
+  "Show me an example.",
+  "I know this, test me.",
+  "Let's wrap up.",
+] as const;
+
 /** The session lengths the Today card offers, in minutes. */
 export const SESSION_LENGTHS = [15, 30, 45] as const;
 

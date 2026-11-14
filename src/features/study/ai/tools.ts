@@ -214,7 +214,7 @@ export type TutorToolActions = {
   findQuestion: () => Promise<QuestionToGrade | null>;
   /**
    * Marks the question graded and stores one attempt per KC; returns each
-   * KC's new recall band, or null when it was graded in the meantime.
+   * KC's stored result, or null when it was graded in the meantime.
    */
   saveGrade: (grade: {
     questionId: string;
@@ -316,7 +316,7 @@ export function tutorTools(actions: TutorToolActions) {
     }),
     grade: tool({
       description:
-        "Grade the Student's answer to the open Question, the one you asked last with ask, before you give feedback: a result for each of its KCs, how much you helped and, for a question with final results, the Student's final values. When the Student moved on instead of answering, call closeQuestion instead. Code checks each value against its key: numbers and units at 1% tolerance, vectors and matrices element by element, expressions at sample points. On a mismatch every full becomes partial. Returns each KC's result, its recall band (new, strong, fading or weak), its next review date (YYYY-MM-DD) and recall today (0 to 1), and the check: match, mismatch, unchecked (a value code doesn't compare, or a result without a value) or null when the question has no final results.",
+        "Grade the Student's answer to the open Question, the one you asked last with ask, before you give feedback: a result for each of its KCs, how much you helped and, for a question with final results, the Student's final values. When the Student moved on instead of answering, call closeQuestion instead. Code checks each value against its key: numbers and units at 1% tolerance, vectors and matrices element by element, expressions at sample points. On a mismatch every full becomes partial. Returns each KC's id and stored result, the help and the check: match, mismatch, unchecked (a value code doesn't compare, or a result without a value) or null when the question has no final results.",
       inputSchema: gradeInputSchema,
       execute: async (input) => grade(actions, input),
     }),
@@ -380,7 +380,11 @@ async function openQuestion(
 async function grade(
   actions: TutorToolActions,
   input: GradeInput,
-): Promise<{ kcs: GradedKc[]; check: FinalValueCheck }> {
+): Promise<{
+  kcs: GradedKc[];
+  help: AttemptHelp;
+  check: FinalValueCheck;
+}> {
   const question = await openQuestion(actions);
   if (!question.answered) {
     throw new TutorToolError(
@@ -392,7 +396,7 @@ async function grade(
     if (!(await actions.closeQuestion(question.id))) {
       throw new TutorToolError(alreadyGraded);
     }
-    return { kcs: [], check: null };
+    return { kcs: [], help: input.help, check: null };
   }
   const help = input.help;
   const results = input.results.filter(
@@ -429,7 +433,7 @@ async function grade(
     check,
   });
   if (!kcs) throw new TutorToolError(alreadyGraded);
-  return { kcs, check };
+  return { kcs, help, check };
 }
 
 export type TutorTools = ReturnType<typeof tutorTools>;

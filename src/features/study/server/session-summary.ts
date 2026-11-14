@@ -4,7 +4,11 @@ import { loadStoredMap } from "@/features/knowledge-map/server";
 import { replayCourse } from "@/features/study/domain/replay";
 import { sessionEnd } from "@/features/study/domain/session-end";
 import { loadCourseAttempts } from "@/features/study/server/attempts";
-import type { AttemptResult, SessionSummary } from "@/features/study/types";
+import type {
+  AttemptHelp,
+  AttemptResult,
+  SessionSummary,
+} from "@/features/study/types";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
@@ -46,17 +50,21 @@ export async function loadSessionSummary(
   });
   const kcName = new Map(map.kcs.map((kc) => [kc.id, kc.name]));
   // Each KC's latest result in the session, in the order first checked.
-  const results = new Map<string, AttemptResult>();
+  const results = new Map<
+    string,
+    { result: AttemptResult; help: AttemptHelp }
+  >();
   for (const attempt of attempts
     .filter(({ sessionId }) => sessionId === session.id)
     .toSorted((a, b) => a.createdAt.localeCompare(b.createdAt))) {
-    results.set(attempt.kcId, attempt.result);
+    results.set(attempt.kcId, { result: attempt.result, help: attempt.help });
   }
   return {
-    kcs: [...results].map(([id, result]) => ({
+    kcs: [...results].map(([id, { result, help }]) => ({
       id,
       name: kcName.get(id) ?? id,
       result,
+      help,
       nextReview: recall.get(id)?.nextReview ?? null,
     })),
     ended:
