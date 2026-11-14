@@ -19,15 +19,30 @@ vi.mock("@/features/courses", async () => ({
     name,
     page,
     marked,
+    defaultZoom,
+    onPageChange,
+    onZoomChange,
   }: {
     name: string;
     page?: number;
     marked?: { from: number; to: number };
+    defaultZoom?: number;
+    onPageChange?: (page: number) => void;
+    onZoomChange?: (zoom: number) => void;
   }) => (
     <>
       <p>
         File {name} at page {page}
       </p>
+      <p>Zoom {defaultZoom}</p>
+      <button
+        onClick={() => {
+          onPageChange?.(7);
+          onZoomChange?.(1.5);
+        }}
+      >
+        Read on
+      </button>
       {marked && (
         <p>
           Marked {marked.from}-{marked.to}
@@ -161,4 +176,39 @@ test("a source not in the Course shows that it could not be found", async () => 
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "This source could not be found.",
   );
+});
+
+test("expand shows the page and zoom reached, and Esc returns to them", async () => {
+  render(<Harness text={`See [Lecture 7](${citation}).`} />);
+  fireEvent.click(screen.getByRole("link", { name: "Lecture 7" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Read on" }));
+
+  fireEvent.click(screen.getByRole("button", { name: "Expand source" }));
+
+  const full = screen.getByRole("dialog");
+  expect(within(full).getByText("File Lecture 7 at page 7")).toBeVisible();
+  expect(within(full).getByText("Zoom 1.5")).toBeVisible();
+
+  fireEvent.keyDown(full, { key: "Escape" });
+
+  const pane = await screen.findByRole("complementary", { name: "Source" });
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(within(pane).getByText("File Lecture 7 at page 7")).toBeVisible();
+  expect(within(pane).getByText("Zoom 1.5")).toBeVisible();
+});
+
+test("the divider resizes with arrow keys, remembers the width, and resets on double-click", async () => {
+  window.localStorage.clear();
+  render(<Harness text={`See [Lecture 7](${citation}).`} />);
+  fireEvent.click(screen.getByRole("link", { name: "Lecture 7" }));
+  const divider = await screen.findByRole("separator");
+  const pane = screen.getByRole("complementary", { name: "Source" });
+
+  fireEvent.keyDown(divider, { key: "ArrowLeft" });
+  expect(pane.style.width).toMatch(/vw$/);
+  expect(window.localStorage.getItem("source-pane-width")).not.toBeNull();
+
+  fireEvent.doubleClick(divider);
+  expect(pane.style.width).toBe("");
+  expect(window.localStorage.getItem("source-pane-width")).toBeNull();
 });

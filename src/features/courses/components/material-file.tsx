@@ -22,6 +22,8 @@ export function MaterialFile({
   page,
   onPageChange,
   marked,
+  defaultZoom,
+  onZoomChange,
 }: {
   materialId: string;
   /** The Material's name, the image's alternative text. */
@@ -32,6 +34,10 @@ export function MaterialFile({
   onPageChange?: (page: number) => void;
   /** PDF pages to mark as cited. */
   marked?: { from: number; to: number };
+  /** The PDF zoom to start at. */
+  defaultZoom?: number;
+  /** Called with the PDF zoom the Student sets. */
+  onZoomChange?: (zoom: number) => void;
 }) {
   const [opened, setOpened] = useState<Opened>({ status: "loading" });
 
@@ -74,6 +80,8 @@ export function MaterialFile({
       defaultPage={page}
       onPageChange={onPageChange}
       marked={marked}
+      defaultZoom={defaultZoom}
+      onZoomChange={onZoomChange}
       className="h-full"
     />
   ) : (
