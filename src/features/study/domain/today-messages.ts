@@ -9,6 +9,15 @@ export const TODAY_MESSAGES = {
   exam: "Exam problems please.",
 } as const;
 
+/** The session lengths the Today card offers, in minutes. */
+export const SESSION_LENGTHS = [15, 30, 45] as const;
+
+/** `value` as a session length, or undefined. */
+export function sessionLength(value: unknown): number | undefined {
+  const minutes = Number(value);
+  return SESSION_LENGTHS.find((length) => length === minutes);
+}
+
 /** The first message of a Chat opened to go through a graded Mock exam. */
 export const MOCK_REVIEW_MESSAGE = "Let's go through my mock exam.";
 

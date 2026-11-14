@@ -130,6 +130,24 @@ export async function setSessionMock(
 }
 
 /**
+ * Gives the Chat's new Study session the length the Student chose
+ * (`set_session_minutes`). False, changing nothing, for any other length
+ * or once the session has a length or a Question.
+ */
+export async function setSessionMinutes(
+  supabase: Supabase,
+  chatId: string,
+  minutes: number,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("set_session_minutes", {
+    p_chat_id: chatId,
+    p_minutes: minutes,
+  });
+  if (error) failed("Setting the session's length", error);
+  return data === true;
+}
+
+/**
  * Ends the Chat's running Study session at `at`, starts generating the
  * Course's review stock and its next Topic's (#183) and starts closing the session (#187).
  * False when there is none to end: no session, or one that ended already.

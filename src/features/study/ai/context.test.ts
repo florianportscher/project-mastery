@@ -26,6 +26,10 @@ const taught = (recallToday: number, due = false): KcRecall => ({
 
 /** A Course of two Topics, t1 (k1, k2) and t2 (k3), in a first session. */
 function render(overrides: Partial<TutorContextInput> = {}): string {
+  return renderTutorContext(build(overrides));
+}
+
+function build(overrides: Partial<TutorContextInput> = {}) {
   const input: TutorContextInput = {
     now: NOW,
     exam: { examDate: "2026-12-07", goal: "pass" },
@@ -50,6 +54,7 @@ function render(overrides: Partial<TutorContextInput> = {}): string {
     session: {
       id: "s1",
       startedAt: "2026-11-07T09:48:00Z",
+      plannedMinutes: null,
       questions: [],
       readings: [],
     },
@@ -67,7 +72,7 @@ function render(overrides: Partial<TutorContextInput> = {}): string {
     mock: null,
     ...overrides,
   };
-  return renderTutorContext(tutorContext(input));
+  return tutorContext(input);
 }
 
 const review = (kcId: string): RankedItem => ({
@@ -83,7 +88,7 @@ test("a first session proposes the next Topic with its sections, stock and notes
   expect(text).toMatch(
     /^<tutor-context>\nToday is 2026-11-07\. The exam is on 2026-12-07, in 30 days\./,
   );
-  expect(text).toContain("Running for 12 minutes.");
+  expect(text).toContain("Running for 12 minutes, no length chosen.");
   expect(text).toContain("No KC checked today.");
   expect(text).toContain("Next Topic: Topic t1 (Topic id t1): Why t1?");
   expect(text).toContain("KCs: KC k1 (KC id k1; new); KC k2 (KC id k2; new)");
@@ -158,6 +163,7 @@ test("a Student who redirected: today's checks touch another Topic, whose notes 
     session: {
       id: "s1",
       startedAt: "2026-11-07T09:48:00Z",
+      plannedMinutes: null,
       questions: [
         {
           prompt: "Why k3?",
@@ -170,7 +176,7 @@ test("a Student who redirected: today's checks touch another Topic, whose notes 
       readings: [],
     },
   });
-  expect(text).toContain("Checked today: KC k3 (KC id k3): full, help none.");
+  expect(text).toContain("Shown without help today: KC k3 (KC id k3).");
   expect(text).toContain("Last graded Question 5 minutes ago.");
   expect(text).toContain(
     "Open Question, not answered, on KC k1 (KC id k1):\n> And k1?",
@@ -180,6 +186,73 @@ test("a Student who redirected: today's checks touch another Topic, whose notes 
     "## Last session\n2026-11-05: Topic t1; 2 KCs checked, 1 below full.",
   );
   expect(text).toContain("Topic t2 (Topic id t2): skipped, 1 of 1 learned");
+});
+
+describe("the session's length and Topic", () => {
+  const session = (
+    plannedMinutes: number | null,
+    questions: TutorContextInput["session"]["questions"] = [],
+  ) => ({
+    id: "s1",
+    startedAt: "2026-11-07T09:48:00Z",
+    plannedMinutes,
+    questions,
+    readings: [],
+  });
+
+  test("says the time used and left, or that it is up", () => {
+    expect(render({ session: session(30) })).toContain(
+      "The Student chose 30 minutes: 12 used, 18 left.",
+    );
+    expect(render({ session: session(10) })).toContain(
+      "The Student chose 10 minutes: 12 used, the time is up.",
+    );
+  });
+
+  test("lists each KC once by its newest Attempt today, shown or worked on", () => {
+    const attempt = (
+      kcId: string,
+      createdAt: string,
+      result: "full" | "partial",
+      help: "none" | "some",
+    ) => ({ kcId, sessionId: "s1", createdAt, result, help });
+    const context = build({
+      attempts: [
+        attempt("k1", "2026-11-07T09:50:00Z", "full", "none"),
+        attempt("k1", "2026-11-07T09:55:00Z", "partial", "none"),
+        attempt("k2", "2026-11-07T09:56:00Z", "full", "some"),
+        attempt("k3", "2026-11-07T09:57:00Z", "full", "none"),
+      ],
+    });
+    expect(context.session.checkedToday).toEqual([
+      { id: "k1", name: "KC k1", state: "worked" },
+      { id: "k2", name: "KC k2", state: "worked" },
+      { id: "k3", name: "KC k3", state: "shown" },
+    ]);
+    const text = renderTutorContext(context);
+    expect(text).toContain("Shown without help today: KC k3 (KC id k3).");
+    expect(text).toContain(
+      "Worked on today, not yet shown without help: KC k1 (KC id k1); KC k2 (KC id k2).",
+    );
+  });
+
+  test("the Topic is the newest Question's, else the proposal's, with its KCs in order", () => {
+    expect(build().session.topic).toEqual({
+      id: "t1",
+      name: "Topic t1",
+      kcs: [
+        { id: "k1", name: "KC k1" },
+        { id: "k2", name: "KC k2" },
+      ],
+    });
+    const asked = build({
+      session: session(null, [
+        { prompt: "?", kcIds: ["k3"], answered: false, gradedAt: null },
+      ]),
+    });
+    expect(asked.session.topic?.id).toBe("t2");
+    expect(build({ ranked: [] }).session.topic).toBeNull();
+  });
 });
 
 describe("a mock session", () => {

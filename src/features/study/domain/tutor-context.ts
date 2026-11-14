@@ -70,6 +70,8 @@ export type TutorContextInput = {
   session: {
     id: string;
     startedAt: string;
+    /** The length the Student chose; null for Open. */
+    plannedMinutes: number | null;
     /** Its Questions, oldest first. */
     questions: Array<{
       prompt: string;
@@ -133,12 +135,10 @@ export function tutorContext(input: TutorContextInput): TutorContext {
     goal: exam.goal,
     session: {
       minutes: minutesSince(input.session.startedAt),
-      checkedToday: todays.map(({ kcId, result, help }) => ({
-        id: kcId,
-        name: nameOf(kcId),
-        result,
-        help,
-      })),
+      startedAt: input.session.startedAt,
+      plannedMinutes: input.session.plannedMinutes,
+      checkedToday: checkedToday(todays, nameOf),
+      topic: sessionTopic(input, proposal),
       openQuestion:
         open && open.gradedAt === null
           ? {
@@ -178,6 +178,44 @@ export function tutorContext(input: TutorContextInput): TutorContext {
       lastSession: lastSession(input, topicOf),
     },
     mock: input.mock,
+  };
+}
+
+/** One entry per KC of today's Attempts, by its newest (`SessionFacts`). */
+function checkedToday(
+  todays: TutorContextInput["attempts"],
+  nameOf: (id: string) => string,
+): TutorContext["session"]["checkedToday"] {
+  const states = new Map<string, "shown" | "worked">();
+  for (const { kcId, result, help } of todays) {
+    states.set(kcId, result === "full" && help === "none" ? "shown" : "worked");
+  }
+  return [...states].map(([id, state]) => ({ id, name: nameOf(id), state }));
+}
+
+/** The session's Topic (`SessionFacts`). */
+function sessionTopic(
+  input: TutorContextInput,
+  proposal: Proposal,
+): TutorContext["session"]["topic"] {
+  const first = input.session.questions.findLast(
+    ({ kcIds }) => kcIds.length > 0,
+  )?.kcIds[0];
+  const asked =
+    first === undefined
+      ? undefined
+      : input.topics.find(({ kcs }) => kcs.includes(first));
+  const topic =
+    asked ??
+    (!proposal.finalStretch && proposal.topic
+      ? input.topics.find(({ id }) => id === proposal.topic!.id)
+      : undefined);
+  if (!topic) return null;
+  const name = new Map(input.kcs.map((kc) => [kc.id, kc.name]));
+  return {
+    id: topic.id,
+    name: topic.name,
+    kcs: topic.kcs.map((id) => ({ id, name: name.get(id) ?? id })),
   };
 }
 

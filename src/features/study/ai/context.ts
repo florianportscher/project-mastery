@@ -79,16 +79,24 @@ function dates({ today, examDate, daysLeft, goal }: TutorContext): string {
 }
 
 function session({ session: s }: TutorContext): string {
+  const names = (state: "shown" | "worked") =>
+    s.checkedToday
+      .filter((kc) => kc.state === state)
+      .map((kc) => `${kc.name} (KC id ${kc.id})`)
+      .join("; ");
+  const shown = names("shown");
+  const worked = names("worked");
   const lines = [
-    `Running for ${s.minutes} minutes.`,
-    s.checkedToday.length === 0
-      ? "No KC checked today."
-      : `Checked today: ${s.checkedToday
-          .map(
-            (kc) =>
-              `${kc.name} (KC id ${kc.id}): ${kc.result}, help ${kc.help}`,
-          )
-          .join("; ")}.`,
+    s.plannedMinutes === null
+      ? `Running for ${s.minutes} minutes, no length chosen.`
+      : s.minutes >= s.plannedMinutes
+        ? `The Student chose ${s.plannedMinutes} minutes: ${s.minutes} used, the time is up.`
+        : `The Student chose ${s.plannedMinutes} minutes: ${s.minutes} used, ${s.plannedMinutes - s.minutes} left.`,
+    ...(s.checkedToday.length === 0 ? ["No KC checked today."] : []),
+    ...(shown ? [`Shown without help today: ${shown}.`] : []),
+    ...(worked
+      ? [`Worked on today, not yet shown without help: ${worked}.`]
+      : []),
     ...(s.minutesSinceGraded === null
       ? []
       : [`Last graded Question ${s.minutesSinceGraded} minutes ago.`]),

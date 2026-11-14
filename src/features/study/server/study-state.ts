@@ -37,6 +37,7 @@ const NO_STATE: StudyState = {
   lastMockPercent: null,
   taught: false,
   pace: DEFAULT_PACE,
+  lastMinutes: null,
 };
 
 /**
@@ -52,9 +53,10 @@ export async function getStudyState(courseId: string): Promise<StudyState> {
   }
   const supabase = await createClient();
   const now = new Date();
-  const [study, lastMock] = await Promise.all([
+  const [study, lastMock, lastMinutes] = await Promise.all([
     loadStudy(supabase, courseId, now),
     loadLastMockPercent(supabase, courseId),
+    loadLastSessionMinutes(supabase, courseId),
   ]);
   const { map, priorities, exam, topics, attempts, pace, recall, scope } =
     study;
@@ -118,6 +120,7 @@ export async function getStudyState(courseId: string): Promise<StudyState> {
     lastMockPercent: lastMock,
     taught: live.some(({ id }) => recall.get(id)?.taught),
     pace,
+    lastMinutes,
   };
 }
 
@@ -164,6 +167,26 @@ export async function loadStudy(
     scope,
     ranked,
   };
+}
+
+/**
+ * The length of the Student's newest Study session in the Course that has
+ * one; null without one.
+ */
+async function loadLastSessionMinutes(
+  supabase: Supabase,
+  courseId: string,
+): Promise<number | null> {
+  const { data, error } = await supabase
+    .from("study_sessions")
+    .select("planned_minutes")
+    .eq("course_id", courseId)
+    .not("planned_minutes", "is", null)
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) failed("Loading the last session's length", error);
+  return data?.planned_minutes ?? null;
 }
 
 /**

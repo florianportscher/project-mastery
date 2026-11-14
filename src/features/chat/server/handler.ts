@@ -56,6 +56,7 @@ import {
   recordAnswer,
   renderTutorContext,
   sessionEndedMessage,
+  setSessionMinutes,
   setSessionMock,
   startTutoring,
   TutorToolError,
@@ -127,7 +128,7 @@ export async function respondInChat({
   if (!parsed.success) {
     return refuse(400, parsed.error.issues[0]?.message ?? "Invalid request.");
   }
-  const { chatId, courseId, mockId, message } = parsed.data;
+  const { chatId, courseId, mockId, minutes, message } = parsed.data;
 
   const existing = await findChat(supabase, chatId);
   if (!existing && !courseId) return refuse(404, chatNotFoundMessage);
@@ -174,7 +175,10 @@ export async function respondInChat({
 
   if (existing) await startReply(supabase, chat.id, replyId);
   // A Chat opened from a graded Mock exam goes through it.
-  else if (mockId) await setSessionMock(supabase, chat.id, mockId);
+  else {
+    if (mockId) await setSessionMock(supabase, chat.id, mockId);
+    if (minutes) await setSessionMinutes(supabase, chat.id, minutes);
+  }
 
   const history =
     resent ??

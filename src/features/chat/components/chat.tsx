@@ -33,10 +33,8 @@ import { MessageActionRow } from "@/features/chat/components/message-action-row"
 import { ReplyFooter } from "@/features/chat/components/reply-footer";
 import { ReplyParts } from "@/features/chat/components/reply-parts";
 import { chatLabel } from "@/features/chat/domain/chat-label";
-import {
-  checkedToday,
-  checkedTodayText,
-} from "@/features/chat/domain/checked-today";
+import { SessionStrip } from "@/features/chat/components/session-strip";
+import { sessionStrip } from "@/features/chat/domain/session-strip";
 import { chatPath, newChatPath } from "@/features/chat/domain/chat-paths";
 import {
   CloseCard,
@@ -99,6 +97,8 @@ type ChatProps = {
   initialMessage?: string;
   /** A new Chat's graded Mock exam, which its Study session goes through. */
   mockId?: string;
+  /** A new Chat's session length chosen on the Today card; none is Open. */
+  minutes?: number;
   /** The Student's Daily limit status when the page loaded. */
   dailyLimit: DailyLimitStatus;
   /**
@@ -120,6 +120,7 @@ export function Chat({
   emptyState,
   initialMessage,
   mockId,
+  minutes,
   dailyLimit: initialDailyLimit,
   showDetails,
 }: ChatProps) {
@@ -200,7 +201,7 @@ export function Chat({
         body: {
           ...body,
           chatId,
-          ...(isNew && { courseId: chat.courseId, mockId }),
+          ...(isNew && { courseId: chat.courseId, mockId, minutes }),
           message: messages.at(-1),
         },
       }),
@@ -239,7 +240,19 @@ export function Chat({
   const ended =
     chat.ended || endedHere || error?.message === sessionEndedMessage;
   const lastMessage = messages.at(-1);
-  const checked = checkedToday(messages);
+  // Until the first reply brings the session's facts, a new Chat counts
+  // from when it opened.
+  const [openedAt] = useState(() => new Date().toISOString());
+  const strip =
+    sessionStrip(messages) ??
+    (isNew && messages.length > 0
+      ? {
+          topic: null,
+          dots: [],
+          startedAt: openedAt,
+          plannedMinutes: minutes ?? null,
+        }
+      : null);
   // The replies loaded with the Chat; any other arrived while it was open.
   const storedIds = useMemo(
     () => new Set(chat.messages.map(({ id }) => id)),
@@ -275,14 +288,9 @@ export function Chat({
     <WithSourcePane courseId={chat.courseId}>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 px-4 pb-4">
         {/* Once the first message is sent, the Chat's session can be ended. */}
-        {messages.length > 0 && (checked !== null || !ended) && (
+        {messages.length > 0 && (strip !== null || !ended) && (
           <div className="mx-auto -mb-2 flex min-h-10 w-full max-w-3xl items-center justify-between gap-2 pt-2">
-            <p
-              data-testid="checked-today"
-              className="text-sm text-muted-foreground"
-            >
-              {checked !== null && checkedTodayText(checked)}
-            </p>
+            {strip ? <SessionStrip strip={strip} /> : <span />}
             {!ended && (
               <EndSessionButton
                 chatId={chatId}

@@ -10,15 +10,15 @@ test("a session from the Today card: a question answered in the input is graded,
   await seedKc(student.id, course.id);
   await page.goto(course.chatPath);
 
-  await page
-    .getByRole("region", { name: "Today" })
-    .getByRole("link", { name: "Let's start." })
-    .click();
+  const today = page.getByRole("region", { name: "Today" });
+  await today.getByRole("radio", { name: "15 min" }).click();
+  await today.getByRole("link", { name: "Let's start." }).click();
   await expect(
     page.getByText("it never calls a real model.", { exact: false }),
   ).toBeVisible();
 
   await expect(page.getByRole("button", { name: "Regenerate" })).toBeVisible();
+  await expect(page.getByTestId("session-strip")).toContainText("0 of 15 min");
 
   // The mock asks on the first KC id of the tutor context.
   const message = page.getByRole("textbox", { name: "Message" });
@@ -35,9 +35,11 @@ test("a session from the Today card: a question answered in the input is graded,
   await expect(
     page.getByText('Mock reply to "4"', { exact: false }),
   ).toBeVisible();
-  await expect(page.getByTestId("checked-today")).toHaveText(
-    "Checked today: 1 KC",
-  );
+  await expect(
+    page
+      .getByTestId("session-strip")
+      .getByRole("img", { name: /^Thrust equation: (practised|shown)/ }),
+  ).toBeVisible();
 
   await page.getByRole("button", { name: "End session" }).click();
   const checked = page

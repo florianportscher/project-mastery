@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Markdown } from "@/components/markdown";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { StartButtons } from "@/features/study/components/start-buttons";
 import { MockExamButton } from "@/features/study/components/mock-exam-button";
 import { TODAY_MESSAGES } from "@/features/study/domain/today-messages";
 import type { NextItem, StudyState } from "@/features/study/types";
@@ -31,7 +31,8 @@ const aboutMinutes = (minutes: number) =>
  * final stretch the first 5 items. Its buttons open a new Chat
  * (`chatHref`) that sends a first message as the Student: "Let's start."
  * while anything is ranked, "Let's review." with Reviews due and "Exam
- * problems please." once a KC is taught. Without a map or Topics it links
+ * problems please." once a KC is taught, for the length the Student picks:
+ * 15, 30 or 45 minutes (their last choice preselected) or Open. Without a map or Topics it links
  * to the Course map to build or update it. The page passes the links, since
  * the map and the Chat belong to other features. With `mock`, Mock exam
  * shows once a KC is taught, and Continue mock exam while a mock is open.
@@ -45,7 +46,12 @@ export function TodayCard({
 }: {
   state: Pick<
     StudyState,
-    "hasMap" | "hasTopics" | "ranking" | "finalStretch" | "taught"
+    | "hasMap"
+    | "hasTopics"
+    | "ranking"
+    | "finalStretch"
+    | "taught"
+    | "lastMinutes"
   >;
   mapHref: string;
   /** A Topic's page. */
@@ -132,7 +138,6 @@ export function TodayCard({
   }
 
   const ready = state.hasMap && state.hasTopics;
-  const say = (text: string) => `${chatHref}?say=${encodeURIComponent(text)}`;
   const buttons = [
     ...(ranking.length > 0 ? [TODAY_MESSAGES.start] : []),
     ...(ranking.some((item) => item.kind === "review")
@@ -157,16 +162,13 @@ export function TodayCard({
         {body}
         {ready && (buttons.length > 0 || showMock) && (
           <div className="flex flex-wrap gap-2">
-            {buttons.map((text, index) => (
-              <Button
-                key={text}
-                asChild
-                size="sm"
-                variant={index === 0 ? "default" : "outline"}
-              >
-                <Link href={say(text)}>{text}</Link>
-              </Button>
-            ))}
+            {buttons.length > 0 && (
+              <StartButtons
+                messages={buttons}
+                chatHref={chatHref}
+                lastMinutes={state.lastMinutes}
+              />
+            )}
             {showMock && (
               <MockExamButton
                 courseId={mock.courseId}

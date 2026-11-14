@@ -57,13 +57,28 @@ export type ContextKc = {
 /** What this Study session has done so far. */
 export type SessionFacts = {
   minutes: number;
-  /** The Course's Attempts of today, oldest first. */
+  /** When the session started, as an ISO time. */
+  startedAt: string;
+  /** The length the Student chose: 15, 30 or 45; null for Open. */
+  plannedMinutes: number | null;
+  /**
+   * One entry per KC with an Attempt today, by its newest one: `shown` for
+   * a `full` without help, otherwise `worked`.
+   */
   checkedToday: Array<{
     id: string;
     name: string;
-    result: AttemptResult;
-    help: AttemptHelp;
+    state: "shown" | "worked";
   }>;
+  /**
+   * The session's Topic: that of the newest Question's first KC, else the
+   * proposal's, with its KCs in map order; null without one.
+   */
+  topic: {
+    id: string;
+    name: string;
+    kcs: Array<{ id: string; name: string }>;
+  } | null;
   /** The session's newest Question while it is ungraded; null otherwise. */
   openQuestion: {
     prompt: string;
@@ -212,6 +227,11 @@ export type StudyState = {
   /** Whether any KC is taught. */
   taught: boolean;
   pace: Pace;
+  /**
+   * The length of the Student's newest session in the Course that has one,
+   * which the Today card preselects; null without one.
+   */
+  lastMinutes: number | null;
 };
 
 /** A source chunk as `getTopic` and `searchMaterials` return it. */

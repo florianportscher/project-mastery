@@ -106,6 +106,7 @@ export async function loadTutorContext(
     session: {
       id: session?.id ?? "",
       startedAt: session?.startedAt ?? now.toISOString(),
+      plannedMinutes: session?.plannedMinutes ?? null,
       questions,
       readings: [...new Set(openedSections)].flatMap(
         (id) => allSections.find((section) => section.id === id) ?? [],
