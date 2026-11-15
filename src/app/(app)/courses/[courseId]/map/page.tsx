@@ -77,6 +77,8 @@ export default async function CourseMapPage({
             <DemoWelcome
               courseName={course.name}
               materialsHref={materialsPath(courseId)}
+              briefHref={briefPath(courseId)}
+              chatHref={newChatPath(courseId)}
             />
           )}
           <TodayCard

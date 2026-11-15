@@ -43,12 +43,14 @@ What works is well known from learning research: testing yourself instead of rer
 
 ## The demo
 
-The [demo link](https://project-mastery-dun.vercel.app/demo) signs you into a shared demo account and opens its course, **Linear Algebra I**, a first-semester university course. Its material is one lecture script that an AI wrote for this demo, so you can see the app on a full course without anyone's real lecture notes. What you can look at:
+The [demo link](https://project-mastery-dun.vercel.app/demo) signs you into a shared demo account and opens its course, **Linear Algebra I**, a first-semester university course. Its material is one lecture script that an AI wrote for this demo, so you can see the app on a full course without anyone's real lecture notes.
 
-- **The Course map**, where the link lands. Each box is a Topic of the course, with the question it answers; the arrows show what builds on what. Click a box to see what it's made of and the pages of the script it comes from.
-- **The Today card** above the map: the Topic the app proposes to start with, and how long it should take.
-- **The example Chat** "Logic and proof" in the sidebar: a tutoring session on the first Topic, where the tutor quizzes the student, grades the answers and teaches from the script when they don't know something yet.
-- **Materials** shows the script itself, and **Brief** the conversation where the student told the app about their exam.
+Using the app comes down to four sections in the sidebar: you upload your course in **Materials**, tell the AI about the exam in the **Brief**, see what to learn on the **Course map**, and start a **New chat** to be tutored. In the demo:
+
+- **Materials**: the files of the course, such as slides, lecture notes and old exams. Here it's the one script.
+- **Brief**: a short conversation where the student told the AI about the exam: its date, their goal and what the lecturer stresses. The study plan follows from it.
+- **Course map**, where the link lands: everything the course teaches, as Topics in the order you need to learn them. Each box is a Topic with the question it answers, and the arrows show what builds on what. Click a box to see what it's made of and the pages of the script it comes from. The **Today** card above the map says what to study now and how long it should take.
+- **New chat**: a tutoring session. You don't pick what to study: the tutor takes the reviews that are due and then the next Topic, quizzes you, grades your answers and teaches from the course materials when you're stuck. The Chat "Logic and proof" listed under Chats is an example of one.
 
 The numbers on the map are at 0% because the demo student has barely started: progress and readiness grow as you answer questions in Chats. The app runs on free AI models, so a new reply or a map update can take a minute or more. The demo account is shared, so other visitors may have left Chats of their own.
 
