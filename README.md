@@ -4,19 +4,55 @@
 [![CodeQL](https://github.com/florianportscher/project-mastery/actions/workflows/codeql.yml/badge.svg)](https://github.com/florianportscher/project-mastery/actions/workflows/codeql.yml)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue)](LICENSE)
 
-**An AI tutor for university exams, grounded in the student's own course.** Upload the slides, scripts and old exams, tell it about the exam and your learning goals, and it tutors you through it, following learning science for reasonable llm api prices.
+**A personal AI tutor that gets you ready for a university exam, using your own course materials.**
+
+You upload the slides, lecture notes and old exams of a course and tell the app when the exam is and what grade you want. It works out what the course teaches and in which order, tells you what to study each day, and tutors you through it: it asks you questions, checks your answers, explains from your own notes when you're stuck, and brings things back just before you would forget them.
 
 > _The AI handles everything about learning except the learning itself._
 
-**[Try the live demo →](https://project-mastery-dun.vercel.app/demo)**
+**[Try the live demo →](https://project-mastery-dun.vercel.app/demo)** No sign-up: the link opens a sample Linear Algebra course ([what's in it](#the-demo)).
 
 Built by **Florian Portscher**: I own the product, the architecture and the review of what every change does; Claude Code agents write the code in a workflow I designed ([how it was built](#how-it-was-built-one-developer-a-team-of-agents)).
 
 ![The Course map of a Linear Algebra course: Topics in prerequisite order with their Readiness, and a Today card that proposes the next Topic](docs/screenshots/map.png)
 
-_The Course map: what the course teaches, in prerequisite order, with the student's Progress, Readiness and what to do today._
+_The Course map: everything the course teaches, as Topics in the order you need to learn them, with what to do today on top._
 
-## What it does
+## Why it exists
+
+Most students spend a large share of their study time not learning: finding what matters across hundreds of slides, guessing what the exam will ask, making a plan and failing to stick to it. Much of the rest goes into methods that feel productive but don't last, such as rereading, highlighting and cramming the night before.
+
+What works is well known from learning research: testing yourself instead of rereading, coming back to a topic just before you'd forget it, and solving problems yourself instead of reading solutions. It is just hard to keep up alone. Project Mastery does the organizing and keeps you on those methods, so your time goes into understanding the material.
+
+|                                      | Studying alone                 | A general AI chatbot             | Project Mastery                                              |
+| ------------------------------------ | ------------------------------ | -------------------------------- | ------------------------------------------------------------ |
+| Knows your course                    | Only if you've read everything | No, it answers from the internet | Yes, it answers from your materials and cites the page       |
+| Tells you what to study today        | You plan it yourself           | No                               | Yes, from your exam date, your goal and what you know        |
+| Makes you do the thinking            | If you're disciplined          | Hands you the answer             | Asks first, checks your answer, helps step by step           |
+| Remembers what you're forgetting     | No                             | No                               | Schedules a review of each thing just before you'd forget it |
+| Tells you honestly how ready you are | A gut feeling                  | No                               | Estimates how much of the exam you'd recall, topic by topic  |
+
+## How it works
+
+1. **Upload** your course materials: slides, lecture notes, exercise sheets and old exams.
+2. **Tell it about the exam** in a short conversation: the date, your goal, what's allowed and what the lecturer stresses.
+3. **Get a map of the course.** The AI breaks your materials into Topics, each made of small things you can learn in one sitting, and puts them in the order you need them.
+4. **Study what the Today card proposes.** Every day it lists the reviews that are due and the next Topic, with an estimate of the minutes.
+5. **Learn with the tutor.** In a Chat, the tutor asks you questions on the Topic, grades your answers, and teaches from your materials when you're stuck.
+6. **Check you're ready** with practice problems and a timed mock exam, graded like the real one.
+
+## The demo
+
+The [demo link](https://project-mastery-dun.vercel.app/demo) signs you into a shared demo account and opens its course, **Linear Algebra I**, a first-semester university course. Its material is one lecture script that an AI wrote for this demo, so you can see the app on a full course without anyone's real lecture notes. What you can look at:
+
+- **The Course map**, where the link lands. Each box is a Topic of the course, with the question it answers; the arrows show what builds on what. Click a box to see what it's made of and the pages of the script it comes from.
+- **The Today card** above the map: the Topic the app proposes to start with, and how long it should take.
+- **The example Chat** "Logic and proof" in the sidebar: a tutoring session on the first Topic, where the tutor quizzes the student, grades the answers and teaches from the script when they don't know something yet.
+- **Materials** shows the script itself, and **Brief** the conversation where the student told the app about their exam.
+
+The numbers on the map are at 0% because the demo student has barely started: progress and readiness grow as you answer questions in Chats. The app runs on free AI models, so a new reply or a map update can take a minute or more. The demo account is shared, so other visitors may have left Chats of their own.
+
+## What it does in detail
 
 1. **Upload.** Slides, scripts, exercise sheets and old exams are parsed into searchable chunks by a durable background workflow.
 2. **Brief.** A conversation captures the exam. What else the student says is kept as notes the tutor reads in every Chat.

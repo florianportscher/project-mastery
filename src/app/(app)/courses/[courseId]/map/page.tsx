@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { DemoWelcome } from "@/features/auth";
+import { isDemoUser } from "@/features/auth/server";
 import { briefPath } from "@/features/brief";
+import { materialsPath } from "@/features/courses";
 import { getCourse } from "@/features/courses/server";
 import { newChatPath } from "@/features/chat";
 import { CourseMap, courseMapPath, topicPath } from "@/features/knowledge-map";
@@ -37,7 +40,7 @@ export default async function CourseMapPage({
 }: PageProps<"/courses/[courseId]/map">) {
   const { courseId } = await params;
   await requireUser(courseMapPath(courseId));
-  const [course, map, topics, study, openMock, examToReport] =
+  const [course, map, topics, study, openMock, examToReport, demo] =
     await Promise.all([
       getCourse(courseId),
       getKnowledgeMap(courseId),
@@ -45,6 +48,7 @@ export default async function CourseMapPage({
       getStudyState(courseId),
       getOpenMockExam(courseId),
       getExamToReport(courseId),
+      isDemoUser(),
     ]);
   if (!course) notFound();
 
@@ -69,6 +73,12 @@ export default async function CourseMapPage({
       )}
       today={
         <>
+          {demo && (
+            <DemoWelcome
+              courseName={course.name}
+              materialsHref={materialsPath(courseId)}
+            />
+          )}
           <TodayCard
             state={study}
             mapHref={courseMapPath(courseId)}
