@@ -92,6 +92,14 @@ export function PdfViewerCore({
   const width = useElementWidth(containerRef);
 
   const pageWidth = width ? Math.round(width * zoom) : undefined;
+  // Pages draw at this width and are scaled by CSS to `pageWidth` meanwhile,
+  // so a drag or zoom does not redraw every canvas on each step.
+  const [renderWidth, setRenderWidth] = useState(pageWidth);
+  useEffect(() => {
+    const timer = setTimeout(() => setRenderWidth(pageWidth), 250);
+    return () => clearTimeout(timer);
+  }, [pageWidth]);
+  const drawnWidth = renderWidth ?? pageWidth;
   const stride = pageWidth ? pageWidth * aspect + PAGE_GAP : 0;
   const currentPage = numPages ? clamp(page, 1, numPages) : page;
 
@@ -249,13 +257,21 @@ export function PdfViewerCore({
                         Cited
                       </span>
                     )}
-                    {near.has(number) ? (
-                      <Page
-                        pageNumber={number}
-                        width={pageWidth}
-                        suspense={false}
-                        loading={null}
-                      />
+                    {near.has(number) && drawnWidth ? (
+                      <div
+                        style={{
+                          width: drawnWidth,
+                          transform: `scale(${pageWidth / drawnWidth})`,
+                          transformOrigin: "top left",
+                        }}
+                      >
+                        <Page
+                          pageNumber={number}
+                          width={drawnWidth}
+                          suspense={false}
+                          loading={null}
+                        />
+                      </div>
                     ) : null}
                   </div>
                 );
