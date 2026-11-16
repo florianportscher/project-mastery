@@ -42,6 +42,11 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
+          case "$SUPABASE_DB_URL" in
+            *@db.*.supabase.co*)
+              echo "::error::SUPABASE_DB_URL is the direct connection, which is IPv6-only and unreachable from GitHub runners. Use the session pooler URI (host aws-0-<region>.pooler.supabase.com, port 5432, user postgres.<project-ref>)."
+              exit 1 ;;
+          esac
           status=0
           supabase db push --remote="$SUPABASE_DB_URL" --yes > push.log 2>&1 || status=$?
           cat push.log
@@ -71,4 +76,10 @@ jobs:
       - name: Apply migrations to production
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: supabase db push --remote="$SUPABASE_DB_URL" --yes
+        run: |
+          case "$SUPABASE_DB_URL" in
+            *@db.*.supabase.co*)
+              echo "::error::SUPABASE_DB_URL is the direct connection, which is IPv6-only and unreachable from GitHub runners. Use the session pooler URI (host aws-0-<region>.pooler.supabase.com, port 5432, user postgres.<project-ref>)."
+              exit 1 ;;
+          esac
+          supabase db push --remote="$SUPABASE_DB_URL" --yes
