@@ -8,8 +8,6 @@ export { TopicDetail } from "./components/topic-detail";
 export { TopicTitle } from "./components/topic-title";
 export { courseMapPath, topicPath } from "./domain/map-paths";
 export {
-  checkAnswer,
-  checkAnswers,
   worstCheck,
   type AnswerCheck,
   type AnswerKey,
