@@ -1,5 +1,5 @@
 {
-  "about": "Reference Knowledge map of the gold course, written by Claude Opus 5.5 in one pass over material.pdf (55 pages, uploaded to staging as Linear_Algebra_I_Script_WS2026-27), with the extraction prompt's KC rule: one thing an exam task could test on its own and a Student could learn in one sitting. It is the bar a pipeline run is judged against (coverage, granularity, Prerequisites, Topics, Exercises and answer keys). Pages are PDF pages. Written 2026-11-07 for PR #252.",
+  "about": "Reference Knowledge map of the gold course, written by Claude Opus 5.5 in one pass over material.pdf (55 pages, uploaded to staging as Linear_Algebra_I_Script_WS2026-27), with the extraction prompt's KC rule: one thing an exam task could test on its own and a Student could learn in one sitting. It is the bar a pipeline run is judged against (coverage, granularity, Prerequisites, Topics, Exercises and answer keys). Pages are PDF pages. Written 2026-11-07 for PR #252. Audited 2026-11-16 against the script's text: each Exercise's kcs are the KCs it mainly tests, and alsoUses the further KCs its statement or printed solution uses as a step, so a run's tag on either is right and recall counts kcs only; 8 Prerequisites the descriptions already implied were added (212), and the key for S^-1 A S of Ex23 was dropped because it depends on the order of a chosen basis.",
   "granularity": "107 KCs taught by the lecture notes (pp. 10-38, 29 pages: about 37 per 10 pages) and 6 KCs taught only by the Exercises and old exams. A judge counts a pipeline KC as matching when it is the same, or one step finer or coarser.",
   "notKcs": [
     {
@@ -859,7 +859,7 @@
       "description": "P_ik, D_i(lambda), T_ik(lambda) perform row operations from the left and column operations from the right; their inverses and determinants.",
       "pages": [29],
       "section": "5.7",
-      "prerequisites": ["MX2", "E3"],
+      "prerequisites": ["MX2", "E3", "MX3"],
       "assumes": []
     },
     {
@@ -877,7 +877,7 @@
       "description": "A = LR (PA = LR with row swaps) from elimination; solving by forward and backward substitution (Remark 5.7.2).",
       "pages": [29],
       "section": "5.7",
-      "prerequisites": ["EM1"],
+      "prerequisites": ["EM1", "E5"],
       "assumes": []
     },
     {
@@ -895,7 +895,7 @@
       "description": "v_i*(v_j) = delta_ij gives a basis of V*; v_i* reads off the i-th coordinate; V and V* are isomorphic but not canonically (Proposition 5.8.2, Caution 5.8.4).",
       "pages": [30],
       "section": "5.8",
-      "prerequisites": ["D1", "LM4"],
+      "prerequisites": ["D1", "LM4", "LM5"],
       "assumes": []
     },
     {
@@ -1075,7 +1075,7 @@
       "description": "The sum of eigenspaces is direct; at most n eigenvalues; n distinct eigenvalues imply diagonalisable (Theorem 7.1.4, Corollary 7.1.5).",
       "pages": [35],
       "section": "7.1",
-      "prerequisites": ["EV1", "V16", "R3"],
+      "prerequisites": ["EV1", "V16", "R3", "EV2", "V13"],
       "assumes": []
     },
     {
@@ -1147,7 +1147,7 @@
       "description": "f-invariant subspaces give a block triangular matrix, chi of the restriction divides chi_f, and invariant complements give block diagonal form (Supplement).",
       "pages": [38],
       "section": "Supplement",
-      "prerequisites": ["EV1", "DT8", "MX1"],
+      "prerequisites": ["EV1", "DT8", "MX1", "EV4", "V18"],
       "assumes": []
     },
     {
@@ -1165,7 +1165,7 @@
       "description": "A^k = 0: only eigenvalue 0, I - A invertible with the geometric series, diagonalisable only if A = 0, and A^n = 0 (Resit Problem 6).",
       "pages": [52, 55],
       "origin": "exercise",
-      "prerequisites": ["EV1", "MX3", "X3"],
+      "prerequisites": ["EV1", "MX3", "X3", "DT3"],
       "assumes": []
     },
     {
@@ -1263,6 +1263,7 @@
       "pages": [41],
       "solutionPages": [],
       "kcs": ["E8"],
+      "alsoUses": ["E5", "E6"],
       "finalAnswers": [
         { "label": "number of solutions", "value": "8", "printed": true }
       ]
@@ -1287,6 +1288,7 @@
       "pages": [41],
       "solutionPages": [43],
       "kcs": ["V3", "LM6", "V14"],
+      "alsoUses": ["LM3"],
       "finalAnswers": [{ "label": "dim U", "value": "2", "printed": true }],
       "note": "The basis ((x-1)^2, x(x-1)^2) is not unique: no key"
     },
@@ -1295,6 +1297,7 @@
       "pages": [41],
       "solutionPages": [],
       "kcs": ["V22", "V17"],
+      "alsoUses": ["V19"],
       "finalAnswers": [
         { "label": "dim(U + W)", "value": "3", "printed": false }
       ],
@@ -1305,6 +1308,7 @@
       "pages": [41],
       "solutionPages": [],
       "kcs": ["X6"],
+      "alsoUses": ["V16", "F4"],
       "finalAnswers": [
         { "label": "dim Sym_n", "value": "n*(n+1)/2", "printed": false },
         { "label": "dim Skew_n", "value": "n*(n-1)/2", "printed": false }
@@ -1341,6 +1345,7 @@
       "pages": [41],
       "solutionPages": [43],
       "kcs": ["LM6", "LM4"],
+      "alsoUses": ["LM3"],
       "finalAnswers": []
     },
     {
@@ -1348,6 +1353,7 @@
       "pages": [41],
       "solutionPages": [],
       "kcs": ["X4", "RK1"],
+      "alsoUses": ["LM3", "MX2"],
       "finalAnswers": []
     },
     {
@@ -1368,6 +1374,7 @@
       "pages": [42],
       "solutionPages": [43],
       "kcs": ["X3"],
+      "alsoUses": ["LM3", "V15", "R3"],
       "finalAnswers": []
     },
     {
@@ -1406,6 +1413,7 @@
       "pages": [42],
       "solutionPages": [44],
       "kcs": ["EV8", "EV9", "EV4"],
+      "alsoUses": ["EV1", "EV7"],
       "finalAnswers": [
         {
           "label": "eigenvalues",
@@ -1414,20 +1422,16 @@
           "printed": true
         },
         { "label": "chi_A", "value": "(x-1)^2*(x-4)", "printed": true },
-        {
-          "label": "S^-1 A S",
-          "value": "[[1, 0, 0], [0, 1, 0], [0, 0, 4]]",
-          "printed": true
-        },
         { "label": "A^k", "value": "I + (4^k - 1)/3 * J", "printed": true }
       ],
-      "note": "Eigenspace bases and S are only up to a choice: no key"
+      "note": "Eigenspace bases, S and S^-1 A S = diag(1, 1, 4), whose order follows the columns of S, are only up to a choice: no key"
     },
     {
       "id": "Ex24",
       "pages": [42],
       "solutionPages": [],
       "kcs": ["X5"],
+      "alsoUses": ["DT2"],
       "finalAnswers": []
     },
     {
@@ -1435,6 +1439,7 @@
       "pages": [42],
       "solutionPages": [],
       "kcs": ["EV5", "DT5", "DT3"],
+      "alsoUses": ["EV4", "CB2"],
       "finalAnswers": []
     },
     {
@@ -1442,6 +1447,7 @@
       "pages": [46],
       "solutionPages": [48],
       "kcs": ["V6", "F4", "LM6", "DT6", "X5"],
+      "alsoUses": ["LM3", "DT3", "EV5"],
       "finalAnswers": [],
       "note": "True / false: (a) true, (b) false, (c) false, (d) true"
     },
@@ -1450,6 +1456,7 @@
       "pages": [46, 47],
       "solutionPages": [48],
       "kcs": ["E6", "E5", "RK3"],
+      "alsoUses": ["E2"],
       "finalAnswers": [
         { "label": "t without solution", "value": "-2", "printed": true },
         {
@@ -1469,6 +1476,7 @@
       "pages": [47],
       "solutionPages": [48, 49],
       "kcs": ["LM3", "RK2", "LM6", "MX1", "CB2", "RK3"],
+      "alsoUses": ["V20", "V19", "DT4", "DT9"],
       "finalAnswers": [
         { "label": "rank f", "value": "2", "printed": true },
         {
@@ -1484,6 +1492,7 @@
       "pages": [47],
       "solutionPages": [49, 50],
       "kcs": ["EV4", "EV8", "EV7", "EV9", "DT9"],
+      "alsoUses": ["EV1"],
       "finalAnswers": [
         { "label": "chi_A", "value": "(x-3)^2*(x-5)", "printed": true },
         {
@@ -1505,6 +1514,7 @@
       "pages": [47],
       "solutionPages": [50],
       "kcs": ["X1", "V16", "EV7", "EV5"],
+      "alsoUses": ["EV2", "EV1", "LM3"],
       "finalAnswers": []
     },
     {
@@ -1512,6 +1522,7 @@
       "pages": [47],
       "solutionPages": [50],
       "kcs": ["DT6", "DT5", "X4", "MX3", "EV1"],
+      "alsoUses": ["LM3", "V6"],
       "finalAnswers": []
     },
     {
@@ -1519,6 +1530,7 @@
       "pages": [51],
       "solutionPages": [53],
       "kcs": ["V9", "LM6", "EV10", "V16"],
+      "alsoUses": ["V6", "EV4", "EV3", "EV7"],
       "finalAnswers": [],
       "note": "Definitions, a statement and examples: no unique result"
     },
@@ -1527,6 +1539,7 @@
       "pages": [51, 52],
       "solutionPages": [53],
       "kcs": ["DT9", "DT4", "V8", "E8", "F3"],
+      "alsoUses": ["MX3", "E5", "E6"],
       "finalAnswers": [
         { "label": "det T", "value": "-10", "printed": true },
         {
@@ -1542,6 +1555,7 @@
       "pages": [52],
       "solutionPages": [54],
       "kcs": ["DT7", "DT1", "DT4"],
+      "alsoUses": ["DT2"],
       "finalAnswers": [
         { "label": "determinant in (a)", "value": "-11", "printed": true },
         {
@@ -1556,6 +1570,7 @@
       "pages": [52],
       "solutionPages": [54],
       "kcs": ["LM1", "MX1", "EV8", "LM3", "LM6", "V15"],
+      "alsoUses": ["EV1", "EV4", "EV3"],
       "finalAnswers": [
         {
           "label": "matrix A in B = (1, x, x^2)",
@@ -1583,6 +1598,7 @@
       "pages": [52],
       "solutionPages": [55],
       "kcs": ["X2", "X3", "EV2", "MX3"],
+      "alsoUses": ["EV1", "DT3", "DT4"],
       "finalAnswers": []
     }
   ]
