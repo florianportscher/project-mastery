@@ -113,7 +113,7 @@
     "eslint-plugin-import-x": "^4.17.1",
     "husky": "^9.1.7",
     "jscpd": "5.4.2",
-    "jsdom": "^31.0.0",
+    "jsdom": "^31.0.1",
     "knip": "6.44.1",
     "lint-staged": "^17.6.0",
     "postgres": "^4.1.0",
