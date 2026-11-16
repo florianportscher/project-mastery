@@ -364,7 +364,12 @@ export function pageModel(
     doStream: async ({ prompt }) => {
       if (isPageCall(prompt)) {
         prompts.push(prompt);
-        const answer = batches[prompts.length - 1] ?? { units: [] };
+        // A strict schema makes the model list skipped pages every time.
+        const answer = {
+          skippedPages: [],
+          units: [],
+          ...batches[prompts.length - 1],
+        };
         return streamedAnswer(JSON.stringify(answer));
       }
       const sent = JSON.parse(promptText(prompt)) as SentOutline | SentPairing;
