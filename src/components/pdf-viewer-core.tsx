@@ -107,8 +107,18 @@ export function PdfViewerCore({
   // scrolling does not scroll again.
   const shownPage = useRef(0);
   // Scroll position in pages (1.5 is half way down page 2), kept across a
-  // zoom or a change of page size.
+  // change of page size such as a resize of the pane.
   const scrollPages = useRef(0);
+  // The point a zoom keeps in place: where it sits in the viewport, and where
+  // in the document, as a fraction of the page width and in pages from the top.
+  const zoomAnchor = useRef<{
+    viewX: number;
+    viewY: number;
+    pageX: number;
+    pages: number;
+  } | null>(null);
+  // Page geometry as last laid out, which the scroll position belongs to.
+  const layout = useRef({ width: 0, pageWidth: 0, stride: 0 });
   const ready = Boolean(numPages && pageWidth);
 
   const scrollToPage = useCallback(
@@ -127,13 +137,44 @@ export function PdfViewerCore({
     scrollToPage(currentPage);
   }, [ready, currentPage, scrollToPage]);
 
-  // Keep the reading position when the page size changes.
+  // Keep the reading position when the page size changes: a zoom keeps the
+  // point it zooms around in place, a resize keeps the top of the view.
   useLayoutEffect(() => {
     const container = containerRef.current;
-    if (container && ready) {
+    if (!container || !ready || !width || !pageWidth) return;
+    const anchor = zoomAnchor.current;
+    zoomAnchor.current = null;
+    if (anchor) {
+      const pageLeft = Math.max(0, (width - pageWidth) / 2);
+      container.scrollLeft = pageLeft + anchor.pageX * pageWidth - anchor.viewX;
+      container.scrollTop = anchor.pages * stride - anchor.viewY;
+      scrollPages.current = Math.max(0, container.scrollTop / stride);
+    } else {
       container.scrollTop = scrollPages.current * stride;
     }
-  }, [stride, ready]);
+    layout.current = { width, pageWidth, stride };
+  }, [stride, ready, width, pageWidth]);
+
+  // Zooms around a point of the viewport, its centre unless given.
+  const zoomAround = useCallback(
+    (next: (current: number) => number, point?: { x: number; y: number }) => {
+      const container = containerRef.current;
+      const laidOut = layout.current;
+      if (container && laidOut.stride) {
+        const viewX = point?.x ?? container.clientWidth / 2;
+        const viewY = point?.y ?? container.clientHeight / 2;
+        const pageLeft = Math.max(0, (laidOut.width - laidOut.pageWidth) / 2);
+        zoomAnchor.current = {
+          viewX,
+          viewY,
+          pageX: (container.scrollLeft + viewX - pageLeft) / laidOut.pageWidth,
+          pages: (container.scrollTop + viewY) / laidOut.stride,
+        };
+      }
+      setZoom(next);
+    },
+    [setZoom],
+  );
 
   // Render pages within about two screens of the viewport.
   useEffect(() => {
@@ -164,13 +205,16 @@ export function PdfViewerCore({
     const onWheel = (event: WheelEvent) => {
       if (!event.ctrlKey) return;
       event.preventDefault();
-      setZoom((current) =>
-        clamp(current * Math.exp(-event.deltaY * 0.01), MIN_ZOOM, MAX_ZOOM),
+      const box = container.getBoundingClientRect();
+      zoomAround(
+        (current) =>
+          clamp(current * Math.exp(-event.deltaY * 0.01), MIN_ZOOM, MAX_ZOOM),
+        { x: event.clientX - box.left, y: event.clientY - box.top },
       );
     };
     container.addEventListener("wheel", onWheel, { passive: false });
     return () => container.removeEventListener("wheel", onWheel);
-  }, [setZoom]);
+  }, [zoomAround]);
 
   const onScroll = () => {
     const container = containerRef.current;
@@ -187,7 +231,7 @@ export function PdfViewerCore({
   };
 
   const zoomBy = (direction: 1 | -1) =>
-    setZoom((current) => {
+    zoomAround((current) => {
       const steps = current / ZOOM_STEP;
       const stepped =
         direction === 1
@@ -248,7 +292,7 @@ export function PdfViewerCore({
                       marginBottom: PAGE_GAP,
                     }}
                     className={cn(
-                      "relative mx-auto overflow-hidden",
+                      "relative mx-auto overflow-hidden bg-white",
                       isMarked && "ring-2 ring-primary",
                     )}
                   >
@@ -258,20 +302,11 @@ export function PdfViewerCore({
                       </span>
                     )}
                     {near.has(number) && drawnWidth ? (
-                      <div
-                        style={{
-                          width: drawnWidth,
-                          transform: `scale(${pageWidth / drawnWidth})`,
-                          transformOrigin: "top left",
-                        }}
-                      >
-                        <Page
-                          pageNumber={number}
-                          width={drawnWidth}
-                          suspense={false}
-                          loading={null}
-                        />
-                      </div>
+                      <PdfPage
+                        number={number}
+                        width={pageWidth}
+                        drawWidth={drawnWidth}
+                      />
                     ) : null}
                   </div>
                 );
@@ -334,6 +369,52 @@ export function PdfViewerCore({
       ) : null}
     </div>
   );
+}
+
+/**
+ * One page drawn at `drawWidth` and scaled to `width`. PDF.js blanks a canvas
+ * while it redraws, so on a new `drawWidth` the old drawing stays on screen
+ * until the new one has finished, hidden beneath it.
+ */
+function PdfPage({
+  number,
+  width,
+  drawWidth,
+}: {
+  number: number;
+  width: number;
+  drawWidth: number;
+}) {
+  // The width of the drawing on screen, until the first one has drawn.
+  const [shownWidth, setShownWidth] = useState<number>();
+  const layers =
+    shownWidth === undefined || shownWidth === drawWidth
+      ? [drawWidth]
+      : [shownWidth, drawWidth];
+
+  return layers.map((layerWidth) => {
+    const pending = layerWidth !== (shownWidth ?? drawWidth);
+    return (
+      <div
+        key={layerWidth}
+        className="absolute top-0 left-0"
+        style={{
+          width: layerWidth,
+          transform: `scale(${width / layerWidth})`,
+          transformOrigin: "top left",
+          visibility: pending ? "hidden" : undefined,
+        }}
+      >
+        <Page
+          pageNumber={number}
+          width={layerWidth}
+          suspense={false}
+          loading={null}
+          onRenderSuccess={() => setShownWidth(layerWidth)}
+        />
+      </div>
+    );
+  });
 }
 
 function PageSkeleton() {

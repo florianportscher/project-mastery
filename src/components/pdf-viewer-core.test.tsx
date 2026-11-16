@@ -40,9 +40,32 @@ vi.mock("react-pdf", () => ({
       </div>
     );
   },
-  Page: ({ pageNumber }: { pageNumber: number }) => (
-    <div data-testid="pdf-page">{pageNumber}</div>
-  ),
+  // `drawn.finish(page, width)` ends that page's drawing, as PDF.js would.
+  Page: ({
+    pageNumber,
+    width,
+    onRenderSuccess,
+  }: {
+    pageNumber: number;
+    width: number;
+    onRenderSuccess: () => void;
+  }) => {
+    useEffect(() => {
+      drawn.pending.set(`${pageNumber}@${width}`, onRenderSuccess);
+    });
+    return (
+      <div data-testid="pdf-page" data-width={width}>
+        {pageNumber}
+      </div>
+    );
+  },
+}));
+
+const drawn = vi.hoisted(() => ({
+  pending: new Map<string, () => void>(),
+  finish(page: number, width: number) {
+    this.pending.get(`${page}@${width}`)?.();
+  },
 }));
 
 // Pages whose numbers are in `near` count as close to the viewport.
@@ -230,5 +253,81 @@ describe("PdfViewerCore", () => {
     const scroll = new WheelEvent("wheel", { deltaY: 20, cancelable: true });
     scroller.dispatchEvent(scroll);
     expect(scroll.defaultPrevented).toBe(false);
+  });
+
+  test("a zoomed page keeps its old drawing until the new one has drawn", async () => {
+    viewport.near = new Set([1]);
+    render(<PdfViewerCore file="/slides.pdf" />);
+    await screen.findAllByTestId("pdf-page");
+    act(() => drawn.finish(1, 600));
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+      act(() => {
+        vi.advanceTimersByTime(250);
+      });
+      const layers = screen.getAllByTestId("pdf-page");
+      expect(layers.map((layer) => layer.dataset.width)).toEqual([
+        "600",
+        "750",
+      ]);
+      expect(layers[0]!.parentElement).toBeVisible();
+      expect(layers[1]!.parentElement).not.toBeVisible();
+
+      act(() => drawn.finish(1, 750));
+      const [layer] = screen.getAllByTestId("pdf-page");
+      expect(screen.getAllByTestId("pdf-page")).toHaveLength(1);
+      expect(layer!.dataset.width).toBe("750");
+      expect(layer!.parentElement).toBeVisible();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test("a zoom keeps the point under the pinch, or the view's centre, in place", async () => {
+    const { container } = render(<PdfViewerCore file="/slides.pdf" />);
+    await screen.findAllByTestId("pdf-page");
+    const scroller = container.querySelector<HTMLElement>(".overflow-auto")!;
+    Object.defineProperty(scroller, "clientWidth", { value: 600 });
+    Object.defineProperty(scroller, "clientHeight", { value: 400 });
+    let left = 0;
+    Object.defineProperty(scroller, "scrollLeft", {
+      get: () => left,
+      set: (value: number) => {
+        left = value;
+      },
+    });
+    scrolled.top = PAGE_STRIDE;
+
+    // Pinch over the point 300 px right and 100 px down on page 2, to 122%.
+    act(() => {
+      scroller.dispatchEvent(
+        new WheelEvent("wheel", {
+          ctrlKey: true,
+          deltaY: -20,
+          clientX: 300,
+          clientY: 100,
+          cancelable: true,
+        }),
+      );
+    });
+    const pageWidth = Math.round(600 * Math.exp(0.2));
+    const stride = (pageWidth * 4) / 3 + 8;
+    expect(left).toBeCloseTo(pageWidth / 2 - 300);
+    expect(scrolled.top).toBeCloseTo(
+      ((PAGE_STRIDE + 100) / PAGE_STRIDE) * stride - 100,
+    );
+
+    // The button zooms around the centre of the view.
+    const before = { left, top: scrolled.top, pageWidth, stride };
+    fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+    const afterWidth = 600 * 1.25;
+    const afterStride = (afterWidth * 4) / 3 + 8;
+    expect(left).toBeCloseTo(
+      ((before.left + 300) / before.pageWidth) * afterWidth - 300,
+    );
+    expect(scrolled.top).toBeCloseTo(
+      ((before.top + 200) / before.stride) * afterStride - 200,
+    );
   });
 });
