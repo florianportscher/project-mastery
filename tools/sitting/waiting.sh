@@ -16,7 +16,7 @@
 #
 # Without a number it ends with one line on /reality-check: the date of the
 # newest report in docs/reality-checks/, its age in days, the PRs merged after
-# that day (bots' left out), and "due" when a threshold below is passed.
+# that day, and "due" when a threshold below is passed.
 set -euo pipefail
 
 # A reality check is due when the newest report is older than this many days,
@@ -34,8 +34,7 @@ reality_check() {
   fi
   newest=$(basename "${reports[-1]}" .md)
   age=$(jq -n --arg d "$newest" '(now - ($d + "T00:00:00Z" | fromdateiso8601)) / 86400 | floor')
-  merged=$(gh pr list --state merged --search "merged:>$newest" --limit 200 --json author \
-    --jq 'map(select(.author.is_bot | not)) | length')
+  merged=$(gh pr list --state merged --search "merged:>$newest" --limit 200 --json number --jq length)
   echo -n "reality-check  newest $newest, $age days old, $merged PRs merged since"
   if ((age > due_days || merged >= due_prs)); then echo ": due"; else echo; fi
 }
