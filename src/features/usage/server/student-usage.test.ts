@@ -180,13 +180,14 @@ describe("usage recorded through the Student's session", () => {
 
   test("rejects when the spend cannot be read", async () => {
     vi.stubEnv("AI_DAILY_LIMIT_USD", "1");
-    const failing = {
-      from: () => ({
-        select: () => ({
-          gte: async () => ({ data: null, error: { message: "timeout" } }),
-        }),
-      }),
-    } as unknown as SessionSupabase;
+    // The query's chain, whose every filter returns it and whose page fails.
+    const query = {
+      select: () => query,
+      gte: () => query,
+      order: () => query,
+      range: async () => ({ data: null, error: { message: "timeout" } }),
+    };
+    const failing = { from: () => query } as unknown as SessionSupabase;
 
     await expect(checkDailyLimit(failing, { now: NOW })).rejects.toThrow(
       /Loading AI usage failed/,

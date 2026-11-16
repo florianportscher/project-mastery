@@ -274,6 +274,9 @@ export function checkAnswer(key: AnswerKey, value: string): AnswerCheck {
   return all ? "match" : "mismatch";
 }
 
+/** A check of one value against its key, as `checkAnswer` is. */
+type CheckOne = (key: AnswerKey, value: string) => AnswerCheck;
+
 const labelKey = (label: string) => label.trim().toLowerCase();
 
 /**
@@ -281,11 +284,13 @@ const labelKey = (label: string) => label.trim().toLowerCase();
  * and one value, the label may be left out. Null for a key without a
  * value. Without keys, the values check nothing. The error names what to
  * fix: a label no key has, a value given twice or a value mathjs cannot
- * read.
+ * read. `check` checks one value: server code passes one with a time
+ * limit (`server/answer-check.ts`).
  */
 export function checkAnswers(
   keys: readonly AnswerKey[],
   given: readonly GivenValue[],
+  check: CheckOne = checkAnswer,
 ):
   | { ok: true; checks: Array<AnswerCheck | null> }
   | { ok: false; error: string } {
@@ -311,7 +316,7 @@ export function checkAnswers(
   for (const [index, key] of keys.entries()) {
     const value = valueOf.get(index);
     try {
-      checks.push(value === undefined ? null : checkAnswer(key, value));
+      checks.push(value === undefined ? null : check(key, value));
     } catch (error) {
       if (!(error instanceof UnreadableAnswerError)) throw error;
       return {
@@ -327,11 +332,12 @@ export function checkAnswers(
  * Each key's own check, for a grading that cannot ask again: a value whose
  * label no key has, or a key's second value, is left out, and a value
  * mathjs cannot read is `unchecked`, so no value hides another key's check.
- * Null for a key without a value.
+ * Null for a key without a value. `check` is as in `checkAnswers`.
  */
 export function checkEachAnswer(
   keys: readonly AnswerKey[],
   given: readonly GivenValue[],
+  check: CheckOne = checkAnswer,
 ): Array<AnswerCheck | null> {
   const valueOf = new Map<number, string>();
   for (const [at, { index }] of keyIndexes(keys, given).entries()) {
@@ -343,7 +349,7 @@ export function checkEachAnswer(
     const value = valueOf.get(index);
     if (value === undefined) return null;
     try {
-      return checkAnswer(key, value);
+      return check(key, value);
     } catch (error) {
       if (error instanceof UnreadableAnswerError) return "unchecked";
       throw error;

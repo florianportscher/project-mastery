@@ -10,13 +10,16 @@ export { restrictMapToTopic } from "./domain/topic-map";
 export { buildTopicGraph } from "./domain/topic-graph";
 export { topicAnchors } from "./domain/topic-reading";
 export {
-  checkAnswer,
-  checkAnswers,
-  checkEachAnswer,
   worstCheck,
   type AnswerCheck,
   type AnswerKey,
 } from "./domain/answer-keys";
+// The answer check under a time limit: the only one server code may use.
+export {
+  checkAnswer,
+  checkAnswers,
+  checkEachAnswer,
+} from "./server/answer-check";
 export { answerKeySchema, MAX_ANSWER_LENGTH } from "./schemas";
 export {
   findReadingSection,

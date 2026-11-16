@@ -7,7 +7,10 @@ export const SIGNED_IN_PATH = "/courses";
 /**
  * Turns an untrusted redirect target (a `next` query parameter or form field)
  * into a same-origin path. Anything that would leave the site, such as
- * `//evil.example` or `https://evil.example`, falls back to `fallback`.
+ * `//evil.example` or `https://evil.example`, falls back to `fallback`. So
+ * does a same-origin target whose path starts with two slashes, as
+ * `/.//evil.example` resolves to: a browser reads the returned
+ * `//evil.example` as another host.
  */
 export function safeRedirectPath(
   target: string | null | undefined,
@@ -18,6 +21,7 @@ export function safeRedirectPath(
   try {
     const url = new URL(target, origin);
     if (url.origin !== new URL(origin).origin) return fallback;
+    if (url.pathname.startsWith("//")) return fallback;
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return fallback;

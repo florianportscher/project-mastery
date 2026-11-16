@@ -2,6 +2,7 @@ import "server-only";
 import { costUsd, type TokenUsage } from "@/lib/ai/cost";
 import type { AiTask } from "@/lib/ai/models";
 import { isAdminClient } from "@/lib/supabase/admin-brand";
+import { allRows } from "@/lib/supabase/all-rows";
 import type {
   AdminSupabase,
   SessionSupabase,
@@ -98,6 +99,10 @@ export async function recordAiUsage(
 /**
  * The signed-in Student's AI spend in US dollars since `since`, or that of
  * `studentId` when given. Throws for the admin client without a Student id.
+ *
+ * It reads every record, page by page: the API returns at most 1000 rows
+ * per request, and a Student can add records of their own, so a sum of one
+ * request would leave out the spend behind their first 1000.
  */
 export async function spentSinceUsd(
   supabase: Supabase,
@@ -105,12 +110,13 @@ export async function spentSinceUsd(
   { studentId }: StudentScope = {},
 ): Promise<number> {
   assertStudentScope(supabase, { studentId });
-  let query = supabase
-    .from("ai_usage")
-    .select("cost_usd")
-    .gte("created_at", since.toISOString());
-  if (studentId !== undefined) query = query.eq("owner", studentId);
-  const { data, error } = await query;
-  if (error) throw new Error(`Loading AI usage failed: ${error.message}`);
-  return data.reduce((sum, row) => sum + Number(row.cost_usd), 0);
+  const records = await allRows("Loading AI usage", (from, to) => {
+    let query = supabase
+      .from("ai_usage")
+      .select("cost_usd")
+      .gte("created_at", since.toISOString());
+    if (studentId !== undefined) query = query.eq("owner", studentId);
+    return query.order("created_at").order("id").range(from, to);
+  });
+  return records.reduce((sum, row) => sum + Number(row.cost_usd), 0);
 }
