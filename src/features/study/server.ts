@@ -29,6 +29,7 @@ export {
   closeIdleSession,
   endIdleSessions,
   getSessionEnd,
+  setSessionMinutes,
   setSessionMock,
 } from "./server/sessions";
 export { getStudyState } from "./server/study-state";

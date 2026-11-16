@@ -19,13 +19,14 @@ import {
   PromptInputActionMenuTrigger,
   PromptInputBody,
   PromptInputFooter,
-  PromptInputHeader,
   PromptInputProvider,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { AttachmentChips } from "@/features/chat/components/attachment-chips";
+import { QuickReplies } from "@/features/chat/components/quick-replies";
 import { ReplyError } from "@/features/chat/components/reply-error";
 import { AttachedMaterials } from "@/features/chat/components/attached-materials";
 import { ContextAction } from "@/features/chat/components/context-action";
@@ -33,19 +34,22 @@ import { MessageActionRow } from "@/features/chat/components/message-action-row"
 import { ReplyFooter } from "@/features/chat/components/reply-footer";
 import { ReplyParts } from "@/features/chat/components/reply-parts";
 import { chatLabel } from "@/features/chat/domain/chat-label";
-import {
-  checkedToday,
-  checkedTodayText,
-} from "@/features/chat/domain/checked-today";
+import { SessionStrip } from "@/features/chat/components/session-strip";
+import { sessionStrip } from "@/features/chat/domain/session-strip";
 import { chatPath, newChatPath } from "@/features/chat/domain/chat-paths";
 import {
   CloseCard,
   EndSessionButton,
+  QUICK_REPLIES,
   sessionEndedMessage,
 } from "@/features/study";
 import { messageText } from "@/lib/ai/reply";
 import { cn } from "@/lib/utils";
-import { replyActivity, THINKING } from "@/features/chat/domain/reply-activity";
+import {
+  BUSY,
+  replyActivity,
+  THINKING,
+} from "@/features/chat/domain/reply-activity";
 import { useChatList } from "@/features/chat/hooks/use-chat-list";
 import { useMessageAttachments } from "@/features/chat/hooks/use-message-attachments";
 import {
@@ -58,7 +62,6 @@ import type { ChatUIMessage, ChatWithMessages } from "@/features/chat/types";
 import { WithSourcePane } from "@/features/chat/components/source-pane";
 import {
   MATERIAL_MEDIA_TYPES,
-  MaterialChip,
   MaterialPicker,
   MaterialViewer,
   type MaterialListItem,
@@ -99,6 +102,8 @@ type ChatProps = {
   initialMessage?: string;
   /** A new Chat's graded Mock exam, which its Study session goes through. */
   mockId?: string;
+  /** A new Chat's session length chosen on the Today card; none is Open. */
+  minutes?: number;
   /** The Student's Daily limit status when the page loaded. */
   dailyLimit: DailyLimitStatus;
   /**
@@ -120,6 +125,7 @@ export function Chat({
   emptyState,
   initialMessage,
   mockId,
+  minutes,
   dailyLimit: initialDailyLimit,
   showDetails,
 }: ChatProps) {
@@ -154,6 +160,8 @@ export function Chat({
   });
   const { noteChatActivity, relabelChat } = useChatList();
   const titled = useRef(chat.title !== null);
+  // Whether the reply waits to be asked again, as the provider is busy.
+  const [busy, setBusy] = useState(false);
   const {
     messages,
     sendMessage,
@@ -164,7 +172,12 @@ export function Chat({
     error,
     clearError,
   } = useChat<ChatUIMessage>({
+    onData: (part) => {
+      if (part.type === "data-busy") setBusy(true);
+    },
+    onError: () => setBusy(false),
     onFinish: ({ message, isAbort }) => {
+      setBusy(false);
       // The server stores a stopped reply as stopped; show it so now too.
       if (isAbort && message.role === "assistant") {
         setMessages((current) =>
@@ -200,7 +213,7 @@ export function Chat({
         body: {
           ...body,
           chatId,
-          ...(isNew && { courseId: chat.courseId, mockId }),
+          ...(isNew && { courseId: chat.courseId, mockId, minutes }),
           message: messages.at(-1),
         },
       }),
@@ -239,7 +252,7 @@ export function Chat({
   const ended =
     chat.ended || endedHere || error?.message === sessionEndedMessage;
   const lastMessage = messages.at(-1);
-  const checked = checkedToday(messages);
+  const strip = sessionStrip(messages);
   // The replies loaded with the Chat; any other arrived while it was open.
   const storedIds = useMemo(
     () => new Set(chat.messages.map(({ id }) => id)),
@@ -275,14 +288,9 @@ export function Chat({
     <WithSourcePane courseId={chat.courseId}>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 px-4 pb-4">
         {/* Once the first message is sent, the Chat's session can be ended. */}
-        {messages.length > 0 && (checked !== null || !ended) && (
+        {messages.length > 0 && (strip !== null || !ended) && (
           <div className="mx-auto -mb-2 flex min-h-10 w-full max-w-3xl items-center justify-between gap-2 pt-2">
-            <p
-              data-testid="checked-today"
-              className="text-sm text-muted-foreground"
-            >
-              {checked !== null && checkedTodayText(checked)}
-            </p>
+            {strip ? <SessionStrip strip={strip} /> : <span />}
             {!ended && (
               <EndSessionButton
                 chatId={chatId}
@@ -383,7 +391,9 @@ export function Chat({
             {status === "submitted" && lastMessage?.role === "user" && (
               <Message from="assistant">
                 <MessageContent>
-                  <Shimmer className="text-sm">{THINKING}</Shimmer>
+                  <Shimmer className="text-sm">
+                    {busy ? BUSY : THINKING}
+                  </Shimmer>
                 </MessageContent>
                 <MessageActionRow from="assistant" text="" hidden />
               </Message>
@@ -430,50 +440,23 @@ export function Chat({
               }}
             />
             {/* Controlled, so a refused message stays in the input. */}
+            <QuickReplies
+              replies={QUICK_REPLIES}
+              visible={
+                !isBusy &&
+                !limitReached &&
+                messages.some(({ role }) => role === "assistant")
+              }
+              onSend={(text) =>
+                void sendMessage({ parts: [{ type: "text", text }] })
+              }
+            />
             <PromptInputProvider>
               <PromptInput onSubmit={handleSubmit}>
-                {(attached.length > 0 || uploading) && (
-                  <PromptInputHeader aria-label="Attached materials">
-                    {attached.map((material) => (
-                      <MaterialChip
-                        key={material.materialId}
-                        name={
-                          materialsById.get(material.materialId)?.name ??
-                          material.name
-                        }
-                        mediaType={material.mediaType}
-                        onRemove={() => detach(material.materialId)}
-                      />
-                    ))}
-                    {uploads.map((upload) => (
-                      <MaterialChip
-                        key={upload.key}
-                        name={upload.filename}
-                        mediaType={upload.mediaType}
-                        progress={
-                          upload.status === "failed"
-                            ? undefined
-                            : upload.progress
-                        }
-                        error={
-                          upload.status === "failed"
-                            ? upload.message
-                            : undefined
-                        }
-                        onRetry={
-                          upload.canRetry
-                            ? () => retryUpload(upload.key)
-                            : undefined
-                        }
-                        onRemove={
-                          upload.status === "registering"
-                            ? undefined
-                            : () => removeUpload(upload.key)
-                        }
-                      />
-                    ))}
-                  </PromptInputHeader>
-                )}
+                <AttachmentChips
+                  {...{ attached, detach, materialsById, uploads }}
+                  {...{ uploading, retryUpload, removeUpload }}
+                />
                 <PromptInputBody>
                   <PromptInputTextarea
                     aria-label="Message"

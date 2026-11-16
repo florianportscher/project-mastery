@@ -28,6 +28,17 @@ describe("safeRedirectPath", () => {
     expect(safeRedirectPath(target, ORIGIN)).toBe(SIGNED_IN_PATH);
   });
 
+  test.each([
+    "/.//evil.example",
+    "/..//evil.example/phish",
+    "/courses/..//evil.example",
+    "/%2e//evil.example",
+    "/.\\/evil.example",
+    `${ORIGIN}//evil.example`,
+  ])("falls back for %s, a path that leads off the site", (target) => {
+    expect(safeRedirectPath(target, ORIGIN)).toBe(SIGNED_IN_PATH);
+  });
+
   test("falls back for missing values and uses a custom fallback", () => {
     expect(safeRedirectPath(null, ORIGIN)).toBe(SIGNED_IN_PATH);
     expect(safeRedirectPath("", ORIGIN, "/login")).toBe("/login");
@@ -60,6 +71,11 @@ describe("confirmRedirectPath", () => {
 
   test("never returns an off-site target from the wrapped next", () => {
     const next = `${ORIGIN}/auth/confirm?next=https%3A%2F%2Fevil.example`;
+    expect(confirmRedirectPath(next, ORIGIN)).toBe(SIGNED_IN_PATH);
+  });
+
+  test("never returns a path that leads off the site from the wrapped next", () => {
+    const next = `${ORIGIN}/auth/confirm?next=/.//evil.example`;
     expect(confirmRedirectPath(next, ORIGIN)).toBe(SIGNED_IN_PATH);
   });
 });

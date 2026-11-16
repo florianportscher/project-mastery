@@ -248,7 +248,10 @@ test.describe("signed in", () => {
           goal: "pass",
           session: {
             minutes: 0,
+            startedAt: "2026-10-16T09:00:00Z",
+            plannedMinutes: null,
             checkedToday: [],
+            topic: null,
             openQuestion: null,
             minutesSinceGraded: null,
             readings: [],

@@ -46,9 +46,8 @@ export const batchResultSchema = z.object({
         reason: z.enum(PAGE_SKIP_REASONS),
       }),
     )
-    .default([])
     .describe(
-      "Every page of the batch that has no unit, with the reason: titles_or_contents for a page of only a title, a table of contents, an index or a reference list. A page with units is not listed.",
+      "Every page of the batch that has no unit, with the reason: titles_or_contents for a page of only a title, a table of contents, an index or a reference list. A page with units is not listed. Empty when every page has units.",
     ),
 });
 

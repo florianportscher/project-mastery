@@ -54,6 +54,7 @@ describe("setupRows", () => {
   it("stores earlier Attempts by Topic and KC name in a backdated session", () => {
     const p = plan({
       goal: "pass",
+      minutes: 15,
       attempts: [
         {
           topics: ["Linear systems"],
@@ -64,6 +65,8 @@ describe("setupRows", () => {
       ],
     });
     expect(p.goal).toBe("pass");
+    expect(p.plannedMinutes).toBe(15);
+    expect(plan({}).plannedMinutes).toBeNull();
     expect(p.inserts.map((i) => i.table)).toEqual([
       "study_sessions",
       "questions",
@@ -159,7 +162,7 @@ describe("the scenario files", () => {
 
   it("each parse, with a persona, moves and a checklist", async () => {
     const files = (await readdir(dir)).filter((f) => f.endsWith(".md"));
-    expect(files).toHaveLength(10);
+    expect(files).toHaveLength(11);
     for (const file of files) {
       const text = await readFile(path.join(dir, file), "utf8");
       expect(() => parseScenario(text), file).not.toThrow();

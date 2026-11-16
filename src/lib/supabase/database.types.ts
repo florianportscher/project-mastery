@@ -1825,6 +1825,7 @@ export type Database = {
           id: string;
           mock_id: string | null;
           owner: string;
+          planned_minutes: number | null;
           rating: number | null;
           rating_note: string | null;
           started_at: string;
@@ -1839,6 +1840,7 @@ export type Database = {
           id?: string;
           mock_id?: string | null;
           owner: string;
+          planned_minutes?: number | null;
           rating?: number | null;
           rating_note?: string | null;
           started_at?: string;
@@ -1852,6 +1854,7 @@ export type Database = {
           id?: string;
           mock_id?: string | null;
           owner?: string;
+          planned_minutes?: number | null;
           rating?: number | null;
           rating_note?: string | null;
           started_at?: string;
@@ -2181,6 +2184,10 @@ export type Database = {
           topic_id: string;
           words?: string;
         };
+        Returns: boolean;
+      };
+      set_session_minutes: {
+        Args: { p_chat_id: string; p_minutes: number };
         Returns: boolean;
       };
       set_session_mock: {

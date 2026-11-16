@@ -448,9 +448,15 @@ export const tutorSmoke: SmokeCheck = {
     // The KCs the question tests show what it was about, so a reply that
     // reads a due KC and then asks about a new one fails.
     const dueAsked = askedKcs.filter((kc) => due.has(kc));
-    // Under the per-day rule every graded KC has a card at once.
+    // grade returns each KC's stored result, without band or schedule.
     const states = [second, fifth].flatMap(({ graded }) =>
-      graded.map((kc) => kc.band !== "new" && kc.nextReview !== null),
+      graded.map(
+        (kc) =>
+          typeof kc.id === "string" &&
+          ["full", "partial", "wrong"].includes(kc.result) &&
+          !("band" in kc) &&
+          !("nextReview" in kc),
+      ),
     );
     const knownIds = new Set([
       ...offered,
@@ -488,12 +494,13 @@ export const tutorSmoke: SmokeCheck = {
         `${recorded.length} attempts for ${askedKcs.length} KCs; ${describe(second.calls)}`,
       ),
       result(
-        "grade gave every KC a recall band and a next review",
+        "grade gave every KC its stored result, without band or next review",
         states.length > 0 && states.every(Boolean),
         JSON.stringify(
-          [...second.graded, ...fifth.graded].map(
-            ({ id, band, nextReview }) => ({ id, band, nextReview }),
-          ),
+          [...second.graded, ...fifth.graded].map(({ id, result }) => ({
+            id,
+            result,
+          })),
         ),
       ),
       result(

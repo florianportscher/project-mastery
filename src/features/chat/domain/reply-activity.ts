@@ -15,6 +15,9 @@ const TOOL_ACTIVITY: Record<string, string> = {
 /** What the AI is doing when it has not said a word yet. */
 export const THINKING = "Thinking…";
 
+/** What a reply shows while it waits for the provider's limit to pass. */
+export const BUSY = "One moment, the AI is busy.";
+
 /**
  * The line that stands in for an AI reply that is on its way and has no text
  * yet: the tool it is using, otherwise "Thinking…". Null once the reply has

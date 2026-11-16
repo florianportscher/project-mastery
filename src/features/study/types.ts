@@ -6,6 +6,7 @@ import type { MockStatus } from "@/features/study/domain/mock-paths";
 import type { Pace, Progress, TopicScope } from "@/features/study/domain/plan";
 import type { ProblemSource } from "@/features/study/domain/exercises";
 import type { KcBand, RecallBand } from "@/features/study/domain/recall-band";
+import type { TopicFacts } from "@/features/study/domain/topic-facts";
 
 export type {
   AttemptHelp,
@@ -57,13 +58,28 @@ export type ContextKc = {
 /** What this Study session has done so far. */
 export type SessionFacts = {
   minutes: number;
-  /** The Course's Attempts of today, oldest first. */
+  /** When the session started, as an ISO time. */
+  startedAt: string;
+  /** The length the Student chose: 15, 30 or 45; null for Open. */
+  plannedMinutes: number | null;
+  /**
+   * One entry per KC with an Attempt today, by its newest one: `shown` for
+   * a `full` without help, otherwise `worked`.
+   */
   checkedToday: Array<{
     id: string;
     name: string;
-    result: AttemptResult;
-    help: AttemptHelp;
+    state: "shown" | "worked";
   }>;
+  /**
+   * The session's Topic: that of the newest Question's first KC, else the
+   * proposal's, with its KCs in map order; null without one.
+   */
+  topic: {
+    id: string;
+    name: string;
+    kcs: Array<{ id: string; name: string }>;
+  } | null;
   /** The session's newest Question while it is ungraded; null otherwise. */
   openQuestion: {
     prompt: string;
@@ -111,6 +127,7 @@ export type ProposedTopic = {
   readings: ReadingSectionView[];
   /** The unseen Problems that test any of its KCs. */
   unseenProblems: number;
+  facts: TopicFacts;
 };
 
 /** A Topic as one line of the tutor context. */
@@ -212,6 +229,11 @@ export type StudyState = {
   /** Whether any KC is taught. */
   taught: boolean;
   pace: Pace;
+  /**
+   * The length of the Student's newest session in the Course that has one,
+   * which the Today card preselects; null without one.
+   */
+  lastMinutes: number | null;
 };
 
 /** A source chunk as `getTopic` and `searchMaterials` return it. */
@@ -267,13 +289,13 @@ export type ProblemView = {
 };
 
 /**
- * A KC of a graded Question as `grade` returns it, with its new band.
+ * A KC of a graded Question as `grade` returns it: its stored result.
  */
 export type GradedKc = {
   id: string;
   name: string;
   result: AttemptResult;
-} & KcBand;
+};
 
 /** A Reading section as the AI is told of it. */
 export type ReadingSectionView = {
@@ -302,6 +324,8 @@ export type SessionSummary = {
     id: string;
     name: string;
     result: AttemptResult;
+    /** The help of that Attempt. */
+    help: AttemptHelp;
     /** As YYYY-MM-DD; null without a card. */
     nextReview: string | null;
   }>;
@@ -330,10 +354,15 @@ export type TopicView = {
     recallToday: number | null;
     /** What it assumes from outside the Materials. */
     assumes: Array<{ name: string; description: string }>;
+    /** The KCs of the same Topic it builds on, by name. */
+    buildsOn: string[];
     /** Up to 3, in reading order; none for a KC not asked for. */
     sources: SourceChunkView[];
   }>;
   anchors: Array<{ id: string; name: string; band: RecallBand }> | null;
+  /** Later Topics that build on it and old-exam Exercises that test it. */
+  buildingTopics: string[] | null;
+  oldExamExercises: number | null;
   /** In order. */
   readingSections: ReadingSectionView[] | null;
 };

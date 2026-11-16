@@ -14,6 +14,7 @@ import {
   type TutorTools,
 } from "@/features/study/ai/tools";
 import { kcBand } from "@/features/study/domain/recall-band";
+import type { TopicFacts } from "@/features/study/domain/topic-facts";
 import { desiredRetention } from "@/features/study/domain/replay";
 import { loadRecall } from "@/features/study/server/attempts";
 import { findProblems } from "@/features/study/server/find-problems";
@@ -44,17 +45,13 @@ const SOURCES_PER_KC = 3;
  * the Student's session client: the tutor context (#251) and the tools,
  * which ask and grade Questions in the Chat's Study session. Read on every
  * reply, so both are current. `openedSections` are the Reading sections
- * the Chat's `showReading` calls opened. On the session's first reply it
- * tops up the Problem stock of the ranking's next Topic.
+ * the Chat's `showReading` calls opened.
  */
 export async function startTutoring(
   supabase: Supabase,
   courseId: string,
   chatId: string,
-  {
-    openedSections,
-    firstReply,
-  }: { openedSections: string[]; firstReply: boolean },
+  { openedSections }: { openedSections: string[] },
 ): Promise<{ context: TutorContext; tools: TutorTools }> {
   const session = await loadTutorSession(supabase, chatId);
   const loaded = await loadTutorContext(
@@ -62,13 +59,6 @@ export async function startTutoring(
     { courseId, session, openedSections },
     new Date(),
   );
-  if (firstReply && loaded.nextTopicId !== null) {
-    // Loaded on use: `workflow/api` fails to import in the component tests
-    // (docs/agents/notes/workflow-imports.md).
-    const { queueProblemGeneration } =
-      await import("@/features/study/server/problem-generation");
-    await queueProblemGeneration(supabase, courseId, loaded.nextTopicId);
-  }
   return {
     context: loaded.context,
     tools: tutorTools(
@@ -81,6 +71,7 @@ export async function startTutoring(
         topics: loaded.topics,
         readings: loaded.readings,
         reserved: loaded.reserved,
+        topicFacts: loaded.topicFacts,
       }),
     ),
   };
@@ -97,6 +88,7 @@ function tutorToolActions(
     topics,
     readings,
     reserved,
+    topicFacts,
   }: {
     courseId: string;
     chatId: string;
@@ -107,6 +99,7 @@ function tutorToolActions(
     readings: Awaited<ReturnType<typeof loadReadingSections>>;
     /** The reserved exam's chunks, which no tool gives the AI. */
     reserved: Set<string>;
+    topicFacts: Map<string, TopicFacts>;
   },
 ): TutorToolActions {
   const kcById = new Map(map.kcs.map((kc) => [kc.id, kc]));
@@ -152,6 +145,9 @@ function tutorToolActions(
       : { statement, page: null, generatedProblemId: problemId };
   };
   const retention = desiredRetention(facts.goal);
+  const kcBuildsOn = new Map(
+    [...topicFacts.values()].flatMap((f) => Object.entries(f.kcBuildsOn)),
+  );
   return {
     async searchMaterials(query) {
       return (await searchChunks(supabase, courseId, query, reserved)).map(
@@ -202,12 +198,10 @@ function tutorToolActions(
         check,
       });
       if (!saved) return null;
-      const recall = await loadRecall(supabase, courseId, facts, new Date());
       return results.map(({ kcId, result }) => ({
         id: kcId,
         name: kcById.get(kcId)?.name ?? kcId,
         result,
-        ...kcBand(recall.get(kcId), retention),
       }));
     },
     closeQuestion: (questionId) => closeQuestion(supabase, questionId),
@@ -270,6 +264,7 @@ function tutorToolActions(
             band,
             recallToday,
             assumes: assumes.get(kc.id) ?? [],
+            buildsOn: kcBuildsOn.get(kc.id) ?? [],
             sources: wanted.has(kc.id)
               ? chunks
                   .filter((chunk) => kc.sources.includes(chunk.id))
@@ -278,6 +273,10 @@ function tutorToolActions(
               : [],
           };
         }),
+        buildingTopics:
+          topic && (topicFacts.get(topic.id)?.buildingTopics ?? []),
+        oldExamExercises:
+          topic && (topicFacts.get(topic.id)?.oldExamExercises ?? 0),
         anchors:
           topic &&
           topicAnchors(topic.kcs, map).map((kc) => ({

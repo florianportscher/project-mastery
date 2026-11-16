@@ -35,6 +35,8 @@ export type ChatMessageMetadata = {
 type ChatDataParts = {
   /** A Material the Student attached to their message. */
   material: MaterialReference;
+  /** Sent, not stored, while a reply waits to be asked again. */
+  busy: Record<string, never>;
 };
 
 /** A message of a Chat, as `useChat` shows it and the database stores it. */

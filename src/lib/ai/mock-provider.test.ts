@@ -97,7 +97,45 @@ describe("structured output on AI_PROVIDER=mock", () => {
     expect(output).toEqual({ groups: [{ ids: ["a", "b", "c"] }] });
     vi.unstubAllEnvs();
   });
+
+  test.each([
+    ["an optional field", "$", (z: Zod) => ({ note: z.string().optional() })],
+    [
+      "a defaulted field",
+      "$",
+      (z: Zod) => ({ tags: z.array(z.string()).default([]) }),
+    ],
+    [
+      "an optional field inside an array",
+      "$.items[]",
+      (z: Zod) => ({
+        items: z.array(z.object({ note: z.string().optional() })),
+      }),
+    ],
+  ])(
+    "fails a schema with %s, as a strict provider such as Muse Ember does",
+    async (_, path, fields) => {
+      vi.stubEnv("AI_PROVIDER", "mock");
+      const { generateText, Output } = await import("ai");
+      const { z } = await import("zod");
+      const { aiTask } = await import("./models");
+
+      await expect(
+        generateText({
+          ...aiTask("ingest"),
+          maxRetries: 0,
+          output: Output.object({
+            schema: z.object({ text: z.string(), ...fields(z) }),
+          }),
+          prompt: "Read this page.",
+        }),
+      ).rejects.toThrow(`the object at ${path} leaves`);
+      vi.unstubAllEnvs();
+    },
+  );
 });
+
+type Zod = typeof import("zod").z;
 
 describe("tutor tool calls on AI_PROVIDER=mock", () => {
   test("leave out every input field the tool does not require, as a real model may", async () => {

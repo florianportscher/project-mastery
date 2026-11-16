@@ -7,6 +7,7 @@ import { courseMapPath, topicPath } from "@/features/knowledge-map";
 import {
   isTodayMessage,
   MOCK_REVIEW_MESSAGE,
+  sessionLength,
   TodayCard,
 } from "@/features/study";
 import { getStudyState } from "@/features/study/server";
@@ -23,14 +24,15 @@ export const metadata: Metadata = {
  * stored with its first message. With `?say=` naming one of the Today
  * card's first messages, it sends that message as the Student at once.
  * With `?mock=` naming a graded Mock exam, its session goes through that
- * mock, and it starts at once.
+ * mock, and it starts at once. With a Today message, `?minutes=` gives the
+ * session its length.
  */
 export default async function NewChatPage({
   params,
   searchParams,
 }: PageProps<"/courses/[courseId]/chat">) {
   const { courseId } = await params;
-  const { say, mock } = await searchParams;
+  const { say, mock, minutes } = await searchParams;
   // The server checks it is the Student's graded mock of this Course.
   const mockId = typeof mock === "string" ? mock : undefined;
   const user = await requireUser(newChatPath(courseId));
@@ -54,6 +56,7 @@ export default async function NewChatPage({
         mockId ? MOCK_REVIEW_MESSAGE : isTodayMessage(say) ? say : undefined
       }
       mockId={mockId}
+      minutes={isTodayMessage(say) ? sessionLength(minutes) : undefined}
       emptyState={
         <TodayCard
           state={study}

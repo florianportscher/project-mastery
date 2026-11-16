@@ -1,5 +1,6 @@
 import "server-only";
 import { simulateReadableStream, type JSONSchema7 } from "ai";
+import { assertStrictOutputSchema } from "./strict-schema";
 
 /**
  * Deterministic models for AI_PROVIDER=mock, so end-to-end tests run the real
@@ -145,6 +146,7 @@ type ResponseFormat =
 /** The text a mock call answers: JSON for structured output, else a reply. */
 function mockText(prompt: Prompt, responseFormat: ResponseFormat): string {
   if (responseFormat?.type === "json") {
+    assertStrictOutputSchema(responseFormat);
     return JSON.stringify(mockObject(responseFormat.schema));
   }
   return mockReply(prompt);

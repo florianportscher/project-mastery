@@ -19,9 +19,30 @@ const summary: SessionSummary = {
       id: "k1",
       name: "Thrust equation",
       result: "partial",
+      help: "some",
       nextReview: "2026-10-27",
     },
-    { id: "k2", name: "Mass flow", result: "full", nextReview: null },
+    {
+      id: "k2",
+      name: "Mass flow",
+      result: "full",
+      help: "none",
+      nextReview: null,
+    },
+    {
+      id: "k3",
+      name: "Nozzle",
+      result: "full",
+      help: "some",
+      nextReview: "2026-11-17",
+    },
+    {
+      id: "k4",
+      name: "Isentropic flow",
+      result: "full",
+      help: "solution_shown",
+      nextReview: null,
+    },
   ],
   ended: false,
   rating: null,
@@ -47,17 +68,21 @@ function renderCard(busy = false) {
   );
 }
 
-test("shows each KC checked with its result and next review", async () => {
+test("shows each KC worked on in plain words with when it is back", async () => {
   renderCard();
   const card = screen.getByRole("region", { name: "Session summary" });
-  const kcs = await within(card).findByRole("list", { name: "KCs checked" });
+  const kcs = await within(card).findByRole("list", {
+    name: "What you worked on",
+  });
   expect(
     within(kcs)
       .getAllByRole("listitem")
       .map((li) => li.textContent),
   ).toEqual([
-    "Thrust equationPartialNext review 2026-10-27",
-    "Mass flowFullNo review planned",
+    "Thrust equationPartlyBack 27 Oct",
+    "Mass flowOn your own",
+    "NozzleWith helpBack 17 Nov",
+    "Isentropic flowNot yet",
   ]);
   expect(
     within(card).getByRole("link", { name: "Start new session" }),

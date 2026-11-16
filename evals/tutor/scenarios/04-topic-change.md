@@ -47,7 +47,7 @@ What Claude Opus 5.5 would do as the tutor with the same context and tools.
 
 - `closeQuestion` for the open subspace Question, since the Student moved on instead of answering.
 - `getTopic` on "Permutations and the determinant" (or its KCs) before teaching it.
-- `ask` for a short diagnostic on determinants, then `grade` of the answer.
+- After a first explanation of determinants, an `ask` with a task that uses it, then `grade` of the answer with help `some`.
 
 ### Tool calls that must not happen
 
@@ -58,6 +58,6 @@ What Claude Opus 5.5 would do as the tutor with the same context and tools.
 
 - Follows the Student at once, in one sentence ("Sure, let's do determinants"), without arguing for the proposal.
 - Mentions at most once, briefly, that subspaces are still waiting, or that the determinant Topic builds on earlier ones, if that matters.
-- Starts the new Topic by finding out what they know ($2 \times 2$ first), not with a lecture.
+- Starts the new Topic, which is untaught, by explaining its first block (two to four ideas, from a concrete $2 \times 2$ case to the script's statement), then gives one task that needs them; no lecture beyond that block.
 - Teaches from the script's notation and cites its pages as links from a tool result.
 - Never shows ids or tool names.

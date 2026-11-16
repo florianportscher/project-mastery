@@ -12,19 +12,31 @@ import {
   getSessionSummary,
   rateStudySession,
 } from "@/features/study/server/actions";
-import type { AttemptResult, SessionSummary } from "@/features/study/types";
+import type {
+  AttemptHelp,
+  AttemptResult,
+  SessionSummary,
+} from "@/features/study/types";
 
-const RESULT_NAMES: Record<AttemptResult, string> = {
-  full: "Full",
-  partial: "Partial",
-  wrong: "Wrong",
-};
+/** A KC's latest Attempt in the session in the Student's words. */
+function outcome(result: AttemptResult, help: AttemptHelp) {
+  if (result === "wrong" || help === "solution_shown") {
+    return { text: "Not yet", variant: "destructive" } as const;
+  }
+  if (result === "partial")
+    return { text: "Partly", variant: "secondary" } as const;
+  return help === "none"
+    ? ({ text: "On your own", variant: "default" } as const)
+    : ({ text: "With help", variant: "secondary" } as const);
+}
 
-const RESULT_VARIANTS = {
-  full: "default",
-  partial: "secondary",
-  wrong: "destructive",
-} as const satisfies Record<AttemptResult, string>;
+/** "17 Nov" from YYYY-MM-DD. */
+const shortDate = (day: string) =>
+  new Date(`${day}T12:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
 
 /**
  * Where a session's composer was, once it has ended: each KC checked with
@@ -106,20 +118,21 @@ function SummaryFacts({ summary }: { summary: SessionSummary }) {
   return (
     <div className="flex flex-col gap-3">
       {kcs.length > 0 && (
-        <ul aria-label="KCs checked" className="flex flex-col gap-1.5">
-          {kcs.map((kc) => (
-            <li key={kc.id} className="flex flex-wrap items-center gap-2">
-              <span className="min-w-0 flex-1">{kc.name}</span>
-              <Badge variant={RESULT_VARIANTS[kc.result]}>
-                {RESULT_NAMES[kc.result]}
-              </Badge>
-              <span className="text-muted-foreground">
-                {kc.nextReview
-                  ? `Next review ${kc.nextReview}`
-                  : "No review planned"}
-              </span>
-            </li>
-          ))}
+        <ul aria-label="What you worked on" className="flex flex-col gap-1.5">
+          {kcs.map((kc) => {
+            const { text, variant } = outcome(kc.result, kc.help);
+            return (
+              <li key={kc.id} className="flex flex-wrap items-center gap-2">
+                <span className="min-w-0 flex-1">{kc.name}</span>
+                <Badge variant={variant}>{text}</Badge>
+                {kc.nextReview && (
+                  <span className="text-muted-foreground">
+                    Back {shortDate(kc.nextReview)}
+                  </span>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

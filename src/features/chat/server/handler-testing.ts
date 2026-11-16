@@ -114,6 +114,7 @@ function createDb() {
           started_at: new Date().toISOString(),
           ended_at: null,
           mock_id: null,
+          planned_minutes: null,
         });
       },
     },
@@ -140,6 +141,23 @@ function createDb() {
           return false;
         }
         session.mock_id = mock.id;
+        return true;
+      },
+      // As the real function: 15, 30 or 45 for the caller's session while
+      // it has no length and no Question.
+      set_session_minutes: (args, tables) => {
+        const session = tables.study_sessions.find(
+          (row) => row.chat_id === args.p_chat_id && row.owner === signedIn,
+        );
+        if (
+          !session ||
+          session.planned_minutes ||
+          ![15, 30, 45].includes(args.p_minutes as number) ||
+          tables.questions.some((q) => q.session_id === session.id)
+        ) {
+          return false;
+        }
+        session.planned_minutes = args.p_minutes;
         return true;
       },
       // Records each generate trigger in `problem_runs` and lets none start,

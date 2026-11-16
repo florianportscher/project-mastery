@@ -100,7 +100,7 @@ const gradeInputSchema = z.object({
   help: z
     .enum(["none", "some", "solution_shown"])
     .describe(
-      "How much you helped on this question: none when the Student answered without your hints, some (hints or corrections before the answer), or solution_shown when you showed or walked through the solution, before the answer or in this reply.",
+      "How much you helped on this question: none when the Student answered without your hints, some (hints or corrections before the answer, and the first task on KCs you explained just before it), or solution_shown when you showed or walked through the solution, before the answer or in this reply.",
     ),
   finalValues: z
     .array(
@@ -214,7 +214,7 @@ export type TutorToolActions = {
   findQuestion: () => Promise<QuestionToGrade | null>;
   /**
    * Marks the question graded and stores one attempt per KC; returns each
-   * KC's new recall band, or null when it was graded in the meantime.
+   * KC's stored result, or null when it was graded in the meantime.
    */
   saveGrade: (grade: {
     questionId: string;
@@ -241,7 +241,7 @@ export function tutorTools(actions: TutorToolActions) {
   return {
     getTopic: tool({
       description:
-        "Read a Topic of this Course before teaching it: its central question, its KCs in order with their description, recall band (new, strong, fading or weak), recall today (0 to 1) and what each assumes from outside the Materials, its anchors with their band and its Reading sections. The KCs you give in kcIds (all of the Topic's when omitted) come with up to 3 source chunks from the Course's Materials in reading order, each with its Markdown, Material, pages and a link to cite. Without a topicId, it reads the KCs in kcIds alone, with the same facts and source chunks.",
+        "Read a Topic of this Course before teaching it: its central question, its KCs in order with their description, recall band (new, strong, fading or weak), recall today (0 to 1), what each assumes from outside the Materials and the KCs of the Topic it builds on, its anchors with their band, its Reading sections, up to 5 later Topics that build on it and how many old-exam Exercises test its KCs. The KCs you give in kcIds (all of the Topic's when omitted) come with up to 3 source chunks from the Course's Materials in reading order, each with its Markdown, Material, pages and a link to cite. Without a topicId, it reads the KCs in kcIds alone, with the same facts and source chunks.",
       inputSchema: getTopicInputSchema,
       execute: async ({ topicId, kcIds }) => {
         if (!topicId && !kcIds) {
@@ -316,13 +316,13 @@ export function tutorTools(actions: TutorToolActions) {
     }),
     grade: tool({
       description:
-        "Grade the Student's answer to the open Question, the one you asked last with ask, before you give feedback: a result for each of its KCs, how much you helped and, for a question with final results, the Student's final values. When the Student moved on instead of answering, call closeQuestion instead. Code checks each value against its key: numbers and units at 1% tolerance, vectors and matrices element by element, expressions at sample points. On a mismatch every full becomes partial. Returns each KC's result, its recall band (new, strong, fading or weak), its next review date (YYYY-MM-DD) and recall today (0 to 1), and the check: match, mismatch, unchecked (a value code doesn't compare, or a result without a value) or null when the question has no final results.",
+        "Grade the Student's answer to the open Question, the one you asked last with ask, before you give feedback: a result for each of its KCs, how much you helped and, for a question with final results, the Student's final values. When the Student moved on instead of answering, call closeQuestion instead. Code checks each value against its key: numbers and units at 1% tolerance, vectors and matrices element by element, expressions at sample points. On a mismatch every full becomes partial. Returns each KC's id and stored result, the help and the check: match, mismatch, unchecked (a value code doesn't compare, or a result without a value) or null when the question has no final results.",
       inputSchema: gradeInputSchema,
       execute: async (input) => grade(actions, input),
     }),
     closeQuestion: tool({
       description:
-        "Close the open Question without a grade when the Student moved on instead of answering it. Records nothing about their knowledge.",
+        "Close the open Question without a grade when the Student moved on instead of answering it, when they found it unclear or misread it (then ask it again in clearer words), or when they say they have not seen a KC that is new to them and this session has not explained (then teach it). Records nothing about their knowledge.",
       inputSchema: z.object({}),
       execute: async () => {
         const question = await openQuestion(actions);
@@ -380,7 +380,11 @@ async function openQuestion(
 async function grade(
   actions: TutorToolActions,
   input: GradeInput,
-): Promise<{ kcs: GradedKc[]; check: FinalValueCheck }> {
+): Promise<{
+  kcs: GradedKc[];
+  help: AttemptHelp;
+  check: FinalValueCheck;
+}> {
   const question = await openQuestion(actions);
   if (!question.answered) {
     throw new TutorToolError(
@@ -392,7 +396,7 @@ async function grade(
     if (!(await actions.closeQuestion(question.id))) {
       throw new TutorToolError(alreadyGraded);
     }
-    return { kcs: [], check: null };
+    return { kcs: [], help: input.help, check: null };
   }
   const help = input.help;
   const results = input.results.filter(
@@ -429,7 +433,7 @@ async function grade(
     check,
   });
   if (!kcs) throw new TutorToolError(alreadyGraded);
-  return { kcs, check };
+  return { kcs, help, check };
 }
 
 export type TutorTools = ReturnType<typeof tutorTools>;

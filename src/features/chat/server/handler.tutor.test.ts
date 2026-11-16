@@ -56,7 +56,7 @@ describe("the tutor context", () => {
     const [first, second] = [0, 1].map((call) => model.doStreamCalls[call]!);
     const system = (call: typeof first) =>
       call!.prompt.find(({ role }) => role === "system")?.content;
-    expect(system(first)).toContain("Find out before you teach");
+    expect(system(first)).toContain("The Student does the thinking");
     expect(system(first)).toBe(system(second));
     const [earlier, newest] = userTexts(model, 1);
     expect(earlier).toBe("Hi");
@@ -92,10 +92,8 @@ describe("the tutor context", () => {
     expect(context).toContain(
       `Thrust (Topic id ${MAP.topic}): in plan, 0 of 2 learned`,
     );
-    // The first reply tops up the next Topic's Problem stock.
-    expect(db.tables.problem_runs).toEqual([
-      { course_id: COURSE, topic_id: MAP.topic },
-    ]);
+    // A first reply queues no generate run: the session's end does.
+    expect(db.tables.problem_runs).toEqual([]);
   });
 
   test("is sent on the reply's start and saved with it", async () => {

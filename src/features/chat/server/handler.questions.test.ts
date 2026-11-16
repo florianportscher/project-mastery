@@ -303,6 +303,32 @@ test("a new Chat from a graded Mock exam goes through its tasks, most points los
   expect(context).toContain("1. 1 of 6 points");
 });
 
+test("a new Chat's chosen length is stored and told to the AI; any other length is refused", async () => {
+  const model = mockTextModel("Welcome.");
+  useMockModels({ chat: model });
+  const chatId = randomUUID();
+
+  await send({
+    chatId,
+    courseId: COURSE,
+    minutes: 15,
+    message: userMessage("Let's start."),
+  });
+
+  expect(
+    db.tables.study_sessions.find((s) => s.chat_id === chatId)!.planned_minutes,
+  ).toBe(15);
+  expect(newestUserText(model)).toContain("The Student chose 15 minutes:");
+
+  const refused = await send({
+    chatId: randomUUID(),
+    courseId: COURSE,
+    minutes: 20,
+    message: userMessage("Let's start."),
+  });
+  expect(refused.status).toBe(400);
+});
+
 test("a mock that is not the Student's graded one is ignored", async () => {
   useMockModels({ chat: mockTextModel("Hello.") });
   const chatId = randomUUID();

@@ -6,6 +6,7 @@ import {
 } from "ai/test";
 import { onTestFinished, vi } from "vitest";
 import { AI_TASKS, type AiTask } from "./models";
+import { assertStrictOutputSchema } from "./strict-schema";
 
 /**
  * Test helpers for AI code. Unit tests and CI never call real models
@@ -128,8 +129,14 @@ function routedByTask(
   };
   return new MockLanguageModelV4({
     modelId,
-    doGenerate: (options) => modelFor(options).doGenerate(options),
-    doStream: (options) => modelFor(options).doStream(options),
+    doGenerate: (options) => {
+      assertStrictOutputSchema(options.responseFormat);
+      return modelFor(options).doGenerate(options);
+    },
+    doStream: (options) => {
+      assertStrictOutputSchema(options.responseFormat);
+      return modelFor(options).doStream(options);
+    },
   });
 }
 

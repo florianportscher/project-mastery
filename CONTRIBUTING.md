@@ -43,6 +43,8 @@ pnpm db:test                       # run the Row Level Security tests in supabas
 
 Every new table needs Row Level Security policies and pgTAP tests for them ([ADR 0003](docs/adr/0003-supabase-js-with-rls.md)). Commit the regenerated types with the migration; CI fails when they are out of date.
 
+Hosted databases are never migrated by hand: GitHub Actions applies a PR's migrations to staging when the PR is ready for review, and to production after the merge, once the maintainer approves the run ([ADR 0030](docs/adr/0030-migrations-from-github-actions.md)).
+
 ### AI, background jobs and tracing
 
 - **AI keys:** deployments call models through Vercel AI Gateway. Locally, the text tasks call the Gemini API directly: create a `GOOGLE_GENERATIVE_AI_API_KEY` in [Google AI Studio](https://aistudio.google.com/apikey) and set the `AI_MODEL_*` overrides in `.env.local` that `.env.example` lists, which point them at `google/gemini-3.5-flash-lite` ([ADR 0016](docs/adr/0016-gemini-api-for-local-development.md)). Embeddings still need an `AI_GATEWAY_API_KEY` from the [Vercel dashboard](https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys), which every team gets a monthly free credit for. Use your own test materials and never personal data. Unit tests and CI use mock models and need no key. Models are configured per task in `src/lib/ai/models.ts`.
