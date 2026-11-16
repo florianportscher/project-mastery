@@ -102,12 +102,7 @@ Project Mastery is a working prototype, not a finished product. The whole loop r
 - **Tutor behavior.** The tutor's teaching (when to ask, when to explain, how to grade and when to move on) needs substantial tuning. So far its quality is judged by hand on [gold course materials](evals/gold/), because automated evals are paused until a paid model and a strong judge are affordable.
 - **Polish.** There are smaller bugs and rough edges throughout, and a first-time user needs a lot of steps to reach their first Study session.
 
-Roadmap:
-
-1. **Paid models.** Move parsing, the map build and the tutor to faster, stronger paid models. Every call goes through one gateway and each task's model is set in [one file](src/lib/ai/models.ts), so switching takes a small change, not a redesign.
-2. **Evals.** Bring back automated evals of the map build and the tutor, with a frontier model as judge, and tune both against them.
-3. **Tests with students.** Have real students prepare for a real exam with the app, and use their sessions to fix what gets in their way.
-4. **Polish.** Fix the remaining bugs and shorten the path from the first upload to the first Study session.
+The roadmap is in [ROADMAP.md](ROADMAP.md): paid models, evals, tests with students, polish.
 
 Open work is tracked on the [project board](https://github.com/users/florianportscher/projects/5).
 
