@@ -129,7 +129,7 @@ function pageModel(answers: Answer[], onCall?: (call: number) => void) {
       const answer = answers[calls++] ?? { units: [] };
       onCall?.(calls);
       if (answer instanceof Error) throw answer;
-      return streamedAnswer(JSON.stringify(answer));
+      return streamedAnswer(JSON.stringify({ skippedPages: [], ...answer }));
     },
   });
   return { model, calls: () => calls };
