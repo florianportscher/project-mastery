@@ -62,7 +62,7 @@ flowchart LR
 
 Preview deployments never touch production data.
 
-Staging is the Supabase project of previews. Agents read its rows with `pnpm -s agent staging` and `staging-sql`, and change rows with `staging-write` ([ADR 0025](adr/0025-staging-for-agent-review.md), [ADR 0029](adr/0029-agent-writes-to-staging.md)).
+Staging is the Supabase project of previews. Its migrations are applied by GitHub Actions ([ADR 0030](adr/0030-migrations-from-github-actions.md)). Agents read its rows with `pnpm -s agent staging` and `staging-sql`, and change rows with `staging-write` ([ADR 0025](adr/0025-staging-for-agent-review.md), [ADR 0029](adr/0029-agent-writes-to-staging.md)).
 
 ## Project structure
 
@@ -195,6 +195,7 @@ Each technical decision is an ADR in [adr/](adr/), with its context, the choice 
 - [0027](adr/0027-per-day-scheduling-and-one-ranking.md): Per-day scheduling and one ranking: a KC's first UTC day teaches it, each later day's first Attempt reviews it, no Easy, cap or sweep; one pure ranking (`rankNext`) of what comes next replaces Phases and Today's rules; supersedes 0019
 - [0028](adr/0028-one-study-session.md): One Study session: a tutor context of facts in front of the newest message, static instructions, eight tools, Questions inline, four kinds of notes; supersedes the session parts of 0018
 - [0029](adr/0029-agent-writes-to-staging.md): Agent writes to staging: `staging-write` changes rows through the REST API for testing, tables only and filtered; supersedes the no-writes sentence of 0025
+- [0030](adr/0030-migrations-from-github-actions.md): Migrations from GitHub Actions: `migrate.yml` applies a ready PR's migrations to staging and, after the merge and the maintainer's approval, to production; supersedes "applied by hand" in 0025 and 0029
 
 ## Open questions
 
