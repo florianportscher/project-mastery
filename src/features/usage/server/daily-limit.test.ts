@@ -78,6 +78,27 @@ describe("the Daily limit", () => {
     expect(status.level).toBe("ok");
   });
 
+  test("counts the spend behind the first 1000 records of the day", async () => {
+    vi.stubEnv("AI_DAILY_LIMIT_USD", "1");
+    // A Student can add records of their own: 1000 free ones would fill
+    // the one page the API returns per request.
+    const free = Array.from({ length: 1000 }, (_, index) => ({
+      ...spent(0, "2026-10-08T00:00:01.000Z"),
+      id: `free-${String(index).padStart(4, "0")}`,
+    }));
+    db = fakeSupabase({
+      tables: {
+        ai_usage: [...free, { ...spent(1), id: "real" }],
+      },
+      canAccess: (_table, row) => row.owner === STUDENT,
+      maxRows: 1000,
+    });
+
+    const status = await getDailyLimitStatus();
+
+    expect(status.level).toBe("reached");
+  });
+
   test("never blocks without AI_DAILY_LIMIT_USD", async () => {
     vi.stubEnv("AI_DAILY_LIMIT_USD", "");
 
