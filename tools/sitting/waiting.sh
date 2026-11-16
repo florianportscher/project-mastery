@@ -13,7 +13,32 @@
 # author's last answer on the PR. A comment of the author that starts with
 # "**Maintainer" holds the maintainer's words, taken down in /sitting: it counts
 # as theirs, not as an answer.
+#
+# Without a number it ends with one line on /reality-check: the date of the
+# newest report in docs/reality-checks/, its age in days, the PRs merged after
+# that day (bots' left out), and "due" when a threshold below is passed.
 set -euo pipefail
+
+# A reality check is due when the newest report is older than this many days,
+# or when this many PRs were merged after it.
+due_days=14
+due_prs=15
+
+reality_check() {
+  local reports newest age merged
+  shopt -s nullglob
+  reports=("$(git rev-parse --show-toplevel)"/docs/reality-checks/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].md)
+  if [[ ${#reports[@]} -eq 0 ]]; then
+    echo "reality-check  no report yet: due"
+    return
+  fi
+  newest=$(basename "${reports[-1]}" .md)
+  age=$(jq -n --arg d "$newest" '(now - ($d + "T00:00:00Z" | fromdateiso8601)) / 86400 | floor')
+  merged=$(gh pr list --state merged --search "merged:>$newest" --limit 200 --json author \
+    --jq 'map(select(.author.is_bot | not)) | length')
+  echo -n "reality-check  newest $newest, $age days old, $merged PRs merged since"
+  if ((age > due_days || merged >= due_prs)); then echo ": due"; else echo; fi
+}
 
 repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
 if [[ $# -gt 0 ]]; then
@@ -24,6 +49,7 @@ else
 fi
 if [[ ${#prs[@]} -eq 0 ]]; then
   echo "No PR waits for review."
+  [[ $# -gt 0 ]] || reality_check
   exit 0
 fi
 
@@ -84,3 +110,4 @@ for pr in "${prs[@]}"; do
     ""
   ' <<<"$json"
 done
+[[ $# -gt 0 ]] || reality_check
