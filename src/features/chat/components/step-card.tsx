@@ -10,7 +10,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import type { ReplyStep, StepDetail } from "@/features/chat/domain/reply-steps";
-import { scheduleText, type ProblemView } from "@/features/study";
+import type { ProblemView } from "@/features/study";
 import { cn } from "@/lib/utils";
 
 const SOURCE_LABELS: Record<ProblemView["source"], string> = {
@@ -133,9 +133,7 @@ function StepDetails({ detail }: { detail: StepDetail }) {
           {detail.kcs.map((kc) => (
             <li key={kc.id}>
               <span className="font-medium">{kc.name}</span>{" "}
-              <span className="text-muted-foreground">
-                · {kc.result} · {scheduleText(kc)}
-              </span>
+              <span className="text-muted-foreground">· {kc.result}</span>
             </li>
           ))}
         </Items>

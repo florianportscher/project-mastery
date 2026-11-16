@@ -123,19 +123,24 @@ async function setUp(
   for (const { table, rows } of plan.inserts) {
     await insertRows(supabase, table, rows);
   }
-  if (plan.sessionMockId) {
-    const { error: mockError } = await supabase
+  if (plan.sessionMockId || plan.plannedMinutes) {
+    const { error: sessionError } = await supabase
       .from("study_sessions")
-      .update({ mock_id: plan.sessionMockId })
+      .update({
+        mock_id: plan.sessionMockId,
+        planned_minutes: plan.plannedMinutes,
+      })
       .eq("id", session.id);
-    if (mockError) throw new Error(`study_sessions: ${mockError.message}`);
+    if (sessionError) {
+      throw new Error(`study_sessions: ${sessionError.message}`);
+    }
   }
 
   const counts = plan.inserts
     .map(({ table, rows }) => `${table} ${rows.length}`)
     .join(", ");
   console.info(
-    `Run ${chatId}: ${path.basename(file, ".md")}, exam in ${setup.examInDays} days${plan.goal ? `, goal ${plan.goal}` : ""}; set up ${counts || "nothing"}.`,
+    `Run ${chatId}: ${path.basename(file, ".md")}, exam in ${setup.examInDays} days${plan.goal ? `, goal ${plan.goal}` : ""}, ${setup.minutes ? `${setup.minutes} minutes` : "Open"}; set up ${counts || "nothing"}.`,
   );
   if (setup.openQuestion) {
     console.info(

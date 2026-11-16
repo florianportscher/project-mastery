@@ -11,6 +11,7 @@ import {
   COURSE,
   db,
   userMessage,
+  post,
   send,
   storedMessages,
   seedChat,
@@ -78,6 +79,71 @@ describe("a failed reply's message", () => {
     });
 
     expect(reply.error).toBe(message);
+  });
+});
+
+describe("a reply the Gateway's per-minute limit refused", () => {
+  const limited = () =>
+    Object.assign(new Error("Too many requests. Retry after 0s."), {
+      name: "GatewayRateLimitError",
+    });
+
+  /** A chat model that fails `failures` times, then answers. */
+  function failingThenAnswering(failures: number) {
+    const answer = mockTextModel("Back again.");
+    let calls = 0;
+    return new MockLanguageModelV4({
+      doStream: async (options) => {
+        if (calls++ < failures) throw limited();
+        return answer.doStream(options);
+      },
+    });
+  }
+
+  test("is asked again once and then answers", async () => {
+    const model = failingThenAnswering(1);
+    useMockModels({ chat: model });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const reply = await send({
+      chatId: randomUUID(),
+      courseId: COURSE,
+      message: userMessage("Hi"),
+    });
+
+    expect(reply.error).toBeUndefined();
+    expect(model.doStreamCalls).toHaveLength(2);
+    expect(reply.text).toContain("Back again.");
+  });
+
+  test("tells the client to say the AI is busy before the second try", async () => {
+    useMockModels({ chat: failingThenAnswering(1) });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const response = await post({
+      chatId: randomUUID(),
+      courseId: COURSE,
+      message: userMessage("Hi"),
+    });
+    const raw = await response.text();
+
+    expect(raw).toContain('"type":"data-busy"');
+    expect(raw).toContain("Back");
+  });
+
+  test("fails after a second refusal", async () => {
+    const model = failingThenAnswering(2);
+    useMockModels({ chat: model });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const reply = await send({
+      chatId: randomUUID(),
+      courseId: COURSE,
+      message: userMessage("Hi"),
+    });
+
+    expect(model.doStreamCalls).toHaveLength(2);
+    expect(reply.error).toBeDefined();
   });
 });
 

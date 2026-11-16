@@ -17,8 +17,12 @@ export { ProblemFlagControl } from "./components/problem-flag-control";
 export { TopicChoiceControls } from "./components/topic-choice-controls";
 export { TodayCard } from "./components/today-card";
 export { topicBadges } from "./domain/plan";
-export { recallText, scheduleText } from "./domain/schedule-text";
-export { isTodayMessage, MOCK_REVIEW_MESSAGE } from "./domain/today-messages";
+export {
+  isTodayMessage,
+  MOCK_REVIEW_MESSAGE,
+  QUICK_REPLIES,
+  sessionLength,
+} from "./domain/today-messages";
 export { sessionEndedMessage } from "./schemas";
 export type {
   AskedProblem,

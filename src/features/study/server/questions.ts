@@ -24,6 +24,8 @@ export type TutorSession = {
   startedAt: string;
   /** The graded Mock exam it goes through; null for none. */
   mockId: string | null;
+  /** The length the Student chose; null for Open. */
+  plannedMinutes: number | null;
 };
 
 /** The Chat's Study session, or null without one. */
@@ -33,12 +35,17 @@ export async function loadTutorSession(
 ): Promise<TutorSession | null> {
   const { data, error } = await supabase
     .from("study_sessions")
-    .select("id, started_at, mock_id")
+    .select("id, started_at, mock_id, planned_minutes")
     .eq("chat_id", chatId)
     .maybeSingle();
   if (error) failed("Loading the Study session", error);
   return (
-    data && { id: data.id, startedAt: data.started_at, mockId: data.mock_id }
+    data && {
+      id: data.id,
+      startedAt: data.started_at,
+      mockId: data.mock_id,
+      plannedMinutes: data.planned_minutes,
+    }
   );
 }
 

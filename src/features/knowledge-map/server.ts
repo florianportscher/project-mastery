@@ -7,6 +7,7 @@ import "server-only";
 export { exerciseLabel } from "./domain/exercise-label";
 export { courseMapPath, topicPath } from "./domain/map-paths";
 export { restrictMapToTopic } from "./domain/topic-map";
+export { buildTopicGraph } from "./domain/topic-graph";
 export { topicAnchors } from "./domain/topic-reading";
 export {
   checkAnswer,

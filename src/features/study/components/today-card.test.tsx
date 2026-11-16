@@ -45,6 +45,7 @@ const renderCard = (
         ranking: [],
         finalStretch: false,
         taught: false,
+        lastMinutes: null,
         ...state,
       }}
       mapHref="/courses/c1/map"
@@ -72,10 +73,27 @@ test("shows the due Reviews with their minutes, then the next Topic with its lin
   expect(card()).toHaveTextContent("Next Topic · about 60 min");
   expect(card()).toHaveTextContent("How does a nozzle speed up its gas?");
   expect(buttons()).toEqual([
-    ["Let's start.", "/courses/c1/chat?say=Let's%20start."],
-    ["Let's review.", "/courses/c1/chat?say=Let's%20review."],
-    ["Exam problems please.", "/courses/c1/chat?say=Exam%20problems%20please."],
+    ["Let's start.", "/courses/c1/chat?say=Let's%20start.&minutes=30"],
+    ["Let's review.", "/courses/c1/chat?say=Let's%20review.&minutes=30"],
+    [
+      "Exam problems please.",
+      "/courses/c1/chat?say=Exam%20problems%20please.&minutes=30",
+    ],
   ]);
+});
+
+test("preselects the last session's length, and the buttons carry the chosen one, none for Open", () => {
+  renderCard({ ranking: [topic], lastMinutes: 45 });
+  const length = (name: string) => screen.getByRole("radio", { name });
+  expect(length("45 min")).toBeChecked();
+  expect(buttons()[0]![1]).toContain("&minutes=45");
+
+  fireEvent.click(length("15 min"));
+  expect(length("15 min")).toBeChecked();
+  expect(buttons()[0]![1]).toContain("&minutes=15");
+
+  fireEvent.click(length("Open"));
+  expect(buttons()[0]![1]).toBe("/courses/c1/chat?say=Let's%20start.");
 });
 
 test("offers only Let's start. before anything is taught or due", () => {
