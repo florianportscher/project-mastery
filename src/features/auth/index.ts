@@ -1,5 +1,6 @@
 // Public API of the auth feature for any code, client or server. Server-only
 // exports live in `server.ts`.
+export { DemoWelcome } from "./components/demo-welcome";
 export { LoginForms } from "./components/login-forms";
 export { SettingsProvider } from "./components/settings-provider";
 export { UserMenu } from "./components/user-menu";
