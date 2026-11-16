@@ -13,4 +13,5 @@ export type { StoredMaterial } from "./types";
 // Also in `index.ts`. Server code that smoke checks load imports them from
 // here, because `index.ts` loads React components, which fail outside Next.js.
 export { materialChunksPath } from "./domain/course-paths";
+export { findMaterialPages } from "./server/material-store";
 export { courseNotFoundMessage, materialReferenceSchema } from "./schemas";

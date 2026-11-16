@@ -56,13 +56,12 @@ export type ChatWithMessages = {
 };
 
 /**
- * What the source pane opens: a Reading section by id, or a cited chunk's
- * Material at the chunk's first page.
+ * What the source pane opens: a Reading section by id, a Material at cited
+ * pages, or (in old Chats) a cited chunk's Material at the chunk's pages.
  */
-export type SourceRequest = {
-  kind: "section" | "chunk";
-  id: string;
-};
+export type SourceRequest =
+  | { kind: "section" | "chunk"; id: string }
+  | { kind: "pages"; materialId: string; pageFrom: number; pageTo: number };
 
 /** A source as the source pane shows it (`openSource`). */
 export type ChatSource = {
@@ -71,6 +70,8 @@ export type ChatSource = {
   /** The page it opens at. */
   pageFrom: number;
   pageTo: number;
+  /** Whether the cited pages are not in the Material: it opens at p. 1. */
+  pageNotFound?: boolean;
 };
 
 /** A Chat as the sidebar lists it. */

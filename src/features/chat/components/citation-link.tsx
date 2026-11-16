@@ -6,20 +6,20 @@ import {
   defaultComponents,
   type ExtraProps,
 } from "streamdown";
-import { citedChunkId } from "@/features/chat/domain/sources";
+import { citedSource } from "@/features/chat/domain/sources";
 import { useSourcePane } from "@/features/chat/hooks/use-source-pane";
 
 const DefaultLink = defaultComponents.a!;
 
 /**
- * A link in a Chat's Markdown. A citation of a chunk of the Chat's Course
- * opens the cited page in the source pane; a modifier or middle click still
+ * A link in a Chat's Markdown. A citation of a Material of the Chat's Course
+ * opens the cited pages in the source pane; a modifier or middle click still
  * follows it. Every other link renders as Streamdown renders it.
  */
 function ChatLink(props: ComponentProps<"a"> & ExtraProps) {
   const pane = useSourcePane();
-  const chunkId = pane && citedChunkId(props.href, pane.courseId);
-  if (!pane || !chunkId) return <DefaultLink {...props} />;
+  const source = pane && citedSource(props.href, pane.courseId);
+  if (!pane || !source) return <DefaultLink {...props} />;
 
   const { href, children, className } = props;
   return (
@@ -40,7 +40,7 @@ function ChatLink(props: ComponentProps<"a"> & ExtraProps) {
           return;
         }
         event.preventDefault();
-        pane.openSource({ kind: "chunk", id: chunkId });
+        pane.openSource(source);
       }}
     >
       {children}

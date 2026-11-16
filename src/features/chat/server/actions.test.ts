@@ -159,6 +159,43 @@ describe("openSource", () => {
     });
   });
 
+  test("gives a Material at the cited pages, or at p. 1 when they are missing", async () => {
+    const { material } = seedSource(STUDENT, COURSE);
+    db.tables.materials.find(({ id }) => id === material)!.pages_total = 12;
+    const open = (pageFrom: number, pageTo: number) =>
+      openSource({
+        courseId: COURSE,
+        kind: "pages",
+        materialId: material,
+        pageFrom,
+        pageTo,
+      });
+    const data = { materialId: material, materialName: "Lecture 7" };
+
+    expect(await open(10, 11)).toEqual({
+      ok: true,
+      data: { ...data, pageFrom: 10, pageTo: 11 },
+    });
+    expect(await open(12, 13)).toEqual({
+      ok: true,
+      data: { ...data, pageFrom: 1, pageTo: 1, pageNotFound: true },
+    });
+  });
+
+  test("does not find a Material of another Course for a page link", async () => {
+    const { material } = seedSource(STUDENT, OTHER_COURSE);
+
+    expect(
+      await openSource({
+        courseId: COURSE,
+        kind: "pages",
+        materialId: material,
+        pageFrom: 1,
+        pageTo: 1,
+      }),
+    ).toEqual({ ok: false, message: sourceNotFoundMessage });
+  });
+
   test("gives a Reading section, cut on read, at its pages", async () => {
     seedMap();
 

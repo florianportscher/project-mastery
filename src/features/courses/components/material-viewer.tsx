@@ -37,7 +37,7 @@ export function MaterialViewer({
                 {material.name}
               </DialogTitle>
             </DialogHeader>
-            <div className="min-h-0 flex-1 overflow-auto">
+            <div className="h-[75dvh] min-h-0 flex-1 overflow-auto">
               {/* Keyed, so each Material starts loading afresh. */}
               <MaterialFile
                 key={material.id}

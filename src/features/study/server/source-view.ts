@@ -1,9 +1,6 @@
 import "server-only";
 import { materialChunksPath } from "@/features/courses/server";
-import {
-  chunkAnchor,
-  type loadChunkSources,
-} from "@/features/ingestion/server";
+import type { loadChunkSources } from "@/features/ingestion/server";
 import type { SourceChunkView } from "@/features/study/types";
 
 /** Such as "p. 3" or "pp. 3–4". */
@@ -18,12 +15,15 @@ export const readingLabel = (section: {
 }) =>
   `${section.materialName}, ${pagesLabel(section.pageFrom, section.pageTo)}`;
 
-/** The chunk on its Material's page, where its figure shows. */
+/** The chunk's Material at the chunk's pages, which the source pane opens. */
 export const chunkLink = (
   courseId: string,
-  chunk: { id: string; materialId: string },
+  chunk: { materialId: string; pageFrom: number; pageTo: number },
 ) =>
-  `${materialChunksPath(courseId, chunk.materialId)}#${chunkAnchor(chunk.id)}`;
+  materialChunksPath(courseId, chunk.materialId, {
+    from: chunk.pageFrom,
+    to: chunk.pageTo,
+  });
 
 /** A chunk as `getTopic` and `searchMaterials` return it. */
 export const sourceView = (

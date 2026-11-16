@@ -165,7 +165,7 @@ describe("getTopic", () => {
     expect(result).toContain("p. 3");
     expect(result).toContain("pp. 4–5");
     expect(result).toContain(
-      `/courses/${COURSE}/materials/${MAP.material}#chunk-${MAP.chunks[1]}`,
+      `/courses/${COURSE}/materials/${MAP.material}?pages=4-5`,
     );
     // The tool call is stored with the reply, and usage once over both steps.
     const stored = db.tables.chat_messages.at(-1)!.parts as Array<{

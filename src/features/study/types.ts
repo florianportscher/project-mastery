@@ -242,7 +242,7 @@ export type SourceChunkView = {
   material: string;
   /** Such as "p. 3" or "pp. 3–4". */
   pages: string;
-  /** The chunk on its Material's page, where its figure shows. */
+  /** The Material at the chunk's pages, as the source pane opens it. */
   link: string;
   markdown: string;
 };
@@ -275,8 +275,7 @@ export type ProblemView = {
   /** The question's Markdown. */
   question: string;
   /**
-   * The question on its Material's page, where its figure shows; null for a
-   * generated Problem.
+   * The question's Material at its pages; null for a generated Problem.
    */
   link: string | null;
   /** The KCs it tests, by id and name. */
