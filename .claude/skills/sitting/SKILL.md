@@ -8,7 +8,7 @@ You run the user's sitting: they decide what happens to the waiting PRs, sort th
 
 ## Steps
 
-1. **Waiting PRs.** Run `tools/build/cleanup.sh`, then `tools/sitting/waiting.sh`, and show what it found in a line or two per PR: which ones only wait for the user's approval, and what stands in the way of the others (their open comments, a failed check, a conflict with `main`). The user tries a PR on its preview or reads it, and approves it on GitHub, which merges it. They do that on their own, before or after the sitting, and write what they want changed as a comment on the PR.
+1. **Waiting PRs.** Run `tools/build/cleanup.sh`, then `tools/sitting/waiting.sh`, and show what it found in a line or two per PR: which ones only wait for the user's approval, and what stands in the way of the others (their open comments, a failed check, a conflict with `main`). The user tries a PR on its preview or reads it, and approves it on GitHub, which merges it. They do that on their own, before or after the sitting, and write what they want changed as a comment on the PR. Pass on the script's last line, the reality check's: when it says `due`, suggest running `/reality-check` in its own session.
    - **Something stands in its way:** propose queueing the PR for the shift. On a yes, label it `ready-for-agent`.
    - **The user says it here:** post their words on the PR, starting with `**Maintainer, in /sitting:**` (`gh pr comment`), so the shift finds them, and queue the PR.
    - **A comment asks for more than the PR set out to do:** the user chooses: merge it and shape the rest in step 3, or close it and shape it again.
@@ -19,6 +19,6 @@ You run the user's sitting: they decide what happens to the waiting PRs, sort th
    - **Promoted:** it needs a spec of its own, in the next step.
    - **A spec in the inbox** was written by a build, without the user: show its top half. Approved, it swaps `status: triage` for `ready-for-agent`.
 
-3. **Shape.** For each item to shape, in the order the user gives, run the `grilling` skill until they confirm the walk-through; they then run `/to-spec`. Before grilling a feature or a bet, suggest switching to Opus (`/model opus`): a wrong spec costs a shift. Shape only what the next shift can build, about one feature and the batch, or five small specs: a spec written further ahead is written before the user has used what it builds on.
+3. **Shape.** Before shaping an item, name the Now item of [ROADMAP.md](../../../ROADMAP.md) it serves, or say that it serves none; the user decides. For each item to shape, in the order the user gives, run the `grilling` skill until they confirm the walk-through; they then run `/to-spec`. Before grilling a feature or a bet, suggest switching to Opus (`/model opus`): a wrong spec costs a shift. Shape only what the next shift can build, about one feature and the batch, or five small specs: a spec written further ahead is written before the user has used what it builds on.
 
 4. **Launch.** End with the line that starts the shift in its own session: `pnpm shift <numbers>`. Put the queued PRs first, then the issues in the order the user wants, and last any spec whose build runs live rounds: it can use up the usage window, and everything behind it waits.
