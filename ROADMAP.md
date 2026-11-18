@@ -4,18 +4,18 @@ The long-term plan. [VISION.md](VISION.md) says what the product is; this file s
 
 ## Now
 
-1. **Paid models.** Move parsing, the map build and the tutor to faster, stronger paid models. Every call goes through one gateway and each task's model is set in [one file](src/lib/ai/models.ts), so switching takes a small change, not a redesign.
+1. **Improve tutoring further and make it robust.**
    - Done when: Not set yet.
 
 ## Next
 
-2. **Evals.** Bring back automated evals of the map build and the tutor, with a frontier model as judge, and tune both against them.
-3. **Tests with students.** Have real students prepare for a real exam with the app, and use their sessions to fix what gets in their way.
-4. **Polish.** Fix the remaining bugs and shorten the path from the first upload to the first Study session.
+2. **Try it on the maintainer's real university courses.** Build knowledge maps and study with the tutor on real courses, with zero data retention enabled at the model provider, and improve what gets in the way from the Student's side.
+   - Done when: Not set yet.
 
 ## Later
 
-Not set yet.
+3. **Paid plan, with a few real Students.** Switch to a paid plan and give the app to a few real Students who use it in their real studies.
+   - Done when: Not set yet.
 
 ## Not doing
 

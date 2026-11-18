@@ -102,7 +102,7 @@ Project Mastery is a working prototype, not a finished product. The whole loop r
 - **Tutor behavior.** The tutor's teaching (when to ask, when to explain, how to grade and when to move on) needs substantial tuning. So far its quality is judged by hand on [gold course materials](evals/gold/), because automated evals are paused until a paid model and a strong judge are affordable.
 - **Polish.** There are smaller bugs and rough edges throughout, and a first-time user needs a lot of steps to reach their first Study session.
 
-The roadmap is in [ROADMAP.md](ROADMAP.md): paid models, evals, tests with students, polish.
+The roadmap is in [ROADMAP.md](ROADMAP.md): better tutoring, real courses with zero data retention, a paid plan with a few real students.
 
 Open work is tracked on the [project board](https://github.com/users/florianportscher/projects/5).
 
