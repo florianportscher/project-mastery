@@ -24,6 +24,12 @@ export type SentUnit = {
   outline: string[];
   language: string;
   chunks: Array<{ id: string; markdown: string }>;
+  knownKcs: Array<{
+    id: string;
+    chapter: string;
+    name: string;
+    description: string;
+  }>;
 };
 
 /** The title of the unit's Chapter: its marked Outline line. */
@@ -131,52 +137,56 @@ export function flatTree(course: SentCourse): TreeTopicAnswer[] {
   );
 }
 
-/** A name a KC assumes, as the Prerequisite check sent it. */
-export type SentName = {
-  id: string;
-  name: string;
-  description: string;
-  usedBy: string;
-  candidates: Array<{ id: string; name: string }>;
+/** The Prerequisite check's input, as it was sent. */
+export type SentCheck = {
+  names: Array<{
+    id: string;
+    name: string;
+    description: string;
+    usedBy: string;
+  }>;
+  kcs: Array<{ id: string; name: string }>;
 };
 
 /**
  * Routes the `map`, `exercise` and `embed` tasks to mocks, one call at a
  * time. The extraction gives each unit the KCs `kcsOf` names (by default
  * one named after the unit's Chapter), citing its first chunk (or the id
- * `chunkIdOf` gives) and assuming the names `assumesOf` says (by default
- * nothing), each described "About <name>." as a KC of that name is; the
- * calls `rateLimitedCalls` count meet the rate limit, its first
+ * `chunkIdOf` gives), using the KCs `prerequisitesOf` names (a known KC's
+ * or an earlier new KC's id by name, else the name itself as an id) and
+ * using from outside the names `assumesOf` says (by default nothing), each
+ * described "About <name>." as a KC of that name is; it names under
+ * repeats the known KCs `repeatsOf` names, citing the unit's first chunk.
+ * The calls `rateLimitedCalls` count meet the rate limit, its first
  * `timeoutCalls` other calls time out, and the next `blankCalls` answer
- * nothing. The merge call
- * calls KCs of one cluster with the same name the same. The Prerequisite
- * check picks the candidate named `meaningOf` the name (by default the name
- * itself). Every KC text gets a one-hot vector of its own, so equal texts
- * are alike and others are not. `afterCall` runs after each extraction
- * call. The `exercise` task answers each subtask with what `subtaskOf` says
- * (by default nothing), naming offered KCs by name.
+ * nothing. The Prerequisite check picks the KC named `meaningOf` the name
+ * (by default the name itself). Every KC text gets a one-hot vector of its
+ * own, so equal texts are alike and others are not. `afterCall` runs after
+ * each extraction call. The `exercise` task answers each subtask with what
+ * `subtaskOf` says (by default nothing), naming offered KCs by name.
  */
 export function useBuildModels({
   kcsOf = (unit) => [unitTitle(unit)],
   assumesOf = () => [],
+  prerequisitesOf = () => [],
+  repeatsOf = () => [],
   chunkIdOf = (_kc, unit) => unit.chunks[0]!.id,
   meaningOf = (name) => name.name,
   subtaskOf = () => ({}),
   blankCalls = 0,
   timeoutCalls = 0,
   rateLimitedCalls = [],
-  blankChecks = 0,
   afterCall,
   treeOf = flatTree,
 }: {
-  /** Prerequisite check calls that answer nothing first. */
-  blankChecks?: number;
   /** The tree call's Topics; undefined for no valid answer. */
   treeOf?: (course: SentCourse) => TreeTopicAnswer[] | undefined;
   kcsOf?: (unit: SentUnit) => string[];
   assumesOf?: (kc: string) => string[];
+  prerequisitesOf?: (kc: string) => string[];
+  repeatsOf?: (unit: SentUnit) => string[];
   chunkIdOf?: (kc: string, unit: SentUnit) => string;
-  meaningOf?: (name: SentName) => string | null;
+  meaningOf?: (name: SentCheck["names"][number]) => string | null;
   subtaskOf?: (subtask: SentExerciseUnit["subtasks"][number]) => SubtaskAnswer;
   blankCalls?: number;
   /** Extraction calls that run into their time limit first. */
@@ -187,43 +197,26 @@ export function useBuildModels({
 } = {}) {
   const timeouts = Array.from({ length: timeoutCalls }, () => true);
   const extractions: SentUnit[] = [];
-  const merges: unknown[] = [];
-  const checks: SentName[][] = [];
+  const checks: SentCheck[] = [];
   const embedded: string[] = [];
   /** Each `map` call's reasoning setting. */
   const reasoning: unknown[] = [];
   const blanks = Array.from({ length: blankCalls }, () => true);
   /** Every extraction call, answered or not. */
   const extractCalls: unknown[] = [];
-  const failedChecks = Array.from({ length: blankChecks }, () => true);
   const map = new MockLanguageModelV4({
     doStream: async (options) => {
       reasoning.push(options.reasoning);
       const sent = userJson(options.prompt);
       if ("names" in sent) {
-        const names = sent.names as SentName[];
-        checks.push(names);
-        if (failedChecks.pop()) return answer(undefined);
+        const check = sent as SentCheck;
+        checks.push(check);
         return answer({
           meanings: Object.fromEntries(
-            names.map((name) => [
+            check.names.map((name) => [
               name.id,
-              name.candidates.find((kc) => kc.name === meaningOf(name))?.id ??
-                null,
+              check.kcs.find((kc) => kc.name === meaningOf(name))?.id ?? null,
             ]),
-          ),
-        });
-      }
-      if ("clusters" in sent) {
-        merges.push(sent);
-        const clusters = sent.clusters as Array<{
-          kcs: Array<{ id: string; name: string }>;
-        }>;
-        return answer({
-          same: clusters.flatMap((cluster) =>
-            [...Map.groupBy(cluster.kcs, (kc) => kc.name).values()]
-              .filter((group) => group.length > 1)
-              .map((group) => ({ kcIds: group.map((kc) => kc.id) })),
           ),
         });
       }
@@ -241,17 +234,28 @@ export function useBuildModels({
       if (blanks.pop()) return answer(undefined);
       const unit = sent as SentUnit;
       extractions.push(unit);
+      const names = kcsOf(unit);
+      const idOf = (name: string, before: number) =>
+        unit.knownKcs.find((kc) => kc.name === name)?.id ??
+        (names.slice(0, before).includes(name)
+          ? `n${names.indexOf(name) + 1}`
+          : name);
       const result = answer({
-        kcs: kcsOf(unit).map((name) => ({
+        repeats: repeatsOf(unit).map((name) => ({
+          kcId: idOf(name, 0),
+          chunkIds: [unit.chunks[0]!.id],
+        })),
+        kcs: names.map((name, index) => ({
+          id: `n${index + 1}`,
           name,
           description: `About ${name}.`,
           chunkIds: [chunkIdOf(name, unit)],
-          assumes: assumesOf(name).map((assumed) => ({
+          prerequisites: prerequisitesOf(name).map((p) => idOf(p, index)),
+          outside: assumesOf(name).map((assumed) => ({
             name: assumed,
             description: `About ${assumed}.`,
           })),
         })),
-        prerequisites: [],
       });
       afterCall?.(extractions.length);
       return result;
@@ -309,5 +313,5 @@ export function useBuildModels({
   });
   useMockModels({ map, embed, exercise, topic });
   vi.stubEnv("AI_CONCURRENCY", "1");
-  return { extractions, merges, checks, embedded, exercises, reasoning, trees };
+  return { extractions, checks, embedded, exercises, reasoning, trees };
 }

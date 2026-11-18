@@ -6,6 +6,7 @@ export {
   unitTitle,
   useBuildModels,
   type SentCourse,
+  type SentUnit,
 } from "./build-models-testing";
 
 /**

@@ -188,7 +188,7 @@ async function checkMap(
         .eq("course_id", courseId),
       supabase
         .from("chapter_extractions")
-        .select("chapter_id, kind, unit, output")
+        .select("chapter_id, kind, unit, output, kc_ids")
         .eq("course_id", courseId),
       supabase
         .from("chunks")
@@ -210,6 +210,24 @@ async function checkMap(
   for (const { error } of [kcs, exercises]) {
     if (error) throw new Error(error.message);
   }
+  const links = await supabase
+    .from("prerequisite_links")
+    .select("from_kc, to_kc")
+    .eq("course_id", courseId);
+  if (links.error) throw new Error(links.error.message);
+  // Each KC's first unit, by the KCs each unit stored.
+  const unitOf = new Map<string, number>();
+  extractions.data!.forEach((row, index) => {
+    for (const id of row.kc_ids ?? []) {
+      if (!unitOf.has(id)) unitOf.set(id, index);
+    }
+  });
+  const acrossUnits = links.data.filter(
+    (link) =>
+      unitOf.has(link.from_kc) &&
+      unitOf.has(link.to_kc) &&
+      unitOf.get(link.from_kc) !== unitOf.get(link.to_kc),
+  ).length;
 
   // A KC may cite any chunk of its unit's `chapterIds`' subtrees.
   const parentOf = new Map(
@@ -327,6 +345,11 @@ async function checkMap(
       notEnglish.length === 0,
       notEnglish.map((kc) => `${kc.name}: ${kc.description}`).join("; ") ||
         undefined,
+    ),
+    result(
+      "a Prerequisite links KCs of different units",
+      acrossUnits > 0,
+      `${acrossUnits} of ${links.data.length} Prerequisites`,
     ),
     result(
       "every KC cites a chunk of its unit",

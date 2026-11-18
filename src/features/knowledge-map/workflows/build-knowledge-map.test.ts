@@ -14,10 +14,12 @@ import {
   flatTree,
   liveKcs,
   type SentCourse,
+  type SentUnit,
   topicTree,
   queueBuild,
   seedMaterial,
   STUDENT,
+  unitTitle,
   useBuildModels,
 } from "./build-testing";
 
@@ -103,6 +105,7 @@ describe("Update map", () => {
           { id: "c1", markdown: "About Vectors." },
           { id: "c2", markdown: "About Bases." },
         ],
+        knownKcs: [],
       },
       expect.objectContaining({
         chunks: [{ id: "c1", markdown: "About Sums." }],
@@ -217,19 +220,47 @@ describe("Update map", () => {
     expect(liveKcs(db)).toEqual(["Vectors"]);
   });
 
-  test("merges a KC alike to a stored one into the older KC, which gains its sources", async () => {
+  test("offers each unit's call the KCs the units before it stored, in Course order", async () => {
+    seedMaterial(db, { chapters: [{ title: "Vectors" }, { title: "Bases" }] });
+    seedMaterial(db, { chapters: [{ title: "Sums" }] });
+    const { extractions } = useBuildModels(kcPerChunk);
+
+    await update();
+
+    expect(extractions.map((unit) => unit.knownKcs)).toEqual([
+      [],
+      [
+        {
+          id: "k1",
+          chapter: "Vectors",
+          name: "About Vectors.",
+          description: "About About Vectors..",
+        },
+        {
+          id: "k2",
+          chapter: "Bases",
+          name: "About Bases.",
+          description: "About About Bases..",
+        },
+      ],
+    ]);
+  });
+
+  test("adds a repeat's chunks to the known KC's sources and stores no KC for it", async () => {
     seedMaterial(db, { chapters: [{ title: "Vectors" }] });
     useBuildModels({ kcsOf: () => ["Vector"] });
     await update();
     const [first] = db.tables.kcs;
 
     seedMaterial(db, { chapters: [{ title: "More vectors" }] });
-    const { merges } = useBuildModels({ kcsOf: () => ["Vector"] });
+    useBuildModels({ kcsOf: () => [], repeatsOf: () => ["Vector"] });
     await update();
 
-    expect(merges).toHaveLength(1);
     expect(db.tables.kcs.map((kc) => kc.id)).toEqual([first!.id]);
-    expect(db.tables.kc_sources).toHaveLength(2);
+    expect(db.tables.kc_sources.map((row) => row.kc_id)).toEqual([
+      first!.id,
+      first!.id,
+    ]);
   });
 
   test("makes no call for units it extracted before", async () => {
@@ -238,64 +269,39 @@ describe("Update map", () => {
     useBuildModels();
     await update();
 
-    const { extractions, merges, checks, embedded } = useBuildModels();
+    const { extractions, checks, embedded } = useBuildModels();
     await update();
 
     expect(build()?.status).toBe("built");
-    expect([extractions, merges, checks, embedded]).toEqual([[], [], [], []]);
+    expect([extractions, checks, embedded]).toEqual([[], [], []]);
     expect(liveKcs(db)).toHaveLength(2);
   });
 
-  test("links what a KC assumes to an earlier KC, not to a later one, and keeps what no KC means as text on the KC, once", async () => {
-    for (const title of ["Vectors", "Bases", "Sums"]) {
-      seedMaterial(db, { chapters: [{ title }] });
-    }
-    // The check picks the KC of the name's own name, or null without one.
-    const { checks } = useBuildModels({
-      kcsOf: (unit) => [unit.chunks[0]!.markdown.slice("About ".length, -1)],
-      assumesOf: (kc) => (kc === "Bases" ? ["Vectors", "Sums", "Limits"] : []),
-    });
-    await update();
-
-    expect(checks).toHaveLength(1);
-    expect(
-      checks[0]!.map((name) => [name.name, name.candidates.length]),
-    ).toEqual([
-      ["Vectors", 2],
-      ["Sums", 2],
-      ["Limits", 2],
-    ]);
-    expect(
-      db.tables.prerequisite_links.map((link) => [link.from_kc, link.to_kc]),
-    ).toEqual([[kcId("Vectors"), kcId("Bases")]]);
-    expect(assumedBy("Bases")).toEqual(["Limits"]);
-    expect(liveKcs(db)).toEqual(["Vectors", "Bases", "Sums"]);
-    expect(topicTree(db)).toEqual([
-      "Vectors: Vectors",
-      "Bases: Bases",
-      "Sums: Sums",
-    ]);
-
-    const again = useBuildModels();
-    await update();
-    expect([again.checks, again.trees]).toEqual([[], []]);
-    expect(assumedBy("Bases")).toEqual(["Limits"]);
-  });
-
-  test("keeps a name that has no candidates as text, once, without a call", async () => {
+  test("links Prerequisites by id across units and within one, drops an unknown id, and keeps what is outside as text, once", async () => {
     seedMaterial(db, { chapters: [{ title: "Vectors" }] });
+    seedMaterial(db, { chapters: [{ title: "Bases" }] });
     const { checks } = useBuildModels({
-      assumesOf: () => ["Fields", " fields"],
+      kcsOf: (unit) =>
+        unitTitle(unit) === "Material 0" ? ["Vectors"] : ["Spans", "Bases"],
+      prerequisitesOf: (kc) =>
+        kc === "Bases" ? ["Vectors", "Spans", "Ghost"] : [],
+      assumesOf: (kc) => (kc === "Bases" ? ["Fields", " fields"] : []),
     });
+
     await update();
 
     expect(checks).toEqual([]);
-    expect(liveKcs(db)).toEqual(["Material 0"]);
-    expect(assumedBy("Material 0")).toEqual(["Fields"]);
-    expect(db.tables.prerequisite_links).toEqual([]);
+    expect(
+      db.tables.prerequisite_links.map((link) => [link.from_kc, link.to_kc]),
+    ).toEqual([
+      [kcId("Spans"), kcId("Bases")],
+      [kcId("Vectors"), kcId("Bases")],
+    ]);
+    expect(assumedBy("Bases")).toEqual(["Fields"]);
+    expect(liveKcs(db)).toEqual(["Vectors", "Spans", "Bases"]);
   });
 
-  test("matches text again once a build stores a KC near it", async () => {
+  test("asks text of earlier KCs once against the KCs an update stored", async () => {
     const titleKc = (unit: { chunks: Array<{ markdown: string }> }) => [
       unit.chunks[0]!.markdown.slice("About ".length, -1),
     ];
@@ -312,9 +318,12 @@ describe("Update map", () => {
     const { checks } = useBuildModels({ kcsOf: titleKc });
     await update();
 
-    expect(checks.map((names) => names.map((name) => name.name))).toEqual([
-      ["Limits", "Vectors"],
-    ]);
+    expect(
+      checks.map((check) => [
+        check.names.map((name) => name.name),
+        check.kcs.map((kc) => kc.name),
+      ]),
+    ).toEqual([[["Limits", "Vectors"], ["Vectors"]]]);
     expect(
       db.tables.prerequisite_links.map((link) => [link.from_kc, link.to_kc]),
     ).toEqual([[kcId("Vectors"), kcId("Bases")]]);
@@ -406,11 +415,7 @@ describe("Update map", () => {
         { title: "Final exam", children: [{ title: "Task 1" }] },
       ],
     });
-    const { extractions } = useBuildModels({
-      kcsOf: (unit) => unit.chunks.map((chunk) => chunk.markdown),
-      chunkIdOf: (kc, unit) =>
-        unit.chunks.find((chunk) => chunk.markdown === kc)!.id,
-    });
+    useBuildModels(kcPerChunk);
     await update();
     expect(liveKcs(db)).toEqual([
       "About Vectors.",
@@ -418,9 +423,17 @@ describe("Update map", () => {
       "About Task 1.",
     ]);
 
-    // The Student confirms the exam; its subtree no longer teaches.
+    // The Student confirms the exam; its subtree no longer teaches. The
+    // unit, packed anew, names what it taught before as repeats.
     db.tables.chapters.find((c) => c.title === "Final exam")!.is_exam = true;
-    extractions.length = 0;
+    const known = (unit: SentUnit) => unit.knownKcs.map((kc) => kc.name);
+    useBuildModels({
+      ...kcPerChunk,
+      kcsOf: (unit) =>
+        kcPerChunk.kcsOf(unit).filter((kc) => !known(unit).includes(kc)),
+      repeatsOf: (unit) =>
+        kcPerChunk.kcsOf(unit).filter((kc) => known(unit).includes(kc)),
+    });
     await update();
 
     expect(liveKcs(db)).toEqual(["About Vectors."]);

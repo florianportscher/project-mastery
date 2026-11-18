@@ -7,200 +7,60 @@ import {
   type OfferedName,
 } from "@/features/knowledge-map/ai/prerequisite-check";
 import { dailyLimitReason } from "@/features/knowledge-map/domain/build-failure";
+import { acyclicLinks } from "@/features/knowledge-map/domain/prerequisite-cycles";
+import { kcAssumesSchema } from "@/features/knowledge-map/schemas";
 import {
-  acyclicLinks,
-  type Link,
-} from "@/features/knowledge-map/domain/prerequisite-cycles";
-import {
-  kcAssumesSchema,
-  storedExtractionSchema,
-} from "@/features/knowledge-map/schemas";
-import {
-  loadCurrentExtractions,
   runCalls,
   touchBuild,
-  UNITS_PER_STEP,
-  type StepOutcome,
 } from "@/features/knowledge-map/workflows/build-steps";
 import {
   buildCall,
   RateLimited,
 } from "@/features/knowledge-map/workflows/build-call";
-import { matchKcs } from "@/features/knowledge-map/workflows/consolidate-steps";
 import {
   firstSourcePlaces,
+  kcsInCourseOrder,
   loadMapInput,
 } from "@/features/knowledge-map/workflows/map-input";
-import {
-  meteredEmbed,
-  RATE_LIMITED_STEP_RETRIES,
-} from "@/features/usage/server";
+import { RATE_LIMITED_STEP_RETRIES } from "@/features/usage/server";
 import { allRows } from "@/lib/supabase/all-rows";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { failed } from "@/lib/supabase/failed";
-import type { AdminSupabase } from "@/lib/supabase/types";
 
 /**
- * The Prerequisite check of a build (#236, #249): what each stored KC
- * `assumes` becomes. Each name is embedded as "name: description" and
- * offered with the 5 nearest live KCs other than the assuming KC; one call
- * (task `map`) per 50 names picks the KC each means, or none. An earlier
- * KC becomes a Prerequisite and a later one nothing. What no KC means
- * stays on the assuming KC as text (`kcs.assumes`), and is matched again
- * when a later build stores KCs near it.
+ * The Prerequisite check of an update (#315): what KCs of earlier builds
+ * assume from outside the Course as text (`kcs.assumes`) is asked once
+ * against the KCs this build stored, 50 names per call (task `map`). A name
+ * that means such a KC leaves the text, and becomes a Prerequisite when
+ * that KC comes earlier in the Course.
  */
 
-/**
- * The most names one check call is asked about. Each failure of a unit's
- * call halves it for that unit's names.
- */
+/** The most names one check call is asked about. */
 const NAMES_PER_CALL = 50;
-/** The tries a unit's check calls get before its names stay as text. */
-const MATCH_TRIES = 4;
-/** The KCs a name is offered. */
-const CANDIDATES = 5;
-/** Parallel `match_kcs` calls. */
-const MATCHES_AT_ONCE = 10;
-/** The most stored names one step matches again. */
+/** The most names one step asks about. */
 const NAMES_PER_STEP = 100;
-
-/** A name a KC assumes, with its vector. */
-type Assumed = {
-  kcId: string;
-  name: string;
-  description: string;
-  embedding: number[];
-};
-
-/** What the check made of a name: the earlier KC it means, a later one, or none. */
-type Meaning = { from: string } | "later" | "none";
 
 const nameKey = (name: string) => name.trim().toLowerCase();
 
 /**
- * Matches what the KCs of up to UNITS_PER_STEP stored unit extractions
- * assume, in Course order, and stores the Prerequisites, the names no KC
- * means as text on their KCs and the extractions marked matched in one
- * transaction. Units whose calls fail, meet the rate limit (`waitMs`) or no
- * longer fit the step wait for the next step, which asks a failed unit's
- * names in calls half as large per failure (`failedKeys`, a key per
- * failure). On its MATCH_TRIES-th failed try, the names a unit's calls left unanswered stay on their KCs as text,
- * as if no KC meant them, so a failing call never fails the build. A
- * reached Daily limit stops the build.
- */
-export async function matchAssumptions(
-  courseId: string,
-  failedKeys: readonly string[] = [],
-): Promise<StepOutcome> {
-  "use step";
-  const startedAt = Date.now();
-  const supabase = createAdminClient();
-  const owner = await touchBuild(supabase, courseId);
-  if (!owner) return { ok: true, left: null };
-
-  const pending = (await loadCurrentExtractions(supabase, courseId)).filter(
-    (row) => row.kcIds !== null && !row.assumesMatched,
-  );
-  if (pending.length === 0) return { ok: true, left: 0 };
-
-  const batch = pending.slice(0, UNITS_PER_STEP);
-  const named = batch.flatMap((row, part) =>
-    storedExtractionSchema.parse(row.output).kcs.flatMap((kc, k) =>
-      kc.assumes.map((assumed) => ({
-        part,
-        kcId: row.kcIds![k]!,
-        ...assumed,
-      })),
-    ),
-  );
-  const assumed = await embedNames(supabase, owner, named);
-  if (assumed === "limit") return { ok: false, reason: dailyLimitReason };
-
-  const failures = batch.map(
-    (row) => failedKeys.filter((key) => key === row.key).length,
-  );
-  const checked = await checkNames(
-    supabase,
-    owner,
-    courseId,
-    assumed,
-    startedAt,
-    undefined,
-    (index) => Math.max(1, NAMES_PER_CALL >> failures[named[index]!.part]!),
-  );
-  const partsOf = (indexes: Iterable<number>) =>
-    new Set([...indexes].map((index) => named[index]!.part));
-  // A unit on its last try keeps the names its calls left unanswered as text.
-  const lastTry = (part: number) => failures[part]! + 1 >= MATCH_TRIES;
-  const givenUp = partsOf(
-    [...checked.failed].filter((index) => lastTry(named[index]!.part)),
-  );
-  for (const index of checked.failed) {
-    if (givenUp.has(named[index]!.part)) checked.meanings.set(index, "none");
-  }
-  if (givenUp.size > 0) {
-    console.warn(
-      "Matching kept failing; names stay as text for units:",
-      [...givenUp].map((part) => batch[part]!.key),
-    );
-  }
-  const stillFailed = partsOf(
-    [...checked.failed].filter((index) => !givenUp.has(named[index]!.part)),
-  );
-  const unready = new Set([...partsOf(checked.unasked), ...stillFailed]);
-  const answered = [...checked.meanings].filter(
-    ([index]) => !unready.has(named[index]!.part),
-  );
-  const ready = batch.flatMap((row, part) =>
-    unready.has(part) ? [] : [row.id],
-  );
-  const { data, error } = await supabase.rpc("store_assumed_prerequisites", {
-    p_course_id: courseId,
-    p_prerequisites: await acyclicWithStored(
-      supabase,
-      courseId,
-      linksOf(answered, assumed),
-    ),
-    p_assumes: answered.flatMap(([index, meaning]) => {
-      const { kcId, name, description } = assumed[index]!;
-      return meaning === "none" ? [{ kc: kcId, name, description }] : [];
-    }),
-    p_matched: [],
-    p_extraction_ids: ready,
-  });
-  if (error) failed("Storing the assumed Prerequisites", error);
-  if (!data) return { ok: true, left: null };
-  if (checked.limitReached) return { ok: false, reason: dailyLimitReason };
-  return {
-    ok: true,
-    left: pending.length - ready.length,
-    failed: [...stillFailed].map((part) => batch[part]!.key),
-    waitMs: checked.waitMs,
-  };
-}
-
-matchAssumptions.maxRetries = RATE_LIMITED_STEP_RETRIES;
-
-/**
- * What a step that matches stored names again did: how many names it
- * left, or null when the build no longer runs, and the key of the last
- * name it handled, which the next step starts after; or why the build
- * stops.
+ * What a step that asks stored names again did: how many names it left,
+ * or null when the build no longer runs, and the key of the last name it
+ * handled, which the next step starts after; or why the build stops.
  */
 export type RematchOutcome =
   | { ok: true; left: number | null; after: string; waitMs?: number }
   | { ok: false; reason: string };
 
 /**
- * Matches again the names live KCs assume as text (`kcs.assumes`) whose 5
- * nearest live KCs include one this build stored, up to NAMES_PER_STEP
- * names after the key `after` (`<kc id>/<name>`, in key order). A name the
- * check matches leaves the KC's text, and becomes a Prerequisite when it
- * means an earlier KC. A name whose call fails stays as it is. Calls that
- * no longer fit the step are left to the next step. A reached Daily limit
- * stops the build.
+ * Asks the names that live KCs stored before this build assume as text
+ * against the live KCs this build stored, up to NAMES_PER_STEP names after
+ * the key `after` (`<kc id>/<name>`, in key order). A name the check
+ * matches leaves the KC's text, and becomes a Prerequisite when it means an
+ * earlier KC. A name whose call fails stays as it is. Calls that no longer
+ * fit the step, or that the rate limit turned away (`waitMs`), are left to
+ * the next step. A reached Daily limit stops the build.
  */
-export async function rematchAssumptions(
+export async function recheckAssumes(
   courseId: string,
   after: string,
 ): Promise<RematchOutcome> {
@@ -228,12 +88,11 @@ export async function rematchAssumptions(
   ]);
   if (build.error) failed("Loading the build", build.error);
   const buildStart = Date.parse(build.data.started_at);
-  const stored = new Set(
-    kcs.flatMap((kc) =>
-      Date.parse(kc.created_at) >= buildStart ? [kc.id] : [],
-    ),
-  );
+  const isNew = (kc: { created_at: string }) =>
+    Date.parse(kc.created_at) >= buildStart;
+  const fresh = new Set(kcs.filter(isNew).map((kc) => kc.id));
   const names = kcs
+    .filter((kc) => !isNew(kc))
     .flatMap((kc) =>
       kcAssumesSchema.parse(kc.assumes).map((assumed) => ({
         key: `${kc.id}/${nameKey(assumed.name)}`,
@@ -243,270 +102,105 @@ export async function rematchAssumptions(
     )
     .filter((name) => name.key > after)
     .toSorted((a, b) => (a.key < b.key ? -1 : 1));
-  if (stored.size === 0 || names.length === 0) {
+  if (fresh.size === 0 || names.length === 0) {
     return { ok: true, left: 0, after };
   }
 
-  const batch = names.slice(0, NAMES_PER_STEP);
-  const assumed = await embedNames(supabase, owner, batch);
-  if (assumed === "limit") return { ok: false, reason: dailyLimitReason };
-  const checked = await checkNames(
-    supabase,
-    owner,
-    courseId,
-    assumed,
-    startedAt,
-    (candidates) => candidates.some((id) => stored.has(id)),
+  const map = await loadMapInput(supabase, courseId);
+  const places = firstSourcePlaces(map);
+  const kcOf = new Map(map.kcs.map((kc) => [kc.id, kc]));
+  const candidates = kcsInCourseOrder(map).filter((kc) => fresh.has(kc.id));
+  const offeredKcs = candidates.map((kc, index): OfferedKc => ({
+    id: `k${index + 1}`,
+    chapter: kc.chapter,
+    name: kc.name,
+    description: kc.description,
+  }));
+  const storedKcId = new Map(
+    candidates.map((kc, index) => [offeredKcs[index]!.id, kc.id]),
   );
-  const matched = [...checked.meanings].filter(
-    ([, meaning]) => meaning !== "none",
+
+  const batch = names.slice(0, NAMES_PER_STEP);
+  const calls: Array<typeof batch> = [];
+  for (let start = 0; start < batch.length; start += NAMES_PER_CALL) {
+    calls.push(batch.slice(start, start + NAMES_PER_CALL));
+  }
+  const matched: Array<{ kc: string; name: string; from?: string }> = [];
+  const asked = new Set<number>();
+  let limitReached = false;
+  let waitMs: number | undefined;
+  await runCalls(
+    calls.map((names, index) => ({ names, index })),
+    async ({ names, index }) => {
+      const offered = names.map((name, n): OfferedName => {
+        const user = kcOf.get(name.kcId);
+        return {
+          id: `n${n + 1}`,
+          name: name.name,
+          description: name.description,
+          usedBy: user ? `${user.name}: ${user.description}` : "",
+        };
+      });
+      const input = { names: offered, kcs: offeredKcs };
+      const answer = await buildCall(
+        supabase,
+        { studentId: owner, task: "map", traceName: "check-prerequisites" },
+        {
+          ...prerequisiteCheckSettings(input),
+          messages: prerequisiteCheckMessages(input),
+        },
+        prerequisiteCheckSchema(offered, offeredKcs),
+      );
+      if (answer === "limit") {
+        limitReached = true;
+        return "stop";
+      }
+      if (answer instanceof RateLimited) {
+        waitMs = Math.max(waitMs ?? 0, answer.waitMs);
+        return "stop";
+      }
+      asked.add(index);
+      if (answer === "failed") return;
+      names.forEach((name, n) => {
+        const meant = answer.meanings[offered[n]!.id];
+        const from = typeof meant === "string" && storedKcId.get(meant);
+        if (!from) return;
+        // A KC the Course teaches later would be a forward link: none.
+        const earlier =
+          (places.get(from) ?? Infinity) < (places.get(name.kcId) ?? Infinity);
+        matched.push({
+          kc: name.kcId,
+          name: name.name,
+          ...(earlier && { from }),
+        });
+      });
+    },
+    startedAt,
+  );
+
+  const links = matched.flatMap((m) =>
+    m.from ? [{ from: m.from, to: m.kc }] : [],
   );
   const { data, error } = await supabase.rpc("store_assumed_prerequisites", {
     p_course_id: courseId,
-    p_prerequisites: await acyclicWithStored(
-      supabase,
-      courseId,
-      linksOf(matched, assumed),
-    ),
+    p_prerequisites: acyclicLinks(map.prerequisites, links),
     p_assumes: [],
-    p_matched: matched.map(([index]) => ({
-      kc: assumed[index]!.kcId,
-      name: assumed[index]!.name,
-    })),
+    p_matched: matched.map(({ kc, name }) => ({ kc, name })),
     p_extraction_ids: [],
   });
-  if (error) failed("Storing the names matched again", error);
+  if (error) failed("Storing the names asked again", error);
   if (!data) return { ok: true, left: null, after };
-  if (checked.limitReached) return { ok: false, reason: dailyLimitReason };
+  if (limitReached) return { ok: false, reason: dailyLimitReason };
 
-  // The names up to the first one whose call never started are done.
-  const done = [...checked.unasked].reduce(
-    (first, index) => Math.min(first, index),
-    batch.length,
-  );
+  // The names up to the first call that never ran are done.
+  const firstUnasked = calls.findIndex((_, index) => !asked.has(index));
+  const done = firstUnasked < 0 ? batch.length : firstUnasked * NAMES_PER_CALL;
   return {
     ok: true,
     left: names.length - done,
     after: done === 0 ? after : batch[done - 1]!.key,
-    waitMs: checked.waitMs,
-  };
-}
-
-rematchAssumptions.maxRetries = RATE_LIMITED_STEP_RETRIES;
-
-/** The Prerequisites of the names that mean an earlier KC. */
-function linksOf(
-  meanings: ReadonlyArray<readonly [number, Meaning]>,
-  assumed: readonly Assumed[],
-): Link[] {
-  return meanings.flatMap(([index, meaning]) =>
-    typeof meaning === "object"
-      ? [{ from: meaning.from, to: assumed[index]!.kcId }]
-      : [],
-  );
-}
-
-/** `links` without those that would close a cycle with the stored ones. */
-async function acyclicWithStored(
-  supabase: AdminSupabase,
-  courseId: string,
-  links: Link[],
-): Promise<Link[]> {
-  if (links.length === 0) return [];
-  const stored = await supabase
-    .from("prerequisite_links")
-    .select("from_kc, to_kc")
-    .eq("course_id", courseId);
-  if (stored.error) failed("Loading the Prerequisites", stored.error);
-  return acyclicLinks(
-    stored.data.map((link) => ({ from: link.from_kc, to: link.to_kc })),
-    links,
-  );
-}
-
-/**
- * The names with their vectors of "name: description", from one call
- * (task `embed`). "limit" when the Daily limit is reached.
- */
-async function embedNames(
-  supabase: AdminSupabase,
-  owner: string,
-  named: ReadonlyArray<Omit<Assumed, "embedding">>,
-): Promise<Assumed[] | "limit"> {
-  if (named.length === 0) return [];
-  const textOf = (item: Omit<Assumed, "embedding">) =>
-    `${item.name}: ${item.description}`;
-  const texts = [...new Set(named.map(textOf))];
-  const vectors = await meteredEmbed(
-    supabase,
-    { studentId: owner, traceName: "embed-assumed" },
-    { values: texts, asDocuments: true },
-  );
-  if (!vectors) return "limit";
-  return named.map(({ kcId, name, description }) => ({
-    kcId,
-    name,
-    description,
-    embedding: vectors[texts.indexOf(textOf({ kcId, name, description }))]!,
-  }));
-}
-
-/** The index of the assumed name each offered name stands for, by object. */
-const indexOf = new WeakMap<OfferedName, number>();
-/** The stored KC id each offered candidate stands for, by object. */
-const kcIdOf = new WeakMap<OfferedKc, string>();
-
-/**
- * Offers each name its candidates, those `offer` accepts (all by
- * default), and asks the check calls, each holding names of one
- * `callSize` (NAMES_PER_CALL by default), at most that many. Returns what each name means, by its
- * index: a name without candidates means none without a call, and a name
- * not offered is left out. Also the names whose call never started or met
- * the Daily limit or the rate limit (`unasked`), those whose call failed,
- * whether the Daily limit was reached, and the wait the rate limit named.
- */
-async function checkNames(
-  supabase: AdminSupabase,
-  owner: string,
-  courseId: string,
-  assumed: readonly Assumed[],
-  stepStartedAt: number,
-  offer: (candidates: string[]) => boolean = () => true,
-  callSize: (index: number) => number = () => NAMES_PER_CALL,
-): Promise<{
-  meanings: Map<number, Meaning>;
-  unasked: Set<number>;
-  failed: Set<number>;
-  limitReached: boolean;
-  waitMs?: number;
-}> {
-  const meanings = new Map<number, Meaning>();
-  if (assumed.length === 0) {
-    return {
-      meanings,
-      unasked: new Set(),
-      failed: new Set(),
-      limitReached: false,
-    };
-  }
-  const map = await loadMapInput(supabase, courseId);
-  const places = firstSourcePlaces(map);
-  const kcs = new Map(map.kcs.map((kc) => [kc.id, kc]));
-  const nearest: string[][] = [];
-  for (let start = 0; start < assumed.length; start += MATCHES_AT_ONCE) {
-    nearest.push(
-      ...(await Promise.all(
-        assumed.slice(start, start + MATCHES_AT_ONCE).map(async (item) =>
-          (
-            await matchKcs(
-              supabase,
-              courseId,
-              item.embedding,
-              CANDIDATES + 1,
-              false,
-            )
-          )
-            .map(({ id }) => id)
-            .filter((id) => id !== item.kcId && kcs.has(id))
-            .slice(0, CANDIDATES),
-        ),
-      )),
-    );
-  }
-
-  const offered: OfferedName[] = [];
-  assumed.forEach((item, index) => {
-    const user = kcs.get(item.kcId);
-    const ids = nearest[index]!;
-    if (!user || !offer(ids)) return;
-    if (ids.length === 0) {
-      meanings.set(index, "none");
-      return;
-    }
-    const n = offered.length + 1;
-    const name: OfferedName = {
-      id: `n${n}`,
-      name: item.name,
-      description: item.description,
-      usedBy: `${user.name}: ${user.description}`,
-      candidates: ids.map((id, k): OfferedKc => {
-        const kc = kcs.get(id)!;
-        const candidate = {
-          id: `n${n}k${k + 1}`,
-          name: kc.name,
-          description: kc.description,
-        };
-        kcIdOf.set(candidate, id);
-        return candidate;
-      }) as [OfferedKc, ...OfferedKc[]],
-    };
-    indexOf.set(name, index);
-    offered.push(name);
-  });
-
-  const calls: OfferedName[][] = [];
-  const sizes = Map.groupBy(offered, (name) => callSize(indexOf.get(name)!));
-  for (const [size, names] of sizes) {
-    for (let start = 0; start < names.length; start += size) {
-      calls.push(names.slice(start, start + size));
-    }
-  }
-  const started = new Set<OfferedName[]>();
-  const failedCalls = new Set<OfferedName[]>();
-  let limitReached = false;
-  let waitMs: number | undefined;
-  const runCall = async (names: OfferedName[]) => {
-    started.add(names);
-    const answer = await buildCall(
-      supabase,
-      { studentId: owner, task: "map", traceName: "check-prerequisites" },
-      {
-        ...prerequisiteCheckSettings(names),
-        messages: prerequisiteCheckMessages(names),
-      },
-      prerequisiteCheckSchema(names),
-    );
-    if (answer === "limit") {
-      limitReached = true;
-      started.delete(names);
-      return "stop" as const;
-    }
-    if (answer instanceof RateLimited) {
-      waitMs = Math.max(waitMs ?? 0, answer.waitMs);
-      started.delete(names);
-      return "stop" as const;
-    }
-    if (answer === "failed") {
-      failedCalls.add(names);
-      return;
-    }
-    for (const name of names) {
-      const index = indexOf.get(name)!;
-      const meant = name.candidates.find(
-        (kc) => kc.id === answer.meanings[name.id],
-      );
-      if (!meant) {
-        meanings.set(index, "none");
-        continue;
-      }
-      // A KC the Course teaches later would be a forward link: none.
-      const from = kcIdOf.get(meant)!;
-      const place = places.get(assumed[index]!.kcId) ?? Infinity;
-      meanings.set(
-        index,
-        (places.get(from) ?? Infinity) < place ? { from } : "later",
-      );
-    }
-  };
-  await runCalls(calls, runCall, stepStartedAt);
-
-  const indexesOf = (names: OfferedName[][]) =>
-    new Set(names.flatMap((call) => call.map((name) => indexOf.get(name)!)));
-  return {
-    meanings,
-    unasked: indexesOf(calls.filter((names) => !started.has(names))),
-    failed: indexesOf([...failedCalls]),
-    limitReached,
     waitMs,
   };
 }
+
+recheckAssumes.maxRetries = RATE_LIMITED_STEP_RETRIES;

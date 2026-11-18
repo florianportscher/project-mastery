@@ -89,6 +89,7 @@ const TREE_INSTRUCTIONS = `You get the materials of a university course as JSON:
 - Where several materials teach the same subject, such as a script and an exercise sheet, put their chapters in the same Topic.
 - List the Topics in tree order, each with its level: 1 at the top, a child one level below its parent.
 - Name each Topic close to its chapters' titles, without numbering. Give a Topic that holds chapters the one question its KCs together answer.
+- Name a Topic so that it is understood without its parent: "Vector spaces: definition and examples", not "Definition and examples".
 - When a Topic is a stored one, kept or changed, give that stored Topic's id under continues, so the student's notes on it stay. Use each stored id at most once.
 - Write in the course language. Formulas in LaTeX ($...$).`;
 

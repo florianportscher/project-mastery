@@ -120,59 +120,52 @@ describe("Update map's Exercises", () => {
     expect(again.exercises).toEqual([]);
   });
 
-  test("offers a unit each chunk's 8 nearest KCs, merged by rank without repeats", async () => {
-    const names = Array.from({ length: 20 }, (_, i) => `K${i + 1}`);
-    useBuildModels({ kcsOf: () => names });
-    await update();
-    // KC i is alone on axis i, so a chunk's weights set its ranking.
-    const vector = (weight: (axis: number) => number) =>
-      JSON.stringify(Array.from({ length: 64 }, (_, i) => weight(i)));
-    for (const kc of db.tables.kcs) {
-      const axis = names.indexOf(kc.name as string);
-      kc.embedding = vector((i) => (i === axis ? 1 : 0));
-    }
-
+  test("offers a unit every live KC of the Course, not only the nearest", async () => {
+    const names = Array.from({ length: 60 }, (_, i) => `K${i + 1}`);
     seedMaterial(db, {
-      chapters: [
-        {
-          title: "Sheet 3",
-          exercise: true,
-          chunks: ["Subject one.", "Subject two."],
-        },
-      ],
+      chapters: [{ title: "Sheet 3", exercise: true, chunks: ["Subject."] }],
     });
-    // One chunk is nearest to K1, K2, ..., the other to K20, K19, ...
-    const embeddingOf = (
-      markdown: string,
-      weight: (axis: number) => number,
-    ) => {
-      db.tables.chunks.find((chunk) => chunk.markdown === markdown)!.embedding =
-        vector(weight);
-    };
-    embeddingOf("Subject one.", (i) => (i < 20 ? 20 - i : 0));
-    embeddingOf("Subject two.", (i) => (i < 20 ? i + 1 : 0));
-    const { exercises } = useBuildModels();
+    const { exercises } = useBuildModels({ kcsOf: () => names });
     await update();
 
     expect(exercises).toHaveLength(1);
-    expect(exercises[0]!.kcs.map((kc) => kc.name)).toEqual([
-      "K1",
-      "K20",
-      "K2",
-      "K19",
-      "K3",
-      "K18",
-      "K4",
-      "K17",
-      "K5",
-      "K16",
-      "K6",
-      "K15",
-      "K7",
-      "K14",
-      "K8",
-      "K13",
+    expect(exercises[0]!.kcs.map((kc) => kc.name)).toEqual(names);
+  });
+
+  test("makes an old exam a unit of its own, and lists a unit the KCs the one before proposed", async () => {
+    seedMaterial(db, {
+      chapters: [
+        { title: "Sheet 1", exercise: true, chunks: ["Sheet task."] },
+        {
+          title: "Exam 2023",
+          exercise: true,
+          exam: true,
+          chunks: ["Exam task."],
+        },
+      ],
+    });
+    const { exercises } = useBuildModels({
+      kcsOf,
+      subtaskOf: (subtask) =>
+        subtask.statement === "Sheet task."
+          ? { newKcs: ["Rank-nullity"] }
+          : { kcs: ["Rank-nullity"] },
+    });
+    await update();
+
+    expect(exercises.map((unit) => unit.subtasks[0]!.statement)).toEqual([
+      "Sheet task.",
+      "Exam task.",
     ]);
+    expect(exercises[0]!.kcs.map((kc) => kc.name)).toEqual(["Dimension"]);
+    expect(exercises[1]!.kcs.map((kc) => kc.name)).toEqual([
+      "Dimension",
+      "Rank-nullity",
+    ]);
+    const exam = db.tables.exercises.find(
+      (exercise) => exercise.question_chunk_id === chunkWith(db, "Exam task."),
+    );
+    expect(kcNamesOf(exam!.id)).toEqual(["Rank-nullity"]);
   });
 
   test("extracts an Exercise again in place when its solution comes later or goes", async () => {

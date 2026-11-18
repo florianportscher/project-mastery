@@ -21,8 +21,14 @@ export type OfferedExerciseUnit = {
     /** The paired printed solution; null without one. */
     solution: string | null;
   }>;
-  /** The KCs nearest to the unit's statements. */
-  kcs: ReadonlyArray<{ id: string; name: string; description: string }>;
+  /** Every live KC of the Course, in Course order. */
+  kcs: ReadonlyArray<{
+    id: string;
+    /** The title of the Chapter of its first source. */
+    chapter: string;
+    name: string;
+    description: string;
+  }>;
 };
 
 /**
@@ -56,7 +62,7 @@ export const exerciseExtractionSchema = (
             }),
           )
           .describe(
-            "Only when no listed KC fits what it needs: KCs an exam task could test on their own and a Student could learn in one sitting. Usually empty.",
+            "Only for a notion or result no listed KC teaches, which another exam task could ask for again. Usually empty.",
           ),
         finalAnswers: z
           .array(
@@ -83,11 +89,11 @@ export const exerciseExtractionSchema = (
     ),
   });
 
-const EXERCISE_INSTRUCTIONS = `You get one unit of a university course's exercises as JSON: the material's name, its outline with the unit's chapters marked, the course language, its subtasks, each with an id, its statement and its printed solution or null, and the knowledge components (KCs) nearest to it, each with an id. Answer for every subtask.
+const EXERCISE_INSTRUCTIONS = `You get one unit of a university course's exercises as JSON: the material's name, its outline with the unit's chapters marked, the course language, its subtasks, each with an id, its statement and its printed solution or null, and every knowledge component (KC) of the course so far, in course order, each with an id and its chapter. Answer for every subtask.
 
-- Give the ids of the listed KCs its solution uses as a step, most important first: usually 1 to 4, at most 6. A KC used in several parts counts once.
-- Only when no listed KC teaches something it needs, propose a new KC, never a restatement of a listed one: something an exam task could test on its own and a Student could learn in one sitting, with a short name and a one-line description.
-- Copy each final result that the statement or the solution prints, as printed: a result the statement gives for checking, such as "Result: 12 solutions", or the result the printed solution arrives at, such as "so $\\dim W = 3$". Write it as a mathjs expression: a number with its unit ("12 kg*m/s^2"), a vector ("[2, -3]"), a matrix by rows ("[[1, 2], [0, 1]]"), a complex number ("3 + 4i") or an expression in the statement's symbols ("n + 1"). Mark a list whose order does not matter, such as a set of eigenvalues, as any order. Copy only a result every correct solution states identically: leave out one that depends on a choice the Student makes, such as a representative, an order, a parametrisation, an example or a counterexample. Give none for a result that is not mathematical, such as a proof or a sentence, and none when neither prints one: do not solve anything yourself.
+- Give the ids of the listed KCs a Student must master to solve it: the results and methods its solution uses as a step, most important first, usually 1 to 4, at most 6. A KC used in several parts counts once. Leave out a KC that only defines a notion the statement is written with when a more specific listed KC covers the step.
+- When the subtask introduces a notion or derives a result that no listed KC teaches and that another exam task could ask for again, such as a named kind of object or a formula it proves, give it as a new KC, never a restatement of a listed one: something an exam task could test on its own and a Student could learn in one sitting, with a short name and a one-line description.
+- Copy each final result that the statement or the solution prints, as printed: a result the statement gives for checking, such as "Result: 12 solutions", or the result the printed solution arrives at, such as "so $\\dim W = 3$". Write it as a mathjs expression: a number with its unit ("12 kg*m/s^2"), a vector ("[2, -3]"), a matrix by rows ("[[1, 2], [0, 1]]"), a complex number ("3 + 4i") or an expression in the statement's symbols ("n + 1"). Mark a list whose order does not matter, such as a set of eigenvalues, as any order. Copy only a result every correct solution states identically: leave out one that depends on a choice the Student makes, such as a representative, an order, a parametrisation, an example or a counterexample. A statement the task asks to show is no result. A value of a parameter that the task asks for, such as the one for which no solution exists, is one. Give none for a result that is not mathematical, such as a proof or a sentence, and none when neither prints one: do not solve anything yourself.
 - Mark a subtask that asks nothing of the Student, such as a heading or an instruction for the whole sheet, as not an exercise.
 - Write every name and description in the course language. Formulas in LaTeX ($...$).`;
 

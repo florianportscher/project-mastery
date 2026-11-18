@@ -38,6 +38,10 @@ const schema = z
     AI_MODEL_GRADE_EXAM: modelId,
     AI_MODEL_CLOSE: modelId,
     AI_MODEL_EMBED: modelId,
+    // Requests per minute the key allows (5 on the free credit): the parse
+    // and build workflows start their calls 60 / AI_RPM seconds apart.
+    // Unset, they are not paced.
+    AI_RPM: optional(z.coerce.number().positive().max(10_000)),
     // How many page calls one parse step makes at a time: 1 on the free
     // credit, which allows 5 requests per minute.
     AI_CONCURRENCY: optional(z.coerce.number().int().min(1).max(16)).default(4),

@@ -24,6 +24,7 @@ import {
   RATE_LIMITED_STEP_RETRIES,
 } from "@/features/usage/server";
 import { callFits } from "@/lib/ai/call-timeout";
+import { paceCall } from "@/lib/ai/pacing";
 import { allRows } from "@/lib/supabase/all-rows";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { failed } from "@/lib/supabase/failed";
@@ -287,6 +288,7 @@ async function pairByCall(
         text: chunk.text,
       }));
 
+  await paceCall();
   const result = await meteredStream(
     supabase,
     { studentId: owner, task: "ingest", traceName: "pair-exercises" },

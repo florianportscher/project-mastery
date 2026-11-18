@@ -1,21 +1,6 @@
 import "server-only";
-import {
-  kcMergeMessages,
-  kcMergeSchema,
-  kcMergeSettings,
-  type OfferedCluster,
-} from "@/features/knowledge-map/ai/kc-merge";
 import { dailyLimitReason } from "@/features/knowledge-map/domain/build-failure";
-import {
-  clusterKcs,
-  cosineSimilarity,
-  MAX_CLUSTER_SIZE,
-  mergeTargets,
-  REVIVE_SIMILARITY,
-  SAME_KC_SIMILARITY,
-  type AlikePair,
-  type ClusterKc,
-} from "@/features/knowledge-map/domain/kc-clusters";
+import { REVIVE_SIMILARITY } from "@/features/knowledge-map/domain/kc-clusters";
 import { exerciseDifficulty } from "@/features/knowledge-map/domain/exercise-extraction";
 import { acyclicLinks } from "@/features/knowledge-map/domain/prerequisite-cycles";
 import {
@@ -25,16 +10,11 @@ import {
 } from "@/features/knowledge-map/schemas";
 import {
   loadCurrentExtractions,
-  runCalls,
-  stepOutcome,
   touchBuild,
   UNITS_PER_STEP,
   type StepOutcome,
+  type StoredUnit,
 } from "@/features/knowledge-map/workflows/build-steps";
-import {
-  buildCall,
-  RateLimited,
-} from "@/features/knowledge-map/workflows/build-call";
 import {
   meteredEmbed,
   RATE_LIMITED_STEP_RETRIES,
@@ -44,28 +24,19 @@ import { failed } from "@/lib/supabase/failed";
 import type { AdminSupabase } from "@/lib/supabase/types";
 
 /**
- * The consolidation steps of a build: the KCs of stored unit extractions
- * become stored KCs. Each new KC gets its vector; one within
- * REVIVE_SIMILARITY of a retired KC revives it, and one within
- * SAME_KC_SIMILARITY of another KC forms a cluster, about which a merge call
- * (task `map`, 15 clusters per call) says which KCs are the same. A merged
- * new KC is never stored: the KC it merges into gains its sources. An
- * exercise unit's extraction also stores its Exercises, in place by their
- * question chunks.
+ * The consolidation of a build: the KCs of stored unit extractions become
+ * stored KCs, without a model call. Each new KC gets its vector, and one
+ * within REVIVE_SIMILARITY of a retired KC revives it. A repeat adds its
+ * chunks to the sources of the KC it names. What a new KC uses from outside
+ * the Course becomes text on it (`kcs.assumes`). An exercise unit's
+ * extraction also stores its Exercises, in place by their question chunks.
  */
-
-/** The most clusters one merge call is asked about. */
-const CLUSTERS_PER_CALL = 15;
 
 /** Parallel `match_kcs` calls. */
 const MATCHES_AT_ONCE = 10;
 
-/** A unit extraction not stored as KCs yet, with its unit's key. */
-type Pending = {
-  extractionId: string;
-  key: string;
-  extraction: StoredExtraction;
-};
+/** A unit extraction not stored as KCs yet. */
+type Pending = { extractionId: string; extraction: StoredExtraction };
 
 /** A new KC of the step, by key: `<unit index>:<kc index>`. */
 type FreshKc = {
@@ -74,39 +45,62 @@ type FreshKc = {
   kc: StoredExtraction["kcs"][number] & { embedding: number[] };
 };
 
-/** A stored KC's key in clusters. */
-const storedKey = (id: string) => `kc:${id}`;
-
 /**
  * Stores the KCs of up to UNITS_PER_STEP pending unit extractions, in
- * Course order. Merge calls that fail, or that no longer fit the step,
- * hold back the units they concern for the next step; a unit held back by
- * a failed call that failed once before (`failedOnce`) fails the build. A
- * reached Daily limit stops the build.
+ * Course order. A reached Daily limit stops the build.
  */
-export async function consolidateKcs(
-  courseId: string,
-  failedOnce: readonly string[] = [],
-): Promise<StepOutcome> {
+export async function consolidateKcs(courseId: string): Promise<StepOutcome> {
   "use step";
-  const startedAt = Date.now();
   const supabase = createAdminClient();
   const owner = await touchBuild(supabase, courseId);
   if (!owner) return { ok: true, left: null };
+  const left = await storePendingExtractions(supabase, owner, courseId);
+  if (left === "limit") return { ok: false, reason: dailyLimitReason };
+  return { ok: true, left: left === "stopped" ? null : left };
+}
 
-  const pending = (await loadCurrentExtractions(supabase, courseId)).filter(
-    (row) => row.kcIds === null,
+consolidateKcs.maxRetries = RATE_LIMITED_STEP_RETRIES;
+
+/**
+ * Stores the KCs of up to UNITS_PER_STEP pending unit extractions that
+ * `accept` takes, in Course order, and then what their new KCs use from
+ * outside the Course as text, marking them matched. Text of extractions
+ * stored before but not marked (a step that stopped in between) is written
+ * first. Returns how many accepted extractions are left, "limit" when the
+ * Daily limit is reached and "stopped" when the build no longer runs.
+ */
+export async function storePendingExtractions(
+  supabase: AdminSupabase,
+  owner: string,
+  courseId: string,
+  accept: (row: StoredUnit) => boolean = () => true,
+): Promise<number | "limit" | "stopped"> {
+  const current = await loadCurrentExtractions(supabase, courseId);
+  const unwritten = current.filter(
+    (row) => row.kcIds !== null && !row.assumesMatched,
   );
-  if (pending.length === 0) return { ok: true, left: 0 };
+  if (
+    unwritten.length > 0 &&
+    !(await storeOutside(
+      supabase,
+      courseId,
+      unwritten.map((row) => ({
+        extractionId: row.id,
+        extraction: storedExtractionSchema.parse(row.output),
+        kcIds: row.kcIds!,
+      })),
+    ))
+  ) {
+    return "stopped";
+  }
+  const pending = current.filter((row) => row.kcIds === null && accept(row));
+  if (pending.length === 0) return 0;
 
   const batch: Pending[] = pending.slice(0, UNITS_PER_STEP).map((row) => ({
     extractionId: row.id,
-    key: row.key,
     extraction: storedExtractionSchema.parse(row.output),
   }));
-  if (!(await embedMissing(supabase, owner, batch))) {
-    return { ok: false, reason: dailyLimitReason };
-  }
+  if (!(await embedMissing(supabase, owner, batch))) return "limit";
   const fresh: FreshKc[] = batch.flatMap((part, p) =>
     part.extraction.kcs.map((kc, k) => ({
       key: `${p}:${k}`,
@@ -114,46 +108,17 @@ export async function consolidateKcs(
       kc: { ...kc, embedding: kc.embedding! },
     })),
   );
-
-  const { revived, pairs } = await matchStored(supabase, courseId, fresh);
-  const clusters = clusterKcs(pairs).filter((keys) =>
-    keys.some((key) => !key.startsWith("kc:")),
-  );
-  const merged = await mergeClusters(
+  const revived = await reviveRetired(supabase, courseId, fresh);
+  const kcIds = await storeKcs(supabase, courseId, { batch, fresh, revived });
+  if (kcIds === null) return "stopped";
+  const written = await storeOutside(
     supabase,
-    owner,
-    fresh,
-    clusters,
-    startedAt,
+    courseId,
+    batch.map((part, p) => ({ ...part, kcIds: kcIds[p]! })),
   );
-  if (merged === "limit") return { ok: false, reason: dailyLimitReason };
-
-  const ready = readyParts(batch.length, clusters, merged.decided);
-  const stored = await storeKcs(supabase, courseId, {
-    batch,
-    fresh: fresh.filter((kc) => ready.has(kc.part)),
-    ready,
-    revived,
-    targets: merged.targets,
-  });
-  if (!stored) return { ok: true, left: null };
-  return stepOutcome(supabase, {
-    left: pending.length - ready.size,
-    failedKeys: [...merged.failed].flatMap((index) =>
-      clusterParts(clusters[index]!).map((part) => batch[part]!.key),
-    ),
-    failedOnce,
-    waitMs: merged.waitMs,
-  });
+  if (!written) return "stopped";
+  return pending.length - batch.length;
 }
-
-/** The batch's units, by index, with new KCs in a cluster. */
-const clusterParts = (keys: string[]) =>
-  keys.flatMap((key) =>
-    key.startsWith("kc:") ? [] : [Number(key.split(":")[0])],
-  );
-
-consolidateKcs.maxRetries = RATE_LIMITED_STEP_RETRIES;
 
 /**
  * Embeds the batch's KCs without a vector in one call (task `embed`) and
@@ -216,17 +181,13 @@ export async function matchKcs(
   return data;
 }
 
-/**
- * The retired KC each new KC revives, and the pairs of alike KCs: a new KC
- * with its nearest stored KCs, and new KCs with each other.
- */
-async function matchStored(
+/** The retired KC each new KC revives, by key. */
+async function reviveRetired(
   supabase: AdminSupabase,
   courseId: string,
   fresh: FreshKc[],
-): Promise<{ revived: Map<string, string>; pairs: AlikePair[] }> {
+): Promise<Map<string, string>> {
   const revived = new Map<string, string>();
-  const pairs: AlikePair[] = [];
   for (let start = 0; start < fresh.length; start += MATCHES_AT_ONCE) {
     await Promise.all(
       fresh.slice(start, start + MATCHES_AT_ONCE).map(async ({ key, kc }) => {
@@ -239,199 +200,11 @@ async function matchStored(
         );
         if (retired && retired.similarity >= REVIVE_SIMILARITY) {
           revived.set(key, retired.id);
-          return;
-        }
-        const live = await matchKcs(
-          supabase,
-          courseId,
-          kc.embedding,
-          MAX_CLUSTER_SIZE,
-          false,
-        );
-        for (const match of live) {
-          if (match.similarity >= SAME_KC_SIMILARITY) {
-            pairs.push({
-              a: key,
-              b: storedKey(match.id),
-              similarity: match.similarity,
-            });
-          }
         }
       }),
     );
   }
-  const unrevived = fresh.filter(({ key }) => !revived.has(key));
-  unrevived.forEach((a, i) => {
-    for (const b of unrevived.slice(i + 1)) {
-      const similarity = cosineSimilarity(a.kc.embedding, b.kc.embedding);
-      if (similarity >= SAME_KC_SIMILARITY) {
-        pairs.push({ a: a.key, b: b.key, similarity });
-      }
-    }
-  });
-  return { revived, pairs };
-}
-
-/**
- * Asks the merge calls (task `map`, trace `merge-kcs`) about the clusters
- * of new KCs by key, and of stored KCs keyed `kc:<id>`: the KC each merged
- * new KC becomes, by key, the indexes of the clusters decided and of those
- * whose call failed. `stepStartedAt` goes to `runCalls`. A call the rate
- * limit turned away leaves its clusters undecided, not failed, and starts
- * no further call: `waitMs` is the wait it named. "limit" when the Daily
- * limit is reached.
- */
-async function mergeClusters(
-  supabase: AdminSupabase,
-  owner: string,
-  fresh: ReadonlyArray<{
-    key: string;
-    kc: { name: string; description: string };
-  }>,
-  clusters: string[][],
-  stepStartedAt: number,
-): Promise<
-  | {
-      targets: Map<string, string>;
-      decided: Set<number>;
-      failed: Set<number>;
-      waitMs?: number;
-    }
-  | "limit"
-> {
-  const targets = new Map<string, string>();
-  const decided = new Set<number>();
-  const failedCalls = new Set<number>();
-  if (clusters.length === 0) return { targets, decided, failed: failedCalls };
-
-  const storedIds = [
-    ...new Set(
-      clusters
-        .flat()
-        .flatMap((key) => (key.startsWith("kc:") ? [key.slice(3)] : [])),
-    ),
-  ];
-  const storedKcs = new Map<
-    string,
-    { name: string; description: string; createdAt: string }
-  >();
-  if (storedIds.length > 0) {
-    const { data, error } = await supabase
-      .from("kcs")
-      .select("id, name, description, created_at")
-      .in("id", storedIds);
-    if (error) failed("Loading the alike KCs", error);
-    for (const kc of data) {
-      storedKcs.set(storedKey(kc.id), {
-        name: kc.name,
-        description: kc.description,
-        createdAt: kc.created_at,
-      });
-    }
-  }
-  const freshByKey = new Map(fresh.map((kc) => [kc.key, kc.kc]));
-  const textOf = (key: string) => freshByKey.get(key) ?? storedKcs.get(key);
-  const clusterKcsOf = (keys: string[]): ClusterKc[] =>
-    keys.flatMap((key): ClusterKc[] => {
-      if (!key.startsWith("kc:")) return [{ key, stored: false }];
-      const kc = storedKcs.get(key);
-      return kc ? [{ key, stored: true, createdAt: kc.createdAt }] : [];
-    });
-
-  const calls: number[][] = [];
-  for (let start = 0; start < clusters.length; start += CLUSTERS_PER_CALL) {
-    calls.push(
-      clusters
-        .slice(start, start + CLUSTERS_PER_CALL)
-        .map((_, offset) => start + offset),
-    );
-  }
-  let limitReached = false;
-  let waitMs: number | undefined;
-  await runCalls(
-    calls,
-    async (indexes) => {
-      const keyOf = new Map<string, string>();
-      const offered = indexes.map((index): OfferedCluster => ({
-        kcs: clusterKcsOf(clusters[index]!).map(({ key }) => {
-          const id = `k${keyOf.size + 1}`;
-          keyOf.set(id, key);
-          const { name, description } = textOf(key)!;
-          return { id, name, description };
-        }),
-      }));
-      const answer = await buildCall(
-        supabase,
-        { studentId: owner, task: "map", traceName: "merge-kcs" },
-        { ...kcMergeSettings(offered), messages: kcMergeMessages(offered) },
-        kcMergeSchema(),
-      );
-      if (answer === "limit") {
-        limitReached = true;
-        return "stop";
-      }
-      if (answer instanceof RateLimited) {
-        waitMs = Math.max(waitMs ?? 0, answer.waitMs);
-        return "stop";
-      }
-      if (answer === "failed") {
-        for (const index of indexes) failedCalls.add(index);
-        return;
-      }
-      const { same } = answer;
-      const groups = same.map((group) =>
-        group.kcIds.flatMap((id) => keyOf.get(id) ?? []),
-      );
-      for (const index of indexes) {
-        for (const [key, target] of mergeTargets(
-          clusterKcsOf(clusters[index]!),
-          groups,
-        )) {
-          targets.set(key, target);
-        }
-        decided.add(index);
-      }
-    },
-    stepStartedAt,
-  );
-  return limitReached
-    ? "limit"
-    : { targets, decided, failed: failedCalls, waitMs };
-}
-
-/**
- * The batch's units whose KCs are all decided: in no cluster, or in a
- * decided one whose other new KCs' units are ready too.
- */
-function readyParts(
-  partCount: number,
-  clusters: string[][],
-  decided: ReadonlySet<number>,
-): Set<number> {
-  const partsOf = clusterParts;
-  const unready = new Set(
-    clusters.flatMap((keys, index) =>
-      decided.has(index) ? [] : partsOf(keys),
-    ),
-  );
-  for (let changed = true; changed;) {
-    changed = false;
-    for (const keys of clusters) {
-      const members = partsOf(keys);
-      if (
-        members.some((part) => unready.has(part)) &&
-        members.some((part) => !unready.has(part))
-      ) {
-        for (const part of members) unready.add(part);
-        changed = true;
-      }
-    }
-  }
-  return new Set(
-    Array.from({ length: partCount }, (_, part) => part).filter(
-      (part) => !unready.has(part),
-    ),
-  );
+  return revived;
 }
 
 /** A KC row of `store_chapter_kcs`. */
@@ -446,8 +219,9 @@ type StoredKcRow = {
 };
 
 /**
- * Stores the ready units' KCs, their sources and Prerequisites with
- * `store_chapter_kcs`. False when the build no longer runs.
+ * Stores the batch's KCs, the sources of the KCs its units teach again and
+ * the Prerequisites with `store_chapter_kcs`: each unit's KC ids, by index
+ * into its `kcs`, or null when the build no longer runs.
  */
 async function storeKcs(
   supabase: AdminSupabase,
@@ -455,23 +229,23 @@ async function storeKcs(
   {
     batch,
     fresh,
-    ready,
     revived,
-    targets,
   }: {
     batch: Pending[];
     fresh: FreshKc[];
-    ready: ReadonlySet<number>;
     revived: ReadonlyMap<string, string>;
-    targets: ReadonlyMap<string, string>;
   },
-): Promise<boolean> {
-  const newIds = new Map<string, string>();
+): Promise<string[][] | null> {
   const rows = new Map<string, StoredKcRow>();
+  const idOfKey = new Map<string, string>();
   for (const { key, part, kc } of fresh) {
-    if (revived.has(key) || targets.has(key)) continue;
+    const revivedId = revived.get(key);
+    if (revivedId) {
+      idOfKey.set(key, revivedId);
+      continue;
+    }
     const id = crypto.randomUUID();
-    newIds.set(key, id);
+    idOfKey.set(key, id);
     rows.set(id, {
       id,
       new: true,
@@ -482,26 +256,29 @@ async function storeKcs(
       sources: [],
     });
   }
-  const idOf = (key: string): string => {
-    const target = revived.get(key) ?? targets.get(key) ?? key;
-    return target.startsWith("kc:")
-      ? target.slice(3)
-      : (newIds.get(target) ?? target);
-  };
-  for (const { key, kc } of fresh) {
-    const id = idOf(key);
+  const addSources = (id: string, chunkIds: readonly string[]) => {
     const row = rows.get(id) ?? { id, new: false, sources: [] };
-    row.sources.push(...kc.chunkIds);
+    row.sources.push(...chunkIds);
     rows.set(id, row);
+  };
+  for (const { key, kc } of fresh) addSources(idOfKey.get(key)!, kc.chunkIds);
+  for (const { extraction } of batch) {
+    for (const repeat of extraction.repeats ?? []) {
+      addSources(repeat.kcId, repeat.chunkIds);
+    }
   }
 
-  const readyParts = [...ready].map((part) => ({ part, ...batch[part]! }));
-  const links = readyParts.flatMap(({ part, extraction }) =>
-    extraction.prerequisites.map((link) => ({
-      from: idOf(`${part}:${link.from}`),
-      to: idOf(`${part}:${link.to}`),
+  const idOf = (part: number, k: number) => idOfKey.get(`${part}:${k}`)!;
+  const links = batch.flatMap(({ extraction }, part) => [
+    ...extraction.prerequisites.map((link) => ({
+      from: idOf(part, link.from),
+      to: idOf(part, link.to),
     })),
-  );
+    ...(extraction.knownPrerequisites ?? []).map((link) => ({
+      from: link.from,
+      to: idOf(part, link.to),
+    })),
+  ]);
   const storedLinks = await supabase
     .from("prerequisite_links")
     .select("from_kc, to_kc")
@@ -510,6 +287,9 @@ async function storeKcs(
     failed("Loading the Prerequisites", storedLinks.error);
   }
 
+  const kcIds = batch.map(({ extraction }, part) =>
+    extraction.kcs.map((_, k) => idOf(part, k)),
+  );
   const { data, error } = await supabase.rpc("store_chapter_kcs", {
     p_course_id: courseId,
     p_kcs: [...rows.values()],
@@ -517,18 +297,43 @@ async function storeKcs(
       storedLinks.data.map((link) => ({ from: link.from_kc, to: link.to_kc })),
       links,
     ),
-    p_units: readyParts.map(({ part, extractionId, extraction }) => ({
+    p_units: batch.map(({ extractionId, extraction }, part) => ({
       extractionId,
-      kcIds: extraction.kcs.map((_, k) => idOf(`${part}:${k}`)),
+      kcIds: kcIds[part]!,
       ...(extraction.exercises && {
         chunkIds: extraction.exercises.map((exercise) => exercise.chunkId),
-        exercises: storedExercises(extraction.exercises, (k) =>
-          idOf(`${part}:${k}`),
-        ),
+        exercises: storedExercises(extraction.exercises, (k) => idOf(part, k)),
       }),
     })),
   });
   if (error) failed("Storing the KCs", error);
+  return data ? kcIds : null;
+}
+
+/**
+ * Stores what the units' new KCs use from outside the Course as text on
+ * them (`kcs.assumes`) and marks the extractions matched, in one
+ * transaction. False when the build no longer runs.
+ */
+async function storeOutside(
+  supabase: AdminSupabase,
+  courseId: string,
+  units: ReadonlyArray<Pending & { kcIds: readonly string[] }>,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("store_assumed_prerequisites", {
+    p_course_id: courseId,
+    p_prerequisites: [],
+    p_assumes: units.flatMap(({ extraction, kcIds }) =>
+      extraction.kcs.flatMap((kc, k) =>
+        kcIds[k] === undefined
+          ? []
+          : kc.assumes.map((assumed) => ({ kc: kcIds[k]!, ...assumed })),
+      ),
+    ),
+    p_matched: [],
+    p_extraction_ids: units.map((unit) => unit.extractionId),
+  });
+  if (error) failed("Storing what the KCs assume", error);
   return data;
 }
 

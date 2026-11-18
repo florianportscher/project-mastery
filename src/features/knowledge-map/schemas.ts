@@ -131,13 +131,15 @@ const extractedExerciseSchema = z.object({
 export type ExtractedExercise = z.infer<typeof extractedExerciseSchema>;
 
 /**
- * A stored unit extraction (`chapter_extractions.output`): its KCs with
- * stored chunk ids, what each assumes (`{ name, description }`) and, until
- * they are stored, their vectors of "name: description"; Prerequisites by
- * index into `kcs`. An exercise
- * unit's also has its subtasks, whose new KCs are its `kcs`. A partial
- * extraction of a split unit (`domain/unit-pieces.ts`) names the chunks its
- * answered pieces read in `readChunkIds`.
+ * A stored unit extraction (`chapter_extractions.output`): its new KCs with
+ * stored chunk ids, what each assumes from outside the Course
+ * (`{ name, description }`) and, until they are stored, their vectors of
+ * "name: description"; Prerequisites among them by index into `kcs`, and
+ * from stored KCs by id (`knownPrerequisites`); the stored KCs the unit
+ * teaches again, with the chunks that teach them there (`repeats`). An
+ * exercise unit's also has its subtasks, whose new KCs are its `kcs`. A
+ * partial extraction of a split unit (`domain/unit-pieces.ts`) names the
+ * chunks its answered pieces read in `readChunkIds`.
  */
 export const storedExtractionSchema = z.object({
   readChunkIds: z.array(z.string()).optional(),
@@ -151,6 +153,12 @@ export const storedExtractionSchema = z.object({
     }),
   ),
   prerequisites: z.array(z.object({ from: z.int(), to: z.int() })),
+  knownPrerequisites: z
+    .array(z.object({ from: z.string(), to: z.int() }))
+    .optional(),
+  repeats: z
+    .array(z.object({ kcId: z.string(), chunkIds: z.array(z.string()) }))
+    .optional(),
   exercises: z.array(extractedExerciseSchema).optional(),
 });
 

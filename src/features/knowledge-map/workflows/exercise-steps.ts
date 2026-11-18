@@ -31,8 +31,10 @@ import {
   buildCall,
   RateLimited,
 } from "@/features/knowledge-map/workflows/build-call";
-import { matchKcs } from "@/features/knowledge-map/workflows/consolidate-steps";
+import { storePendingExtractions } from "@/features/knowledge-map/workflows/consolidate-steps";
+import { loadKnownKcs } from "@/features/knowledge-map/workflows/extract-steps";
 import { RATE_LIMITED_STEP_RETRIES } from "@/features/usage/server";
+import { BUILD_CALL_TIMEOUT_MS, callFits } from "@/lib/ai/call-timeout";
 import { allRows } from "@/lib/supabase/all-rows";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { failed } from "@/lib/supabase/failed";
@@ -40,34 +42,27 @@ import type { AdminSupabase } from "@/lib/supabase/types";
 
 /**
  * The exercise steps of a build: one call (task `exercise`) per exercise
- * unit, with its subtasks, their paired solutions and the KCs nearest to
- * them. Each extraction is stored as it finishes in `chapter_extractions`;
- * the consolidation steps then store its new KCs and its Exercises. A unit
- * is called again when its content changed or a subtask's paired solution
- * is no longer the one it was extracted with.
+ * unit, with its subtasks, their paired solutions and every live KC of the
+ * Course. Units run one after another in Course order, and each extraction
+ * is stored in `chapter_extractions` and then as KCs and Exercises before
+ * the next unit's call, so the KCs one proposed are listed for the next. A
+ * unit is called again when its content changed or a subtask's paired
+ * solution is no longer the one it was extracted with.
  */
 
-/** How many KCs an exercise call is offered at most. */
-const CANDIDATE_KCS = 40;
-
-/** How many nearest live KCs each exercise chunk adds. */
-const KCS_PER_CHUNK = 8;
-
-/** Parallel `match_kcs` calls. */
-const MATCHES_AT_ONCE = 10;
-
 /**
- * Extracts up to UNITS_PER_STEP exercise units that need it, in Course
- * order, as one round of at most AI_CONCURRENCY calls. A unit whose call
- * fails is left to the next step and goes last; after its second failure
- * it is called in pieces until it is given up (`domain/unit-pieces.ts`), so
- * it never fails the build. A unit the rate limit turned away is left to the
- * next step, after the wait (`waitMs`). A reached Daily limit stops the
+ * Extracts up to UNITS_PER_STEP exercise units that need it, one after
+ * another in Course order. A unit whose call fails is left to the next step
+ * and goes last; after its second failure it is called in pieces until it
+ * is given up (`domain/unit-pieces.ts`), so it never fails the build. A
+ * unit the rate limit turned away is left to the next step, after the wait
+ * (`waitMs`), and goes after the others. A reached Daily limit stops the
  * build; what is stored stays.
  */
 export async function extractExercises(
   courseId: string,
   failed: readonly string[] = [],
+  deferred: readonly string[] = [],
 ): Promise<StepOutcome> {
   "use step";
   const startedAt = Date.now();
@@ -111,42 +106,64 @@ export async function extractExercises(
       solutionOf,
     ),
   );
-  const attempts = planAttempts(todo, stored, failed);
+  const attempts = planAttempts(todo, stored, failed, deferred);
   if (attempts.length === 0) return { ok: true, left: 0 };
 
-  const batch = attempts.slice(0, UNITS_PER_STEP).map((a) => a.unit);
-  const [language, solutions, candidates] = await Promise.all([
-    loadCourseLanguage(supabase, courseId),
-    loadMarkdowns(
-      supabase,
-      batch.flatMap((unit) =>
-        unit.chunks.flatMap((chunk) => solutionOf(chunk.id) ?? []),
-      ),
-    ),
-    loadCandidates(supabase, courseId, batch),
-  ]);
-
-  const { done, failedKeys, limit, waitMs } = await extractAttempts(
-    supabase,
-    { owner, courseId },
-    attempts,
-    (unit, chunks) =>
-      extractUnit(supabase, owner, {
-        unit: { ...unit, chunks },
-        language,
-        solutions,
-        solutionOf,
-        candidates: candidates.get(unitKey(unit)) ?? [],
-      }),
-    startedAt,
+  // A complete extraction is stored as KCs and Exercises at once; a partial
+  // one waits until its unit is complete or given up.
+  const complete = new Map(
+    units.map((unit) => [unitKey(unit), unit.contentHash]),
   );
-  if (limit) return { ok: false, reason: dailyLimitReason };
-  return {
-    ok: true,
-    left: attempts.length - done,
-    failed: failedKeys,
-    waitMs,
-  };
+  const storeComplete = () =>
+    storePendingExtractions(
+      supabase,
+      owner,
+      courseId,
+      (row) => complete.get(row.key) === row.contentHash,
+    );
+  const language = await loadCourseLanguage(supabase, courseId);
+  let done = 0;
+  const failedKeys: string[] = [];
+  for (const attempt of attempts.slice(0, UNITS_PER_STEP)) {
+    if (!callFits(startedAt, BUILD_CALL_TIMEOUT_MS)) break;
+    const known = await loadKnownKcs(supabase, courseId);
+    const solutions = await loadMarkdowns(
+      supabase,
+      attempt.unit.chunks.flatMap((chunk) => solutionOf(chunk.id) ?? []),
+    );
+    const outcome = await extractAttempts(
+      supabase,
+      { owner, courseId },
+      [attempt],
+      (unit, chunks) =>
+        extractUnit(supabase, owner, {
+          unit: { ...unit, chunks },
+          language,
+          solutions,
+          solutionOf,
+          known,
+        }),
+      startedAt,
+    );
+    if (outcome.limit) return { ok: false, reason: dailyLimitReason };
+    failedKeys.push(...outcome.failedKeys);
+    done += outcome.done;
+    if (outcome.done > 0) {
+      const after = await storeComplete();
+      if (after === "limit") return { ok: false, reason: dailyLimitReason };
+      if (after === "stopped") return { ok: true, left: null };
+    }
+    if (outcome.waitMs !== undefined) {
+      return {
+        ok: true,
+        left: attempts.length - done,
+        failed: failedKeys,
+        deferred: outcome.done > 0 ? [] : [unitKey(attempt.unit)],
+        waitMs: outcome.waitMs,
+      };
+    }
+  }
+  return { ok: true, left: attempts.length - done, failed: failedKeys };
 }
 
 extractExercises.maxRetries = RATE_LIMITED_STEP_RETRIES;
@@ -170,95 +187,6 @@ async function loadMarkdowns(
   return markdowns;
 }
 
-/**
- * The lists' ids by rank (each list's first, then each second, and so on),
- * without repeats, up to CANDIDATE_KCS.
- */
-function mergeByRank(lists: readonly string[][]): string[] {
-  const merged = new Set<string>();
-  const longest = Math.max(0, ...lists.map((list) => list.length));
-  for (let rank = 0; rank < longest; rank++) {
-    for (const list of lists) {
-      if (list[rank] !== undefined) merged.add(list[rank]!);
-    }
-  }
-  return [...merged].slice(0, CANDIDATE_KCS);
-}
-
-type Candidate = { id: string; name: string; description: string };
-
-/**
- * Each unit's candidate KCs by `unitKey`: the KCS_PER_CHUNK live KCs nearest
- * to each of its exercise chunks, merged by rank without repeats, up to
- * CANDIDATE_KCS.
- */
-async function loadCandidates(
-  supabase: AdminSupabase,
-  courseId: string,
-  units: readonly CourseUnit[],
-): Promise<Map<string, Candidate[]>> {
-  const unitOf = new Map(
-    units.flatMap((unit) =>
-      unit.chunks.map((chunk) => [chunk.id, unitKey(unit)] as const),
-    ),
-  );
-  const ids = [...unitOf.keys()];
-  const embeddings: Array<{ id: string; embedding: string | null }> = [];
-  for (let start = 0; start < ids.length; start += 100) {
-    const { data, error } = await supabase
-      .from("chunks")
-      .select("id, embedding")
-      .in("id", ids.slice(start, start + 100));
-    if (error) failed("Loading the exercise vectors", error);
-    embeddings.push(...data);
-  }
-
-  const nearest = new Map<string, string[]>();
-  for (let start = 0; start < embeddings.length; start += MATCHES_AT_ONCE) {
-    await Promise.all(
-      embeddings
-        .slice(start, start + MATCHES_AT_ONCE)
-        .map(async ({ id, embedding }) => {
-          if (!embedding) return;
-          const matches = await matchKcs(
-            supabase,
-            courseId,
-            embedding,
-            KCS_PER_CHUNK,
-            false,
-          );
-          nearest.set(
-            id,
-            matches.map((match) => match.id),
-          );
-        }),
-    );
-  }
-
-  const chosen = new Map(
-    units.map((unit) => [
-      unitKey(unit),
-      mergeByRank(unit.chunks.map((chunk) => nearest.get(chunk.id) ?? [])),
-    ]),
-  );
-  const kcIds = [...new Set([...chosen.values()].flat())];
-  const kcs = new Map<string, Candidate>();
-  for (let start = 0; start < kcIds.length; start += 100) {
-    const { data, error } = await supabase
-      .from("kcs")
-      .select("id, name, description")
-      .in("id", kcIds.slice(start, start + 100));
-    if (error) failed("Loading the candidate KCs", error);
-    for (const kc of data) kcs.set(kc.id, kc);
-  }
-  return new Map(
-    [...chosen].map(([key, ids]) => [
-      key,
-      ids.flatMap((id) => kcs.get(id) ?? []),
-    ]),
-  );
-}
-
 /** One exercise unit's call, checked; "limit" when the Daily limit is reached. */
 async function extractUnit(
   supabase: AdminSupabase,
@@ -268,13 +196,13 @@ async function extractUnit(
     language,
     solutions,
     solutionOf,
-    candidates,
+    known,
   }: {
     unit: CourseUnit;
     language: string;
     solutions: ReadonlyMap<string, string>;
     solutionOf: (chunkId: string) => string | null;
-    candidates: Candidate[];
+    known: Awaited<ReturnType<typeof loadKnownKcs>>;
   },
 ): Promise<StoredExtraction | "limit" | "failed" | RateLimited> {
   const subtasks = unit.chunks.map((chunk, index): OfferedSubtask => {
@@ -286,11 +214,6 @@ async function extractUnit(
       solution: (solutionChunkId && solutions.get(solutionChunkId)) ?? null,
     };
   });
-  const offeredKcs = candidates.map((kc, index) => ({
-    id: `k${index + 1}`,
-    name: kc.name,
-    description: kc.description,
-  }));
   const offered: OfferedExerciseUnit = {
     material: unit.materialName,
     outline: unit.outline,
@@ -300,7 +223,7 @@ async function extractUnit(
       statement: unit.chunks[index]!.markdown,
       solution: subtask.solution,
     })),
-    kcs: offeredKcs,
+    kcs: known.offered,
   };
   const answer = await buildCall(
     supabase,
@@ -317,7 +240,7 @@ async function extractUnit(
   const { kcs, exercises } = checkExerciseAnswer(
     answer,
     subtasks,
-    new Map(offeredKcs.map((kc, index) => [kc.id, candidates[index]!.id])),
+    known.storedId,
   );
   return { kcs, prerequisites: [], exercises };
 }
