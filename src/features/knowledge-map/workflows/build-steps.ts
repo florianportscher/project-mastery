@@ -1,7 +1,7 @@
 import "server-only";
 import { UNIT_MARK } from "@/features/knowledge-map/ai/chapter-extraction";
 import {
-  chapterUnits,
+  chapterUnitsByExam,
   unitHash,
 } from "@/features/knowledge-map/domain/chapter-units";
 import { keptFailingReason } from "@/features/knowledge-map/domain/build-failure";
@@ -199,17 +199,15 @@ export async function loadCourseUnits(
   ]);
   if (materials.error) failed("Loading the Materials", materials.error);
   // Old exams teach nothing: their chunks form no teaching units. Their
-  // exercise chunks still form exercise units.
-  const exams =
-    kind === "content"
-      ? examChapterIds(
-          chapters.map((c) => ({
-            id: c.id,
-            parentId: c.parent_id,
-            isExam: c.is_exam === true,
-          })),
-        )
-      : new Set<string>();
+  // exercise chunks still form exercise units, each exam on its own.
+  const examIds = examChapterIds(
+    chapters.map((c) => ({
+      id: c.id,
+      parentId: c.parent_id,
+      isExam: c.is_exam === true,
+    })),
+  );
+  const exams = kind === "content" ? examIds : new Set<string>();
   const rootOf = new Map(
     chapters.filter((c) => c.parent_id === null).map((c) => [c.material_id, c]),
   );
@@ -222,13 +220,14 @@ export async function loadCourseUnits(
     );
     const chunkOf = new Map(ofMaterial.map((chunk) => [chunk.id, chunk]));
     const titleOf = new Map(outline.map((c) => [c.id, c.title]));
-    return chapterUnits(
+    return chapterUnitsByExam(
       outline.map((c) => ({ id: c.id, parentId: c.parent_id })),
       ofMaterial.map((c) => ({
         id: c.id,
         chapterId: c.chapter_id,
         markdown: c.markdown,
       })),
+      kind === "exercise" ? examIds : new Set<string>(),
     ).map((unit) => {
       const unitChunks = unit.chunkIds.map((id) => {
         const { markdown } = chunkOf.get(id)!;

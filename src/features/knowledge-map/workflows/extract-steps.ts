@@ -147,7 +147,7 @@ export async function extractChapters(
 }
 
 /** The live KCs stored so far in Course order, with ids for the call. */
-async function loadKnownKcs(
+export async function loadKnownKcs(
   supabase: AdminSupabase,
   courseId: string,
 ): Promise<{ offered: KnownKc[]; storedId: Map<string, string> }> {

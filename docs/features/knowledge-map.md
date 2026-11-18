@@ -112,7 +112,7 @@ The chunk labels decide where each chunk goes next:
 | Label      | Used by                                                                                     |
 | ---------- | ------------------------------------------------------------------------------------------- |
 | `content`  | Teaching units of the build. Searchable by the AI                                           |
-| `exercise` | Exercise units of the build. Its vector picks the KCs offered to the call. Searchable       |
+| `exercise` | Exercise units of the build. Searchable                                                     |
 | `solution` | Reaches the build only through its pair. Becomes an Exercise's printed solution. Searchable |
 | `admin`    | Never embedded. The Brief reads it to propose exam scopes (`loadAdminChunks`)               |
 
@@ -158,7 +158,7 @@ A partial extraction (a unit in pieces) waits until the unit is complete or give
 
 ### 3. Extract the exercise units
 
-`extractExercises` makes one call per exercise unit that has no current extraction, or whose paired solutions changed. The call sees each exercise chunk's statement and paired solution, and the live KCs nearest to the unit's statements: each exercise chunk adds its 8 nearest, merged by rank (every chunk's first, then every second) without repeats, up to 40 per unit. That's why it runs after step 2.
+`extractExercises` makes one call per exercise unit that has no current extraction, or whose paired solutions changed, **one after another in Course order**. The call sees each exercise chunk's statement and paired solution, and **every live KC** in Course order (short id, its first source's Chapter title, name, description), not a shortlist. A unit's answer is stored as KCs and Exercises before the next unit's call, so the KCs one proposed are listed for the next. Exercise units are formed per Material, and an old exam is never packed into a unit with other Chapters (`chapterUnitsByExam`): each exam is a unit of its own, or several when it is big. That's why it runs after step 2.
 
 It answers, per exercise chunk (the call's prompt says "subtask"): the listed KCs its solution uses as a step (usually 1 to 4, at most 6), new KCs only when no listed one teaches what it needs, mathematical final results copied as printed and written as mathjs (code drops a key mathjs cannot parse; the prompt leaves out a result that depends on the Student's own choice, such as a representative, an order, a parametrisation or an example), and whether it is no exercise at all. Code then computes the difficulty from the number of KCs and the solution's length (`exerciseDifficulty`).
 
@@ -250,7 +250,7 @@ All eight calls follow one pattern, so the prompts stay small and the answers ch
 | Outline (`parse-outline`)       | Parse, `ingest`   | high      | Name, page count, PDF outline, headings (`h1…`), page starts (80 characters)                                                       | Language, notes, Chapters: title, level, heading or page, `exam`           | `ingestion/ai/outline.ts`          |
 | Pairing                         | Parse, `ingest`   | high      | Exercises (`e1…`) and solutions (`s1…`): Material, Chapter path, first 300 characters                                              | Pairs it is sure of                                                        | `ingestion/ai/exercise-pairing.ts` |
 | Extraction (`extract-chapter`)  | Build, `map`      | medium    | Material name, Outline with `<- this unit` marked, Course language, chunks (`c1…`), `knownKcs` (`k1…`): Chapter, name, description | `repeats`; new KCs (`n1…`) with `chunkIds`, Prerequisites by id, `outside` | `ai/chapter-extraction.ts`         |
-| Exercises (`extract-exercises`) | Build, `exercise` | medium    | Material name, Outline, Course language, subtasks (`s1…`) with statement and solution, nearest KCs (`k1…`)                         | Per subtask: KCs, new KCs, final answers, `notAnExercise`                  | `ai/exercise-extraction.ts`        |
+| Exercises (`extract-exercises`) | Build, `exercise` | medium    | Material name, Outline, Course language, subtasks (`s1…`) with statement and solution, every KC (`k1…`)                            | Per subtask: KCs, new KCs, final answers, `notAnExercise`                  | `ai/exercise-extraction.ts`        |
 | Check (`check-prerequisites`)   | Build, `map`      | medium    | Names (`n1…`): name, description, the KC using it; the KCs this build stored (`k1…`)                                               | For each name, the KC it means or null                                     | `ai/prerequisite-check.ts`         |
 | Tree (`topic-tree`)             | Build, `topic`    | medium    | Course language, Outlines (`c1…`) with KC names, stored Topics (`t1…`)                                                             | Flat Topic list: level, name, `chapterIds`, central question, `continues`  | `ai/topic-tree.ts`                 |
 
