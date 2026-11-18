@@ -53,12 +53,12 @@ flowchart LR
 
 ## Environments
 
-| Environment | App                         | Supabase               | AI                                                       |
-| ----------- | --------------------------- | ---------------------- | -------------------------------------------------------- |
-| Local       | `pnpm dev`                  | Supabase CLI in Docker | Gemini API free tier for text, AI Gateway for embeddings |
-| Tests / CI  | Vitest, Playwright          | Supabase CLI in Docker | AI SDK mock models, no real calls                        |
-| Preview     | Vercel preview per PR       | Staging project        | AI Gateway, card on file                                 |
-| Production  | Vercel production on `main` | Production project     | AI Gateway, purchased credits                            |
+| Environment | App                            | Supabase               | AI                                                       |
+| ----------- | ------------------------------ | ---------------------- | -------------------------------------------------------- |
+| Local       | `pnpm dev`                     | Supabase CLI in Docker | Gemini API free tier for text, AI Gateway for embeddings |
+| Tests / CI  | Vitest, Playwright             | Supabase CLI in Docker | AI SDK mock models, no real calls                        |
+| Preview     | Vercel preview per PR          | Staging project        | AI Gateway, card on file                                 |
+| Production  | Vercel production on a release | Production project     | AI Gateway, purchased credits                            |
 
 Preview deployments never touch production data.
 
