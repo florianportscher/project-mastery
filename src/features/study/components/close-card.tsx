@@ -1,6 +1,11 @@
 "use client";
 
-import { CheckIcon, SquarePenIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  SquarePenIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +63,9 @@ export function CloseCard({
 }) {
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  // Collapsed by default: the card sits over the chat the Student may want to read.
+  const [open, setOpen] = useState(false);
+  const bodyId = useId();
   useEffect(() => {
     if (busy) return;
     let current = true;
@@ -80,35 +88,52 @@ export function CloseCard({
       data-testid="close-card"
       className="mx-auto flex w-full max-w-3xl flex-col gap-4 rounded-lg border bg-card p-4 text-sm"
     >
-      <h2 className="font-medium">
-        {summary?.ended ? "Session ended" : "Session summary"}
-      </h2>
-      {failed && (
-        <p role="alert" className="text-destructive">
-          {failed}
-        </p>
-      )}
-      {!summary && !failed && <Skeleton className="h-16" />}
-      {summary && <SummaryFacts summary={summary} />}
-      {summary && (
-        <RatingForm
-          // Remounts with the stored rating once it loads.
-          key={`${summary.rating}:${summary.ratingNote}`}
-          chatId={chatId}
-          rating={summary.rating}
-          note={summary.ratingNote}
-          onRated={() => {
-            setSummary({ ...summary, ended: true });
-            onRated();
-          }}
-        />
-      )}
-      <Button size="sm" className="self-end" asChild>
-        <Link href={newSessionHref}>
-          <SquarePenIcon />
-          Start new session
-        </Link>
-      </Button>
+      <div className="flex items-center gap-2">
+        <h2 className="min-w-0 flex-1 font-medium">
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={bodyId}
+            onClick={() => setOpen(!open)}
+            className="flex items-center gap-1.5 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {open ? (
+              <ChevronDownIcon className="size-4" />
+            ) : (
+              <ChevronUpIcon className="size-4" />
+            )}
+            {summary?.ended ? "Session ended" : "Session summary"}
+          </button>
+        </h2>
+        <Button size="sm" asChild>
+          <Link href={newSessionHref}>
+            <SquarePenIcon />
+            Start new session
+          </Link>
+        </Button>
+      </div>
+      <div id={bodyId} hidden={!open} className="flex flex-col gap-4">
+        {failed && (
+          <p role="alert" className="text-destructive">
+            {failed}
+          </p>
+        )}
+        {!summary && !failed && <Skeleton className="h-16" />}
+        {summary && <SummaryFacts summary={summary} />}
+        {summary && (
+          <RatingForm
+            // Remounts with the stored rating once it loads.
+            key={`${summary.rating}:${summary.ratingNote}`}
+            chatId={chatId}
+            rating={summary.rating}
+            note={summary.ratingNote}
+            onRated={() => {
+              setSummary({ ...summary, ended: true });
+              onRated();
+            }}
+          />
+        )}
+      </div>
     </section>
   );
 }

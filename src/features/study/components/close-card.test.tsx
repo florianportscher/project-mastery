@@ -68,9 +68,30 @@ function renderCard(busy = false) {
   );
 }
 
+test("starts collapsed and expands on the heading button", async () => {
+  renderCard();
+  const card = screen.getByRole("region", { name: "Session summary" });
+  const toggle = within(card).getByRole("button", { name: "Session summary" });
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(within(card).queryByRole("list")).toBeNull();
+  expect(
+    within(card).getByRole("link", { name: "Start new session" }),
+  ).toBeVisible();
+  fireEvent.click(toggle);
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
+  expect(
+    await within(card).findByRole("list", { name: "What you worked on" }),
+  ).toBeVisible();
+  fireEvent.click(toggle);
+  expect(within(card).queryByRole("list")).toBeNull();
+});
+
 test("shows each KC worked on in plain words with when it is back", async () => {
   renderCard();
   const card = screen.getByRole("region", { name: "Session summary" });
+  fireEvent.click(
+    within(card).getByRole("button", { name: "Session summary" }),
+  );
   const kcs = await within(card).findByRole("list", {
     name: "What you worked on",
   });
@@ -92,6 +113,9 @@ test("shows each KC worked on in plain words with when it is back", async () => 
 test("saves a rating with its note, which ends the session", async () => {
   renderCard();
   const card = screen.getByRole("region", { name: "Session summary" });
+  fireEvent.click(
+    within(card).getByRole("button", { name: "Session summary" }),
+  );
   const save = await within(card).findByRole("button", { name: "Save rating" });
   expect(save).toBeDisabled();
 
@@ -123,6 +147,9 @@ test("waits for the reply before reading the summary, and keeps a note to 300 ch
     />,
   );
   const card = screen.getByRole("region", { name: "Session summary" });
+  fireEvent.click(
+    within(card).getByRole("button", { name: "Session summary" }),
+  );
   fireEvent.click(
     await within(card).findByRole("radio", { name: "Rating 2 of 5" }),
   );
