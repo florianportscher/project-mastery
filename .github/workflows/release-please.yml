@@ -1,5 +1,13 @@
 name: Release
 
+# Merging to main only updates the release PR. Merging that PR creates the
+# release; then production is migrated first and deployed second, both behind
+# the maintainer's approval of the database-production environment (ADR 0030).
+# A release made with GITHUB_TOKEN triggers no `release` workflow, so the
+# migration and the deploy live here, gated on release_created. After a
+# failure use "Re-run failed jobs": "Re-run all jobs" asks release-please
+# again, finds no new release, and skips both.
+
 on:
   push:
     branches: [main]
@@ -12,8 +20,89 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  migrate-production:
+    name: Migrate production
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    environment: database-production
+    permissions:
+      contents: read
+    concurrency:
+      group: migrate-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 3.0.0
+      - name: Apply migrations to production
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          set +e
+          supabase db push --remote="$SUPABASE_DB_URL" --yes > push.log 2>&1
+          status=$?
+          cat push.log
+          {
+            echo "### Migrate production ($TAG)"
+            if [ "$status" -eq 0 ]; then
+              echo "Migrations applied:"
+              grep -E '^Applying migration' push.log | sed 's/^/- /' || echo "- none (already up to date)"
+            else
+              echo "Failed with exit code $status, nothing deploys:"
+              echo '```'
+              tail -n 20 push.log
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+  deploy-production:
+    name: Deploy production
+    needs: [release-please, migrate-production]
+    runs-on: ubuntu-latest
+    environment: database-production
+    permissions:
+      contents: read
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      TAG: ${{ needs.release-please.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - name: Pull Vercel production settings
+        run: npx --yes vercel@41.0.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Build
+        run: npx --yes vercel@41.0.0 build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy
+        run: |
+          url=$(npx --yes vercel@41.0.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          {
+            echo "### Deploy production"
+            echo "Release: $TAG"
+            echo "Deployment: $url"
+          } >> "$GITHUB_STEP_SUMMARY"
