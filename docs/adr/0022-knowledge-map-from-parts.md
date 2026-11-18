@@ -1,6 +1,6 @@
 # Knowledge map from Parts
 
-> Superseded by [ADR 0023](0023-knowledge-map-from-chapters.md): the map is built from Chapter units of each Material's Outline into a nested Topic tree; Parts, Big ideas, KC types and budgets, the naming call and Topics kept by Part hashes are gone. Bounded steps that store their results, KC vectors and merging, printed final answers and the Prerequisite check stay as decided here.
+> Superseded by [ADR 0023](0023-knowledge-map-from-chapters.md): the map is built from Chapter units of each Material's Outline into a nested Topic tree; Parts, Big ideas, KC types and budgets, the naming call and Topics kept by Part hashes are gone. Bounded steps that store their results, KC vectors and merging, printed final answers stay as decided here; the consolidation step and the Prerequisite check stayed until #315 replaced them (see 0023).
 
 **Context.** The first build sent every KC to most of its calls: at about 1,000 pages a dedup step's vectors passed Vercel Workflow's 50 MB step payload, one links call would answer for every KC, assignment and exercise prompts carried 46k to 64k tokens, and nothing was stored before the end, so a Daily limit below one build's cost restarted it every day (#222). It also stored judgment the tutor cannot trust: generated solutions, Bloom levels, typed relations, prior knowledge. Cheap models (Haiku 5.5, GPT-6 Luna) need small prompts, and the AI already reads the chunks and pages in a Study session.
 

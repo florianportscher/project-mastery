@@ -26,6 +26,14 @@ describe("paceCall", () => {
     expect(starts).toEqual([0, 12_000, 24_000, 36_000, 48_000, 60_000]);
   });
 
+  test("it returns the time waited", async () => {
+    vi.stubEnv("AI_RPM", "5");
+    const { paceCall } = await import("./pacing");
+    const waits = [paceCall(), paceCall()];
+    await vi.runAllTimersAsync();
+    expect(await Promise.all(waits)).toEqual([0, 12_000]);
+  });
+
   test("without AI_RPM, calls start at once", async () => {
     vi.stubEnv("AI_RPM", "");
     const { paceCall } = await import("./pacing");
