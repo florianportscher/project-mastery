@@ -55,9 +55,10 @@ export function headingIds(
  * The Outline of a Material: the root Chapter, titled by its name, and the
  * proposed Chapters below it. A Chapter starts at its heading; with an
  * unknown or already used heading id, at the first unit that starts on its
- * page; given by a page where no unit starts, at the first unit after it,
- * if that is before the next Chapter's start. A Chapter with none of these, without a title, or starting before the
- * Chapter kept before it is dropped. A Chapter's parent is the nearest
+ * page; given by a page where no unit starts, it stays, holds no chunks of
+ * its own and starts at the first unit after it or the next Chapter's start,
+ * whichever is first. A Chapter without a start or a title, or starting
+ * before the Chapter kept before it, is dropped. A Chapter's parent is the nearest
  * Chapter kept before it with a lower level, so its depth is one more than
  * that parent's.
  */
@@ -101,6 +102,7 @@ export function outlineChapters(
     if (!title) continue;
     let startUnit: number | undefined;
     let startsAtHeading = false;
+    let pageFrom: number | undefined;
     if (
       chapter.heading !== null &&
       ids.has(chapter.heading) &&
@@ -113,14 +115,16 @@ export function outlineChapters(
       const index = units.findIndex((unit) => unit.pageFrom === chapter.page);
       if (index !== -1) {
         startUnit = index;
-      } else if (chapter.page !== null) {
-        // A page without a unit (a title page, say): the first unit after
-        // it, if that comes before the next Chapter's start.
+      } else {
+        // A page without a unit (a title page, say): the Chapter stays and
+        // holds no chunks of its own. It starts where the next unit or the
+        // next Chapter does, whichever comes first.
         const next = exact.slice(at + 1).find((start) => start !== undefined);
         const after = units.findIndex((unit) => unit.pageFrom > chapter.page!);
-        if (after !== -1 && (next === undefined || after < next)) {
-          startUnit = after;
-        }
+        const firstAfter = after === -1 ? units.length : after;
+        startUnit =
+          next === undefined ? firstAfter : Math.min(firstAfter, next);
+        pageFrom = chapter.page;
       }
     }
     if (startUnit === undefined || startUnit < kept.at(-1)!.startUnit) {
@@ -134,7 +138,7 @@ export function outlineChapters(
       parentPosition: kept[parent]!.position,
       depth: kept[parent]!.depth + 1,
       title,
-      pageFrom: units[startUnit]!.pageFrom,
+      pageFrom: pageFrom ?? units[startUnit]!.pageFrom,
       examProposed: chapter.exam,
       startUnit,
       startsAtHeading,

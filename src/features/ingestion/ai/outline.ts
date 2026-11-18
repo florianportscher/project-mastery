@@ -86,6 +86,8 @@ const OUTLINE_INSTRUCTIONS = `You find the Outline of a Student's course materia
 - You get the Material's name, its page count, its PDF outline when it has one (title, level, page), every line its reader marked as a heading (id, page, style, text) and how each page starts.
 - A Chapter is a part, chapter, section or subsection, a slide deck's section, an exercise sheet, or an old exam. Definitions, theorems, lemmas, propositions, corollaries, examples, proofs, remarks, single exercises or problems, figure captions and running headers are never Chapters, even when set as headings.
 - Give the Chapters in reading order, each with its title as printed (with its number), its level (1 at the top, 2 inside it, and so on) and where it starts: the id of its heading, or, only when none of the given headings opens it, its first page. Leave out a Chapter that starts on no given page.
+- A label on a line above a title, such as "Chapter 2", starts that Chapter and belongs to its title: "2 Algebraic Structures".
+- A part such as "I Lecture Notes" is a Chapter too, with the chapters inside it one level lower. When it starts on a page that opens no given heading, give its page.
 - The PDF outline, numbering and heading styles show the levels; a Material may not use every level.
 - Mark a Chapter exam when it is an old exam, a class test or their solutions.
 - language: the language the Material is written in, as an English name.

@@ -57,7 +57,7 @@ describe("outlineChapters", () => {
         chapter({ title: "4.2 Bases", heading: "h3" }),
         chapter({ title: "Earlier", heading: "h1" }),
         chapter({ title: "Unknown id", heading: "h9", page: 21 }),
-        chapter({ title: "Used id", heading: "h3", page: 30 }),
+        chapter({ title: "Used id", heading: "h3" }),
         chapter({ title: "  ", heading: "h2" }),
       ]),
     ).toEqual([
@@ -75,23 +75,23 @@ describe("outlineChapters", () => {
 
     expect(tree(proposed)).toEqual([
       [0, null, 0, "lecture-notes.pdf", 1, 0],
-      [1, 0, 1, "Part I", 17, 0],
+      [1, 0, 1, "Part I", 3, 0],
       [2, 1, 2, "4 Vector Spaces", 18, 1],
     ]);
   });
 
-  test("starts a Chapter on a page without units at the first unit after it, unless the next Chapter starts first", () => {
+  test("keeps a Chapter on a page without units, holding no chunks of its own, and nests the Chapters after it under it", () => {
     expect(
       tree([
-        chapter({ title: "Title page", page: 3 }),
-        chapter({ title: "Squeezed", page: 19 }),
-        chapter({ title: "4.2 Bases", heading: "h3" }),
+        chapter({ title: "I Lecture Notes", page: 19 }),
+        chapter({ title: "4.2 Bases", level: 2, heading: "h3" }),
         chapter({ title: "Beyond", page: 40 }),
       ]),
     ).toEqual([
       [0, null, 0, "lecture-notes.pdf", 1, 0],
-      [1, 0, 1, "Title page", 17, 0],
-      [2, 0, 1, "4.2 Bases", 20, 4],
+      [1, 0, 1, "I Lecture Notes", 19, 4],
+      [2, 1, 2, "4.2 Bases", 20, 4],
+      [3, 0, 1, "Beyond", 40, 6],
     ]);
   });
 });
