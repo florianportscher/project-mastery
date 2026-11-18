@@ -42,8 +42,9 @@ test("a session from the Today card: a question answered in the input is graded,
   ).toBeVisible();
 
   await page.getByRole("button", { name: "End session" }).click();
-  const checked = page
-    .getByRole("region", { name: "Session summary" })
+  const card = page.getByRole("region", { name: "Session summary" });
+  await card.getByRole("button", { name: "Session summary" }).click();
+  const checked = card
     .getByRole("list", { name: "What you worked on" })
     .getByRole("listitem");
   await expect(checked).toHaveCount(1);
