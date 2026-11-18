@@ -3,6 +3,7 @@ import { RetryableError } from "workflow";
 import type { z } from "zod";
 import { meteredStream } from "@/features/usage/server";
 import { BUILD_CALL_TIMEOUT_MS, CallTimeoutError } from "@/lib/ai/call-timeout";
+import { paceCall } from "@/lib/ai/pacing";
 import type { AdminSupabase } from "@/lib/supabase/types";
 
 /** The least wait after the Gateway's rate limit turned a build call away. */
@@ -38,6 +39,7 @@ export async function buildCall<Schema extends z.ZodType>(
   timeoutMs = BUILD_CALL_TIMEOUT_MS,
 ): Promise<z.infer<Schema> | "limit" | "failed" | RateLimited> {
   let result: Awaited<ReturnType<typeof meteredStream>>;
+  await paceCall();
   try {
     result = await meteredStream(supabase, scope, {
       ...call,

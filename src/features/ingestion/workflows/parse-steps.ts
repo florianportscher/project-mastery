@@ -27,6 +27,7 @@ import {
 } from "@/features/usage/server";
 import { callFits } from "@/lib/ai/call-timeout";
 import { getAiEnv } from "@/lib/ai/env";
+import { paceCall } from "@/lib/ai/pacing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MATERIALS_BUCKET } from "@/lib/supabase/buckets";
 import { failed } from "@/lib/supabase/failed";
@@ -460,6 +461,7 @@ async function callBatch(
     return "failed" as const;
   };
   let result: Awaited<ReturnType<typeof meteredStream>>;
+  await paceCall();
   try {
     result = await meteredStream(
       supabase,

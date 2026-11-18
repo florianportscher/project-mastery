@@ -25,6 +25,7 @@ import {
   meteredStream,
   RATE_LIMITED_STEP_RETRIES,
 } from "@/features/usage/server";
+import { paceCall } from "@/lib/ai/pacing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { failed } from "@/lib/supabase/failed";
 import type { AdminSupabase } from "@/lib/supabase/types";
@@ -124,6 +125,7 @@ async function callOutline(
     return null;
   };
   let result: Awaited<ReturnType<typeof meteredStream>>;
+  await paceCall();
   try {
     result = await meteredStream(
       supabase,
