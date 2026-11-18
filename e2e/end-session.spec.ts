@@ -43,7 +43,7 @@ test("a session from the Today card: a question answered in the input is graded,
 
   await page.getByRole("button", { name: "End session" }).click();
   const card = page.getByRole("region", { name: "Session summary" });
-  await card.getByRole("button", { name: "Session summary" }).click();
+  await card.getByRole("button", { name: /Session (summary|ended)/ }).click();
   const checked = card
     .getByRole("list", { name: "What you worked on" })
     .getByRole("listitem");
