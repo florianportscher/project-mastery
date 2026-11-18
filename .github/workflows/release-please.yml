@@ -4,7 +4,9 @@ name: Release
 # release; then production is migrated first and deployed second, both behind
 # the maintainer's approval of the database-production environment (ADR 0030).
 # A release made with GITHUB_TOKEN triggers no `release` workflow, so the
-# migration and the deploy live here, gated on release_created.
+# migration and the deploy live here, gated on release_created. After a
+# failure use "Re-run failed jobs": "Re-run all jobs" asks release-please
+# again, finds no new release, and skips both.
 
 on:
   push:
@@ -51,14 +53,23 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           TAG: ${{ needs.release-please.outputs.tag_name }}
         run: |
-          set -o pipefail
-          supabase db push --remote="$SUPABASE_DB_URL" --yes 2>&1 | tee push.log
+          set +e
+          supabase db push --remote="$SUPABASE_DB_URL" --yes > push.log 2>&1
+          status=$?
+          cat push.log
           {
             echo "### Migrate production ($TAG)"
-            echo '```'
-            cat push.log
-            echo '```'
+            if [ "$status" -eq 0 ]; then
+              echo "Migrations applied:"
+              grep -E '^Applying migration' push.log | sed 's/^/- /' || echo "- none (already up to date)"
+            else
+              echo "Failed with exit code $status, nothing deploys:"
+              echo '```'
+              tail -n 20 push.log
+              echo '```'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
   deploy-production:
     name: Deploy production

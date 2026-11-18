@@ -43,7 +43,7 @@ pnpm db:test                       # run the Row Level Security tests in supabas
 
 Every new table needs Row Level Security policies and pgTAP tests for them ([ADR 0003](docs/adr/0003-supabase-js-with-rls.md)). Commit the regenerated types with the migration; CI fails when they are out of date.
 
-Hosted databases are never migrated by hand: GitHub Actions applies a PR's migrations to staging when the PR is ready for review, and to production after the merge, once the maintainer approves the run ([ADR 0030](docs/adr/0030-migrations-from-github-actions.md)).
+Hosted databases are never migrated by hand: GitHub Actions applies a PR's migrations to staging when the PR is ready for review, and to production when the release PR is merged, once the maintainer approves the run ([ADR 0030](docs/adr/0030-migrations-from-github-actions.md)).
 
 ### AI, background jobs and tracing
 
