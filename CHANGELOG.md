@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.4](https://github.com/florianportscher/project-mastery/compare/project-mastery-v0.1.3...project-mastery-v0.1.4) (2026-11-18)
+
+
+### Features
+
+* a Study session with a goal, a plan and a final check ([#306](https://github.com/florianportscher/project-mastery/issues/306)) ([f371420](https://github.com/florianportscher/project-mastery/commit/f371420c3915e6e94be6f8f55372fee701196008))
+* **knowledge-map:** build the map with the whole map in view ([#332](https://github.com/florianportscher/project-mastery/issues/332)) ([e623f39](https://github.com/florianportscher/project-mastery/commit/e623f39f69fb9ad2010d8bc0f3e7d8874a563f19))
+* **study:** collapse the session summary card by default ([#331](https://github.com/florianportscher/project-mastery/issues/331)) ([d823bc5](https://github.com/florianportscher/project-mastery/commit/d823bc54d92c0a075672eec38fae7121a04ddb26))
+
+
+### Bug Fixes
+
+* **chat:** citations open reliably, and the source pane scrolls, zooms, resizes and goes full screen ([#305](https://github.com/florianportscher/project-mastery/issues/305)) ([c6ce8b2](https://github.com/florianportscher/project-mastery/commit/c6ce8b2f19a677fac710aafc7f2b076d9478fc67))
+* count all usage toward the daily limit, time-limit the answer check and keep sign-in redirects on the site ([#319](https://github.com/florianportscher/project-mastery/issues/319)) ([88029a3](https://github.com/florianportscher/project-mastery/commit/88029a39e6a70b2d7bd91afd18d72a994562319a))
+* make skippedPages required so strict providers accept the page schema ([#311](https://github.com/florianportscher/project-mastery/issues/311)) ([00ebcf9](https://github.com/florianportscher/project-mastery/commit/00ebcf95edcc5e7ab0884a293ef4fa01603f50cd))
+
 ## [0.1.3](https://github.com/florianportscher/project-mastery/compare/project-mastery-v0.1.2...project-mastery-v0.1.3) (2026-11-15)
 
 
