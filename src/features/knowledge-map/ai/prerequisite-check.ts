@@ -4,15 +4,17 @@ import { z } from "zod";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { aiTask } from "@/lib/ai/models";
 
-/** A KC the Prerequisite check is offered. */
+/** A KC the check is offered: one an update stored. */
 export type OfferedKc = {
   /** Short and only for the call, such as k1. */
   id: string;
+  /** The title of the Chapter of its first source. */
+  chapter: string;
   name: string;
   description: string;
 };
 
-/** A name a KC assumes, with the course's KCs it may mean. */
+/** A name a KC assumes from outside the course, as text. */
 export type OfferedName = {
   /** Short and only for the call, such as n1. */
   id: string;
@@ -20,53 +22,60 @@ export type OfferedName = {
   description: string;
   /** The KC that assumes it, as "name: description". */
   usedBy: string;
-  candidates: readonly [OfferedKc, ...OfferedKc[]];
 };
 
 /**
- * What the check returns: for each name, the id of the candidate it means,
- * or null. Any string validates as an id (`offeredId`): code reads an
- * unknown one as null.
+ * What the check returns: for each name, the id of the KC it means, or
+ * null. Any string validates as an id (`offeredId`): code reads an unknown
+ * one as null.
  */
-export function prerequisiteCheckSchema(names: readonly OfferedName[]) {
+export function prerequisiteCheckSchema(
+  names: readonly OfferedName[],
+  kcs: readonly OfferedKc[],
+) {
+  const ids = kcs.map((kc) => kc.id);
   return z.object({
     meanings: z.object(
       Object.fromEntries(
-        names.map((name) => [
-          name.id,
-          offeredId(name.candidates.map((kc) => kc.id)).nullable(),
-        ]),
+        names.map((name) => [name.id, offeredId(ids).nullable()]),
       ),
     ),
   });
 }
 
-const CHECK_INSTRUCTIONS = `You get things that knowledge components (KCs) of a university course assume, as JSON: each with a name, a one-line description, the KC that uses it and up to 5 candidate KCs of the course. For each, say which candidate it means.
+const CHECK_INSTRUCTIONS = `You get things that knowledge components (KCs) of a university course assume from outside the course, as JSON: each with a name, a one-line description and the KC that uses it (names), and the KCs that newly added materials teach (kcs). For each name, say which of these KCs it means.
 
-- Pick a candidate only when it means the same thing as that KC, so a student must know the KC to understand the one that uses it.
-- Answer null when no candidate is meant, or when you are not sure. Do not guess: a null answer keeps it as something the KC assumes from outside the course.`;
+- Pick a KC only when it means the same thing, so a student must know that KC to understand the one that uses it.
+- Answer null when no KC is meant, or when you are not sure. Do not guess: a null answer keeps it as something the KC assumes from outside the course.`;
+
+/** One check call: up to 50 names, and the KCs they may mean. */
+export type CheckInput = {
+  names: readonly OfferedName[];
+  kcs: readonly OfferedKc[];
+};
 
 /**
- * Call settings for one Prerequisite check of a build (task `map`), over up
- * to 50 names:
+ * Call settings for one Prerequisite check of a build (task `map`):
  *
- *   streamText({ ...prerequisiteCheckSettings(n), messages: prerequisiteCheckMessages(n) })
+ *   streamText({ ...prerequisiteCheckSettings(input), messages: prerequisiteCheckMessages(input) })
  */
-export function prerequisiteCheckSettings(names: readonly OfferedName[]) {
+export function prerequisiteCheckSettings(input: CheckInput) {
   return {
     ...aiTask("map"),
     reasoning: "medium" as const,
     instructions: CHECK_INSTRUCTIONS,
-    output: Output.object({ schema: prerequisiteCheckSchema(names) }),
+    output: Output.object({
+      schema: prerequisiteCheckSchema(input.names, input.kcs),
+    }),
   };
 }
 
-/** The user message of a Prerequisite check: the names, as JSON. */
-export function prerequisiteCheckMessages(names: readonly OfferedName[]) {
+/** The user message of a Prerequisite check: names and KCs, as JSON. */
+export function prerequisiteCheckMessages(input: CheckInput) {
   return [
     {
       role: "user" as const,
-      content: [{ type: "text" as const, text: JSON.stringify({ names }) }],
+      content: [{ type: "text" as const, text: JSON.stringify(input) }],
     },
   ];
 }

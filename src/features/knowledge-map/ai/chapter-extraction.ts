@@ -11,6 +11,16 @@ export type OfferedChunk = {
   markdown: string;
 };
 
+/** A KC the Course's Materials taught so far, as the call is offered it. */
+export type KnownKc = {
+  /** Short and only for the call, such as k1. */
+  id: string;
+  /** The title of the Chapter of its first source. */
+  chapter: string;
+  name: string;
+  description: string;
+};
+
 /** What the extraction call gets of one teaching unit. */
 export type OfferedUnit = {
   material: string;
@@ -22,28 +32,54 @@ export type OfferedUnit = {
   /** The course language by name, such as English. */
   language: string;
   chunks: readonly [OfferedChunk, ...OfferedChunk[]];
+  /** Every live KC stored so far, in Course order. */
+  knownKcs: readonly KnownKc[];
 };
 
 /** The mark on the unit's Chapter in the Outline. */
 export const UNIT_MARK = "  <- this unit";
 
 /**
- * What the extraction call returns for a unit with these chunk ids. Any
- * string validates as an id (`offeredId`): code drops a KC without a known
- * chunk id, and a Prerequisite with an unknown end.
+ * What the extraction call returns for a unit with these chunk and known
+ * KC ids. Any string validates as an id (`offeredId`): code drops a KC
+ * without a known chunk id, a repeat of an unknown KC and a Prerequisite
+ * with an unknown id.
  */
-export const chapterExtractionSchema = (chunkIds: readonly string[] = []) =>
+export const chapterExtractionSchema = (
+  chunkIds: readonly string[] = [],
+  knownIds: readonly string[] = [],
+) =>
   z.object({
+    repeats: z
+      .array(
+        z.object({
+          kcId: offeredId(knownIds).describe("The id of the known KC."),
+          chunkIds: z
+            .array(offeredId(chunkIds))
+            .describe("The chunks that teach it here."),
+        }),
+      )
+      .describe(
+        "Known KCs this unit teaches again, with the chunks that teach them here. Empty when none.",
+      ),
     kcs: z.array(
       z.object({
+        id: z.string().describe("An id for this answer: n1, n2, …"),
         name: z.string().describe("Short, in the course language."),
         description: z
           .string()
           .describe("One line: what it states or how it is done."),
         chunkIds: z
           .array(offeredId(chunkIds))
-          .describe("The chunks that teach it, at least one."),
-        assumes: z
+          .describe(
+            "The chunks that teach it, at least one; not a chunk that only announces or recalls it.",
+          ),
+        prerequisites: z
+          .array(z.string())
+          .describe(
+            "Ids of the KCs it uses directly: known KCs, or new KCs that come before it in this unit.",
+          ),
+        outside: z
           .array(
             z.object({
               name: z.string().describe("Short, in the course language."),
@@ -53,32 +89,25 @@ export const chapterExtractionSchema = (chunkIds: readonly string[] = []) =>
             }),
           )
           .describe(
-            "Up to 3 things it uses that this unit does not explain. Empty when none.",
+            "Up to 3 things it uses that no listed KC teaches. Usually empty.",
           ),
       }),
     ),
-    prerequisites: z
-      .array(
-        z.object({
-          from: z.string().describe("The name of the KC learned first."),
-          to: z.string().describe("The name of the KC that builds on it."),
-        }),
-      )
-      .describe(
-        "Pairs of this unit's KCs where the second uses the first in its statement, its proof or its method.",
-      ),
   });
 
-const EXTRACTION_INSTRUCTIONS = `You get one unit of a university course's materials as JSON: the material's name, its outline with the unit's chapters marked, the course language and the unit's chunks, each with an id and its Markdown. List the knowledge components (KCs) this unit teaches.
+const EXTRACTION_INSTRUCTIONS = `You get one unit of a university course's materials as JSON: the material's name, its outline with the unit's chapters marked, the course language, the unit's chunks, each with an id and its Markdown, and the knowledge components (KCs) the course's materials taught so far (knownKcs, in course order, each with an id). List the KCs this unit teaches.
 
 - A KC is one thing the unit teaches: a statement to know, an idea to understand, a method to carry out or when to use which method. Size it as something an exam task could test on its own and a Student could learn in one sitting.
 - Together, the unit's KCs cover what it teaches. Do not split one thing into several KCs or merge several into one.
 - Headings, summaries, the organisation of the course, lists of notation or conventions, repeated material and asides the course does not ask for (history, cost, outlooks beyond the course) are no KCs.
 - An example, counterexample, caution or remark belongs to the KC it illustrates. Give it a KC of its own only when an exam task could test it alone. A description states the KC itself, without examples or their numbers.
 - The outline only shows where the unit sits: take KCs only from the chunks. A chunk that is only a heading teaches nothing.
-- Give each KC a short name, a one-line description and the ids of the chunks that teach it.
-- For each KC, list under assumes up to 3 things it uses that this unit does not explain, from an earlier chapter or from outside the course, each with a short name and a one-line description of what it states or what it is. Leave out everyday knowledge that a university student of this subject cannot lack.
-- List a Prerequisite between two of this unit's KCs, by their names, where the second uses the first in its statement, its proof or its method.
+- When the unit teaches again what one of knownKcs already teaches, do not write that KC anew: give its id under repeats, with the ids of the chunks that teach it here.
+- Give each new KC an id (n1, n2, …), a short name, a one-line description and the ids of the chunks that teach it.
+- For each new KC, give its Prerequisites as ids: known KCs, or new KCs that come before it in this unit.
+- A Prerequisite is a KC that this KC uses directly: a notion its statement is written with, a result its proof cites, or a method its own method runs.
+- Choose from every listed KC, also from far earlier chapters. List each KC that is used, not only the most important one. You need not repeat what its Prerequisites build on in turn.
+- outside: up to 3 things it uses that no listed KC teaches, as short names, each with a one-line description. Leave out everyday knowledge that a university student of this subject cannot lack. Usually empty.
 - Write every name and description in the course language. Formulas in LaTeX ($...$).`;
 
 /**
@@ -93,7 +122,10 @@ export function chapterExtractionSettings(unit: OfferedUnit) {
     reasoning: "medium" as const,
     instructions: EXTRACTION_INSTRUCTIONS,
     output: Output.object({
-      schema: chapterExtractionSchema(unit.chunks.map((chunk) => chunk.id)),
+      schema: chapterExtractionSchema(
+        unit.chunks.map((chunk) => chunk.id),
+        unit.knownKcs.map((kc) => kc.id),
+      ),
     }),
   };
 }

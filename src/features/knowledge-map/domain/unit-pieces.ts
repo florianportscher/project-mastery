@@ -100,6 +100,18 @@ export function joinExtractions(
         to: link.to + offset,
       })),
     );
+    if (part.knownPrerequisites) {
+      joined.knownPrerequisites = [
+        ...(joined.knownPrerequisites ?? []),
+        ...part.knownPrerequisites.map((link) => ({
+          from: link.from,
+          to: link.to + offset,
+        })),
+      ];
+    }
+    if (part.repeats) {
+      joined.repeats = [...(joined.repeats ?? []), ...part.repeats];
+    }
     if (part.exercises) {
       joined.exercises = [
         ...(joined.exercises ?? []),

@@ -28,14 +28,13 @@ flowchart TD
 
   subgraph build ["Build, per Course, on Update map"]
     retire["Retire KCs<br/>whose sources are gone"]
-    extract["Extract KCs<br/>per teaching unit"]
-    merge1["Consolidate<br/>merge alike KCs"]
+    extract["Extract KCs per teaching unit<br/>in Course order, with the map so far"]
     exercises["Extract Exercises<br/>per exercise unit"]
-    merge2["Consolidate<br/>their new KCs"]
-    assume["Match what KCs assume<br/>Prerequisites, or text on the KC"]
+    store2["Store their new KCs"]
+    assume["Ask earlier text entries<br/>against this build's KCs"]
     tree["Propose the Topic tree"]
     arrange["Arrange<br/>Course order, check report"]
-    retire --> extract --> merge1 --> exercises --> merge2 --> assume --> tree --> arrange
+    retire --> extract --> exercises --> store2 --> assume --> tree --> arrange
   end
 
   file --> pages
@@ -73,7 +72,7 @@ erDiagram
 | Chapter               | `chapters`             | One node of a Material's Outline, with its title as printed. The root Chapter (depth 0) is titled by the Material. `exam_proposed` is the AI's guess                                  | Parse. The Brief sets `is_exam` and `exam_asked` |
 | Chunk                 | `chunks`               | A passage of Markdown with its pages, Chapter, vector and `label`: `content`, `exercise`, `solution` or `admin`                                                                       | Parse                                            |
 | Exercise pair         | `exercise_solutions`   | For each exercise chunk of the Course, its solution chunk or "no solution"                                                                                                            | Parse. Recomputed for the whole Course           |
-| Unit extraction       | `chapter_extractions`  | The checked answer of one extraction call, keyed by Chapter, kind and unit, with the unit's content hash, `kc_ids` once stored and `assumes_matched` once matched                     | Build                                            |
+| Unit extraction       | `chapter_extractions`  | The checked answer of one extraction call, keyed by Chapter, kind and unit, with the unit's content hash, `kc_ids` once stored and `assumes_matched` once its text is on its KCs      | Build                                            |
 | Knowledge component   | `kcs`                  | Name, description, vector, Course order (`position`), `origin` (`content` or `exercise`), `assumes` (what it assumes that no KC means, as text) and `retired_at` when it left the map | Build                                            |
 | KC source             | `kc_sources`           | Which chunks teach a KC. Every live KC has one: a KC whose sources are all gone is retired                                                                                            | Build                                            |
 | Prerequisite          | `prerequisite_links`   | `from_kc` must be learned before `to_kc`. They form no cycle                                                                                                                          | Build                                            |
@@ -129,26 +128,33 @@ The Student's button calls `startKnowledgeMapBuild`, which queues through `queue
 
 ### 1. Extract the teaching units
 
-`extractChapters` makes one call per teaching unit without a current extraction.
+`extractChapters` makes one call per teaching unit without a current extraction, **one after another in Course order**: Materials by position, Chapters in reading order. Each call is offered `knownKcs`: every live KC stored so far, in Course order, with a short id (`k1…`), the title of its first source's Chapter, its name and description. A unit's answer is stored, and then stored as KCs, before the next unit's call, so the next unit sees them.
 
 A **Chapter unit** comes from `chapterUnits` in `domain/chapter-units.ts`. A Chapter whose subtree holds at most 12,000 characters of chunks of one kind (`UNIT_CHARS`, about 15 KCs) is one unit. A bigger one makes units of its children. Its own chunks outside them join the unit of its first child (that unit's `chapterIds` include the parent), unless they alone pass the cap, when they split into units of their own. Consecutive sibling Chapters whose subtrees each fit are packed into one unit up to the cap: a packed unit is keyed by its first Chapter, lists all of them in `chapterIds`, and the Outline marks each (`<- this unit`). Packs are recomputed on every build, so a changed pack is a new unit (its hash changes) and is extracted again. A KC of a unit may cite any chunk of the unit, that is of its `chapterIds`' subtrees; the check report's Chapters without KCs and the map smoke check follow that rule. The same rule over `content` chunks gives teaching units, and over `exercise` chunks gives exercise units.
 
 **Old exams teach nothing.** A Chapter the Student confirmed as an old exam (`is_exam`), and its whole subtree, form no teaching units. Their `exercise` chunks still form exercise units, so the exam's tasks become Exercises. A unit the build no longer forms loses its extraction when the next step loads the current ones. Confirming or withdrawing an old exam marks the map as needing Update map, as a changed Material does (see [The Course map](#the-course-map)).
 
-A unit's hash covers its Chapter's title and its chunks' Markdown. A unit whose stored extraction has the same hash makes no call: this is why Update map is cheap.
+A unit's hash covers its Chapter's title and its chunks' Markdown, not `knownKcs`. A unit whose stored extraction has the same hash makes no call: this is why Update map is cheap.
 
-The call answers KCs (name, description, the chunks that teach it, up to 3 things it `assumes`) and Prerequisites among them, by name. Its prompt keeps the KCs near the size of an exam task: headings, notation lists, repeated material and asides beyond the course are no KCs, an example or remark belongs to the KC it illustrates unless an exam task could test it alone, the Outline only places the unit (KCs come from the chunks), and a Prerequisite is listed where the second KC uses the first in its statement, proof or method. `checkExtraction` turns names and short ids into stored references. **Coverage** (`unitCoverage` in `domain/unit-coverage.ts`) is the share of the unit's characters in chunks some KC cites: below `MIN_UNIT_COVERAGE` (0.5) the call is made once more, and the answer that covers more is kept. An answer with no KCs (a notation list, say) is kept as it is, without that retry; the check report lists its Chapter under Chapters without KCs. The result goes into `chapter_extractions`, not yet into `kcs`.
+The call answers:
 
-### 2. Consolidate
+- `repeats`: known KCs this unit teaches again, each with the chunks that teach it here. They become sources of that KC; no KC is stored for them. This is how slides next to a script add sources instead of duplicates.
+- New KCs, each with an id for the call (`n1…`), name, description, the chunks that teach it, its `prerequisites` as ids (known KCs, from any earlier Chapter or Material, or new KCs before it in the unit) and `outside`: up to 3 things it uses that no listed KC teaches, which become text in `kcs.assumes`.
 
-`consolidateKcs` turns pending extractions into stored KCs, and is where KCs get their identity. For each new KC, in order:
+Its prompt keeps the KCs near the size of an exam task: headings, notation lists, repeated material and asides beyond the course are no KCs, an example or remark belongs to the KC it illustrates unless an exam task could test it alone, and the Outline only places the unit (KCs come from the chunks). A Prerequisite is a KC this one uses directly: a notion its statement is written with, a result its proof cites, a method its method runs. `checkExtraction` turns short ids into stored references and drops ids it does not know. **Coverage** (`unitCoverage` in `domain/unit-coverage.ts`) is the share of the unit's characters in chunks some KC cites: below `MIN_UNIT_COVERAGE` (0.5) the call is made once more, and the answer that covers more is kept. An answer with no KCs (a notation list, say) is kept as it is, without that retry; the check report lists its Chapter under Chapters without KCs. The result goes into `chapter_extractions`, and is then stored as KCs (step 2).
 
-1. **Embed** it as "name: description".
+A unit whose call failed, or that the rate limit turned away, is called again after the others.
+
+### 2. Store the KCs
+
+`storePendingExtractions` in `workflows/consolidate-steps.ts` turns stored extractions into stored KCs without a model call. The extraction step runs it after each complete unit; `consolidateKcs` runs it as a step for a unit given up on and for the exercise units. For each extraction:
+
+1. **Embed** each new KC as "name: description".
 2. **Revive:** a retired KC at cosine similarity 0.90 or more comes back instead of a new one.
-3. **Find alike ones:** live KCs and other new KCs at 0.85 or more form clusters of 2 to 8.
-4. **Ask the merge call** which KCs of each cluster are the same, 15 clusters per call. Its prompt counts two KCs that state the same definition, theorem or method as the same, also when one adds detail, examples or how to check it.
-5. **Apply the answer in code** (`mergeTargets`). A group keeps its oldest stored KC, or else its first new one. A merged new KC is never stored, and the KC it merges into gains its sources. Two stored KCs never merge.
-6. **Store** with `store_chapter_kcs` in one transaction. Prerequisites go through `acyclicLinks`, where a link that would close a cycle is dropped, so each cycle loses its newest link.
+3. **Store** with `store_chapter_kcs` in one transaction: new KCs with their sources, repeats as sources of their KCs, and the Prerequisites inside the unit and from known KCs. They go through `acyclicLinks`, where a link that would close a cycle is dropped, so each cycle loses its newest link.
+4. **Write `outside`** as text on its KC with `store_assumed_prerequisites`, which marks the extraction `assumes_matched`. A step that stopped between 3 and 4 writes it on the next run.
+
+A partial extraction (a unit in pieces) waits until the unit is complete or given up, so its KCs are stored once. When a unit given up on is tried whole on a later Update map, the KCs its pieces stored come back as repeats.
 
 ### 3. Extract the exercise units
 
@@ -158,23 +164,21 @@ It answers, per exercise chunk (the call's prompt says "subtask"): the listed KC
 
 **One exercise chunk gives one Exercise**, and the page read keeps an exercise with all its printed subtasks in one unit, so "Ex. 7.2" with parts a to c is one Exercise. A new KC's source is the exercise chunk that needed it, with `origin` `exercise`.
 
-### 4. Consolidate again
+### 4. Store their KCs
 
-The same step as 2 over the exercise extractions, which also stores their Exercises, keyed by question chunk so each keeps its id. A chunk marked as no exercise is dropped.
+Step 2 over the exercise extractions, which also stores their Exercises, keyed by question chunk so each keeps its id. A chunk marked as no exercise is dropped.
 
-### 5. Match what KCs assume
+### 5. Ask earlier text against the new KCs
 
-`matchAssumptions` decides what each `assumes` entry means. It embeds the entry and offers it the 5 nearest live KCs other than the assuming KC. One call per 50 entries picks a candidate or answers null. A unit whose call failed waits a step, and its entries are then asked in calls half as large per failure (25, 12, 6). When its fourth try fails too, its unanswered entries stay as text, as if no KC meant them, so matching never fails the build.
+On an update that stored new KCs (created since the build started), `recheckAssumes` asks the text entries of KCs from earlier builds once against them: one call per 50 entries, each call offered every new KC (`k1…`, with Chapter, name and description). `kcs.assumes` holds each name once.
 
-| The call answers                      | Result                                                                     |
-| ------------------------------------- | -------------------------------------------------------------------------- |
-| A KC that comes earlier in the Course | A Prerequisite                                                             |
-| A KC that comes later                 | Nothing: a forward link could make the cycle check drop real Prerequisites |
-| Null, or there were no candidates     | The entry stays on the assuming KC as text, in `kcs.assumes`               |
+| The call answers                      | Result                                                                                       |
+| ------------------------------------- | -------------------------------------------------------------------------------------------- |
+| A KC that comes earlier in the Course | The entry leaves the text and becomes a Prerequisite                                         |
+| A KC that comes later                 | The entry leaves the text: a forward link could make the cycle check drop real Prerequisites |
+| Null, or the call failed              | The entry stays as text                                                                      |
 
-`kcs.assumes` holds each name once: entries from KCs merged into one are joined by name. `store_assumed_prerequisites` writes the links, the text and the matched marks in one transaction.
-
-**Matching again.** Before that, `rematchAssumptions` takes the text entries of live KCs whose 5 nearest live KCs now include one this build stored (created since the build started). It embeds them again, since their vectors aren't stored, and asks the same call. A match removes the entry, and an earlier KC also becomes a Prerequisite. It handles 100 entries per step, in key order, and the workflow passes the last key it handled to the next run.
+It handles 100 entries per step, in key order, and the workflow passes the last key it handled to the next run.
 
 ### 6. Propose the Topic tree
 
@@ -210,18 +214,16 @@ An illustration with made-up content:
 Chapter "4.2 Subspaces", three content chunks
   │ extract
   ▼ chapter_extractions.output
-  kcs: [{ name: "Subspace criterion", description: "A subset is a subspace when ...",
-          chunkIds: [<chunk 2>], assumes: [{ name: "Vector space axioms", ... },
-                                           { name: "Set notation", ... }] }, ...]
-  │ consolidate: "Subspace criterion" is like no stored KC
-  ▼ kcs + kc_sources
-  a new KC with one source chunk
+  offered knownKcs: [{ id: "k7", chapter: "3.1 Vector spaces", name: "Vector space axioms", ... }, ...]
+  kcs: [{ id: "n1", name: "Subspace criterion", description: "A subset is a subspace when ...",
+          chunkIds: [<chunk 2>], prerequisites: ["k7"],
+          outside: [{ name: "Set notation", ... }] }, ...]
+  │ store: "Subspace criterion" revives no retired KC
+  ▼ kcs + kc_sources + prerequisite_links
+  a new KC with one source chunk, a Prerequisite from the Chapter 3.1 KC,
+  and "Set notation" in its assumes
   │ exercises: "Ex. 4.3a" tests it, final answer "dim W = 3"
   ▼ exercises + exercise_kcs
-  │ match assumptions: "Vector space axioms" means a KC of Chapter 3.1;
-  │                    "Set notation" means no KC of the Course
-  ▼ prerequisite_links + kcs
-  Prerequisite from the Chapter 3.1 KC; "Set notation" stays in its assumes
   │ Topic tree: the Chapter goes to the Topic "Subspaces"
   ▼ topics + topic_kcs
   Topic "Subspaces": "Subspace criterion", ...
@@ -238,22 +240,21 @@ All eight calls follow one pattern, so the prompts stay small and the answers ch
 - **A wrong id doesn't fail the call** (`offeredId` in `ai/offered-id.ts`). The JSON schema lists the ids as an enum to guide the model, but any string validates, so the check in code decides what to keep.
 - **The answer is structured**, through `Output.object` with a Zod schema, whose `.describe()` texts are part of the prompt.
 - **Calls fit a Vercel function.** A build call ends after `BUILD_CALL_TIMEOUT_MS` (260 s), and a step starts no call that could run past 290 s (`callFits` in `src/lib/ai/call-timeout.ts`), so each step makes one round of at most `AI_CONCURRENCY` calls. A retry within a step (the coverage retry, the second tree call) gets what is left of the step, when that is at least 60 s (`retryTimeoutMs`). The parse's calls keep `CALL_TIMEOUT_MS` (170 s). A timed-out call is a failed answer: its usage is recorded as estimated and its trace marked as an error.
-- **A failed unit waits a step, then splits.** A unit whose build call times out or gives no valid answer (`buildCall` answers "failed") is left to the next step; the workflow passes the key of a unit once per failure. An extraction unit (teaching or exercise) that failed goes after the others; from its second failure it is called in pieces, each attempt halving every piece again by characters, between chunks (`domain/unit-pieces.ts`). Answered pieces are stored as a partial extraction (its `content_hash` is `partialHash` of the unit's, and `readChunkIds` names what they read), so only failed pieces are called again, and the unit is stored whole once every piece is answered. Once its split into single chunks failed twice, the unit is given up: its partial extraction is consolidated, and the check report lists it. A match call gets four tries in halving calls (step 5). A merge call that fails twice fails the build with "A model call kept failing for <Chapter>", without a throw. The tree call is made twice; when both fail, each Chapter with KCs becomes a Topic of its own.
-- **A rate limit is a wait, not a failure.** Build calls send no SDK retries (`maxRetries: 0`). A call the Gateway's per-minute rate limit turns away (`buildCall` answers `RateLimited`) starts no further call in its step; the extraction, exercise, merge and match steps store every unit answered so far and leave the rest pending, without counting it failed or splitting it. The step's outcome carries the wait the error names, at least `MIN_RATE_LIMIT_WAIT_MS` (60 s), and the workflow sleeps that long before the next step calls the pending units. The tree call, the only call of its step, retries the step after the wait.
+- **A failed unit waits a step, then splits.** A unit whose build call times out or gives no valid answer (`buildCall` answers "failed") is left to the next step; the workflow passes the key of a unit once per failure. An extraction unit (teaching or exercise) that failed goes after the others; from its second failure it is called in pieces, each attempt halving every piece again by characters, between chunks (`domain/unit-pieces.ts`). Answered pieces are stored as a partial extraction (its `content_hash` is `partialHash` of the unit's, and `readChunkIds` names what they read), so only failed pieces are called again, and the unit is stored whole once every piece is answered. Once its split into single chunks failed twice, the unit is given up: its partial extraction is stored as KCs, and the check report lists it. A check call that fails leaves its names as text (step 5). The tree call is made twice; when both fail, each Chapter with KCs becomes a Topic of its own.
+- **A rate limit is a wait, not a failure.** Build calls send no SDK retries (`maxRetries: 0`). A call the Gateway's per-minute rate limit turns away (`buildCall` answers `RateLimited`) starts no further call in its step; the extraction, exercise and check steps store every unit answered so far and leave the rest pending, without counting it failed or splitting it. A teaching unit turned away goes after the others. The step's outcome carries the wait the error names, at least `MIN_RATE_LIMIT_WAIT_MS` (60 s), and the workflow sleeps that long before the next step calls the pending units. The tree call, the only call of its step, retries the step after the wait.
 - **Every call is metered** (`meteredStream`), so it counts against the Student's Daily limit and stops the job there.
 
-| Call (trace name)               | Job and task      | Reasoning | User message                                                                                               | Answer                                                                    | Prompt in                          |
-| ------------------------------- | ----------------- | --------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------- |
-| Page read                       | Parse, `ingest`   | none      | Last unit before the batch, then per page: number, image, text layer                                       | Units: Markdown, label, pages, heading style, continuation flags          | `ingestion/ai/page-units.ts`       |
-| Outline (`parse-outline`)       | Parse, `ingest`   | high      | Name, page count, PDF outline, headings (`h1…`), page starts (80 characters)                               | Language, notes, Chapters: title, level, heading or page, `exam`          | `ingestion/ai/outline.ts`          |
-| Pairing                         | Parse, `ingest`   | high      | Exercises (`e1…`) and solutions (`s1…`): Material, Chapter path, first 300 characters                      | Pairs it is sure of                                                       | `ingestion/ai/exercise-pairing.ts` |
-| Extraction (`extract-chapter`)  | Build, `map`      | medium    | Material name, Outline with `<- this unit` marked, Course language, chunks (`c1…`)                         | KCs with `chunkIds` and `assumes`, Prerequisites by name                  | `ai/chapter-extraction.ts`         |
-| Merge (`merge-kcs`)             | Build, `map`      | medium    | Clusters of KCs (`k1…`): name, description                                                                 | Groups that are the same KC                                               | `ai/kc-merge.ts`                   |
-| Exercises (`extract-exercises`) | Build, `exercise` | medium    | Material name, Outline, Course language, subtasks (`s1…`) with statement and solution, nearest KCs (`k1…`) | Per subtask: KCs, new KCs, final answers, `notAnExercise`                 | `ai/exercise-extraction.ts`        |
-| Check (`check-prerequisites`)   | Build, `map`      | medium    | Names (`n1…`): name, description, the KC using it, up to 5 candidates                                      | For each name, the candidate it means or null                             | `ai/prerequisite-check.ts`         |
-| Tree (`topic-tree`)             | Build, `topic`    | medium    | Course language, Outlines (`c1…`) with KC names, stored Topics (`t1…`)                                     | Flat Topic list: level, name, `chapterIds`, central question, `continues` | `ai/topic-tree.ts`                 |
+| Call (trace name)               | Job and task      | Reasoning | User message                                                                                                                       | Answer                                                                     | Prompt in                          |
+| ------------------------------- | ----------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------- |
+| Page read                       | Parse, `ingest`   | none      | Last unit before the batch, then per page: number, image, text layer                                                               | Units: Markdown, label, pages, heading style, continuation flags           | `ingestion/ai/page-units.ts`       |
+| Outline (`parse-outline`)       | Parse, `ingest`   | high      | Name, page count, PDF outline, headings (`h1…`), page starts (80 characters)                                                       | Language, notes, Chapters: title, level, heading or page, `exam`           | `ingestion/ai/outline.ts`          |
+| Pairing                         | Parse, `ingest`   | high      | Exercises (`e1…`) and solutions (`s1…`): Material, Chapter path, first 300 characters                                              | Pairs it is sure of                                                        | `ingestion/ai/exercise-pairing.ts` |
+| Extraction (`extract-chapter`)  | Build, `map`      | medium    | Material name, Outline with `<- this unit` marked, Course language, chunks (`c1…`), `knownKcs` (`k1…`): Chapter, name, description | `repeats`; new KCs (`n1…`) with `chunkIds`, Prerequisites by id, `outside` | `ai/chapter-extraction.ts`         |
+| Exercises (`extract-exercises`) | Build, `exercise` | medium    | Material name, Outline, Course language, subtasks (`s1…`) with statement and solution, nearest KCs (`k1…`)                         | Per subtask: KCs, new KCs, final answers, `notAnExercise`                  | `ai/exercise-extraction.ts`        |
+| Check (`check-prerequisites`)   | Build, `map`      | medium    | Names (`n1…`): name, description, the KC using it; the KCs this build stored (`k1…`)                                               | For each name, the KC it means or null                                     | `ai/prerequisite-check.ts`         |
+| Tree (`topic-tree`)             | Build, `topic`    | medium    | Course language, Outlines (`c1…`) with KC names, stored Topics (`t1…`)                                                             | Flat Topic list: level, name, `chapterIds`, central question, `continues`  | `ai/topic-tree.ts`                 |
 
-The vectors come from task `embed`: chunks as their Markdown, KCs and assumed names as "name: description". Which model serves each task is set in `src/lib/ai/models.ts`.
+The vectors come from task `embed`: chunks as their Markdown, KCs as "name: description". Which model serves each task is set in `src/lib/ai/models.ts`.
 
 **Course language.** KC names, descriptions and Topics are written in the language from `loadCourseLanguage`: the Student's choice in the Brief, otherwise the most common language of the Materials, otherwise English. The Materials themselves are transcribed untranslated.
 
@@ -263,14 +264,14 @@ A build always _updates_ the stored map. The tutoring keys everything on KC, Exe
 
 | Thing           | Keeps its id because                                                                       | Loses it when                                                                    |
 | --------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| KC              | A new KC merges into it or revives it instead of being stored as new                       | Never deleted: it is only retired, and it keeps its Attempts                     |
+| KC              | A unit names it as a repeat, or a new KC revives it, instead of a KC being stored as new   | Never deleted: it is only retired, and it keeps its Attempts                     |
 | Exercise        | It is stored by its question chunk                                                         | Its question chunk is deleted                                                    |
 | Topic           | The tree call names it under `continues`, or code continues it by the Chapters it covers   | No new Topic holds a Chapter of it, which also loses its notes and Topic choices |
 | Reading section | Its id is a UUID v5 of Topic, Material and pages, so a Done mark holds while the cut stays | The cut changes                                                                  |
 
 What happens to the map when the Student changes the Materials and presses Update map:
 
-- **A Material is added.** Its units are new, so they are extracted. Other units keep their hash and make no call. Its KCs merge into alike ones, which gain sources, and text that KCs assume is matched again against its new KCs. The tree call runs again because the Outlines changed.
+- **A Material is added.** Its units are new, so they are extracted. Other units keep their hash and make no call. Its units are offered the stored KCs: what they teach again adds sources to them, and their new KCs link to them. Text that KCs of earlier builds assume is asked once against its new KCs. The tree call runs again because the Outlines changed.
 - **A Material is deleted.** Its chunks go, and with them their `kc_sources` and the Exercises they pose. Pairing runs again at once. The next build retires each KC with no sources left.
 - **An old exam is confirmed or withdrawn.** Its content chunks stop or start forming teaching units. The KCs taught only there are retired, or extracted.
 - **Nothing changed.** No model calls: every hash matches, and the stored tree is arranged again.
@@ -319,16 +320,16 @@ The map is the tutoring's only source of what there is to learn. The tutoring re
 
 ## Where the code is
 
-| To change                           | Look in                                                                                                                                                                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| What a model is asked               | `ai/*.ts`, `ingestion/ai/*.ts`                                                                                                                                                                                            |
-| How an answer is checked            | `domain/chapter-extraction.ts`, `domain/exercise-extraction.ts`, `ingestion/domain/outline.ts`, `ingestion/domain/exercise-pairing.ts`                                                                                    |
-| Order and bounds of the steps       | `workflows/build-knowledge-map.ts`, `workflows/*-steps.ts`, `ingestion/workflows/parse-material.ts`                                                                                                                       |
-| Limits                              | `UNIT_CHARS`, `UNITS_PER_STEP`, `CALL_TIMEOUT_MS`, `MIN_UNIT_COVERAGE`, `CANDIDATE_KCS`, `NAMES_PER_CALL`, `CLUSTERS_PER_CALL`, `PAGES_PER_BATCH`, `MAX_PAIRING_CHUNKS`, `MAX_CHUNK_CHARS`, each in the file that uses it |
-| Thresholds for same and revived KCs | `SAME_KC_SIMILARITY`, `REVIVE_SIMILARITY` in `domain/kc-clusters.ts`                                                                                                                                                      |
-| Tree rules                          | `domain/topic-tree.ts`                                                                                                                                                                                                    |
-| Anchors and Reading sections        | `domain/topic-reading.ts`                                                                                                                                                                                                 |
-| What is written in one transaction  | The `store_*`, `arrange_*` and `replace_*` functions in `supabase/migrations/`, newest definition                                                                                                                         |
+| To change                            | Look in                                                                                                                                                                                              |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What a model is asked                | `ai/*.ts`, `ingestion/ai/*.ts`                                                                                                                                                                       |
+| How an answer is checked             | `domain/chapter-extraction.ts`, `domain/exercise-extraction.ts`, `ingestion/domain/outline.ts`, `ingestion/domain/exercise-pairing.ts`                                                               |
+| Order and bounds of the steps        | `workflows/build-knowledge-map.ts`, `workflows/*-steps.ts`, `ingestion/workflows/parse-material.ts`                                                                                                  |
+| Limits                               | `UNIT_CHARS`, `UNITS_PER_STEP`, `CALL_TIMEOUT_MS`, `MIN_UNIT_COVERAGE`, `CANDIDATE_KCS`, `NAMES_PER_CALL`, `PAGES_PER_BATCH`, `MAX_PAIRING_CHUNKS`, `MAX_CHUNK_CHARS`, each in the file that uses it |
+| Thresholds for alike and revived KCs | `SAME_KC_SIMILARITY`, `REVIVE_SIMILARITY` in `domain/kc-clusters.ts`                                                                                                                                 |
+| Tree rules                           | `domain/topic-tree.ts`                                                                                                                                                                               |
+| Anchors and Reading sections         | `domain/topic-reading.ts`                                                                                                                                                                            |
+| What is written in one transaction   | The `store_*`, `arrange_*` and `replace_*` functions in `supabase/migrations/`, newest definition                                                                                                    |
 
 To see it run: `pnpm smoke parse`, `pnpm smoke pair` and `pnpm smoke map` call real models, so read [docs/agents/live-ai.md](../agents/live-ai.md) first. `pnpm gold` loads the [gold course](../../evals/gold/README.md)'s stored output instead of running the pipeline.
 

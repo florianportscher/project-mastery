@@ -162,6 +162,28 @@ export function firstSourcePlaces(map: MapInput): Map<string, number> {
   );
 }
 
+/**
+ * The live KCs with a first source in Course order, each with the title of
+ * that source's Chapter (empty for a chunk without one).
+ */
+export function kcsInCourseOrder(
+  map: MapInput,
+): Array<{ id: string; chapter: string; name: string; description: string }> {
+  const places = firstSourcePlaces(map);
+  const titleOf = new Map(map.chapters.map((c) => [c.id, c.title]));
+  const kcOf = new Map(map.kcs.map((kc) => [kc.id, kc]));
+  return courseOrder(map).map((id) => {
+    const kc = kcOf.get(id)!;
+    const { chapterId } = map.chunks[places.get(id)!]!;
+    return {
+      id,
+      chapter: (chapterId && titleOf.get(chapterId)) || "",
+      name: kc.name,
+      description: kc.description,
+    };
+  });
+}
+
 /** The live KCs with a first source, in Course order. */
 export function courseOrder(map: MapInput): string[] {
   const places = firstSourcePlaces(map);

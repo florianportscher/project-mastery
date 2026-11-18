@@ -48,16 +48,25 @@ export const UNITS_PER_STEP = 8;
  * step; or why the build stops.
  */
 export type StepOutcome =
-  | { ok: true; left: number | null; failed?: string[]; waitMs?: number }
+  | {
+      ok: true;
+      left: number | null;
+      failed?: string[];
+      /** Units the rate limit turned away, to call after the others. */
+      deferred?: string[];
+      waitMs?: number;
+    }
   | { ok: false; reason: string };
 
 /**
  * A step of the build that the workflow calls until it leaves nothing,
- * passing the keys of the units whose call failed, once per failure.
+ * passing the keys of the units whose call failed, once per failure, and
+ * of those the rate limit turned away.
  */
 export type BuildStep = (
   courseId: string,
   failed: readonly string[],
+  deferred: readonly string[],
 ) => Promise<StepOutcome>;
 
 /**
@@ -327,13 +336,17 @@ export async function storeExtraction(
  * The extraction steps' units to call, after the units of `failed` (a key
  * once per failed attempt) failed: those that failed less first, so a
  * failed unit waits until the others ran, each with its pieces still to
- * call (`unitPieces`) and the partial extraction it keeps. Units given up
- * on (`givenUp`) are left out.
+ * call (`unitPieces`) and the partial extraction it keeps. A unit of
+ * `deferred` goes after the others that failed as often. Units given up on
+ * (`givenUp`) are left out. A kept partial extraction whose KCs were stored
+ * already (a unit given up in an earlier build) keeps them as repeats, so
+ * they are not stored twice.
  */
 export function planAttempts(
   todo: readonly CourseUnit[],
   stored: readonly StoredUnit[],
   failed: readonly string[],
+  deferred: readonly string[] = [],
 ): UnitAttempt[] {
   const storedOf = new Map(stored.map((row) => [row.key, row]));
   return todo
@@ -342,10 +355,14 @@ export function planAttempts(
       const failures = failed.filter((k) => k === key).length;
       const sizes = unit.chunks.map((chunk) => chunk.markdown.length);
       const row = storedOf.get(key);
-      const kept =
+      const partial =
         row && row.contentHash === partialHash(unit.contentHash)
           ? storedExtractionSchema.parse(row.output)
           : null;
+      const kept =
+        partial && row?.kcIds && !partial.exercises
+          ? asRepeats(partial, row.kcIds)
+          : partial;
       const read = new Set(kept?.readChunkIds ?? []);
       const pieces = unitPieces(sizes, failures).filter((piece) =>
         unit.chunks
@@ -355,13 +372,32 @@ export function planAttempts(
       return {
         unit,
         failures,
+        later: deferred.includes(key) ? 1 : 0,
         kept,
         pieces,
         givenUp: givenUp(sizes, failures),
       };
     })
     .filter((attempt) => !attempt.givenUp)
-    .toSorted((a, b) => a.failures - b.failures);
+    .toSorted((a, b) => a.failures - b.failures || a.later - b.later);
+}
+
+/** A stored extraction whose KCs are stored, as repeats of those KCs. */
+function asRepeats(
+  extraction: StoredExtraction,
+  kcIds: readonly string[],
+): StoredExtraction {
+  return {
+    readChunkIds: extraction.readChunkIds,
+    kcs: [],
+    prerequisites: [],
+    repeats: [
+      ...(extraction.repeats ?? []),
+      ...extraction.kcs.flatMap((kc, k) =>
+        kcIds[k] ? [{ kcId: kcIds[k], chunkIds: kc.chunkIds }] : [],
+      ),
+    ],
+  };
 }
 
 /** One unit's attempt in an extraction step. */
