@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/florianportscher/project-mastery/compare/project-mastery-v0.1.4...project-mastery-v0.1.5) (2026-11-19)
+
+
+### Bug Fixes
+
+* **ci:** use a Vercel CLI that accepts supportsCancellation in vercel.json ([#333](https://github.com/florianportscher/project-mastery/issues/333)) ([ddceb74](https://github.com/florianportscher/project-mastery/commit/ddceb741bd9ff6dd584ec333b9cb06c6a662f7f7))
+
 ## [0.1.4](https://github.com/florianportscher/project-mastery/compare/project-mastery-v0.1.3...project-mastery-v0.1.4) (2026-11-18)
 
 
