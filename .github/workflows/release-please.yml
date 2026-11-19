@@ -95,12 +95,12 @@ jobs:
         with:
           node-version-file: .nvmrc
       - name: Pull Vercel production settings
-        run: npx --yes vercel@41.0.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+        run: npx --yes vercel@66.2.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
       - name: Build
-        run: npx --yes vercel@41.0.0 build --prod --token="$VERCEL_TOKEN"
+        run: npx --yes vercel@66.2.0 build --prod --token="$VERCEL_TOKEN"
       - name: Deploy
         run: |
-          url=$(npx --yes vercel@41.0.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          url=$(npx --yes vercel@66.2.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
           {
             echo "### Deploy production"
             echo "Release: $TAG"
