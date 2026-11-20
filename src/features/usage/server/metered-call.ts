@@ -47,6 +47,11 @@ type MeteredScope = {
   studentId: string;
   traceName: string;
   /**
+   * Trace metadata the developer view finds the call by, such as the
+   * `courseId` of a parse or build call.
+   */
+  metadata?: Record<string, string>;
+  /**
    * Turns any other error of the model call itself into the step's own, for
    * a step that reports a failed call differently. Without it, the error is
    * thrown as it is.
@@ -76,6 +81,7 @@ export async function meteredGenerate(
     studentId,
     task,
     traceName,
+    metadata,
     callFailed,
     dailyLimit = "enforce",
   }: GenerateScope,
@@ -87,7 +93,7 @@ export async function meteredGenerate(
   }
 
   const result = await withTraceAttributes(
-    { userId: studentId, traceName },
+    { userId: studentId, traceName, metadata },
     () => generateText({ timeout: { totalMs: CALL_TIMEOUT_MS }, ...call }),
   ).catch(async (error: unknown) =>
     quotaAsNull(
@@ -129,14 +135,20 @@ type StreamCall = Parameters<typeof streamText>[0] & {
  */
 export async function meteredStream(
   admin: AdminSupabase,
-  { studentId, task, traceName, callFailed }: Omit<GenerateScope, "dailyLimit">,
+  {
+    studentId,
+    task,
+    traceName,
+    metadata,
+    callFailed,
+  }: Omit<GenerateScope, "dailyLimit">,
   call: StreamCall,
 ): Promise<{ readonly output: Promise<unknown> } | null> {
   const limit = await checkDailyLimit(admin, { studentId });
   if (limit.level === "reached") return null;
 
   const result = await withTraceAttributes(
-    { userId: studentId, traceName },
+    { userId: studentId, traceName, metadata },
     async () => {
       let streamError: unknown;
       const stream = streamText({
@@ -216,6 +228,7 @@ export async function meteredEmbed(
   {
     studentId,
     traceName,
+    metadata,
     callFailed,
   }: Omit<MeteredScope, "studentId"> & { studentId?: string },
   { values, maxRetries, asDocuments }: EmbedCall,
@@ -229,7 +242,7 @@ export async function meteredEmbed(
 
   const settings = aiTask("embed");
   const result = await withTraceAttributes(
-    { userId: studentId, traceName },
+    { userId: studentId, traceName, metadata },
     () =>
       embedMany({
         ...settings,

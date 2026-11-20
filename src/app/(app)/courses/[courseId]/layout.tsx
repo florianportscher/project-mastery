@@ -20,6 +20,8 @@ import {
   materialsPath,
 } from "@/features/courses";
 import { getCourse, getCourseList } from "@/features/courses/server";
+import { DevLink } from "@/features/dev-inspector";
+import { isDeveloper } from "@/features/dev-inspector/server";
 import {
   CourseMapLink,
   TopicTitle,
@@ -31,7 +33,8 @@ import { isSidebarOpen } from "@/lib/sidebar-state";
 
 /**
  * Shell inside a Course: the sidebar shows the Course switcher, New chat,
- * Materials, the Brief, the Course map and the Course's Chats, and the top
+ * Materials, the Brief, the Course map, for a developer outside production
+ * the developer view, and the Course's Chats, and the top
  * bar where in the Course the page is. An unknown or another Student's
  * Course is not found.
  *
@@ -44,16 +47,25 @@ export default async function CourseLayout({
   params,
 }: LayoutProps<"/courses/[courseId]">) {
   const { courseId } = await params;
-  const [user, displayName, course, courses, chats, topicNames, cookieStore] =
-    await Promise.all([
-      getUser(),
-      getDisplayName(),
-      getCourse(courseId),
-      getCourseList(),
-      getChatList(courseId),
-      getTopicNames(courseId),
-      cookies(),
-    ]);
+  const [
+    user,
+    displayName,
+    course,
+    courses,
+    chats,
+    topicNames,
+    developer,
+    cookieStore,
+  ] = await Promise.all([
+    getUser(),
+    getDisplayName(),
+    getCourse(courseId),
+    getCourseList(),
+    getChatList(courseId),
+    getTopicNames(courseId),
+    isDeveloper(),
+    cookies(),
+  ]);
   // Signed out, the page sends the Student to sign in instead.
   if (user && !course) notFound();
 
@@ -71,6 +83,7 @@ export default async function CourseLayout({
                 <MaterialsLink courseId={course.id} />
                 <BriefLink courseId={course.id} />
                 <CourseMapLink courseId={course.id} />
+                {developer && <DevLink courseId={course.id} />}
               </>
             )
           }

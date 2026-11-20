@@ -17,6 +17,8 @@ const config = {
     "!**/*-testing.ts",
     "!**/*.tsx",
     "!**/database.types.ts",
+    // The developer view is vibe-coded UI for the maintainer (#337).
+    "!src/features/dev-inspector/**",
   ],
   ...(env.SWEEP_CONCURRENCY && { concurrency: Number(env.SWEEP_CONCURRENCY) }),
   // Copy only what the unit tests need into each sandbox.

@@ -220,7 +220,12 @@ export async function proposeTopicTree(courseId: string): Promise<TreeOutcome> {
   const treeCall = (timeoutMs?: number) =>
     buildCall(
       supabase,
-      { studentId: owner, task: "topic", traceName: "topic-tree" },
+      {
+        studentId: owner,
+        task: "topic",
+        traceName: "topic-tree",
+        metadata: { courseId },
+      },
       { ...topicTreeSettings(course), messages: topicTreeMessages(course) },
       topicTreeSchema(),
       timeoutMs,

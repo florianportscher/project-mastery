@@ -117,6 +117,7 @@ export async function extractChapters(
       [attempt],
       (unit, chunks) =>
         extractUnit(supabase, owner, {
+          courseId,
           unit,
           chunks,
           language,
@@ -179,12 +180,14 @@ async function extractUnit(
   supabase: AdminSupabase,
   owner: string,
   {
+    courseId,
     unit: whole,
     chunks,
     language,
     known,
     startedAt,
   }: {
+    courseId: string;
     unit: CourseUnit;
     chunks: CourseUnit["chunks"];
     language: string;
@@ -210,7 +213,12 @@ async function extractUnit(
   const call = async (timeoutMs?: number) => {
     const answer = await buildCall(
       supabase,
-      { studentId: owner, task: "map", traceName: "extract-chapter" },
+      {
+        studentId: owner,
+        task: "map",
+        traceName: "extract-chapter",
+        metadata: { courseId, unitKey: unitKey(whole) },
+      },
       {
         ...chapterExtractionSettings(offeredUnit),
         messages: chapterExtractionMessages(offeredUnit),

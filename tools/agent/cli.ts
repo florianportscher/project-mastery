@@ -21,6 +21,7 @@ import {
   stopDevServer,
 } from "./dev-server";
 import { checkAll, newProblems } from "./diagnostics";
+import { inspect } from "./inspect";
 import { formatMail, latestMail } from "./mail";
 import { callNextTool } from "./next-mcp";
 import { PERSONA_PASSWORD, PERSONAS, persona } from "./personas";
@@ -72,7 +73,12 @@ Staging (real data; reads, and REST writes for testing; from .env.local, ADR 002
                          PATCH and DELETE need a filter; prints the affected rows
                          e.g. staging-write "PATCH materials?id=eq.7" '{"title":"x"}'
   staging-sql "<query>"  one read-only SQL statement; at most 200 rows printed
-                         e.g. staging-sql "select count(*) from materials"`;
+                         e.g. staging-sql "select count(*) from materials"
+  inspect <courseId> [materials|outline|units|kcs|exercises|topics|build|calls]
+                         a Course's stored map build and its model calls as text, suspect
+                         spots first; the first stop when diagnosing a map
+  inspect <courseId> call <callId>
+                         one model call's input and output (needs Langfuse keys)`;
 
 const appUrl = (port: number, target: string) =>
   /^https?:\/\//.test(target)
@@ -271,6 +277,8 @@ async function run(
     case "staging-sql":
       if (!args[0]) throw new AgentError('Usage: agent staging-sql "<query>"');
       return queryStagingSql(args[0]);
+    case "inspect":
+      return inspect(args);
     case "users":
       return Object.entries(PERSONAS)
         .map(([name, { email }]) => `${name.padEnd(10)}${email}`)

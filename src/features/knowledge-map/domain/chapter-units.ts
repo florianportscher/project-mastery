@@ -20,11 +20,11 @@ export const UNIT_CHARS = 12_000;
 /** A Chapter of one Material's Outline, in reading order. */
 export type UnitChapter = { id: string; parentId: string | null };
 
-/** A chunk of one Material, in reading order. */
+/** A chunk of one Material, in reading order, with its Markdown's length. */
 export type UnitChunk = {
   id: string;
   chapterId: string | null;
-  markdown: string;
+  chars: number;
 };
 
 /**
@@ -65,7 +65,7 @@ export function chapterUnits(
       ...(children.get(id) ?? []).flatMap((child) => subtree(child.id)),
     ].toSorted((a, b) => place.get(a.id)! - place.get(b.id)!);
   const size = (list: readonly UnitChunk[]) =>
-    list.reduce((sum, chunk) => sum + chunk.markdown.length, 0);
+    list.reduce((sum, chunk) => sum + chunk.chars, 0);
 
   const units: ChapterUnit[] = [];
   type Part = { ids: string[]; chunks: UnitChunk[] };
@@ -200,13 +200,13 @@ function slices(chunks: readonly UnitChunk[], cap: number): UnitChunk[][] {
   let run: UnitChunk[] = [];
   let chars = 0;
   for (const chunk of chunks) {
-    if (run.length > 0 && chars + chunk.markdown.length > cap) {
+    if (run.length > 0 && chars + chunk.chars > cap) {
       runs.push(run);
       run = [];
       chars = 0;
     }
     run.push(chunk);
-    chars += chunk.markdown.length;
+    chars += chunk.chars;
   }
   if (run.length > 0) runs.push(run);
   return runs;

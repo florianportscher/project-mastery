@@ -469,6 +469,7 @@ async function callBatch(
         studentId: material.owner,
         task: "ingest",
         traceName: "parse-batch",
+        metadata: { courseId: material.course_id, materialId: material.id },
         callFailed: (error) => {
           throw new PageCallFailed(String(error), { cause: error });
         },

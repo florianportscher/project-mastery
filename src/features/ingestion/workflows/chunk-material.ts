@@ -80,7 +80,7 @@ export async function outlineMaterial(
     pageStarts: pageStarts(units),
   };
 
-  const answer = await callOutline(supabase, material.owner, input);
+  const answer = await callOutline(supabase, material, input);
   if (answer === "limit") return { ok: false, reason: dailyLimitReason };
   return {
     ok: true,
@@ -117,7 +117,7 @@ class OutlineCallFailed extends Error {}
  */
 async function callOutline(
   supabase: AdminSupabase,
-  studentId: string,
+  material: { id: string; owner: string; course_id: string },
   input: OutlineInput,
 ): Promise<OutlineAnswer | null | "limit"> {
   const failedCall = (error: unknown) => {
@@ -130,9 +130,10 @@ async function callOutline(
     result = await meteredStream(
       supabase,
       {
-        studentId,
+        studentId: material.owner,
         task: "ingest",
         traceName: "parse-outline",
+        metadata: { courseId: material.course_id, materialId: material.id },
         callFailed: (error) => {
           throw new OutlineCallFailed(String(error), { cause: error });
         },
