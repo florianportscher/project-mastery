@@ -10,6 +10,7 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { ChatEmptyState } from "@/features/chat/components/chat-empty-state";
+import { DictationButton } from "@/features/dictation";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
   PromptInput,
@@ -131,6 +132,8 @@ export function Chat({
 }: ChatProps) {
   const chatId = chat.id;
   const [inputError, setInputError] = useState<string | null>(null);
+  // True while the Student dictates; Send waits for the text.
+  const [dictating, setDictating] = useState(false);
   const [endedHere, setEndedHere] = useState(false);
   const [dailyLimit, setDailyLimit] = useState(initialDailyLimit);
   const [opened, setOpened] = useState<MaterialListItem | null>(null);
@@ -496,11 +499,20 @@ export function Chat({
                     </PromptInputActionMenu>
                   </PromptInputTools>
                   {/* While a reply is on its way, the button is Stop. */}
-                  <PromptInputSubmit
-                    status={status}
-                    onStop={() => void stop()}
-                    disabled={!isBusy && (limitReached || uploading)}
-                  />
+                  <div className="flex items-center gap-1">
+                    <DictationButton
+                      disabled={limitReached || isBusy}
+                      onBusyChange={setDictating}
+                      onError={setInputError}
+                    />
+                    <PromptInputSubmit
+                      status={status}
+                      onStop={() => void stop()}
+                      disabled={
+                        !isBusy && (limitReached || uploading || dictating)
+                      }
+                    />
+                  </div>
                 </PromptInputFooter>
               </PromptInput>
             </PromptInputProvider>
