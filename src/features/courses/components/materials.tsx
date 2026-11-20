@@ -237,7 +237,7 @@ function UploadEntry({
           Retry
         </Button>
       )}
-      {upload.status !== "registering" && (
+      {(upload.status !== "registering" || upload.materialId) && (
         <Button
           variant="ghost"
           size="icon"
