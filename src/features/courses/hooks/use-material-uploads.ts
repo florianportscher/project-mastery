@@ -22,6 +22,8 @@ export type MaterialUpload = {
   status: "uploading" | "registering" | "failed";
   /** Share of the bytes sent, from 0 to 1. */
   progress: number;
+  /** The Material it became, once registered. */
+  materialId?: string;
   /** Why it failed. */
   message?: string;
   /** Whether trying again can help: false for a refused file. */
@@ -42,7 +44,14 @@ export function useMaterialUploads({
   courseId,
   onRegistered,
   refresh = "after-register",
+  listedIds,
 }: {
+  /**
+   * The ids of the Materials the page lists. When given, a registered upload
+   * stays in the list until its Material is listed, so the Student never sees
+   * a gap between the two.
+   */
+  listedIds?: ReadonlySet<string>;
   ownerId: string;
   courseId: string;
   /** Called once for each upload that became a Material. */
@@ -59,6 +68,10 @@ export function useMaterialUploads({
   const registeredCallback = useRef(onRegistered);
   useEffect(() => {
     registeredCallback.current = onRegistered;
+  });
+  const waitForListing = useRef(false);
+  useEffect(() => {
+    waitForListing.current = listedIds !== undefined;
   });
   const files = useRef(new Map<string, File>());
   const controllers = useRef(new Map<string, AbortController>());
@@ -79,6 +92,14 @@ export function useMaterialUploads({
     controllers.current.delete(key);
     setUploads((current) => current.filter((upload) => upload.key !== key));
   }, []);
+
+  // A registered upload leaves once the page lists its Material.
+  // Adjusted while rendering, so no frame shows both rows or neither.
+  const isListed = (upload: MaterialUpload) =>
+    upload.materialId !== undefined && listedIds?.has(upload.materialId);
+  if (uploads.some(isListed)) {
+    setUploads(uploads.filter((upload) => !isListed(upload)));
+  }
 
   // Leaving the page cancels unfinished uploads. With refresh "on-leave",
   // leaving after a registration refreshes the router, which drops its cached
@@ -162,7 +183,8 @@ export function useMaterialUploads({
           name,
           mediaType: file.type as MaterialReference["mediaType"],
         });
-        forget(key);
+        if (waitForListing.current) update(key, { materialId });
+        else forget(key);
         return;
       }
       const fieldError = Object.values(result.fieldErrors ?? {})[0]?.[0];

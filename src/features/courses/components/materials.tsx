@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import {
   type DragEvent,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useTransition,
@@ -80,9 +81,14 @@ export function Materials({
   materials,
   countMaterialChats,
 }: MaterialsProps) {
+  const listedIds = useMemo(
+    () => new Set(materials.map((material) => material.id)),
+    [materials],
+  );
   const { uploads, add, retry, remove } = useMaterialUploads({
     ownerId,
     courseId,
+    listedIds,
   });
   const [opened, setOpened] = useState<MaterialListItem | null>(null);
   const [dragging, setDragging] = useState(false);
