@@ -1,6 +1,5 @@
 import "server-only";
 import { notFound } from "next/navigation";
-import { cache } from "react";
 import { getUser, requireUser, type AuthUser } from "@/lib/auth/user";
 import { isProductionDeployment } from "@/lib/deployment-env";
 import { failed } from "@/lib/supabase/failed";
@@ -10,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
  * Whether the signed-in account is a developer: never in production, else
  * when it has a `developers` row, which it may read only for itself.
  */
-export const isDeveloper = cache(async (): Promise<boolean> => {
+export async function isDeveloper(): Promise<boolean> {
   if (isProductionDeployment()) return false;
   const user = await getUser();
   if (!user) return false;
@@ -22,7 +21,7 @@ export const isDeveloper = cache(async (): Promise<boolean> => {
     .maybeSingle();
   if (error) failed("Reading the developer row", error);
   return data !== null;
-});
+}
 
 /**
  * The signed-in developer, for every page and data call under `/dev`: signs

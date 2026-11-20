@@ -30,6 +30,9 @@ export type TracedCall = {
 /** A traced call with what it sent and answered. */
 export type TracedCallDetail = TracedCall & { input: unknown; output: unknown };
 
+/** A list of traced calls; `truncated` when older calls were left out. */
+export type TracedCalls = { calls: TracedCall[]; truncated: boolean };
+
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 10;
 const LIST_FIELDS = "core,basic,usage,model,metadata";
@@ -41,12 +44,16 @@ type Observation = Awaited<
 /**
  * The calls of this deployment's tracing environment whose trace metadata
  * `key` is `value`, oldest first, without input or output. Null when no
- * Langfuse keys are set. At most MAX_PAGES pages of PAGE_SIZE calls.
+ * Langfuse keys are set. At most MAX_PAGES pages of PAGE_SIZE calls, the
+ * newest ones.
+ *
+ * Tool spans are left out, and so is an `embedMany` span that wraps the
+ * embedding span of its provider call, so each model call is listed once.
  */
 export async function listTracedCalls(
   key: string,
   value: string,
-): Promise<TracedCall[] | null> {
+): Promise<TracedCalls | null> {
   if (!isLangfuseConfigured()) return null;
   const client = new LangfuseClient();
   const filter = JSON.stringify([
@@ -56,22 +63,40 @@ export async function listTracedCalls(
       operator: "any of",
       value: [getTracingEnvironment()],
     },
+    {
+      type: "stringOptions",
+      column: "type",
+      operator: "any of",
+      value: ["GENERATION", "EMBEDDING"],
+    },
     { type: "stringObject", column: "metadata", key, operator: "=", value },
   ]);
-  const calls: TracedCall[] = [];
+  const observations: Observation[] = [];
   let cursor: string | undefined;
-  for (let page = 0; page < MAX_PAGES; page++) {
+  let truncated = false;
+  for (let page = 0; ; page++) {
+    if (page === MAX_PAGES) {
+      truncated = true;
+      break;
+    }
     const response = await client.api.observations.getMany({
       fields: LIST_FIELDS,
       limit: PAGE_SIZE,
       filter,
       ...(cursor && { cursor }),
     });
-    calls.push(...response.data.map(toCall));
+    observations.push(...response.data);
     cursor = response.meta.cursor ?? undefined;
     if (!cursor || response.data.length < PAGE_SIZE) break;
   }
-  return calls.toSorted((a, b) => a.startTime.localeCompare(b.startTime));
+  const parents = new Set(
+    observations.map((observation) => observation.parentObservationId),
+  );
+  const calls = observations
+    .filter((observation) => !parents.has(observation.id))
+    .map(toCall)
+    .toSorted((a, b) => a.startTime.localeCompare(b.startTime));
+  return { calls, truncated };
 }
 
 /** One call with its input and output; null when unknown or no keys are set. */

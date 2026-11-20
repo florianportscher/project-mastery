@@ -149,7 +149,7 @@ export type DevCall = {
  * did not answer.
  */
 export type DevCalls =
-  | { status: "ok"; calls: DevCall[] }
+  | { status: "ok"; calls: DevCall[]; truncated: boolean }
   | { status: "untraced" }
   | { status: "error"; message: string };
 

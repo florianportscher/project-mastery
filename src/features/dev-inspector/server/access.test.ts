@@ -22,10 +22,6 @@ const db = fakeSupabase({
 });
 
 vi.mock("server-only", () => ({}));
-vi.mock("react", async (original) => ({
-  ...(await original<typeof import("react")>()),
-  cache: <T>(fn: T) => fn,
-}));
 vi.mock("@/lib/auth/user", () => ({
   getUser: async () => ({ id: signedIn, email: undefined }),
   requireUser: async () => ({ id: signedIn, email: undefined }),

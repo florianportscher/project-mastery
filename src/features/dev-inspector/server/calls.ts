@@ -19,10 +19,14 @@ import {
  */
 export async function getCourseCalls(courseId: string): Promise<DevCalls> {
   try {
-    const calls = await listTracedCalls("courseId", courseId);
-    return calls === null
+    const traced = await listTracedCalls("courseId", courseId);
+    return traced === null
       ? { status: "untraced" }
-      : { status: "ok", calls: calls.map(toDevCall) };
+      : {
+          status: "ok",
+          calls: traced.calls.map(toDevCall),
+          truncated: traced.truncated,
+        };
   } catch (error) {
     console.error("Reading the Course's calls from Langfuse failed:", error);
     return { status: "error", message: String(error) };

@@ -11,7 +11,6 @@ import { queryStagingSql } from "./staging";
 type Env = Record<string, string | undefined>;
 
 export const SECTIONS = [
-  "flags",
   "materials",
   "outline",
   "units",
@@ -146,7 +145,7 @@ function langfuse(env: Env) {
     ),
     auth: `Basic ${Buffer.from(`${key}:${secret}`).toString("base64")}`,
     // Staging calls come from previews.
-    environment: env.LANGFUSE_TRACING_ENVIRONMENT ?? "preview",
+    environment: "preview",
   };
 }
 
@@ -190,6 +189,7 @@ async function observations(
 /** One Langfuse observation, as far as the CLI reads it. */
 type Raw = {
   id: string;
+  parentObservationId?: string | null;
   name?: string;
   model?: string | null;
   startTime: string;
@@ -222,17 +222,32 @@ function toCall(o: Raw): Call {
   };
 }
 
-/** The Course's calls, oldest first; null when `.env.local` has no Langfuse keys. */
+/**
+ * The Course's calls, oldest first, each model call once (no tool spans, no
+ * `embedMany` wrapper span); null when `.env.local` has no Langfuse keys.
+ * At most 10 000, the newest; `truncated` when older ones were left out.
+ */
 export async function fetchCalls(
   courseId: string,
   env: Env = process.env,
-): Promise<Call[] | null> {
-  const calls: Call[] = [];
+): Promise<{ calls: Call[]; truncated: boolean } | null> {
+  const raws: Raw[] = [];
   let cursor: string | undefined;
-  for (let page = 0; page < 10; page++) {
+  let truncated = false;
+  for (let page = 0; ; page++) {
+    if (page === 10) {
+      truncated = true;
+      break;
+    }
     const response = await observations(
       env,
       [
+        {
+          type: "stringOptions",
+          column: "type",
+          operator: "any of",
+          value: ["GENERATION", "EMBEDDING"],
+        },
         {
           type: "stringObject",
           column: "metadata",
@@ -245,11 +260,16 @@ export async function fetchCalls(
       cursor,
     );
     if (!response) return null;
-    calls.push(...response.data.map(toCall));
+    raws.push(...response.data);
     cursor = response.meta.cursor ?? undefined;
     if (!cursor || response.data.length < 1000) break;
   }
-  return calls.toSorted((a, b) => a.startTime.localeCompare(b.startTime));
+  const parents = new Set(raws.map((o) => o.parentObservationId));
+  const calls = raws
+    .filter((o) => !parents.has(o.id))
+    .map(toCall)
+    .toSorted((a, b) => a.startTime.localeCompare(b.startTime));
+  return { calls, truncated };
 }
 
 /** One call's input and output as text. */
@@ -395,9 +415,6 @@ export function formatSection(
   const name = (id: string) => `${kcName.get(id) ?? "?"} (${short(id)})`;
   const lines: string[] = [];
   switch (section) {
-    case "flags":
-      lines.push(...flagLines(s, calls));
-      break;
     case "materials":
       for (const m of s.materials) {
         const skipped = s.pages.filter(
@@ -512,15 +529,22 @@ export async function inspect(
   let calls: Call[] | null = null;
   let callsNote = "";
   try {
-    calls = await fetchCalls(courseId, env);
+    const fetched = await fetchCalls(courseId, env);
+    calls = fetched?.calls ?? null;
+    if (fetched?.truncated)
+      callsNote = `only the newest ${fetched.calls.length} calls are shown`;
   } catch (error) {
     callsNote = `calls unavailable: ${error instanceof Error ? error.message : error}`;
   }
-  if (section) return formatSection(section, snapshot, calls);
+  if (section)
+    return [callsNote, formatSection(section, snapshot, calls)]
+      .filter(Boolean)
+      .join("\n");
   // No section: flags first, then every section, headed.
   return [
     `Course ${snapshot.course.name} (${snapshot.course.id})`,
     ...(callsNote ? [callsNote] : []),
+    `\n== flags ==\n${flagLines(snapshot, calls).join("\n")}`,
     ...SECTIONS.map(
       (x) => `\n== ${x} ==\n${formatSection(x, snapshot, calls)}`,
     ),

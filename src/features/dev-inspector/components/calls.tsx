@@ -68,6 +68,9 @@ export function CallList({
   const cost = list.reduce((sum, call) => sum + (call.cost ?? 0), 0);
   return (
     <div className="space-y-1">
+      {calls.truncated && (
+        <Flag>Only the newest {list.length} calls are shown.</Flag>
+      )}
       <p className="text-xs text-muted-foreground">
         {list.length} calls · {flags.failed.size} failed · {flags.retried.size}{" "}
         retried · {list.reduce((sum, c) => sum + c.inputTokens, 0)} in /{" "}
