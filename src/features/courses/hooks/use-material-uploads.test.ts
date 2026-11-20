@@ -155,6 +155,29 @@ describe("useMaterialUploads", () => {
       expect(router.refresh).toHaveBeenCalledTimes(1);
     });
 
+    test("with listed ids, a registered upload stays until its Material is listed", async () => {
+      let listed: ReadonlySet<string> = new Set();
+      const { result, rerender } = renderHook(() =>
+        useMaterialUploads({
+          ownerId: OWNER,
+          courseId: COURSE,
+          listedIds: listed,
+        }),
+      );
+
+      act(() => result.current.add([pdf()]));
+      await waitFor(() => expect(registered.calls).toBe(1));
+      await waitFor(() =>
+        expect(result.current.uploads[0]?.materialId).toBeDefined(),
+      );
+      expect(result.current.uploads).toHaveLength(1);
+
+      listed = new Set([result.current.uploads[0]!.materialId!]);
+      rerender();
+
+      expect(result.current.uploads).toEqual([]);
+    });
+
     test("with refresh on leave, leaving without a registered Material refreshes nothing", () => {
       const { unmount } = renderHook(() =>
         useMaterialUploads({
