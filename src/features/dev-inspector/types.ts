@@ -124,6 +124,38 @@ export type DevUnit = {
   extraction: SnapshotExtraction | null;
 };
 
+/**
+ * One traced parse or build call of the Course, from Langfuse, without its
+ * input and output.
+ */
+export type DevCall = {
+  id: string;
+  /** The trace name, such as `extract-chapter`. */
+  name: string;
+  model: string | null;
+  startTime: string;
+  endTime: string | null;
+  level: string;
+  statusMessage: string | null;
+  inputTokens: number;
+  outputTokens: number;
+  cost: number | null;
+  materialId: string | null;
+  unitKey: string | null;
+};
+
+/**
+ * The Course's calls, or why there are none: no Langfuse keys, or Langfuse
+ * did not answer.
+ */
+export type DevCalls =
+  | { status: "ok"; calls: DevCall[] }
+  | { status: "untraced" }
+  | { status: "error"; message: string };
+
+/** One call with what it sent and answered. */
+export type DevCallDetail = DevCall & { input: unknown; output: unknown };
+
 /** The suspect spots of a build, by the ids the page marks. */
 export type Flags = {
   /** Chapters with `content` chunks of their own that no live KC cites. */

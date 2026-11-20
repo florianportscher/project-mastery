@@ -100,7 +100,9 @@ export async function storePendingExtractions(
     extractionId: row.id,
     extraction: storedExtractionSchema.parse(row.output),
   }));
-  if (!(await embedMissing(supabase, owner, batch))) return "limit";
+  if (!(await embedMissing(supabase, { owner, courseId }, batch))) {
+    return "limit";
+  }
   const fresh: FreshKc[] = batch.flatMap((part, p) =>
     part.extraction.kcs.map((kc, k) => ({
       key: `${p}:${k}`,
@@ -127,7 +129,7 @@ export async function storePendingExtractions(
  */
 async function embedMissing(
   supabase: AdminSupabase,
-  owner: string,
+  { owner, courseId }: { owner: string; courseId: string },
   batch: Pending[],
 ): Promise<boolean> {
   const missing = batch.flatMap((part) =>
@@ -136,7 +138,7 @@ async function embedMissing(
   if (missing.length === 0) return true;
   const vectors = await meteredEmbed(
     supabase,
-    { studentId: owner, traceName: "embed-kcs" },
+    { studentId: owner, traceName: "embed-kcs", metadata: { courseId } },
     {
       values: missing.map((kc) => `${kc.name}: ${kc.description}`),
       asDocuments: true,

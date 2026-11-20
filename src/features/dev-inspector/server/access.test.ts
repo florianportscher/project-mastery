@@ -11,6 +11,10 @@ const db = fakeSupabase({
   tables: {
     developers: [{ user_id: DEV }],
     chunks: [{ id: CHUNK, owner: DEV, markdown: "A vector." }],
+    courses: [
+      { id: "course-dev", owner: DEV },
+      { id: "course-student", owner: STUDENT },
+    ],
   },
   // As the policies: own developer row, own chunks.
   canAccess: (table, row) =>
@@ -33,8 +37,27 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
+// Langfuse: one call per Course, its id the Course's.
+vi.mock("@/lib/tracing/observations", () => ({
+  getTracedCall: async (id: string) => ({
+    id,
+    name: "extract-chapter",
+    model: null,
+    startTime: "2026-11-20T10:00:00Z",
+    endTime: null,
+    level: "DEFAULT",
+    statusMessage: null,
+    inputTokens: 1,
+    outputTokens: 1,
+    cost: null,
+    metadata: { courseId: id, unitKey: "c/content/0" },
+    input: "prompt",
+    output: "answer",
+  }),
+}));
+
 const { requireDeveloper } = await import("./access");
-const { loadChunkMarkdown } = await import("./actions");
+const { loadCallDetail, loadChunkMarkdown } = await import("./actions");
 
 beforeEach(() => {
   signedIn = DEV;
@@ -59,6 +82,22 @@ describe("the developer view's access", () => {
       ok: false,
       message: "Not found.",
     });
+  });
+
+  test("a developer opens calls of their own Courses only", async () => {
+    await expect(
+      loadCallDetail({ callId: "course-dev" }),
+    ).resolves.toMatchObject({
+      ok: true,
+      data: { input: "prompt", output: "answer", unitKey: "c/content/0" },
+    });
+    await expect(loadCallDetail({ callId: "course-student" })).resolves.toEqual(
+      { ok: false, message: "Not found." },
+    );
+    signedIn = STUDENT;
+    await expect(loadCallDetail({ callId: "course-student" })).resolves.toEqual(
+      { ok: false, message: "Not found." },
+    );
   });
 
   test("production gets 404, developer or not", async () => {

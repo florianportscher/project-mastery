@@ -144,7 +144,12 @@ export async function recheckAssumes(
       const input = { names: offered, kcs: offeredKcs };
       const answer = await buildCall(
         supabase,
-        { studentId: owner, task: "map", traceName: "check-prerequisites" },
+        {
+          studentId: owner,
+          task: "map",
+          traceName: "check-prerequisites",
+          metadata: { courseId },
+        },
         {
           ...prerequisiteCheckSettings(input),
           messages: prerequisiteCheckMessages(input),

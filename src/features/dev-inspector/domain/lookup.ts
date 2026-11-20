@@ -16,6 +16,7 @@ export const anchor = {
   kc: (id: string) => `kc-${id}`,
   exercise: (id: string) => `exercise-${id}`,
   topic: (id: string) => `topic-${id}`,
+  call: (id: string) => `call-${id}`,
 };
 
 /** The snapshot indexed every way the page links its parts. */

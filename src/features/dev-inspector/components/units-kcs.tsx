@@ -1,3 +1,4 @@
+import { CallRefs } from "@/features/dev-inspector/components/calls";
 import {
   ChapterRefs,
   ChunkRefs,
@@ -9,9 +10,15 @@ import {
   Section,
   unitName,
 } from "@/features/dev-inspector/components/inspector-parts";
+import type { CallFlags } from "@/features/dev-inspector/domain/calls";
 import { unitCoverage } from "@/features/dev-inspector/domain/flags";
 import { anchor, type Lookup } from "@/features/dev-inspector/domain/lookup";
-import type { DevUnit, Flags, Snapshot } from "@/features/dev-inspector/types";
+import type {
+  DevCall,
+  DevUnit,
+  Flags,
+  Snapshot,
+} from "@/features/dev-inspector/types";
 import { cn } from "@/lib/utils";
 
 const percent = (share: number) => `${Math.round(share * 100)}%`;
@@ -22,11 +29,16 @@ export function UnitsSection({
   units,
   lookup,
   flags,
+  unitCalls,
+  callFlags,
 }: {
   snapshot: Snapshot;
   units: DevUnit[];
   lookup: Lookup;
   flags: Flags;
+  /** Each unit's traced calls, or null when the calls could not be read. */
+  unitCalls: Map<string, DevCall[]> | null;
+  callFlags: CallFlags;
 }) {
   const cited = new Set(
     snapshot.kcs
@@ -74,6 +86,14 @@ export function UnitsSection({
             <Row label="KCs">
               <KcRefs ids={unit.extraction?.kcIds ?? []} lookup={lookup} />
             </Row>
+            {unitCalls && (
+              <Row label="Calls">
+                <CallRefs
+                  calls={unitCalls.get(unit.key) ?? []}
+                  flags={callFlags}
+                />
+              </Row>
+            )}
             {unit.extraction && (
               <>
                 <Row label="Extracted">

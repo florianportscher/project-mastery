@@ -137,6 +137,7 @@ export async function extractExercises(
       [attempt],
       (unit, chunks) =>
         extractUnit(supabase, owner, {
+          courseId,
           unit: { ...unit, chunks },
           language,
           solutions,
@@ -192,12 +193,14 @@ async function extractUnit(
   supabase: AdminSupabase,
   owner: string,
   {
+    courseId,
     unit,
     language,
     solutions,
     solutionOf,
     known,
   }: {
+    courseId: string;
     unit: CourseUnit;
     language: string;
     solutions: ReadonlyMap<string, string>;
@@ -227,7 +230,12 @@ async function extractUnit(
   };
   const answer = await buildCall(
     supabase,
-    { studentId: owner, task: "exercise", traceName: "extract-exercises" },
+    {
+      studentId: owner,
+      task: "exercise",
+      traceName: "extract-exercises",
+      metadata: { courseId, unitKey: unitKey(unit) },
+    },
     {
       ...exerciseExtractionSettings(offered),
       messages: exerciseExtractionMessages(offered),

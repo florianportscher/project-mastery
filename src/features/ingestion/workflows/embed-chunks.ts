@@ -67,7 +67,12 @@ export async function embedChunks(materialId: string): Promise<ParseOutcome> {
 
     const embeddings = await meteredEmbed(
       supabase,
-      { studentId, traceName: "parse-embed", callFailed: embedCallFailed },
+      {
+        studentId,
+        traceName: "parse-embed",
+        metadata: { courseId: material.course_id, materialId },
+        callFailed: embedCallFailed,
+      },
       // The step retries, not the AI SDK as well: one request per attempt.
       {
         values: batch.map((chunk) => chunk.markdown),

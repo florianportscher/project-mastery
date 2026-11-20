@@ -170,7 +170,7 @@ async function runPass(
   for (const chunks of pairingCalls(course.chunks)) {
     if (!(await isLatest(supabase, pass))) return "done";
     if (!callFits(stepStartedAt)) break;
-    const pairs = await pairByCall(supabase, course.owner, chunks);
+    const pairs = await pairByCall(supabase, pass, course.owner, chunks);
     if (!pairs) {
       if (atLimit === "fail") return "limit";
       // What is left has no solution until the next pass.
@@ -274,6 +274,7 @@ async function loadCourse(
  */
 async function pairByCall(
   supabase: AdminSupabase,
+  { courseId }: { courseId: string },
   owner: string,
   chunks: CourseChunk[],
 ): Promise<Map<string, string> | null> {
@@ -291,7 +292,12 @@ async function pairByCall(
   await paceCall();
   const result = await meteredStream(
     supabase,
-    { studentId: owner, task: "ingest", traceName: "pair-exercises" },
+    {
+      studentId: owner,
+      task: "ingest",
+      traceName: "pair-exercises",
+      metadata: { courseId },
+    },
     {
       ...pairingCallSettings(),
       messages: pairingMessages(items("exercise"), items("solution")),

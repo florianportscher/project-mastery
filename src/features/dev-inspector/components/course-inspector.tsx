@@ -12,8 +12,14 @@ import {
   KcsSection,
   UnitsSection,
 } from "@/features/dev-inspector/components/units-kcs";
+import { callFlags, callsByUnit } from "@/features/dev-inspector/domain/calls";
 import { buildLookup } from "@/features/dev-inspector/domain/lookup";
-import type { DevUnit, Flags, Snapshot } from "@/features/dev-inspector/types";
+import type {
+  DevCalls,
+  DevUnit,
+  Flags,
+  Snapshot,
+} from "@/features/dev-inspector/types";
 
 const SECTIONS = [
   ["materials", "Materials"],
@@ -33,20 +39,26 @@ export function CourseInspector({
   snapshot,
   units,
   flags,
+  calls,
   backHref,
 }: {
   snapshot: Snapshot;
   units: DevUnit[];
   flags: Flags;
+  calls: DevCalls;
   backHref: string;
 }) {
   const lookup = buildLookup(snapshot, units);
+  const traced = calls.status === "ok" ? calls.calls : [];
+  const marks = callFlags(traced);
   const counts = [
     `${flags.chaptersWithoutKcs.size} Chapters without KCs`,
     `${flags.kcsWithoutSources.size} KCs without sources`,
     `${flags.nearDuplicates.size} near-duplicate KCs`,
     `${flags.unitsBelowCoverage.size} units below coverage`,
     `${flags.unreadPages.size} unread pages`,
+    `${marks.failed.size} failed calls`,
+    `${marks.retried.size} retried calls`,
   ];
   return (
     <div className="mx-auto max-w-5xl space-y-8 p-4">
@@ -82,11 +94,18 @@ export function CourseInspector({
         units={units}
         lookup={lookup}
         flags={flags}
+        unitCalls={calls.status === "ok" ? callsByUnit(traced) : null}
+        callFlags={marks}
       />
       <KcsSection snapshot={snapshot} lookup={lookup} flags={flags} />
       <ExercisesSection snapshot={snapshot} lookup={lookup} />
       <TopicsSection snapshot={snapshot} lookup={lookup} />
-      <BuildSection snapshot={snapshot} />
+      <BuildSection
+        snapshot={snapshot}
+        calls={calls}
+        callFlags={marks}
+        lookup={lookup}
+      />
     </div>
   );
 }

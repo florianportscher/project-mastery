@@ -1,3 +1,4 @@
+import { CallList } from "@/features/dev-inspector/components/calls";
 import { ChunkMarkdown } from "@/features/dev-inspector/components/chunk-markdown";
 import {
   ChapterRefs,
@@ -8,8 +9,9 @@ import {
   Row,
   Section,
 } from "@/features/dev-inspector/components/inspector-parts";
+import type { CallFlags } from "@/features/dev-inspector/domain/calls";
 import { anchor, type Lookup } from "@/features/dev-inspector/domain/lookup";
-import type { Snapshot } from "@/features/dev-inspector/types";
+import type { DevCalls, Snapshot } from "@/features/dev-inspector/types";
 
 /** Each Exercise with its question, solution, KCs and final answers. */
 export function ExercisesSection({
@@ -108,8 +110,18 @@ export function TopicsSection({
   );
 }
 
-/** The build's state and its stored check report. */
-export function BuildSection({ snapshot }: { snapshot: Snapshot }) {
+/** The build's state, its stored check report and every traced call. */
+export function BuildSection({
+  snapshot,
+  calls,
+  callFlags,
+  lookup,
+}: {
+  snapshot: Snapshot;
+  calls: DevCalls;
+  callFlags: CallFlags;
+  lookup: Lookup;
+}) {
   const build = snapshot.build;
   const time = (value: string | null) =>
     value ? new Date(value).toLocaleString("en") : "–";
@@ -134,6 +146,8 @@ export function BuildSection({ snapshot }: { snapshot: Snapshot }) {
       ) : (
         <p className="text-sm text-muted-foreground">Never built.</p>
       )}
+      <h3 className="pt-2 text-sm font-semibold">Parse and build calls</h3>
+      <CallList calls={calls} flags={callFlags} lookup={lookup} />
     </Section>
   );
 }

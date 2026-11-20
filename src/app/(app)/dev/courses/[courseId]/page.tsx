@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CourseInspector, devCoursePath } from "@/features/dev-inspector";
 import {
+  getCourseCalls,
   getCourseInspection,
   requireDeveloper,
 } from "@/features/dev-inspector/server";
@@ -22,5 +23,13 @@ export default async function DevCoursePage({
   await requireDeveloper(devCoursePath(courseId));
   const inspection = await getCourseInspection(courseId);
   if (!inspection) notFound();
-  return <CourseInspector {...inspection} backHref={courseMapPath(courseId)} />;
+  // After the snapshot, so another Student's Course id reads nothing here.
+  const calls = await getCourseCalls(courseId);
+  return (
+    <CourseInspector
+      {...inspection}
+      calls={calls}
+      backHref={courseMapPath(courseId)}
+    />
+  );
 }

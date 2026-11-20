@@ -4,3 +4,4 @@ import "server-only";
 
 export { isDeveloper, requireDeveloper } from "./server/access";
 export { getCourseInspection, type CourseInspection } from "./server/snapshot";
+export { getCourseCalls } from "./server/calls";
