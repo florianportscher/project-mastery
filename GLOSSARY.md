@@ -116,6 +116,10 @@ _Avoid_: Tutor, assistant, bot. The code's "tutor context", `TutorTools` and the
 One ongoing conversation between a Student and the AI within one Course, kept until the Student deletes it or its Course. It is where the AI tutors the Student from the Course's Knowledge map: it gets the facts of their study and a proposal of what to do next, teaches freely, and follows the Student when they want something else.
 _Avoid_: Conversation, thread
 
+**Dictation**:
+Speaking a message instead of typing it, in a Chat or the Brief. A microphone button records up to 2 minutes, the recording is turned into text and added after what is already in the message box; the Student checks and edits it, and sends it like a typed message. The recording is not stored.
+_Avoid_: Voice input, speech input, voice message
+
 **Source pane**:
 The pane beside a Chat that shows a Material's own pages, at a Reading section or a citation. A citation in the Chat opens the cited page in it.
 _Avoid_: Viewer, reader, side panel

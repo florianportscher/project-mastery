@@ -50,7 +50,12 @@ export type AiUsageRecord = {
   /** The model that answered, as priced in MODEL_PRICES. */
   modelId: string;
   usage: TokenUsage;
-  /** True when `usage` is an estimate, as for an aborted call. */
+  /**
+   * The call's cost when it is not priced per token, as for transcription,
+   * which bills the audio's length (`audioCostUsd`).
+   */
+  costUsd?: number;
+  /** True when `usage` or `costUsd` is an estimate, as for an aborted call. */
   estimated?: boolean;
   /** The Chat the call was made for, if any. */
   chatId?: string;
@@ -76,7 +81,15 @@ export async function recordAiUsage(
 ): Promise<void>;
 export async function recordAiUsage(
   supabase: Supabase,
-  { task, modelId, usage, estimated = false, chatId, replyId }: AiUsageRecord,
+  {
+    task,
+    modelId,
+    usage,
+    costUsd: cost,
+    estimated = false,
+    chatId,
+    replyId,
+  }: AiUsageRecord,
   { studentId }: StudentScope = {},
 ): Promise<void> {
   assertStudentScope(supabase, { studentId });
@@ -88,7 +101,7 @@ export async function recordAiUsage(
     input_tokens: usage.inputTokens,
     cached_input_tokens: usage.cachedInputTokens,
     output_tokens: usage.outputTokens,
-    cost_usd: costUsd(modelId, usage),
+    cost_usd: cost ?? costUsd(modelId, usage),
     estimated,
     chat_id: chatId ?? null,
     reply_id: replyId ?? null,

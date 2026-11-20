@@ -18,6 +18,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { AdminSupabase } from "@/lib/supabase/types";
 import { briefSmoke } from "./smoke/brief";
 import { closeSmoke } from "./smoke/close";
+import { dictationSmoke } from "./smoke/dictation";
 import { generateSmoke } from "./smoke/generate";
 import { gradeMockSmoke } from "./smoke/grade-mock";
 import { mapSmoke } from "./smoke/map";
@@ -40,6 +41,7 @@ const CHECKS: SmokeCheck[] = [
   mockSmoke,
   gradeMockSmoke,
   closeSmoke,
+  dictationSmoke,
 ];
 
 /**

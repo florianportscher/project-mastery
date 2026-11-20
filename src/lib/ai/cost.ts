@@ -1,5 +1,5 @@
 import type { LanguageModelUsage } from "ai";
-import { MODEL_PRICES } from "./prices";
+import { AUDIO_PRICES, MODEL_PRICES } from "./prices";
 
 /** Token counts of one AI call, as recorded and priced (ADR 0006). */
 export type TokenUsage = {
@@ -40,6 +40,17 @@ export function costUsd(modelId: string, usage: TokenUsage): number {
       usage.outputTokens * price.output) /
     1_000_000
   );
+}
+
+/** Cost in US dollars of transcribing `seconds` of audio. */
+export function audioCostUsd(modelId: string, seconds: number): number {
+  const perHour = AUDIO_PRICES[modelId];
+  if (perHour === undefined) {
+    throw new Error(
+      `No audio price for model "${modelId}". Add it to AUDIO_PRICES in src/lib/ai/prices.ts.`,
+    );
+  }
+  return (seconds * perHour) / 3600;
 }
 
 /** "$0.0012", or "<$0.0001" for a tiny cost. */

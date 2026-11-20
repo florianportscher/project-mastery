@@ -24,6 +24,7 @@ import { Markdown } from "@/components/markdown";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { messageText } from "@/lib/ai/reply";
+import { DictationButton } from "@/features/dictation";
 import { withNewStaticMessages } from "@/features/brief/domain/static-messages";
 import {
   MAX_BRIEF_MESSAGE_LENGTH,
@@ -51,6 +52,8 @@ export function Brief({ brief, dailyLimit: initialDailyLimit }: BriefProps) {
   const { courseId } = brief;
   const router = useRouter();
   const [inputError, setInputError] = useState<string | null>(null);
+  // True while the Student dictates; Send waits for the text.
+  const [dictating, setDictating] = useState(false);
   const [dailyLimit, setDailyLimit] = useState(initialDailyLimit);
   const limitReached = dailyLimit.level === "reached";
   const {
@@ -169,7 +172,17 @@ export function Brief({ brief, dailyLimit: initialDailyLimit }: BriefProps) {
             </PromptInputBody>
             <PromptInputFooter>
               <span />
-              <PromptInputSubmit status={status} disabled={limitReached} />
+              <div className="flex items-center gap-1">
+                <DictationButton
+                  disabled={limitReached}
+                  onBusyChange={setDictating}
+                  onError={setInputError}
+                />
+                <PromptInputSubmit
+                  status={status}
+                  disabled={limitReached || dictating}
+                />
+              </div>
             </PromptInputFooter>
           </PromptInput>
         </PromptInputProvider>

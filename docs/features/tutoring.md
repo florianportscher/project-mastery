@@ -184,6 +184,8 @@ Changing the instructions means running `pnpm smoke tutor`, and for a change in 
 
 ### Messages
 
+A Student message may be dictated: `/api/dictation` (`features/dictation`) turns the recording into text in the message box, and the Student sends it like a typed one, so the tutor never sees audio.
+
 The model gets the stored history on every reply (`toModelMessages`, then `modelHistory` in `chat/domain/model-history.ts`), with two cost cuts:
 
 - A Material the Student attached in the Chat is sent as its file only with the message it is attached to, up to 20 MB per request; later turns carry "[Attached: <name>]", and the AI finds it through `searchMaterials` once it is parsed.

@@ -62,3 +62,13 @@ export const MODEL_PRICES: Record<string, ModelPrice> = {
     cachedInput: 0.003,
   },
 };
+
+/**
+ * USD per hour of audio, for transcription models, which bill the audio's
+ * length rather than tokens. `openai/gpt-transcribe` verified live on
+ * 2026-11-19: the Gateway reported $0.000825 for 11 s
+ * (docs/agents/notes/gpt-transcribe.md).
+ */
+export const AUDIO_PRICES: Record<string, number> = {
+  "openai/gpt-transcribe": 0.27,
+};

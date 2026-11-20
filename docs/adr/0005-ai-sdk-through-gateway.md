@@ -1,6 +1,6 @@
 # Vercel AI SDK through Vercel AI Gateway
 
-> Local development: the text tasks may call the Gemini API directly, see [ADR 0016](0016-gemini-api-for-local-development.md). Preview and production are unchanged.
+> Local development: the text tasks may call the Gemini API directly, see [ADR 0016](0016-gemini-api-for-local-development.md); embeddings and transcription stay on the gateway. Preview and production are unchanged.
 
 **Context.** The app uses several models for different tasks, and the right model per task will change as models improve. Switching providers should be a configuration change.
 
