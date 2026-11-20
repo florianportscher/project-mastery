@@ -3,7 +3,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { gateway } from "ai";
 import { getAiEnv, type AiEnv } from "./env";
 import { routeToMockModels } from "./mock-provider";
-import { MODEL_PRICES } from "./prices";
+import { AUDIO_PRICES, MODEL_PRICES } from "./prices";
 
 export type TaskConfig = {
   /** Gateway model id (`provider/model`), resolved through AI Gateway. */
@@ -110,6 +110,16 @@ export const AI_TASKS = {
     fallbacks: [],
     override: "AI_MODEL_EMBED",
   },
+  /**
+   * A Student's Dictation to text, billed per audio hour (AUDIO_PRICES).
+   * Through AI Gateway in local development too
+   * (docs/agents/notes/gpt-transcribe.md).
+   */
+  transcribe: {
+    model: "openai/gpt-transcribe",
+    fallbacks: [],
+    override: "AI_MODEL_TRANSCRIBE",
+  },
 } as const satisfies Record<string, TaskConfig>;
 
 export type AiTask = keyof typeof AI_TASKS;
@@ -169,9 +179,13 @@ export function textOnlyStep(model: string) {
 function overrideFor(task: AiTask): string | undefined {
   const config = taskConfig(task);
   const override = getAiEnv()[config.override];
-  if (override !== undefined && !(override in MODEL_PRICES)) {
+  const [prices, table] =
+    task === "transcribe"
+      ? [AUDIO_PRICES, "AUDIO_PRICES"]
+      : [MODEL_PRICES, "MODEL_PRICES"];
+  if (override !== undefined && !(override in prices)) {
     throw new Error(
-      `${config.override}="${override}" has no price. Add it to MODEL_PRICES in src/lib/ai/prices.ts.`,
+      `${config.override}="${override}" has no price. Add it to ${table} in src/lib/ai/prices.ts.`,
     );
   }
   return override;
@@ -235,6 +249,7 @@ function geminiRouter(apiKey: string) {
         ? google.embeddingModel(geminiId(id))
         : gateway.embeddingModel(id),
     imageModel: (id: string) => gateway.imageModel(id),
+    transcriptionModel: (id: string) => gateway.transcriptionModel(id),
   };
 }
 

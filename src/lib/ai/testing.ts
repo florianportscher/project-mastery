@@ -2,6 +2,7 @@ import {
   MockEmbeddingModelV4,
   MockLanguageModelV4,
   MockProviderV4,
+  MockTranscriptionModelV4,
   simulateReadableStream,
 } from "ai/test";
 import { onTestFinished, vi } from "vitest";
@@ -140,10 +141,32 @@ function routedByTask(
   });
 }
 
+/**
+ * A transcription model that hears `text` in any audio, `durationInSeconds`
+ * long (none reported when undefined).
+ */
+export function mockTranscriptionModel(
+  text: string,
+  durationInSeconds: number | undefined,
+) {
+  return new MockTranscriptionModelV4({
+    doGenerate: async () => ({
+      text,
+      segments: [],
+      language: "en",
+      durationInSeconds,
+      warnings: [],
+      response: { timestamp: new Date(), modelId: "mock", headers: undefined },
+    }),
+  });
+}
+
 type MockModels = {
   [Task in AiTask]?: Task extends "embed"
     ? MockEmbeddingModelV4
-    : MockLanguageModelV4;
+    : Task extends "transcribe"
+      ? MockTranscriptionModelV4
+      : MockLanguageModelV4;
 };
 
 /**
@@ -165,10 +188,13 @@ export function useMockModels(models: MockModels) {
     Map<string, MockLanguageModelV4>
   > = {};
   const embeddingModels: Record<string, MockEmbeddingModelV4> = {};
+  const transcriptionModels: Record<string, MockTranscriptionModelV4> = {};
   for (const [task, model] of Object.entries(models)) {
     const id = AI_TASKS[task as AiTask].model;
     if (model instanceof MockEmbeddingModelV4) embeddingModels[id] = model;
-    else (languageByModelId[id] ??= new Map()).set(task, model);
+    else if (model instanceof MockTranscriptionModelV4) {
+      transcriptionModels[id] = model;
+    } else (languageByModelId[id] ??= new Map()).set(task, model);
   }
   const languageModels = Object.fromEntries(
     Object.entries(languageByModelId).map(([id, byTask]) => [
@@ -181,6 +207,7 @@ export function useMockModels(models: MockModels) {
   globalThis.AI_SDK_DEFAULT_PROVIDER = new MockProviderV4({
     languageModels,
     embeddingModels,
+    transcriptionModels,
   });
   onTestFinished(() => {
     globalThis.AI_SDK_DEFAULT_PROVIDER = previous;

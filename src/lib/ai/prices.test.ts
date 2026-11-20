@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, test, vi } from "vitest";
 import { AI_TASKS, type TaskConfig } from "./models";
-import { MODEL_PRICES } from "./prices";
+import { AUDIO_PRICES, MODEL_PRICES } from "./prices";
 
 vi.mock("server-only", () => ({}));
 
@@ -14,5 +14,5 @@ const configuredModels = new Set(
 );
 
 test.each([...configuredModels])("%s has a price", (id) => {
-  expect(MODEL_PRICES).toHaveProperty([id]);
+  expect({ ...MODEL_PRICES, ...AUDIO_PRICES }).toHaveProperty([id]);
 });

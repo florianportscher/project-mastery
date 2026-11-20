@@ -394,6 +394,30 @@ function embeddingModel(modelId: string) {
   };
 }
 
+/** What the mock transcription model hears in any recording. */
+export const MOCK_DICTATION =
+  "The determinant of A is zero, so A is not invertible.";
+
+/**
+ * Answers any audio with `MOCK_DICTATION`, 5 seconds long, with no token
+ * usage, like `openai/gpt-transcribe` (docs/agents/notes/gpt-transcribe.md).
+ */
+function transcriptionModel(modelId: string) {
+  return {
+    specificationVersion: "v4" as const,
+    provider: "mock",
+    modelId,
+    doGenerate: async () => ({
+      text: MOCK_DICTATION,
+      segments: [],
+      language: "en",
+      durationInSeconds: 5,
+      warnings: [],
+      response: { timestamp: new Date(), modelId, headers: undefined },
+    }),
+  };
+}
+
 function unsupported(kind: string) {
   return (modelId: string): never => {
     throw new Error(`AI_PROVIDER=mock has no ${kind} model ("${modelId}").`);
@@ -407,5 +431,6 @@ export function routeToMockModels() {
     languageModel,
     embeddingModel,
     imageModel: unsupported("image"),
+    transcriptionModel,
   };
 }
