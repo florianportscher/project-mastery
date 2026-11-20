@@ -76,15 +76,27 @@ test("appends the transcript after the typed text and reports busy", async () =>
   expect(onBusyChange).toHaveBeenLastCalledWith(false);
 });
 
-test("a failed transcription shows the server's line and leaves the box", async () => {
+test("a failed transcription shows the error line and leaves the box", async () => {
   vi.stubGlobal(
     "fetch",
     vi.fn().mockResolvedValue(new Response("Try later.", { status: 502 })),
   );
   const { onError } = setup();
   await dictate();
-  expect(onError).toHaveBeenLastCalledWith("Try later.");
+  expect(onError).toHaveBeenLastCalledWith(
+    "Couldn't transcribe that. Try again.",
+  );
   expect(screen.getByRole("textbox")).toHaveProperty("value", "");
+});
+
+test("a second press while the browser asks for access is ignored", async () => {
+  vi.mocked(navigator.mediaDevices.getUserMedia).mockReturnValue(
+    new Promise(() => {}),
+  );
+  setup();
+  const button = await screen.findByRole("button", { name: "Dictate" });
+  await act(async () => fireEvent.click(button));
+  expect(button).toHaveProperty("disabled", true);
 });
 
 test("denied microphone access shows a message", async () => {

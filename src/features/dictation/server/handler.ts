@@ -33,7 +33,7 @@ const NO_TOKENS = { inputTokens: 0, cachedInputTokens: 0, outputTokens: 0 };
  * plain text. Stages:
  *
  * 1. require the signed-in Student (401)
- * 2. refuse an empty (400) or too large (413) recording
+ * 2. refuse a too large recording (413)
  * 3. refuse at the Daily limit, before any model call (429)
  * 4. transcribe and record the call's cost from the audio's length; a model
  *    error answers 502 and records nothing
@@ -66,7 +66,6 @@ export async function transcribeDictation({
     return tooLarge();
   }
   const audio = new Uint8Array(await request.arrayBuffer());
-  if (audio.byteLength === 0) return refuse(400, "No audio was recorded.");
   if (audio.byteLength > MAX_DICTATION_BYTES) return tooLarge();
 
   const dailyLimit = await checkDailyLimit(supabase);

@@ -48,9 +48,10 @@ export function DictationButton({
   onError,
 }: DictationButtonProps) {
   const { textInput } = usePromptInputController();
-  const [phase, setPhase] = useState<"idle" | "recording" | "transcribing">(
-    "idle",
-  );
+  // "starting" waits for microphone access, so a second press is ignored.
+  const [phase, setPhase] = useState<
+    "idle" | "starting" | "recording" | "transcribing"
+  >("idle");
   const [seconds, setSeconds] = useState(0);
   const supported = useSyncExternalStore(
     noSubscription,
@@ -58,6 +59,7 @@ export function DictationButton({
     () => false,
   );
   const recorder = useRef<MediaRecorder | null>(null);
+  const mounted = useRef(false);
   // The box's current text, read when the transcript arrives.
   const current = useRef(textInput.value);
   useEffect(() => {
@@ -80,17 +82,18 @@ export function DictationButton({
   }, [phase]);
 
   // Leaving the page drops a recording and switches the microphone off.
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
       const active = recorder.current;
       if (active && active.state !== "inactive") {
         active.onstop = null;
         active.stop();
         for (const track of active.stream.getTracks()) track.stop();
       }
-    },
-    [],
-  );
+    };
+  }, []);
 
   async function transcribe(audio: Blob) {
     try {
@@ -99,22 +102,16 @@ export function DictationButton({
         headers: { "Content-Type": audio.type || "audio/webm" },
         body: audio,
       });
-      if (!response.ok) {
-        const message = (await response.text()).trim();
-        throw new Error(message || TRANSCRIBE_FAILED);
-      }
+      if (!response.ok)
+        throw new Error(`Dictation answered ${response.status}`);
       const { text } = (await response.json()) as { text: string };
       if (text) {
         const before = current.current;
         const gap = before && !/\s$/.test(before) ? " " : "";
         textInput.setInput(before + gap + text);
       }
-    } catch (error) {
-      onError?.(
-        error instanceof Error && error.message.length < 200
-          ? error.message
-          : TRANSCRIBE_FAILED,
-      );
+    } catch {
+      onError?.(TRANSCRIBE_FAILED);
     } finally {
       setPhase("idle");
     }
@@ -122,11 +119,19 @@ export function DictationButton({
 
   async function start() {
     onError?.(null);
+    setPhase("starting");
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
+      if (!mounted.current) return;
       onError?.(ACCESS_NEEDED);
+      setPhase("idle");
+      return;
+    }
+    // The Student left while the browser asked for access.
+    if (!mounted.current) {
+      for (const track of stream.getTracks()) track.stop();
       return;
     }
     const next = new MediaRecorder(stream);
@@ -177,7 +182,7 @@ export function DictationButton({
     <PromptInputButton
       aria-label="Dictate"
       tooltip="Dictate"
-      disabled={disabled}
+      disabled={disabled || phase === "starting"}
       onClick={() => void start()}
     >
       <MicIcon className="size-4" />

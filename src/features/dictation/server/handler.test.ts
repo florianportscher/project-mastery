@@ -1,10 +1,27 @@
 // @vitest-environment node
 import { MockTranscriptionModelV4 } from "ai/test";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { mockTranscriptionModel, useMockModels } from "@/lib/ai/testing";
+import { useMockModels } from "@/lib/ai/testing";
 import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
 
 vi.mock("server-only", () => ({}));
+
+/** Hears `text` in any audio, `durationInSeconds` long (none when undefined). */
+function mockTranscriptionModel(
+  text: string,
+  durationInSeconds: number | undefined,
+) {
+  return new MockTranscriptionModelV4({
+    doGenerate: async () => ({
+      text,
+      segments: [],
+      language: "en",
+      durationInSeconds,
+      warnings: [],
+      response: { timestamp: new Date(), modelId: "mock", headers: undefined },
+    }),
+  });
+}
 
 const STUDENT = "11111111-1111-1111-1111-111111111111";
 let signedIn: string | null = STUDENT;

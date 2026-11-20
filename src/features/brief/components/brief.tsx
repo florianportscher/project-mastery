@@ -174,7 +174,7 @@ export function Brief({ brief, dailyLimit: initialDailyLimit }: BriefProps) {
               <span />
               <div className="flex items-center gap-1">
                 <DictationButton
-                  disabled={limitReached || isBusy}
+                  disabled={limitReached}
                   onBusyChange={setDictating}
                   onError={setInputError}
                 />

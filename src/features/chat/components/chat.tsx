@@ -501,7 +501,7 @@ export function Chat({
                   {/* While a reply is on its way, the button is Stop. */}
                   <div className="flex items-center gap-1">
                     <DictationButton
-                      disabled={limitReached || isBusy}
+                      disabled={limitReached}
                       onBusyChange={setDictating}
                       onError={setInputError}
                     />

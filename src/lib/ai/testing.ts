@@ -141,26 +141,6 @@ function routedByTask(
   });
 }
 
-/**
- * A transcription model that hears `text` in any audio, `durationInSeconds`
- * long (none reported when undefined).
- */
-export function mockTranscriptionModel(
-  text: string,
-  durationInSeconds: number | undefined,
-) {
-  return new MockTranscriptionModelV4({
-    doGenerate: async () => ({
-      text,
-      segments: [],
-      language: "en",
-      durationInSeconds,
-      warnings: [],
-      response: { timestamp: new Date(), modelId: "mock", headers: undefined },
-    }),
-  });
-}
-
 type MockModels = {
   [Task in AiTask]?: Task extends "embed"
     ? MockEmbeddingModelV4
