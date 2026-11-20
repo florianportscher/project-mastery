@@ -648,6 +648,30 @@ export type Database = {
           },
         ];
       };
+      developers: {
+        Row: {
+          created_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "developers_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       exam_results: {
         Row: {
           course_id: string;
@@ -2099,6 +2123,7 @@ export type Database = {
         };
         Returns: boolean;
       };
+      course_build_snapshot: { Args: { p_course_id: string }; Returns: Json };
       match_chunks: {
         Args: { p_count: number; p_course_id: string; p_embedding: string };
         Returns: {

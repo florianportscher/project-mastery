@@ -225,7 +225,7 @@ export async function loadCourseUnits(
       ofMaterial.map((c) => ({
         id: c.id,
         chapterId: c.chapter_id,
-        markdown: c.markdown,
+        chars: c.markdown.length,
       })),
       kind === "exercise" ? examIds : new Set<string>(),
     ).map((unit) => {

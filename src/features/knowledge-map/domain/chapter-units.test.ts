@@ -13,7 +13,7 @@ const chapters = [
 const chunk = (id: string, chapterId: string | null, chars = 10) => ({
   id,
   chapterId,
-  markdown: "x".repeat(chars),
+  chars,
 });
 
 describe("chapterUnits", () => {

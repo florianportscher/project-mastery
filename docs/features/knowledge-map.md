@@ -296,6 +296,8 @@ The Course map (`/courses/[courseId]/map`, where the Course's home redirects) po
 
 A card opens the Topic page (`map/[topicId]`): its detail, anchors, KCs, Reading sections and neighbours in Course order, above a KC graph of the Topic's KCs, its anchors and the Exercises that test them. Clicking a KC opens a panel with every stat about it.
 
+**Developer view.** Outside production, a developer account (a `developers` row) sees a Developer link that opens `/dev/courses/[courseId]`: the Course's Materials as page grids, Outline with chunks, units with coverage, KCs, Exercises, Topics and the build's state, linked to each other, with suspect spots flagged ([ADR 0031](../adr/0031-developer-view-outside-production.md)). It reads everything from one `course_build_snapshot` call.
+
 **What changes the map.** A Material that finished parsing or was deleted, and an old exam the Student confirmed or withdrew, set `knowledge_map_builds.needs_update` (database triggers, `mark_map_needs_update`). While it is set and no build runs, the Course map shows "Your Materials changed since the map was last built." with Update map. `prepareBuild` clears it before the build reads the Course, so a change during a build marks the map again.
 
 ## How the two connect

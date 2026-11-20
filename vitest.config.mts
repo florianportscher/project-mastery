@@ -21,7 +21,8 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.test.{ts,tsx}"],
+      // The developer view is vibe-coded UI for the maintainer (#337).
+      exclude: ["src/**/*.test.{ts,tsx}", "src/features/dev-inspector/**"],
     },
   },
 });
