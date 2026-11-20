@@ -62,4 +62,6 @@ Tests and app runs use `AI_PROVIDER=mock`. Read [docs/agents/live-ai.md](docs/ag
 
 ## Staging database
 
+To diagnose a wrong map, start with `pnpm -s agent inspect <courseId>` (suspect spots first, then Materials, Outline, Units, KCs, Exercises, Topics, Build and model calls; `inspect <courseId> call <callId>` prints one call's input and output).
+
 `pnpm -s agent staging "<table>?<params>"` reads rows of the staging project, which holds real data, and `pnpm -s agent staging-sql "<query>"` runs one read-only SQL statement there. `pnpm -s agent staging-write "<POST|PATCH|DELETE> <table>?<params>" '<json body>'` changes rows through the REST API; SQL writes, schema changes and production stay out of reach. A write changes real staging rows with no undo: write only what the task needs and name what you changed. Read [ADR 0025](docs/adr/0025-staging-for-agent-review.md) and [ADR 0029](docs/adr/0029-agent-writes-to-staging.md) first.
