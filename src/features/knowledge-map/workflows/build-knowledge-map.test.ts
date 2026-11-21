@@ -1,9 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import {
-  dailyLimitReason,
-  nothingToMapReason,
-} from "@/features/knowledge-map/domain/build-failure";
+import { nothingToMapReason } from "@/features/knowledge-map/domain/build-failure";
 import { UNIT_CHARS } from "@/features/knowledge-map/domain/chapter-units";
 import { markAdminClient } from "@/lib/supabase/admin-brand";
 import type { Supabase } from "@/lib/supabase/types";
@@ -203,7 +200,7 @@ describe("Update map", () => {
       // The limit stops the build once the first answer is stored.
       expect(extractions).toHaveLength(1);
       expect(db.tables.chapter_extractions).toHaveLength(1);
-      expect(build()?.failure_reason).toBe(dailyLimitReason);
+      expect(build()?.failure_reason).toBe("Daily limit reached");
     });
   });
 
@@ -357,7 +354,7 @@ describe("Update map", () => {
 
     expect(build()).toMatchObject({
       status: "failed",
-      failure_reason: dailyLimitReason,
+      failure_reason: "Daily limit reached",
     });
     expect(db.tables.chapter_extractions).toHaveLength(1);
 

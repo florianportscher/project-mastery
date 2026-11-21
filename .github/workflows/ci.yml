@@ -31,6 +31,7 @@ jobs:
       # Coverage has no threshold and nothing reads its report, so CI runs the
       # tests without it, as `pnpm check` does.
       - run: pnpm test:run
+      - run: pnpm exec knip --no-progress
 
   build-e2e:
     name: Build & E2E tests

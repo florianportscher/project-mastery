@@ -22,14 +22,14 @@ const BOX_PADDING = "[top=44,left=16,bottom=16,right=16]";
 /** The id of the box of a Topic with child Topics. */
 export const boxId = (topicId: string) => `box:${topicId}`;
 
-export type TopicGraphNode =
+type TopicGraphNode =
   /** `parentId`: the box it sits in; null at the top. */
   | { id: string; kind: "box"; parentId: string | null; topic: MapTopic }
   /** The card of a Topic's own KCs; its id is the Topic's. */
   | { id: string; kind: "topic"; parentId: string | null; topic: MapTopic };
 
 /** Topic `source` holds a Prerequisite of a KC in Topic `target`. */
-export type TopicGraphEdge = { id: string; source: string; target: string };
+type TopicGraphEdge = { id: string; source: string; target: string };
 
 export type TopicGraph = { nodes: TopicGraphNode[]; edges: TopicGraphEdge[] };
 

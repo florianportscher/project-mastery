@@ -3,6 +3,7 @@ import type { LanguageModelUsage } from "ai";
 import { estimatedUsage, tokenUsage, type SentFile } from "@/lib/ai/cost";
 import type { AiTask } from "@/lib/ai/models";
 import type { Supabase, SessionSupabase } from "@/lib/supabase/types";
+import { failed } from "@/lib/supabase/failed";
 import { recordAiUsage } from "./usage-store";
 
 /** What one reply's model call used, as its `ai_usage` row records it. */
@@ -32,9 +33,7 @@ export async function loadReplyUsage(
       "reply_id, input_tokens, cached_input_tokens, output_tokens, cost_usd, estimated",
     )
     .in("reply_id", replyIds);
-  if (error) {
-    throw new Error(`Loading the replies' usage failed: ${error.message}`);
-  }
+  if (error) failed("Loading the replies' usage", error);
   for (const row of data) {
     if (row.reply_id === null) continue;
     usage.set(row.reply_id, {

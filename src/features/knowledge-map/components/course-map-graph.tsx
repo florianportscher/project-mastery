@@ -1,20 +1,14 @@
 "use client";
 
-import "@xyflow/react/dist/style.css";
 import {
-  Background,
   type Edge,
-  Handle,
   MarkerType,
   type Node,
   type NodeProps,
-  Position,
-  ReactFlow,
 } from "@xyflow/react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { Markdown } from "@/components/markdown";
-import { Skeleton } from "@/components/ui/skeleton";
 import { nodeLayouts } from "@/features/knowledge-map/domain/map-graph";
 import { topicPath } from "@/features/knowledge-map/domain/map-paths";
 import {
@@ -30,7 +24,7 @@ import type {
   MapTopicStudy,
 } from "@/features/knowledge-map/types";
 import { PlanBadges, TopicStudyLine } from "./topic-study";
-import { ZoomControls } from "./zoom-controls";
+import { FlowCanvas, Handles } from "./flow-canvas";
 
 type TopicNodeData = {
   topic: MapTopic;
@@ -50,12 +44,7 @@ function TopicNodeView({ data }: NodeProps<TopicNode>) {
   const { topic, href, study, badges } = data;
   return (
     <>
-      <Handle
-        type="target"
-        position={Position.Left}
-        isConnectable={false}
-        className="opacity-0"
-      />
+      <Handles />
       <Link
         href={href}
         aria-label={topic.name}
@@ -75,12 +64,6 @@ function TopicNodeView({ data }: NodeProps<TopicNode>) {
         <PlanBadges badges={badges} />
         <TopicStudyLine study={study} />
       </Link>
-      <Handle
-        type="source"
-        position={Position.Right}
-        isConnectable={false}
-        className="opacity-0"
-      />
     </>
   );
 }
@@ -190,40 +173,14 @@ export function CourseMapGraph({
     return { nodes, edges };
   }, [graph, laidOut, map.courseId, topicStudies, topicBadges]);
 
-  if (failed) {
-    return (
-      <p
-        role="alert"
-        className="flex size-full min-h-96 items-center justify-center rounded-xl border p-4 text-center text-sm text-muted-foreground"
-      >
-        The map could not be laid out. Reload the page to try again.
-      </p>
-    );
-  }
-  if (!laidOut) {
-    return (
-      <Skeleton
-        aria-label="Laying out the map"
-        className="size-full min-h-96 rounded-xl"
-      />
-    );
-  }
   return (
-    <ReactFlow
-      aria-label="Course map graph"
+    <FlowCanvas
+      label="Course map graph"
+      laidOut={laidOut !== null}
+      failed={failed}
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
-      nodesDraggable={false}
-      nodesConnectable={false}
-      elementsSelectable={false}
-      fitView
-      minZoom={0.1}
-      proOptions={{ hideAttribution: true }}
-      className="rounded-xl border"
-    >
-      <Background />
-      <ZoomControls />
-    </ReactFlow>
+    />
   );
 }

@@ -7,7 +7,7 @@ import { paceCall } from "@/lib/ai/pacing";
 import type { AdminSupabase } from "@/lib/supabase/types";
 
 /** The least wait after the Gateway's rate limit turned a build call away. */
-export const MIN_RATE_LIMIT_WAIT_MS = 60_000;
+const MIN_RATE_LIMIT_WAIT_MS = 60_000;
 
 /** The least time a build call keeps after a pace wait. */
 const MIN_CALL_MS = 30_000;

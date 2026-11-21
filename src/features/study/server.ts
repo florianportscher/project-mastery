@@ -11,15 +11,10 @@ import "server-only";
 // whose React components fail to import outside Next.js (smoke checks).
 export { renderTutorContext } from "./ai/context";
 export { TUTOR_INSTRUCTIONS } from "./ai/instructions";
-export { endsReply, TutorToolError, type TutorTools } from "./ai/tools";
+export { endsReply, TutorToolError } from "./ai/tools";
 export { getKcLearning } from "./server/learning";
 export { getExamToReport } from "./server/exam-to-report";
-export {
-  mathRunner,
-  type DeclaredAnswer,
-  type MathRunner,
-  type ProgramRun,
-} from "./server/math-runner";
+export { mathRunner } from "./server/math-runner";
 export { getMemory } from "./server/memory";
 export { getMockExam, getOpenMockExam } from "./server/mock-exams";
 export { loadProblemFlags } from "./server/problems";
@@ -44,11 +39,4 @@ export { assembleMock } from "./workflows/assemble-mock";
 export { gradeMock } from "./workflows/grade-mock";
 // For the `close` smoke check, which closes an ended session in process.
 export { closeStudySession } from "./workflows/close-study-session";
-export type { CloseNotes, CloseSource } from "./domain/close";
-export type {
-  GradedKc,
-  KcBand,
-  RecallBand,
-  StudyState,
-  TutorContext,
-} from "./types";
+export type { GradedKc, TutorContext } from "./types";

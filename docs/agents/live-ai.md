@@ -32,6 +32,6 @@ Read the body before deciding. In the AI SDK the status is `statusCode` on the `
 | 429    | Rate limited. `retry-after` headers say how long; waiting works.                                               |
 | 400    | Malformed request, or input the model does not take (a PDF sent to a model without file input): read the body. |
 | 404    | Unknown model id.                                                                                              |
-| 5xx    | Provider-side trouble that clears by itself. A task's fallback models would be tried first, but none is set.   |
+| 5xx    | Provider-side trouble that clears by itself. No task has a fallback model.                                     |
 
-Fallbacks are supported (`fallbacks` in `src/lib/ai/models.ts`), but no task sets one. A fallback that answered would be recorded as the call's model, not the primary.
+There are no fallback models: a call is recorded as its task's model.

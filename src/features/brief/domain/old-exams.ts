@@ -13,7 +13,7 @@ const LIKELY_EXAM = /klausur|exam|prüfung|resit/i;
  * Whether a Material's name marks it as a likely old exam, such as
  * "Altklausur 2023" or "Resit exam". The Student still confirms it.
  */
-export function isLikelyExam(name: string): boolean {
+function isLikelyExam(name: string): boolean {
   return LIKELY_EXAM.test(name);
 }
 
@@ -34,7 +34,7 @@ export type StoredChapter = {
  * for one, or it is a Material's root Chapter, titled by the Material's
  * name, and the name looks like one.
  */
-export function proposedExam(
+function proposedExam(
   chapter: Pick<StoredChapter, "title" | "depth" | "examProposed">,
 ): boolean {
   return (
@@ -43,7 +43,7 @@ export function proposedExam(
 }
 
 /** "<Material> › <Chapter>", or the Material's name for its root Chapter. */
-export function examChapterName(
+function examChapterName(
   materialName: string,
   chapter: Pick<StoredChapter, "title" | "depth">,
 ): string {

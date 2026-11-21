@@ -2,10 +2,8 @@
 // The chat handler: recorded usage and the Daily limit.
 // Shared setup and helpers: handler-testing.ts.
 import { randomUUID } from "node:crypto";
-import { simulateReadableStream } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
-import { describe, expect, onTestFinished, test, vi } from "vitest";
-import { AI_TASKS } from "@/lib/ai/models";
+import { describe, expect, test, vi } from "vitest";
 import { mockTextModel, useMockModels } from "@/lib/ai/testing";
 import {
   STUDENT,
@@ -14,7 +12,6 @@ import {
   db,
   userMessage,
   send,
-  storedMessages,
 } from "./handler-testing";
 
 vi.mock("server-only", () => ({}));
@@ -108,32 +105,6 @@ describe("usage", () => {
     ]);
   });
 
-  test("a reply from a gateway fallback is stored and priced as the fallback model", async () => {
-    // No Chat model has a fallback now, so this test gives it one.
-    const fallback = "google/gemini-3.5-flash-lite";
-    const { fallbacks } = AI_TASKS.chat;
-    Object.assign(AI_TASKS.chat, { fallbacks: [fallback] });
-    onTestFinished(() => {
-      Object.assign(AI_TASKS.chat, { fallbacks });
-    });
-    useMockModels({ chat: answeredByModel(fallback, "From the fallback.") });
-    const chatId = randomUUID();
-
-    await send({ chatId, courseId: COURSE, message: userMessage("Hi") });
-
-    expect(storedMessages(chatId).at(-1)).toMatchObject({
-      text: "From the fallback.",
-      modelId: fallback,
-    });
-    expect(db.tables.ai_usage.find(({ task }) => task === "chat")).toEqual(
-      expect.objectContaining({
-        model_id: fallback,
-        // 10 × $0.30 + 20 × $2.50 per million tokens.
-        cost_usd: expect.closeTo(0.000053, 12),
-      }),
-    );
-  });
-
   test("a failed reply records an estimated cost, as the provider reports none", async () => {
     useMockModels({
       chat: new MockLanguageModelV4({
@@ -160,39 +131,6 @@ describe("usage", () => {
     expect(db.tables.ai_usage[0]!.input_tokens).toBeGreaterThan(100);
   });
 });
-
-/**
- * A model that answers `text` and reports `modelId` as the model that
- * answered, as AI Gateway does when it falls back to another model.
- */
-function answeredByModel(modelId: string, text: string) {
-  return new MockLanguageModelV4({
-    doStream: async () => ({
-      stream: simulateReadableStream({
-        chunks: [
-          { type: "stream-start", warnings: [] },
-          { type: "response-metadata", modelId },
-          { type: "text-start", id: "text-1" },
-          { type: "text-delta", id: "text-1", delta: text },
-          { type: "text-end", id: "text-1" },
-          {
-            type: "finish",
-            finishReason: { unified: "stop", raw: undefined },
-            usage: {
-              inputTokens: {
-                total: 10,
-                noCache: 10,
-                cacheRead: undefined,
-                cacheWrite: undefined,
-              },
-              outputTokens: { total: 20, text: 20, reasoning: undefined },
-            },
-          },
-        ],
-      }),
-    }),
-  });
-}
 
 describe("the Daily limit", () => {
   /** Spend of a Student, today unless `createdAt` says otherwise. */

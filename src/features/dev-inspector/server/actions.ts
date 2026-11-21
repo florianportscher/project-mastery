@@ -10,7 +10,11 @@ import { getCallDetail } from "@/features/dev-inspector/server/calls";
 import type { DevCallDetail } from "@/features/dev-inspector/types";
 import { getChunkMarkdown } from "@/features/dev-inspector/server/snapshot";
 import { getUser } from "@/lib/auth/user";
-import { parseActionInput, type ActionResult } from "@/lib/validation/action";
+import {
+  parseActionInput,
+  signedOut,
+  type ActionResult,
+} from "@/lib/validation/action";
 
 const NOT_FOUND = { ok: false, message: "Not found." } as const;
 
@@ -23,7 +27,7 @@ export async function loadChunkMarkdown(input: {
   chunkId: string;
 }): Promise<ActionResult<string>> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(chunkMarkdownSchema, input);
   if (!parsed.ok) return parsed;
@@ -41,7 +45,7 @@ export async function loadCallDetail(input: {
   callId: string;
 }): Promise<ActionResult<DevCallDetail>> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(callDetailSchema, input);
   if (!parsed.ok) return parsed;

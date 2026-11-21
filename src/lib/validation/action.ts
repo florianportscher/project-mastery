@@ -14,6 +14,12 @@ export type ActionResult<T = void> =
 
 export type ActionFailure = Extract<ActionResult<never>, { ok: false }>;
 
+/** What an action returns when no Student is signed in. */
+export const signedOut = {
+  ok: false,
+  message: "Sign in again to continue.",
+} as const;
+
 /**
  * Validates Server Action input against a Zod schema. Accepts `FormData`
  * (from `<form action>`) or a plain value (from a direct call); Server Action

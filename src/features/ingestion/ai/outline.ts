@@ -94,7 +94,7 @@ const OUTLINE_INSTRUCTIONS = `You find the Outline of a Student's course materia
 - notes: notation and conventions of this Material's content that differ from the usual ones and that a reader of one passage needs. Never its structure, headings or numbering. Empty when there are none.`;
 
 /** A heading unit as the structure call sees it. */
-export type OutlineHeading = {
+type OutlineHeading = {
   id: string;
   page: number;
   style: string | null;

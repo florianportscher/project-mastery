@@ -35,9 +35,12 @@ import {
 import { startPairing, startParse } from "@/features/ingestion/server";
 import { getUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
-import { parseActionInput, type ActionResult } from "@/lib/validation/action";
+import {
+  parseActionInput,
+  signedOut,
+  type ActionResult,
+} from "@/lib/validation/action";
 
-const signedOut = { ok: false, message: "Sign in again to continue." } as const;
 const courseNotFound = { ok: false, message: courseNotFoundMessage } as const;
 const uploadIncomplete = {
   ok: false,

@@ -40,6 +40,65 @@ export async function loadKcAssumes(
 }
 
 /**
+ * The rows of a Course's map: its live KCs in order, their sources, the
+ * Prerequisite links (also those of retired KCs), the Exercises and the KCs
+ * each tests. One read for the stored map, the map queries and the build.
+ */
+export async function loadMapRows(supabase: Supabase, courseId: string) {
+  const [kcs, sources, links, exercises, exerciseKcs] = await Promise.all([
+    allRows("Loading the KCs", (from, to) =>
+      supabase
+        .from("kcs")
+        .select("id, name, description, origin")
+        .eq("course_id", courseId)
+        .is("retired_at", null)
+        .order("position")
+        .order("id")
+        .range(from, to),
+    ),
+    allRows("Loading the KC sources", (from, to) =>
+      supabase
+        .from("kc_sources")
+        .select("kc_id, chunk_id")
+        .eq("course_id", courseId)
+        .order("kc_id")
+        .order("chunk_id")
+        .range(from, to),
+    ),
+    allRows("Loading the prerequisites", (from, to) =>
+      supabase
+        .from("prerequisite_links")
+        .select("from_kc, to_kc")
+        .eq("course_id", courseId)
+        .order("from_kc")
+        .order("to_kc")
+        .range(from, to),
+    ),
+    allRows("Loading the exercises", (from, to) =>
+      supabase
+        .from("exercises")
+        .select(
+          "id, question_chunk_id, solution_chunk_id, difficulty, final_answers",
+        )
+        .eq("course_id", courseId)
+        .order("position")
+        .order("id")
+        .range(from, to),
+    ),
+    allRows("Loading the exercise KCs", (from, to) =>
+      supabase
+        .from("exercise_kcs")
+        .select("exercise_id, kc_id")
+        .eq("course_id", courseId)
+        .order("exercise_id")
+        .order("kc_id")
+        .range(from, to),
+    ),
+  ]);
+  return { kcs, sources, links, exercises, exerciseKcs };
+}
+
+/**
  * The Course's stored map, with its rows' ids; empty before the first. Reads
  * on the admin client or a Student's session client, where Row Level
  * Security leaves another Student's Course empty.
@@ -48,54 +107,13 @@ export async function loadStoredMap(
   supabase: Supabase,
   courseId: string,
 ): Promise<KnowledgeMap> {
-  const [kcs, sources, prerequisites, exercises, exerciseKcs] =
-    await Promise.all([
-      allRows("Loading the KCs", (from, to) =>
-        supabase
-          .from("kcs")
-          .select("id, name, description, origin")
-          .eq("course_id", courseId)
-          .is("retired_at", null)
-          .order("position")
-          .range(from, to),
-      ),
-      allRows("Loading the KC sources", (from, to) =>
-        supabase
-          .from("kc_sources")
-          .select("kc_id, chunk_id")
-          .eq("course_id", courseId)
-          .order("kc_id")
-          .order("chunk_id")
-          .range(from, to),
-      ),
-      allRows("Loading the prerequisites", (from, to) =>
-        supabase
-          .from("prerequisite_links")
-          .select("from_kc, to_kc")
-          .eq("course_id", courseId)
-          .order("id")
-          .range(from, to),
-      ),
-      allRows("Loading the exercises", (from, to) =>
-        supabase
-          .from("exercises")
-          .select(
-            "id, question_chunk_id, solution_chunk_id, difficulty, final_answers",
-          )
-          .eq("course_id", courseId)
-          .order("position")
-          .range(from, to),
-      ),
-      allRows("Loading the exercise KCs", (from, to) =>
-        supabase
-          .from("exercise_kcs")
-          .select("exercise_id, kc_id")
-          .eq("course_id", courseId)
-          .order("exercise_id")
-          .order("kc_id")
-          .range(from, to),
-      ),
-    ]);
+  const {
+    kcs,
+    sources,
+    links: prerequisites,
+    exercises,
+    exerciseKcs,
+  } = await loadMapRows(supabase, courseId);
 
   const kcOrder = new Map(kcs.map((kc, index) => [kc.id, index]));
   return knowledgeMapSchema.parse({

@@ -3,8 +3,7 @@ import { beforeEach, expect, test, vi } from "vitest";
 
 const COURSE = "aaaaaaaa-c000-4000-8000-000000000001";
 const MATERIAL = "aaaaaaaa-0000-4000-8000-0000000000a1";
-const CHUNK = "aaaaaaaa-0000-4000-8000-00000000c001";
-const citation = `/courses/${COURSE}/materials/${MATERIAL}#chunk-${CHUNK}`;
+const citation = `/courses/${COURSE}/materials/${MATERIAL}?pages=3-5`;
 
 const openSource = vi.fn();
 vi.mock("@/features/chat/server/actions", () => ({
@@ -97,29 +96,15 @@ test("a citation click opens the cited page in the pane, and Close closes it", a
   expect(pane).toHaveTextContent("pp. 3–5");
   expect(openSource).toHaveBeenCalledWith({
     courseId: COURSE,
-    kind: "chunk",
-    id: CHUNK,
-  });
-
-  fireEvent.click(within(pane).getByRole("button", { name: "Close source" }));
-  expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
-});
-
-test("a page link opens the Material at the cited pages", async () => {
-  const link = `/courses/${COURSE}/materials/${MATERIAL}?pages=3-5`;
-  render(<Harness text={`See [Lecture 7, pp. 3–5](${link}).`} />);
-
-  fireEvent.click(screen.getByRole("link", { name: "Lecture 7, pp. 3–5" }));
-
-  expect(await screen.findByText("File Lecture 7 at page 3")).toBeVisible();
-  expect(screen.getByText("Marked 3-5")).toBeVisible();
-  expect(openSource).toHaveBeenCalledWith({
-    courseId: COURSE,
     kind: "pages",
     materialId: MATERIAL,
     pageFrom: 3,
     pageTo: 5,
   });
+  expect(screen.getByText("Marked 3-5")).toBeVisible();
+
+  fireEvent.click(within(pane).getByRole("button", { name: "Close source" }));
+  expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
 });
 
 test("a cited page the Material lacks shows the note at page 1", async () => {
@@ -155,7 +140,7 @@ test("a modifier click follows the citation instead", () => {
 });
 
 test("a link that is no citation of this Course behaves as before", () => {
-  const other = `/courses/bbbbbbbb-c000-4000-8000-000000000001/materials/${MATERIAL}#chunk-${CHUNK}`;
+  const other = `/courses/bbbbbbbb-c000-4000-8000-000000000001/materials/${MATERIAL}?pages=3-5`;
   render(<Harness text={`See [elsewhere](${other}).`} />);
 
   fireEvent.click(screen.getByText("elsewhere"));

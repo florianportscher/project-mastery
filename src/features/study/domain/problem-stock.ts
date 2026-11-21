@@ -8,19 +8,19 @@
  */
 
 /** Unseen Problems a Topic's KC should have. */
-export const TOPIC_STOCK_PER_KC = 2;
+const TOPIC_STOCK_PER_KC = 2;
 
 /** The most Problems one Topic stock run queues. */
-export const TOPIC_STOCK_CAP = 4;
+const TOPIC_STOCK_CAP = 4;
 
 /** How many days ahead a review stock run looks for due KCs. */
-export const REVIEW_DAYS_AHEAD = 3;
+const REVIEW_DAYS_AHEAD = 3;
 
 /** The most Problems one review stock run queues. */
-export const REVIEW_STOCK_CAP = 6;
+const REVIEW_STOCK_CAP = 6;
 
 /** An Exercise as a variant source. */
-export type StockExercise = {
+type StockExercise = {
   id: string;
   kcs: string[];
   /** Whether the Student has been asked it. */

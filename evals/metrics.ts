@@ -59,7 +59,7 @@ const wordCount = (text: string) => text.split(/\s+/).filter(Boolean).length;
 const endsInQuestion = (text: string) => /\?[\s*_)\]"'`»”’]*$/.test(text);
 
 /** Whether the Chat has a reply from a real model, and so was traced. */
-export function hasRealReplies(chat: MetricsChat): boolean {
+function hasRealReplies(chat: MetricsChat): boolean {
   return chat.messages.some((message) => {
     if (message.role !== "assistant") return false;
     const text = messageText(message.parts);
@@ -106,7 +106,7 @@ export function chatMetrics(chat: MetricsChat): ChatMetrics {
 }
 
 /** The Langfuse scores of one Chat; a metric without a value has none. */
-export function chatScores(chat: MetricsChat): SessionScore[] {
+function chatScores(chat: MetricsChat): SessionScore[] {
   return Object.entries(chatMetrics(chat)).flatMap(([name, value]) =>
     value === undefined
       ? []

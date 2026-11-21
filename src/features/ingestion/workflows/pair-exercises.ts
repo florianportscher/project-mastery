@@ -14,12 +14,12 @@ import {
   type PairingChunk,
   type PathChapter,
 } from "@/features/ingestion/domain/exercise-pairing";
-import { dailyLimitReason } from "@/features/ingestion/domain/parse-failure";
 import {
   loadMaterial,
   type ParseOutcome,
 } from "@/features/ingestion/workflows/parse-steps";
 import {
+  dailyLimitReason,
   meteredStream,
   RATE_LIMITED_STEP_RETRIES,
 } from "@/features/usage/server";

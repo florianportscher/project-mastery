@@ -5,7 +5,7 @@
  */
 
 /** Something a KC uses that no KC of the Course teaches. */
-export type Assumption = { name: string; description: string };
+type Assumption = { name: string; description: string };
 
 /**
  * A new KC of an extraction: with the call's chunk ids in its answer, with
