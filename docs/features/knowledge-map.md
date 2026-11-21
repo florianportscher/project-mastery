@@ -6,6 +6,20 @@ The Knowledge map is half of one system. This document covers everything up to a
 
 Domain words are defined in [GLOSSARY.md](../../GLOSSARY.md); the choices behind the design are in [ADR 0007](../adr/0007-ingest-each-upload-once.md), [0020](../adr/0020-topics.md), [0021](../adr/0021-problem-verification.md), [0023](../adr/0023-knowledge-map-from-chapters.md) and [0026](../adr/0026-assumptions-as-text.md).
 
+## What the map is for
+
+The map gives the AI tutor five things, and nothing else:
+
+1. **Topics**: a big picture of everything in the Materials.
+2. **Chunks**: every Material searchable.
+3. **KCs**: what the Student's mastery is tracked on, so nothing is forgotten.
+4. **Prerequisites**: an order that makes sense to teach in.
+5. **Exercises and old exams**: real practice, and Priority when they are good.
+
+Keep only what these need: every other structure in the pipeline is internal and stays thin. The map is never perfect, and it must never stand in the tutor's way.
+
+**Any material.** The pipeline serves every kind of school, college and university material: scripts, slides, exercise sheets, solutions, old exams, scans, books. Solve a problem with a rule that holds for any material, never with one that names a layout, a type of material or a course: such rules fit the Materials at hand and fail on the next upload. Accept an imperfect map for unusual material over a special case.
+
 ## The short version
 
 Two background jobs run one after the other:
