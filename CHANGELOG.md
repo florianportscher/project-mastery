@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.6](https://github.com/florianportscher/project-mastery/compare/project-mastery-v0.1.5...project-mastery-v0.1.6) (2026-11-21)
+
+
+### Features
+
+* developer view of a Course's map build, for the maintainer and agents ([#340](https://github.com/florianportscher/project-mastery/issues/340)) ([5a0a552](https://github.com/florianportscher/project-mastery/commit/5a0a552ab4b04b6e4145728de635b8aa4b560ee2))
+* dictate messages in the Chat and the Brief ([#338](https://github.com/florianportscher/project-mastery/issues/338)) ([7b14f7b](https://github.com/florianportscher/project-mastery/commit/7b14f7bbf523a85f35b1fbdf9af755c8cb99988b))
+
+
+### Bug Fixes
+
+* keep an upload row until its material is listed ([#339](https://github.com/florianportscher/project-mastery/issues/339)) ([bc53266](https://github.com/florianportscher/project-mastery/commit/bc53266e5f56ff3504a9b8c11c98570f8da49d98))
+
 ## [0.1.5](https://github.com/florianportscher/project-mastery/compare/project-mastery-v0.1.4...project-mastery-v0.1.5) (2026-11-19)
 
 
