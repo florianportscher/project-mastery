@@ -2,6 +2,8 @@
 
 Every change reaches `main` through a PR that the maintainer reviews and squash-merges. Agents push branches and open PRs; they never push to `main`, and a PR merges only on the maintainer's approval. `/build` arms auto-merge (`gh pr merge <pr> --auto --squash`), so that approval is the merge.
 
+**The one exception:** a Dependabot PR of the `minor-and-patch` group arms its own auto-merge (squash) when it opens (`.github/workflows/dependabot-automerge.yml`) and merges once the required checks pass. Majors and the `next-react` group stay manual.
+
 The maintainer reviews on GitHub: they read the PR, try it on its Vercel preview, which runs on the staging project with their own Courses, and approve it or comment on it. A comment is a change request, built on the same branch by the next shift (`/build`). They run no command for a review: what a command can check is yours to run before the PR is ready.
 
 - **Branch:** `<type>/<issue>-<kebab-description>`, or `<type>/<kebab-description>` without an issue. The type is a Conventional Commits type: `feat`, `fix`, `refactor`, `test`, `chore` or `docs`.
