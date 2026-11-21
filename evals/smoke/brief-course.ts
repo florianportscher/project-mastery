@@ -2,15 +2,15 @@ import { randomUUID } from "node:crypto";
 import type { AdminSupabase } from "@/lib/supabase/types";
 import { insertRows } from "./gold-course";
 
-/** The lecture notes' last Chapter, which the parse proposed as an old exam. */
+/** The exam at the end of the lecture notes, which the build found. */
 export const EXAM_TITLE = "Klausur 2025";
 
 /** The small Course's Materials and the Topic its admin text leaves out. */
 export type SmallCourse = {
   courseId: string;
   labManualId: string;
-  /** The old exam Chapter inside the lecture notes. */
-  examChapterId: string;
+  /** The exam the build found at the end of the lecture notes. */
+  examId: string;
   /** The KCs of Chapter 2, which an admin text says is not examined. */
   chapter2Kcs: string[];
   /** The Topic that holds them. */
@@ -26,9 +26,10 @@ export type Inserts = Array<{
 /**
  * The rows of a small Course of `studentId` named `name` (#229): a lab
  * manual and lecture notes whose admin chunk says "Chapter 2 is not
- * examined", with Chapters 1 and 2 and a last Chapter "Klausur 2025" that
- * the parse proposed as an old exam, and a map of two top-level Topics, one
- * per teaching Chapter. Parents come before children.
+ * examined", with Chapters 1 and 2 and a last Chapter "Klausur 2025" whose
+ * Exercise is in an exam the build found, not yet answered, and a map of
+ * two top-level Topics, one per teaching Chapter. Parents come before
+ * children.
  */
 export function smallCourseRows(
   studentId: string,
@@ -75,7 +76,6 @@ export function smallCourseRows(
     depth: parentId === null ? 0 : 1,
     title,
     page_from: Math.max(position, 1),
-    exam_proposed: title === EXAM_TITLE,
   });
   const chapters = [
     chapter(labRoot, labManualId, null, 0, "Lab manual"),
@@ -136,6 +136,8 @@ export function smallCourseRows(
     position,
   });
   const kcs = [kc("Vector addition", 0), kc("Matrix product", 1)];
+  const examId = newId();
+  const exerciseId = newId();
   return {
     inserts: [
       { table: "courses", rows: [{ id: courseId, owner: studentId, name }] },
@@ -167,11 +169,40 @@ export function smallCourseRows(
           chunk_id: chunks[index + 1]!.id,
         })),
       },
+      {
+        table: "exams",
+        rows: [{ ...owned, id: examId, name: EXAM_TITLE, position: 0 }],
+      },
+      {
+        table: "exercises",
+        rows: [
+          {
+            ...owned,
+            id: exerciseId,
+            question_chunk_id: chunks[3]!.id,
+            difficulty: 1,
+            position: 0,
+            exam_id: examId,
+          },
+        ],
+      },
+      {
+        table: "exercise_chunks",
+        rows: [
+          {
+            ...owned,
+            exercise_id: exerciseId,
+            chunk_id: chunks[3]!.id,
+            role: "question",
+            position: 0,
+          },
+        ],
+      },
     ],
     course: {
       courseId,
       labManualId,
-      examChapterId: examChapter,
+      examId,
       chapter2Kcs: [kcs[1]!.id],
       chapter2Topic: matrices,
     },

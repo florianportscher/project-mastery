@@ -77,12 +77,11 @@ describe("the Progress section", () => {
 
 test("shows the reserved exam as a row of the exam facts, or None once answered", () => {
   const { unmount } = renderPanel({
-    brief: { reservedExam: { name: "Exam 2024", href: "/exam" } },
+    brief: { reservedExam: { name: "Exam 2024" } },
   });
-  expect(screen.getByRole("link", { name: "Exam 2024" })).toHaveAttribute(
-    "href",
-    "/exam",
-  );
+  expect(
+    screen.getByText("Reserved exam").nextElementSibling,
+  ).toHaveTextContent("Exam 2024");
   unmount();
   renderPanel({ brief: { reservedExam: "none" } });
   const label = screen.getByText("Reserved exam");
@@ -161,10 +160,10 @@ describe("BriefPanel", () => {
     );
   });
 
-  test("links the old exams and shows each exam scope with the Student's words", () => {
+  test("names the old exams and shows each exam scope with the Student's words", () => {
     renderPanel({
       brief: {
-        oldExams: [{ id: "m2", name: "Klausur 2024", href: "/m/2" }],
+        oldExams: [{ id: "x2", name: "Klausur 2024" }],
         examScopes: [
           {
             name: "Eigenvalues",
@@ -176,11 +175,10 @@ describe("BriefPanel", () => {
     });
 
     expect(
-      within(screen.getByRole("region", { name: "Old exams" })).getByRole(
-        "link",
-        { name: "Klausur 2024" },
+      within(screen.getByRole("region", { name: "Old exams" })).getByText(
+        "Klausur 2024",
       ),
-    ).toHaveAttribute("href", "/m/2");
+    ).toBeTruthy();
     expect(
       screen.getByRole("region", { name: "Exam scope" }),
     ).toHaveTextContent("Excluded: Eigenvalues · “Chapter 7 is not examined”");

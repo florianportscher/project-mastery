@@ -22,12 +22,14 @@ const TABLES = [
   "problem_kcs",
   "materials",
   "chapters",
+  "exams",
   "chunks",
   "kcs",
   "kc_sources",
   "prerequisite_links",
   "exercises",
   "exercise_kcs",
+  "exercise_chunks",
   "exam_scopes",
   "knowledge_map_builds",
   "topics",
@@ -136,7 +138,6 @@ function seedCourse(kcIds: string[], taught: string[] = []) {
     parent_id: null,
     title: "Sheet 7",
     depth: 0,
-    is_exam: null,
   });
   t.chunks.push({
     id: QUESTION_CHUNK,
@@ -175,10 +176,16 @@ function seedCourse(kcIds: string[], taught: string[] = []) {
     id: "x1",
     ...owned,
     question_chunk_id: QUESTION_CHUNK,
-    solution_chunk_id: null,
     difficulty: 2,
     position: 0,
     final_answers: [{ label: "Thrust", value: "17.5 kN", anyOrder: false }],
+  });
+  t.exercise_chunks.push({
+    ...owned,
+    exercise_id: "x1",
+    chunk_id: QUESTION_CHUNK,
+    role: "question",
+    position: 0,
   });
   t.exercise_kcs.push({ ...owned, exercise_id: "x1", kc_id: "k1" });
   const at = new Date(Date.now() - 3 * DAY_MS).toISOString();
@@ -205,6 +212,19 @@ function seedCourse(kcIds: string[], taught: string[] = []) {
       created_at: at,
     });
   }
+}
+
+/** A confirmed old exam, e1, holding Exercise x1. */
+function confirmedExam() {
+  db.tables.exams.push({
+    id: "e1",
+    owner: STUDENT,
+    course_id: COURSE,
+    name: "Klausur 2023",
+    position: 0,
+    confirmed: true,
+  });
+  db.tables.exercises[0]!.exam_id = "e1";
 }
 
 function seedRun(stock: "topic" | "review") {
@@ -286,22 +306,11 @@ describe("Topic stock", () => {
 
   test("the reserved exam's Exercises are no stock and no variant source", async () => {
     seedCourse(["k1"]);
-    // The exam is a Chapter inside the sheet, and the question is in it.
-    db.tables.chapters.push({
-      id: "ch2",
-      owner: STUDENT,
-      course_id: COURSE,
-      material_id: "m1",
-      parent_id: "ch1",
-      title: "Klausur 2023",
-      depth: 1,
-      is_exam: true,
-    });
-    db.tables.chunks[0]!.chapter_id = "ch2";
+    confirmedExam();
     db.tables.briefs.push({
       course_id: COURSE,
       owner: STUDENT,
-      reserved_exam_chapter_id: "ch2",
+      reserved_exam_id: "e1",
     });
     seedRun("topic");
     useGenerateModel(DRAFT);
@@ -316,17 +325,17 @@ describe("Topic stock", () => {
 
   test("once a submitted mock used the reservation, its exam is an ordinary Material", async () => {
     seedCourse(["k1"]);
-    db.tables.chapters[0]!.is_exam = true;
+    confirmedExam();
     db.tables.briefs.push({
       course_id: COURSE,
       owner: STUDENT,
-      reserved_exam_chapter_id: "ch1",
+      reserved_exam_id: "e1",
     });
     db.tables.mock_exams.push({
       id: "mock1",
       course_id: COURSE,
       status: "submitted",
-      reserved_chapter_id: "ch1",
+      reserved_exam_id: "e1",
     });
     seedRun("topic");
     useGenerateModel(DRAFT);

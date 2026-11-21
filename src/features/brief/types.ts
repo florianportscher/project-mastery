@@ -25,8 +25,8 @@ export type BriefWithMessages = {
   notesUpdatedAt: string | null;
   /** The Materials the exam excludes, oldest first, with their chunk page. */
   excludedMaterials: Array<{ id: string; name: string; href: string }>;
-  /** The Materials the Student said are old exams, oldest first. */
-  oldExams: Array<{ id: string; name: string; href: string }>;
+  /** The exams the Student confirmed as old exams, in Course order. */
+  oldExams: Array<{ id: string; name: string }>;
   /** The exam scopes, each with its Topic's name. */
   examScopes: Array<{
     name: string;
@@ -34,8 +34,8 @@ export type BriefWithMessages = {
     words: string;
   }>;
   /**
-   * The Student's answer to the reservation question: the reserved old exam
-   * with its chunk page, or "none"; null before they answered.
+   * The Student's answer to the reservation question: the reserved old exam,
+   * or "none"; null before they answered.
    */
-  reservedExam: { name: string; href: string } | "none" | null;
+  reservedExam: { name: string } | "none" | null;
 };

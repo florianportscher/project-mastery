@@ -39,11 +39,6 @@ export const outlineAnswerSchema = z.object({
           .describe(
             "The page the Chapter starts on, only when it starts at no given heading; else null.",
           ),
-        exam: z
-          .boolean()
-          .describe(
-            "True for an old exam, a class test or their solutions; else false.",
-          ),
       }),
     )
     .describe("The Chapters in reading order, each after its parent."),
@@ -89,7 +84,6 @@ const OUTLINE_INSTRUCTIONS = `You find the Outline of a Student's course materia
 - A label on a line above a title, such as "Chapter 2", starts that Chapter and belongs to its title: "2 Algebraic Structures".
 - A part such as "I Lecture Notes" is a Chapter too, with the chapters inside it one level lower. When it starts on a page that opens no given heading, give its page.
 - The PDF outline, numbering and heading styles show the levels; a Material may not use every level.
-- Mark a Chapter exam when it is an old exam, a class test or their solutions.
 - language: the language the Material is written in, as an English name.
 - notes: notation and conventions of this Material's content that differ from the usual ones and that a reader of one passage needs. Never its structure, headings or numbering. Empty when there are none.`;
 

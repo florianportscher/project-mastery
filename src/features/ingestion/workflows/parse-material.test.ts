@@ -278,7 +278,7 @@ describe("the Outline", () => {
 
   test("comes from one structure call over the headings and page starts, and the chunks are cut at its Chapters", async () => {
     seedMaterial("application/pdf", await fixture("two-page-lecture.pdf"));
-    const { model, outlinePrompts } = pageModel([{ units }], undefined, () => ({
+    const { model, outlinePrompts } = pageModel([{ units }], () => ({
       language: "English",
       notes: "Vectors are rows.",
       chapters: [
@@ -359,7 +359,7 @@ describe("the Outline", () => {
 
   test("when the structure call gives no valid answer, has only the root Chapter without a PDF outline, and the parse goes on", async () => {
     seedMaterial("application/pdf", await fixture("two-page-lecture.pdf"));
-    const { model } = pageModel([{ units }], undefined, () => ({
+    const { model } = pageModel([{ units }], () => ({
       chapters: "nope",
     }));
     useMockModels({ ingest: model });

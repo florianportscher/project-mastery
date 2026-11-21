@@ -11,7 +11,6 @@ const snapshot: Snapshot = {
   version: 1,
   courseName: "Probability",
   courseId: "course-old",
-  pairingRequested: 0,
   tables: {
     materials: [
       {

@@ -16,44 +16,33 @@ export type BriefFields = {
 /** The longest a Brief's notes may grow, in characters (the column's check). */
 export const MAX_BRIEF_NOTES_LENGTH = 20_000;
 
-/** A Chapter of a Material's Outline, as the AI sees it in the Brief. */
-export type BriefChapter = {
-  id: string;
-  title: string;
-  /** 0 for the root Chapter, which is titled by the Material's name. */
-  depth: number;
-  /** Whether the parse took it for an old exam (`proposedExam`). */
-  proposed: boolean;
-  /** The Student's answer: an old exam or not; null before they answered. */
-  exam: boolean | null;
-  /** Whether the Brief has asked if it is an old exam. */
-  examAsked: boolean;
-};
-
 /** A Course's Material as the AI sees it in the Brief. */
 export type BriefMaterial = {
   id: string;
   name: string;
   excluded: boolean;
-  /**
-   * Its Chapters in reading order, to depth 2, and any deeper one that is
-   * proposed or answered as an old exam.
-   */
-  chapters: BriefChapter[];
 };
 
-/**
- * An old exam of the Course: a confirmed Chapter not inside another, named
- * "<Material> › <Chapter>", or the Material's name for its root.
- */
-export type ExamChapter = { id: string; name: string };
+/** An exam the build found in the Materials, as the Brief sees it. */
+export type BriefExam = {
+  id: string;
+  /** As printed, such as "Klausur WS 2023/24". */
+  name: string;
+  /** The Student's answer: an old exam or not; null before they answered. */
+  confirmed: boolean | null;
+  /** Whether the Brief has asked about it. */
+  asked: boolean;
+};
+
+/** An old exam of the Course: an exam the Student confirmed. */
+export type OldExam = { id: string; name: string };
 
 /** The Student's answer to the reservation question. */
 export type ReservedExam = {
   /** Whether the Student answered, with an exam or with none. */
   answered: boolean;
-  /** The reserved old-exam Chapter; null for none. */
-  chapterId: string | null;
+  /** The reserved old exam; null for none. */
+  examId: string | null;
 };
 
 /** The Course language that the build writes the Knowledge map in. */
@@ -96,8 +85,10 @@ export type BriefContext = {
   notes: string | null;
   /** The Course's Materials, oldest upload first. */
   materials: BriefMaterial[];
-  /** The Course's old exams in Course order: Materials oldest first. */
-  exams: ExamChapter[];
+  /** Every exam the build found, in Course order, with the Student's answer. */
+  foundExams: BriefExam[];
+  /** The Course's old exams in Course order. */
+  exams: OldExam[];
   reservedExam: ReservedExam;
   language: CourseLanguage;
   /** The Course's Topic tree in tree order: a parent before its children. */
@@ -120,6 +111,6 @@ export function isIntakeDone(fields: BriefFields | null): boolean {
  * The exam the reservation question suggests: with two or more, the last
  * in Course order; with only one, none, so that it stays for practice.
  */
-export function suggestedReservation(exams: ExamChapter[]): ExamChapter | null {
+export function suggestedReservation(exams: OldExam[]): OldExam | null {
   return exams.length < 2 ? null : (exams.at(-1) ?? null);
 }

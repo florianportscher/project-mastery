@@ -59,10 +59,29 @@ function addExercise(
     ...owned,
     id: `ex-${n}`,
     question_chunk_id: chunkOf(n),
-    solution_chunk_id: solutionChunk,
     difficulty,
     position: n,
   });
+  db.tables.exercise_chunks.push(
+    {
+      ...owned,
+      exercise_id: `ex-${n}`,
+      chunk_id: chunkOf(n),
+      role: "question",
+      position: 0,
+    },
+    ...(solutionChunk
+      ? [
+          {
+            ...owned,
+            exercise_id: `ex-${n}`,
+            chunk_id: solutionChunk,
+            role: "solution",
+            position: 0,
+          },
+        ]
+      : []),
+  );
   for (const kc of kcs) {
     db.tables.exercise_kcs.push({
       ...owned,
@@ -81,21 +100,23 @@ function seedExercises() {
     name: "Exam 2024",
     created_at: "2025-12-02T00:00:00.000Z",
   });
-  db.tables.chapters.push({
+  // The build found Exam 2024, and the Student confirmed it.
+  db.tables.exams.push({
     ...owned,
-    id: `root-${EXAM}`,
-    material_id: EXAM,
-    parent_id: null,
-    title: "Exam 2024",
-    depth: 0,
-    is_exam: true,
+    id: EXAM_ID,
+    name: "Exam 2024",
+    position: 0,
+    confirmed: true,
   });
   addChunk(1, EXAM, "Compute the thrust of the engine.");
   addChunk(2, EXAM, "Solution: 42 kN.");
   addChunk(3, MAP.material, "Why does thrust grow with exhaust speed?");
   addExercise(1, 2, undefined, chunkOf(2));
   addExercise(3, 2);
+  db.tables.exercises.find((e) => e.id === "ex-1")!.exam_id = EXAM_ID;
 }
+
+const EXAM_ID = "exam-2024";
 
 /** A question on an Exercise in an earlier session, answered with `help`. */
 function answered(exerciseId: string, help: "none" | "some", askedAt: string) {
@@ -490,7 +511,7 @@ describe("findProblems", () => {
     db.tables.briefs.push({
       course_id: COURSE,
       owner: STUDENT,
-      reserved_exam_chapter_id: `root-${EXAM}`,
+      reserved_exam_id: EXAM_ID,
     });
     const model = mockToolModel(
       [

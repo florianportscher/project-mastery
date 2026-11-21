@@ -1,6 +1,5 @@
 import "server-only";
 import { z } from "zod";
-import { examChapterIds } from "@/features/ingestion/domain/old-exam-chapters";
 import {
   CHUNK_LABELS,
   type ExerciseSolution,
@@ -44,26 +43,9 @@ export async function getMaterialChunks(
       .range(from, to),
   );
 
-  const [solutions, chapters] = await Promise.all([
-    exerciseSolutions(
-      supabase,
-      chunks.filter((chunk) => chunk.label === "exercise").map((c) => c.id),
-    ),
-    allRows("Loading the Chapters", (from, to) =>
-      supabase
-        .from("chapters")
-        .select("id, parent_id, title, is_exam")
-        .eq("material_id", materialId)
-        .order("position")
-        .range(from, to),
-    ),
-  ]);
-  const examIds = examChapterIds(
-    chapters.map((c) => ({
-      id: c.id,
-      parentId: c.parent_id,
-      isExam: c.is_exam === true,
-    })),
+  const solutions = await exerciseSolutions(
+    supabase,
+    chunks.filter((chunk) => chunk.label === "exercise").map((c) => c.id),
   );
 
   const row = material.data;
@@ -72,10 +54,6 @@ export async function getMaterialChunks(
     courseId: row.course_id,
     name: row.name,
     parseStatus: row.parse_status as ParseStatus,
-    // A confirmed Chapter whose parent is in no old exam.
-    examChapters: chapters
-      .filter((c) => examIds.has(c.id) && !examIds.has(c.parent_id ?? ""))
-      .map((c) => c.title),
     chunks: chunks.map((chunk) => ({
       id: chunk.id,
       position: chunk.position,
@@ -113,9 +91,10 @@ async function inSlices<Row>(
 }
 
 /**
- * The solutions of these exercise chunks, by exercise chunk id, with the
- * Material each solution is in. Exercises without a pair, such as an
- * exercise's shared statement, are left out.
+ * The first printed solution of the Exercise each of these exercise chunks
+ * belongs to, by exercise chunk id, with the Material it is in; "no
+ * solution" for an Exercise without one. Chunks in no Exercise yet, before
+ * a build, are left out.
  */
 async function exerciseSolutions(
   supabase: Supabase,
@@ -123,18 +102,29 @@ async function exerciseSolutions(
 ): Promise<Map<string, ExerciseSolution>> {
   const result = new Map<string, ExerciseSolution>();
   if (exerciseIds.length === 0) return result;
-  const pairs = await inSlices(
-    "Loading the exercise solutions",
+  const members = await inSlices(
+    "Loading the chunks' Exercises",
     exerciseIds,
     (ids) =>
       supabase
-        .from("exercise_solutions")
-        .select("exercise_chunk_id, solution_chunk_id, status")
-        .in("exercise_chunk_id", ids),
+        .from("exercise_chunks")
+        .select("chunk_id, exercise_id")
+        .in("chunk_id", ids),
+  );
+  const solutions = await inSlices(
+    "Loading the Exercises' solutions",
+    members.map((member) => member.exercise_id),
+    (ids) =>
+      supabase
+        .from("exercise_chunks")
+        .select("exercise_id, chunk_id, position")
+        .eq("role", "solution")
+        .eq("position", 0)
+        .in("exercise_id", ids),
   );
   const solutionChunks = await inSlices(
     "Loading the solution chunks",
-    pairs.flatMap((pair) => pair.solution_chunk_id ?? []),
+    solutions.map((solution) => solution.chunk_id),
     (ids) => supabase.from("chunks").select("id, material_id").in("id", ids),
   );
   const materials = await inSlices(
@@ -143,21 +133,21 @@ async function exerciseSolutions(
     (ids) => supabase.from("materials").select("id, name").in("id", ids),
   );
 
-  for (const pair of pairs) {
-    const solution = solutionChunks.find(
-      (chunk) => chunk.id === pair.solution_chunk_id,
-    );
+  for (const member of members) {
+    const first = solutions.find((s) => s.exercise_id === member.exercise_id);
+    const solution = solutionChunks.find((c) => c.id === first?.chunk_id);
     const material = materials.find((m) => m.id === solution?.material_id);
-    if (pair.status === "paired" && solution && material) {
-      result.set(pair.exercise_chunk_id, {
-        status: "paired",
-        chunkId: solution.id,
-        materialId: material.id,
-        materialName: material.name,
-      });
-    } else if (pair.status === "no_solution") {
-      result.set(pair.exercise_chunk_id, { status: "no_solution" });
-    }
+    result.set(
+      member.chunk_id,
+      solution && material
+        ? {
+            status: "paired",
+            chunkId: solution.id,
+            materialId: material.id,
+            materialName: material.name,
+          }
+        : { status: "no_solution" },
+    );
   }
   return result;
 }

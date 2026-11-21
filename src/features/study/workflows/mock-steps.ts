@@ -1,10 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { getExamFacts, getReservedExam } from "@/features/brief/server";
-import {
-  loadChunkSources,
-  loadChapterChunkIds,
-} from "@/features/ingestion/server";
+import { loadChunkSources } from "@/features/ingestion/server";
 import {
   loadStoredMap,
   loadStoredTopics,
@@ -89,9 +86,6 @@ export async function planMockExam(
       loadReadyProblems(supabase, courseId),
       getReservedExam(supabase, courseId),
     ]);
-  const reserved = new Set(
-    reservedId === null ? [] : await loadChapterChunkIds(supabase, reservedId),
-  );
   const [kcRecall, choices] = await Promise.all([
     loadRecall(supabase, courseId, exam, now),
     loadTopicChoices(supabase, courseId),
@@ -122,7 +116,7 @@ export async function planMockExam(
   });
   const exercises = map.exercises.map((exercise) => ({
     ...exercise,
-    reserved: reserved.has(exercise.questionChunk),
+    reserved: reservedId !== null && exercise.examId === reservedId,
     seen: asked.has(exercise.id),
   }));
 
@@ -174,7 +168,7 @@ export async function planMockExam(
             {
               id: exercise.id,
               kind: "exercise" as const,
-              source: chunk.isExam
+              source: exercise.oldExam
                 ? ("old_exam" as const)
                 : ("exercise" as const),
               kcs: exercise.kcs,
@@ -269,26 +263,42 @@ async function loadAssembling(supabase: Supabase, mockId: string) {
   return data;
 }
 
-/** The question chunks of the Exercises, by id. */
+/**
+ * The Exercises' first question chunks, by id, each with the whole
+ * statement as its Markdown.
+ */
 async function questionChunks(
   supabase: Supabase,
-  exercises: Array<{ questionChunk: string }>,
+  exercises: Array<{ questionChunk: string; questionChunks: string[] }>,
 ) {
-  const chunks = await loadChunkSources(
-    supabase,
-    exercises.map((exercise) => exercise.questionChunk),
+  const chunks = new Map(
+    (
+      await loadChunkSources(
+        supabase,
+        exercises.flatMap((exercise) => exercise.questionChunks),
+      )
+    ).map((chunk) => [chunk.id, chunk]),
   );
-  return new Map(chunks.map((chunk) => [chunk.id, chunk]));
+  return new Map(
+    exercises.flatMap((exercise) => {
+      const first = chunks.get(exercise.questionChunk);
+      if (!first) return [];
+      const markdown = exercise.questionChunks
+        .flatMap((id) => chunks.get(id)?.markdown ?? [])
+        .join("\n\n");
+      return [[exercise.questionChunk, { ...first, markdown }] as const];
+    }),
+  );
 }
 
 async function setFinal(
   supabase: Supabase,
   mockId: string,
-  chapterId: string,
+  examId: string,
 ): Promise<void> {
   const { error } = await supabase
     .from("mock_exams")
-    .update({ reserved_chapter_id: chapterId })
+    .update({ reserved_exam_id: examId })
     .eq("id", mockId)
     .eq("status", "assembling");
   if (error) failed("Marking the final mock exam", error);

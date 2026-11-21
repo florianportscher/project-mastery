@@ -33,7 +33,7 @@ export const SNAPSHOT_TABLES: { table: string; parent?: Parent }[] = [
   { table: "prerequisite_links" },
   { table: "exercises" },
   { table: "exercise_kcs" },
-  { table: "exercise_solutions" },
+  { table: "exercise_chunks" },
   { table: "topics" },
   { table: "topic_kcs", parent: { table: "topics", column: "topic_id" } },
   { table: "briefs" },
@@ -48,7 +48,8 @@ export const snapshotSchema = z.object({
   /** The Course's name; a seed replaces a Course of the same name. */
   courseName: z.string(),
   courseId: z.string(),
-  pairingRequested: z.number(),
+  /** Written by snapshots from before #350; unused. */
+  pairingRequested: z.number().optional(),
   tables: z.record(z.string(), z.array(rowSchema)),
 });
 
@@ -106,7 +107,7 @@ export function remapSnapshot(
   }
 
   const tables: Record<string, Row[]> = {};
-  for (const [table, rows] of Object.entries(snapshot.tables)) {
+  for (const [table, rows] of Object.entries(upgraded(snapshot.tables))) {
     tables[table] = rows.map((row) => {
       const next = replaceIds(row, ids) as Row;
       next.owner = studentId;
@@ -125,6 +126,52 @@ export function remapSnapshot(
     ]),
   );
   return { tables, materialIds };
+}
+
+/**
+ * The tables of a snapshot from before Exercises were whole tasks (#350)
+ * as the schema has them now: each Exercise's question and solution chunk
+ * become its `exercise_chunks`, the pairs go, and so do the exercise
+ * extractions, which the next Update map makes again.
+ */
+function upgraded(tables: Snapshot["tables"]): Snapshot["tables"] {
+  const exercises = tables.exercises ?? [];
+  if (!exercises.some((row) => "solution_chunk_id" in row)) return tables;
+  const rest = Object.fromEntries(
+    Object.entries(tables).filter(([name]) => name !== "exercise_solutions"),
+  );
+  const chunks: Row[] = [];
+  const taken = new Set<unknown>();
+  for (const role of ["question", "solution"] as const) {
+    for (const exercise of exercises) {
+      const chunkId =
+        role === "question"
+          ? exercise.question_chunk_id
+          : exercise.solution_chunk_id;
+      if (!chunkId || taken.has(chunkId)) continue;
+      taken.add(chunkId);
+      chunks.push({
+        exercise_id: exercise.id,
+        chunk_id: chunkId,
+        role,
+        position: 0,
+        owner: exercise.owner,
+        course_id: exercise.course_id,
+      });
+    }
+  }
+  return {
+    ...rest,
+    exercises: exercises.map((exercise) =>
+      Object.fromEntries(
+        Object.entries(exercise).filter(([key]) => key !== "solution_chunk_id"),
+      ),
+    ),
+    exercise_chunks: chunks,
+    chapter_extractions: (rest.chapter_extractions ?? []).filter(
+      (row) => row.kind !== "exercise",
+    ),
+  };
 }
 
 /** The exam date a seeded Brief gets: `days` after `today`, as `YYYY-MM-DD`. */

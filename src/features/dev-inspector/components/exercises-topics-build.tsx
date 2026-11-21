@@ -25,6 +25,7 @@ export function ExercisesSection({
     <Section id="exercises" title="Exercises">
       {snapshot.exercises.map((exercise) => {
         const kcs = lookup.kcsOfExercise.get(exercise.id) ?? [];
+        const exam = snapshot.exams.find((e) => e.id === exercise.examId);
         const answers = Array.isArray(exercise.finalAnswers)
           ? (exercise.finalAnswers as Array<{ label?: string; value?: string }>)
           : [];
@@ -37,16 +38,30 @@ export function ExercisesSection({
             <div className="flex flex-wrap items-baseline gap-2 text-sm font-medium">
               #{exercise.position} · difficulty {exercise.difficulty}
               {kcs.length === 0 && <Flag>no KCs</Flag>}
+              {exam && (
+                <span className="text-muted-foreground">
+                  exam: {exam.name}
+                  {exam.confirmed === true
+                    ? " (confirmed)"
+                    : exam.confirmed === false
+                      ? " (rejected)"
+                      : ""}
+                </span>
+              )}
             </div>
             <Row label="Question">
-              <ChunkRefs ids={[exercise.questionChunkId]} lookup={lookup} />{" "}
-              <ChunkMarkdown chunkId={exercise.questionChunkId} />
+              <ChunkRefs ids={exercise.questionChunkIds} lookup={lookup} />{" "}
+              {exercise.questionChunkIds.map((id) => (
+                <ChunkMarkdown key={id} chunkId={id} />
+              ))}
             </Row>
             <Row label="Solution">
-              {exercise.solutionChunkId ? (
+              {exercise.solutionChunkIds.length > 0 ? (
                 <>
-                  <ChunkRefs ids={[exercise.solutionChunkId]} lookup={lookup} />{" "}
-                  <ChunkMarkdown chunkId={exercise.solutionChunkId} />
+                  <ChunkRefs ids={exercise.solutionChunkIds} lookup={lookup} />{" "}
+                  {exercise.solutionChunkIds.map((id) => (
+                    <ChunkMarkdown key={id} chunkId={id} />
+                  ))}
                 </>
               ) : (
                 <span className="text-muted-foreground">none</span>

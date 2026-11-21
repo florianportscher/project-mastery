@@ -44,53 +44,20 @@ test.describe("signed in", () => {
     await expect(log.getByText(REPLY_END)).toBeVisible(REPLY_DONE);
   });
 
-  test("asks whether an exam the parse found inside a script is an old exam", async ({
+  test("asks whether an exam the build found is an old exam", async ({
     page,
     student,
     course,
   }) => {
     const admin = adminClient();
-    const materialId = crypto.randomUUID();
-    const material = await admin.from("materials").insert({
-      id: materialId,
+    // The exam as the map build stores it.
+    const exam = await admin.from("exams").insert({
       course_id: course.id,
       owner: student.id,
-      name: "Lecture notes",
-      media_type: "application/pdf",
-      size_bytes: 1,
-      storage_path: `${student.id}/${course.id}/${materialId}`,
-      parse_status: "parsed",
+      name: "Klausur 2024",
+      position: 0,
     });
-    expect(material.error).toBeNull();
-    const rootId = crypto.randomUUID();
-    const owned = {
-      course_id: course.id,
-      owner: student.id,
-      material_id: materialId,
-    };
-    const chapters = await admin.from("chapters").insert([
-      {
-        ...owned,
-        id: rootId,
-        parent_id: null,
-        position: 0,
-        depth: 0,
-        title: "Lecture notes",
-        page_from: 1,
-        exam_proposed: false,
-      },
-      {
-        ...owned,
-        id: crypto.randomUUID(),
-        parent_id: rootId,
-        position: 1,
-        depth: 1,
-        title: "Klausur 2024",
-        page_from: 40,
-        exam_proposed: true,
-      },
-    ]);
-    expect(chapters.error).toBeNull();
+    expect(exam.error).toBeNull();
     const brief = await admin.from("briefs").insert({
       course_id: course.id,
       owner: student.id,
@@ -108,7 +75,7 @@ test.describe("signed in", () => {
     await expect(
       log.getByText("This looks like an old exam. Is it one?"),
     ).toBeVisible();
-    await expect(log.getByText("Lecture notes › Klausur 2024")).toBeVisible();
+    await expect(log.getByText("Klausur 2024", { exact: true })).toBeVisible();
 
     // Asked once: a reload shows the same single question.
     await page.reload();

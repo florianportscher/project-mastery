@@ -1,10 +1,9 @@
 import "server-only";
 import { buildFlags } from "@/features/dev-inspector/domain/flags";
 import type { DevUnit, Flags, Snapshot } from "@/features/dev-inspector/types";
-import { examChapterIds } from "@/features/ingestion/server";
 import {
   MIN_UNIT_COVERAGE,
-  chapterUnitsByExam,
+  chapterUnits,
   unitKey,
 } from "@/features/knowledge-map/server";
 import { failed } from "@/lib/supabase/failed";
@@ -43,17 +42,9 @@ export async function getCourseInspection(
 /**
  * The units the current chunks form, as the build forms them
  * (`loadCourseUnits`): teaching units in Course order, then exercise
- * units. Old exams form no teaching units, and each is an exercise unit of
- * its own.
+ * units.
  */
 function courseUnits(snapshot: Snapshot): DevUnit[] {
-  const exams = examChapterIds(
-    snapshot.chapters.map((c) => ({
-      id: c.id,
-      parentId: c.parentId,
-      isExam: c.isExam === true,
-    })),
-  );
   const extractionOf = new Map(
     snapshot.extractions.map((e) => [unitKey(e), e]),
   );
@@ -62,19 +53,12 @@ function courseUnits(snapshot: Snapshot): DevUnit[] {
       const outline = snapshot.chapters
         .filter((c) => c.materialId === material.id)
         .toSorted((a, b) => a.position - b.position);
-      const root = outline.find((c) => c.parentId === null);
       const chunks = snapshot.chunks
-        .filter(
-          (c) =>
-            c.materialId === material.id &&
-            c.label === kind &&
-            (kind === "exercise" || !exams.has(c.chapterId ?? root?.id ?? "")),
-        )
+        .filter((c) => c.materialId === material.id && c.label === kind)
         .toSorted((a, b) => a.position - b.position);
-      return chapterUnitsByExam(
+      return chapterUnits(
         outline.map((c) => ({ id: c.id, parentId: c.parentId })),
         chunks,
-        kind === "exercise" ? exams : new Set<string>(),
       ).map((unit) => {
         const key = unitKey({ ...unit, kind });
         return {

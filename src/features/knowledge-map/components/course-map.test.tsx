@@ -176,6 +176,7 @@ describe("the map check", () => {
       unitsBelowCoverage: [{ chapter: "Bases", coverage: 0.3 }],
       unreadPages: [{ material: "Notes", pages: [10, 36, 37, 38] }],
       unitsNotExtracted: [],
+      exercisesNotGrouped: false,
     },
   };
   const renderCheck = (view: KnowledgeMapView, checkDetails: boolean) =>

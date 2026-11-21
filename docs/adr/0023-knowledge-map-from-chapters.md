@@ -1,6 +1,6 @@
 # Knowledge map from Chapters into a Topic tree
 
-> The Prerequisite check: superseded by [ADR 0026](0026-assumptions-as-text.md), where what a KC assumes and no KC means stays as text on the KC instead of being dropped. The unit size, the retry rule, old exams and the Topic placement of KCs from the exercise call were changed by #249 and are marked below. The rest stands.
+> The Prerequisite check: superseded by [ADR 0026](0026-assumptions-as-text.md), where what a KC assumes and no KC means stays as text on the KC instead of being dropped. The unit size, the retry rule, old exams and the Topic placement of KCs from the exercise call were changed by #249 and are marked below. Pairing and old exams as Chapters that teach nothing: superseded by [ADR 0032](0032-exercises-as-whole-tasks-and-exams-as-records.md). The rest stands.
 
 **Context.** The gold run of the pipeline v2 (#222, 2026-11-01) showed the Parts of [ADR 0022](0022-knowledge-map-from-parts.md) were too small: a Part of a few hundred words gave KCs without the context of their chapter, one call per page was slow on MiMo's 5 requests per minute, and exercise keys and partner Materials missed the numbering of real sheets. Big ideas, one per chapter title, flattened scripts whose chapters have sections, and an old exam bundled into a script could not count, because `is_exam` sat on the Material. An extraction with reasoning off misspelled Prerequisite names where the same prompt with reasoning on did not, for about 2,000 reasoning tokens a call (2026-11-01, `docs/agents/notes/ai-sdk.md`).
 

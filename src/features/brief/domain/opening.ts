@@ -33,9 +33,9 @@ export function replyMessageId(messageId: string): string {
 }
 
 /**
- * The id of the static message that asks whether `chapterIds` are old
- * exams, so the same question is stored once.
+ * The id of the static message that asks whether the exams `examIds` are
+ * old exams, so the same question is stored once.
  */
-export function oldExamsMessageId(chapterIds: string[]): string {
-  return staticMessageId(`old-exams:${chapterIds.toSorted().join(",")}`);
+export function oldExamsMessageId(examIds: string[]): string {
+  return staticMessageId(`old-exams:${examIds.toSorted().join(",")}`);
 }

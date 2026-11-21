@@ -235,6 +235,7 @@ const withDuplicate = {
     unitsBelowCoverage: [],
     unreadPages: [],
     unitsNotExtracted: [],
+    exercisesNotGrouped: false,
   },
 };
 

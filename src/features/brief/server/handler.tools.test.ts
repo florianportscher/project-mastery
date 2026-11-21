@@ -5,10 +5,9 @@ import { describe, expect, test, vi } from "vitest";
 import { mockToolModel, useMockModels } from "@/lib/ai/testing";
 import {
   COURSE,
-  LECTURE_EXAM,
-  LECTURE_ROOT,
+  EXAM_2024,
+  KLAUSUR_2023,
   OLD_EXAM,
-  OLD_EXAM_ROOT,
   STUDENT,
   db,
   send,
@@ -17,8 +16,8 @@ import {
 
 vi.mock("server-only", () => ({}));
 
-const examChapter = (id: string) =>
-  db.tables.chapters.find((chapter) => chapter.id === id)!;
+const foundExam = (id: string) =>
+  db.tables.exams.find((exam) => exam.id === id)!;
 
 function seedBrief(notes: string | null = null) {
   db.tables.briefs.push({
@@ -58,59 +57,56 @@ describe("a tool result", () => {
     );
   });
 
-  test("saveBrief stores the reserved exam, or none, and ignores a Chapter that is no old exam", async () => {
+  test("saveBrief stores the reserved exam, or none, and ignores an exam the Student did not confirm", async () => {
     seedBrief();
-    // The old exam inside Lecture 1.
-    examChapter(LECTURE_EXAM).is_exam = true;
+    foundExam(KLAUSUR_2023).confirmed = true;
 
     useMockModels({
-      brief: toolModel("saveBrief", { reservedExamChapterId: LECTURE_EXAM }),
+      brief: toolModel("saveBrief", { reservedExamId: KLAUSUR_2023 }),
     });
     await send({ courseId: COURSE, message: userMessage("…") });
     expect(db.tables.briefs[0]).toMatchObject({
-      reserved_exam_chapter_id: LECTURE_EXAM,
+      reserved_exam_id: KLAUSUR_2023,
       reserved_exam_answered: true,
     });
 
-    const lecture = toolModel("saveBrief", {
-      reservedExamChapterId: LECTURE_ROOT,
-    });
-    useMockModels({ brief: lecture });
-    expect(await lastPrompt(lecture)).toContain(
-      `The reserved exam ${LECTURE_ROOT} was ignored: it is not among the old exams.`,
+    const unconfirmed = toolModel("saveBrief", { reservedExamId: EXAM_2024 });
+    useMockModels({ brief: unconfirmed });
+    expect(await lastPrompt(unconfirmed)).toContain(
+      `The reserved exam ${EXAM_2024} was ignored: it is not among the old exams.`,
     );
-    expect(db.tables.briefs[0]?.reserved_exam_chapter_id).toBe(LECTURE_EXAM);
+    expect(db.tables.briefs[0]?.reserved_exam_id).toBe(KLAUSUR_2023);
 
     useMockModels({
-      brief: toolModel("saveBrief", { reservedExamChapterId: "none" }),
+      brief: toolModel("saveBrief", { reservedExamId: "none" }),
     });
     await send({ courseId: COURSE, message: userMessage("…") });
     expect(db.tables.briefs[0]).toMatchObject({
-      reserved_exam_chapter_id: null,
+      reserved_exam_id: null,
       reserved_exam_answered: true,
     });
   });
 
   test("saveBrief keeps a reserved exam that a submitted mock used", async () => {
     seedBrief();
-    examChapter(OLD_EXAM_ROOT).is_exam = true;
+    foundExam(EXAM_2024).confirmed = true;
     Object.assign(db.tables.briefs[0]!, {
-      reserved_exam_chapter_id: OLD_EXAM_ROOT,
+      reserved_exam_id: EXAM_2024,
       reserved_exam_answered: true,
     });
     db.tables.mock_exams.push({
       id: "dddddddd-0000-4000-8000-000000000001",
       owner: STUDENT,
       course_id: COURSE,
-      reserved_chapter_id: OLD_EXAM_ROOT,
+      reserved_exam_id: EXAM_2024,
       status: "submitted",
     });
 
-    const model = toolModel("saveBrief", { reservedExamChapterId: "none" });
+    const model = toolModel("saveBrief", { reservedExamId: "none" });
     useMockModels({ brief: model });
 
     expect(await lastPrompt(model)).toContain("it can no longer change");
-    expect(db.tables.briefs[0]?.reserved_exam_chapter_id).toBe(OLD_EXAM_ROOT);
+    expect(db.tables.briefs[0]?.reserved_exam_id).toBe(EXAM_2024);
   });
 
   test("saveBrief stores the Course language the Student asked for", async () => {

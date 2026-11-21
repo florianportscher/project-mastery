@@ -1,97 +1,53 @@
 import { describe, expect, test } from "vitest";
+import type { BriefExam } from "./intake";
 import {
-  briefChapters,
+  askedExamIds,
   confirmedExams,
+  oldExamsPart,
   unaskedExams,
-  type StoredChapter,
 } from "./old-exams";
 
-const chapter = (
-  id: string,
-  parentId: string | null,
-  depth: number,
-  fields: Partial<StoredChapter> = {},
-): StoredChapter => ({
+const exam = (id: string, fields: Partial<BriefExam> = {}): BriefExam => ({
   id,
-  parentId,
-  title: id,
-  depth,
-  examProposed: false,
-  exam: null,
-  examAsked: false,
+  name: `Klausur ${id}`,
+  confirmed: null,
+  asked: false,
   ...fields,
 });
 
-// Script › 4 › 4.1 › Lemma, and Script › Klausur 2023 › Aufgabe 1.
-const script = [
-  chapter("Script", null, 0),
-  chapter("4", "Script", 1),
-  chapter("4.1", "4", 2),
-  chapter("Lemma", "4.1", 3),
-  chapter("Klausur 2023", "Script", 1, { examProposed: true }),
-  chapter("Aufgabe 1", "Klausur 2023", 2),
-];
-
-describe("briefChapters", () => {
-  test("lists Chapters to depth 2 and a deeper one only when it is about an exam", () => {
-    const deepExam = [
-      ...script,
-      chapter("Probe", "4.1", 3, { examProposed: true }),
-    ];
-    expect(briefChapters(deepExam).map(({ id }) => id)).toEqual([
-      "Script",
-      "4",
-      "4.1",
-      "Klausur 2023",
-      "Aufgabe 1",
-      "Probe",
-    ]);
-  });
-});
-
 describe("confirmedExams", () => {
-  test("names each confirmed Chapter not inside another by Material and Chapter", () => {
-    const confirmed = script.map((c) =>
-      c.id === "Klausur 2023" || c.id === "Aufgabe 1"
-        ? { ...c, exam: true }
-        : c,
-    );
+  test("keeps the exams the Student confirmed, in order", () => {
     expect(
       confirmedExams([
-        { name: "Script", chapters: confirmed },
-        {
-          name: "Altklausur",
-          chapters: [chapter("root", null, 0, { exam: true })],
-        },
+        exam("2023", { confirmed: true }),
+        exam("2024", { confirmed: false }),
+        exam("2025"),
+        exam("2026", { confirmed: true }),
       ]),
     ).toEqual([
-      { id: "Klausur 2023", name: "Script › Klausur 2023" },
-      { id: "root", name: "Altklausur" },
+      { id: "2023", name: "Klausur 2023" },
+      { id: "2026", name: "Klausur 2026" },
     ]);
   });
 });
 
 describe("unaskedExams", () => {
-  test("asks about proposed Chapters, and a root whose Material's name looks like an exam, once", () => {
-    const materials = [
-      { name: "Script", parsed: true, chapters: script },
-      {
-        name: "Resit exam",
-        parsed: true,
-        chapters: [chapter("Resit exam", null, 0)],
-      },
-      {
-        name: "Klausur 2024",
-        parsed: false,
-        chapters: [chapter("Klausur 2024", null, 0)],
-      },
-    ];
-    expect(unaskedExams(materials)).toEqual([
-      { id: "Klausur 2023", name: "Script › Klausur 2023" },
-      { id: "Resit exam", name: "Resit exam" },
-    ]);
-
-    script[4] = { ...script[4]!, examAsked: true };
-    expect(unaskedExams(materials).map(({ id }) => id)).toEqual(["Resit exam"]);
+  test("asks about each found exam once, until it is answered", () => {
+    expect(
+      unaskedExams([
+        exam("2023"),
+        exam("2024", { asked: true }),
+        exam("2025", { confirmed: false }),
+      ]),
+    ).toEqual([{ id: "2023", name: "Klausur 2023" }]);
   });
+});
+
+test("the asked exams are those the static questions listed, and every exam during intake", () => {
+  const messages = [
+    { parts: [{ type: "text" }, oldExamsPart(["a", "b"])] },
+    { parts: [{ type: "text" }] },
+  ];
+  expect(askedExamIds(messages, [])).toEqual(["a", "b"]);
+  expect(askedExamIds(messages, ["b", "c"])).toEqual(["a", "b", "c"]);
 });

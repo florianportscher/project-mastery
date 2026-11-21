@@ -63,21 +63,13 @@ export function unitCoverage(
 }
 
 /**
- * Chapters outside old exams with `content` chunks of their own that no
- * live KC cites, as the build's check report counts them.
+ * Chapters with `content` chunks of their own that no live KC cites, as
+ * the build's check report counts them.
  */
 function chaptersWithoutKcs(
   snapshot: Snapshot,
   cited: ReadonlySet<string>,
 ): Set<string> {
-  const parentOf = new Map(snapshot.chapters.map((c) => [c.id, c.parentId]));
-  const examOf = new Map(
-    snapshot.chapters.map((c) => [c.id, c.isExam === true]),
-  );
-  const inExam = (id: string | null, seen = 0): boolean =>
-    id !== null &&
-    seen < snapshot.chapters.length &&
-    (examOf.get(id) === true || inExam(parentOf.get(id) ?? null, seen + 1));
   const teaching = new Set<string>();
   const citedChapters = new Set<string>();
   for (const chunk of snapshot.chunks) {
@@ -85,9 +77,7 @@ function chaptersWithoutKcs(
     if (chunk.label === "content") teaching.add(chunk.chapterId);
     if (cited.has(chunk.id)) citedChapters.add(chunk.chapterId);
   }
-  return new Set(
-    [...teaching].filter((id) => !citedChapters.has(id) && !inExam(id)),
-  );
+  return new Set([...teaching].filter((id) => !citedChapters.has(id)));
 }
 
 type Report = {

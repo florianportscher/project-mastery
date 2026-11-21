@@ -5,7 +5,6 @@ import {
   outlineMaterial,
 } from "@/features/ingestion/workflows/chunk-material";
 import { embedChunks } from "@/features/ingestion/workflows/embed-chunks";
-import { pairMaterialCourse } from "@/features/ingestion/workflows/pair-exercises";
 import {
   failParse,
   markParsed,
@@ -19,8 +18,8 @@ import {
  * its pages and skips slide overlays, reads the pages without a stored
  * result in steps of up to PAGES_PER_STEP, one vision call per batch of
  * pages, then finds the Material's Outline in one structure call, cuts the
- * units into chunks at its Chapters, embeds them, pairs the Course's
- * exercises with their solutions and marks the Material parsed. A page that
+ * units into chunks at its Chapters, embeds them and marks the Material
+ * parsed. A page that
  * cannot be read is stored unreadable and the parse goes on; a retried
  * parse resumes at the first page without a result. Steps retry on their
  * own; a step that fails for good, or a reached Daily limit, marks the
@@ -59,11 +58,6 @@ export async function parseMaterial(
     const embedded = await embedChunks(materialId);
     if (!embedded.ok) {
       await failParse(materialId, embedded.reason);
-      return null;
-    }
-    const paired = await pairMaterialCourse(materialId);
-    if (!paired.ok) {
-      await failParse(materialId, paired.reason);
       return null;
     }
     await markParsed(materialId);

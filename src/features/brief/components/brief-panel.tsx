@@ -96,7 +96,15 @@ export function BriefPanel({
         <MaterialLinks materials={brief.excludedMaterials} />
       </Section>
       <Section title="Old exams">
-        <MaterialLinks materials={brief.oldExams} />
+        {brief.oldExams.length === 0 ? (
+          <None />
+        ) : (
+          <ul className="flex flex-col gap-1 text-sm">
+            {brief.oldExams.map((exam) => (
+              <li key={exam.id}>{exam.name}</li>
+            ))}
+          </ul>
+        )}
       </Section>
       <Section title="Exam scope">
         {brief.examScopes.length === 0 ? (
@@ -179,16 +187,7 @@ function ExamFacts({
         <div className="contents">
           <dt className="text-muted-foreground">Reserved exam</dt>
           <dd className="break-words">
-            {reservedExam === "none" ? (
-              "None"
-            ) : (
-              <Link
-                href={reservedExam.href}
-                className="underline underline-offset-4"
-              >
-                {reservedExam.name}
-              </Link>
-            )}
+            {reservedExam === "none" ? "None" : reservedExam.name}
           </dd>
         </div>
       )}

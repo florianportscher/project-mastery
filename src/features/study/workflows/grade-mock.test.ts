@@ -20,6 +20,7 @@ const TABLES = [
   "attempts",
   "kcs",
   "exercises",
+  "exercise_chunks",
   "chunks",
   "problems",
   "ai_usage",
@@ -93,7 +94,6 @@ function seedMock() {
   t.exercises.push({
     id: "x1",
     question_chunk_id: "c1",
-    solution_chunk_id: null,
     final_answers: [{ label: "F", value: "17.5 kN", anyOrder: false }],
   });
   t.problems.push(

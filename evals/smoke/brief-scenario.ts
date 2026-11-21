@@ -44,30 +44,30 @@ export function parseScenario(markdown: string): BriefSetup {
   return setupSchema.parse(JSON.parse(block[1]!));
 }
 
-/** What a setup stores: the Brief's row, and its old exams' marks. */
+/** What a setup stores: the Brief's row, and its found exams' answers. */
 export type BriefPlan = {
   /** The `briefs` row, inserted in place of the Course's own. */
   brief: Record<string, unknown>;
-  /** The Chapters the parse proposed as old exams, and their answer. */
-  examChapters: { ids: string[]; isExam: boolean | null; asked: boolean };
+  /** The exams the build found, and the Student's answer. */
+  exams: { ids: string[]; confirmed: boolean | null; asked: boolean };
 };
 
 /**
  * The Brief that puts `setup` in place in the Course `courseId` of
- * `studentId`, whose likely old exams are the Chapters `examChapterIds`.
- * The exam date counts from `now`.
+ * `studentId`, whose found exams are `examIds`. The exam date counts from
+ * `now`.
  */
 export function briefSetup(
-  course: { courseId: string; studentId: string; examChapterIds: string[] },
+  course: { courseId: string; studentId: string; examIds: string[] },
   setup: BriefSetup,
   now: Date,
 ): BriefPlan {
   const row = {
     course_id: course.courseId,
     owner: course.studentId,
-    reserved_exam_chapter_id: null,
+    reserved_exam_id: null,
   };
-  const ids = course.examChapterIds;
+  const ids = course.examIds;
   const done = setup.answered;
   if (!done) {
     return {
@@ -82,7 +82,7 @@ export function briefSetup(
         notes: null,
         reserved_exam_answered: false,
       },
-      examChapters: { ids, isExam: null, asked: false },
+      exams: { ids, confirmed: null, asked: false },
     };
   }
   return {
@@ -99,6 +99,6 @@ export function briefSetup(
       notes: done.notes ?? null,
       reserved_exam_answered: ids.length > 0,
     },
-    examChapters: { ids, isExam: true, asked: true },
+    exams: { ids, confirmed: true, asked: true },
   };
 }

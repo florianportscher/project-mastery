@@ -103,7 +103,6 @@ export async function pullCourse(
     version: 1,
     courseName: options.name ?? (course.name as string),
     courseId,
-    pairingRequested: course.pairing_requested as number,
     tables,
   };
 
