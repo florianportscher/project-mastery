@@ -67,6 +67,16 @@ function isRunning(pid: number) {
   }
 }
 
+/**
+ * The dev server's environment: the mock provider unless the caller chose one.
+ * `.env.local` doesn't count, because Next never overrides a set variable.
+ */
+export function devServerEnv<T extends Record<string, string | undefined>>(
+  env: T,
+): T & { AI_PROVIDER: string } {
+  return { ...env, AI_PROVIDER: env.AI_PROVIDER || "mock" };
+}
+
 /** Starts `next dev` in the background and waits until it answers. */
 export async function startDevServer() {
   const port = await freePort();
@@ -75,6 +85,7 @@ export async function startDevServer() {
   const log = openSync(DEV_LOG, "w+");
   const child = spawn(BIN("next"), ["dev", "--port", String(port)], {
     cwd: ROOT,
+    env: devServerEnv(process.env),
     detached: true,
     stdio: ["ignore", log, log],
   });
