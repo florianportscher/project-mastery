@@ -85,7 +85,6 @@ pnpm -s agent check           # compile issues, runtime and server errors
 | `pnpm -s agent`                | Drive the running app from the terminal                                            |
 | `pnpm nit "<title>"`           | File a one-line inbox issue                                                        |
 | `pnpm -s retro`                | Digest recent Claude Code runs of this repo for a retro                            |
-| `pnpm -s sweep`                | Deterministic checks for `/sweep` (`mutate [unit...]` runs mutation tests)         |
 | `pnpm db:start`                | Start local Supabase (Docker)                                                      |
 | `pnpm db:stop`                 | Stop local Supabase                                                                |
 | `pnpm db:status`               | Show local Supabase URLs and API keys                                              |

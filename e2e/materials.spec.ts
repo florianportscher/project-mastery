@@ -3,7 +3,6 @@ import type { Page } from "@playwright/test";
 import { adminClient, expect, storedFilePaths, test } from "./fixtures";
 
 const PDF = path.join(__dirname, "files", "lecture-notes.pdf");
-// Shared with the ingestion unit tests, which Stryker runs without e2e/.
 const PNG = path.join(
   __dirname,
   "../src/features/ingestion/workflows/test-files/whiteboard.png",
