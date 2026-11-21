@@ -12,6 +12,7 @@ import {
   unit,
   useMockModels,
 } from "@/features/ingestion/workflows/parse-testing";
+import { silenceLogs } from "@/lib/log-testing";
 import { markAdminClient } from "@/lib/supabase/admin-brand";
 import type { Supabase } from "@/lib/supabase/types";
 
@@ -40,6 +41,7 @@ const { readPages } = await import("./parse-steps");
 
 beforeEach(() => {
   db = createDb();
+  silenceLogs("error", "warn");
 });
 
 afterEach(() => {

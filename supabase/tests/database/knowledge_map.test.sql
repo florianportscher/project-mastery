@@ -46,7 +46,8 @@ select is(public.queue_knowledge_map_build('aaaaaaaa-0000-0000-0000-000000000001
   'the owner starts a build');
 select is(public.queue_knowledge_map_build('aaaaaaaa-0000-0000-0000-000000000001'), false,
   'a second press while it runs starts nothing');
-select is((select status from public.knowledge_map_builds), 'building', 'the build is running');
+select is((select status from public.knowledge_map_builds
+  where course_id = 'aaaaaaaa-0000-0000-0000-000000000001'), 'building', 'the build is running');
 select is(
   (select parse_status || ': ' || parse_failure from public.materials where id = 'aaaaaaaa-1111-0000-0000-000000000002'),
   'failed: The parse stopped. Parse again.',
@@ -101,8 +102,10 @@ select is(public.queue_knowledge_map_build('aaaaaaaa-0000-0000-0000-000000000001
 select is(public.record_knowledge_map_build_start_failure('aaaaaaaa-0000-0000-0000-000000000001'), true,
   'a failed start is recorded');
 select results_eq(
-  $$select b.status, b.failure_reason is not null, (select count(*)::int from public.kcs)
-    from public.knowledge_map_builds b$$,
+  $$select b.status, b.failure_reason is not null, (select count(*)::int from public.kcs
+      where course_id = 'aaaaaaaa-0000-0000-0000-000000000001')
+    from public.knowledge_map_builds b
+    where b.course_id = 'aaaaaaaa-0000-0000-0000-000000000001'$$,
   $$values ('failed', true, 3)$$,
   'the build failed and the owner still reads the previous map');
 reset role;

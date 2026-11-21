@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeEach, expect, test, vi } from "vitest";
+import { silenceLogs } from "@/lib/log-testing";
 import { markAdminClient } from "@/lib/supabase/admin-brand";
 import type { Supabase } from "@/lib/supabase/types";
 import {
@@ -42,6 +43,7 @@ async function update() {
 beforeEach(() => {
   db = createBuildDb();
   sleep.mockClear();
+  silenceLogs("error", "warn");
 });
 
 test("stores the units answered before the rate limit, and extracts the rest after its wait", async () => {

@@ -3,6 +3,12 @@ name: CI
 on:
   push:
     branches: [main]
+    # release-please's commits touch only these files (the release bumps the
+    # version in package.json).
+    paths-ignore:
+      - CHANGELOG.md
+      - .release-please-manifest.json
+      - package.json
   pull_request:
 
 concurrency:
@@ -13,6 +19,34 @@ permissions:
   contents: read
 
 jobs:
+  # The e2e and database jobs have nothing to test in a PR that touches only
+  # Markdown, docs/ or .claude/. A push to main always runs everything.
+  changes:
+    name: Changed paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          code=true
+          if [ "$EVENT" = pull_request ]; then
+            if git diff --name-only "$BASE" "$HEAD" | grep -qvE '(\.md$|^docs/|^\.claude/)'; then
+              code=true
+            else
+              code=false
+            fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
   quality:
     name: Lint, typecheck & unit tests
     runs-on: ubuntu-latest
@@ -33,6 +67,8 @@ jobs:
       - run: pnpm test:run
 
   build-e2e:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Build & E2E tests
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -52,7 +88,7 @@ jobs:
       - name: Start Supabase
         run: |
           start() { supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta; }
-          start || { supabase stop --no-backup; sleep 5; start; }
+          start || { supabase stop --no-backup; docker ps -aq --filter name=supabase_ | xargs -r docker rm -f; sleep 5; start; }
       - name: Point the app and tests at local Supabase
         run: |
           supabase status -o env | tr -d '"' | sed -n \
@@ -65,7 +101,17 @@ jobs:
           key: nextjs-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**') }}
           restore-keys: nextjs-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
       - run: pnpm build
-      - run: pnpm exec playwright install --with-deps chromium
+      - id: playwright-version
+        run: echo "version=$(pnpm exec playwright --version)" >> "$GITHUB_OUTPUT"
+      - id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
       - run: pnpm test:e2e
       # The agent CLI (run-app skill) signs in through the real login form, so
       # a change to that flow fails here, not in the next agent run.
@@ -82,6 +128,8 @@ jobs:
           retention-days: 14
 
   database:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Database lint, policy tests & types
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -100,7 +148,7 @@ jobs:
       - name: Start Supabase
         run: |
           start() { supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta; }
-          start || { supabase stop --no-backup; sleep 5; start; }
+          start || { supabase stop --no-backup; docker ps -aq --filter name=supabase_ | xargs -r docker rm -f; sleep 5; start; }
       - run: supabase db lint --local --fail-on error
       - run: supabase test db
       - name: Check that generated types are up to date
@@ -108,3 +156,20 @@ jobs:
           pnpm db:types
           git diff --exit-code -- src/lib/supabase/database.types.ts \
             || { echo "::error::Database types are out of date. Run pnpm db:types and commit the result."; exit 1; }
+
+  # The one check to require on main: passes when every job that was needed
+  # passed or was skipped.
+  ci-ok:
+    name: CI ok
+    if: always()
+    needs: [changes, quality, build-e2e, database]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail when a job failed or was cancelled
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          case " $RESULTS " in
+            *" failure "*|*" cancelled "*) exit 1 ;;
+          esac
