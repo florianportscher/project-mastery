@@ -6,6 +6,8 @@ This is the second half of one system. [The Knowledge map](knowledge-map.md) cov
 
 Domain words are defined in [GLOSSARY.md](../../GLOSSARY.md); the choices behind the design are in [ADR 0018](../adr/0018-questions-as-first-class-objects.md), [0021](../adr/0021-problem-verification.md), [0026](../adr/0026-assumptions-as-text.md), [0027](../adr/0027-per-day-scheduling-and-one-ranking.md) and [0028](../adr/0028-one-study-session.md). In code, "tutor" names what the AI is given to tutor with, such as `TutorContext` and `tutorTools`. In the product it is always "the AI".
 
+**Any Course, any Student.** Instructions, tools and context must hold for every subject, kind of material and Student. Fix a problem by its general cause, never by tuning to the example that showed it. What the map gives the tutor, and why it stays minimal, is in [What the map is for](knowledge-map.md#what-the-map-is-for).
+
 ## The short version
 
 Three ideas explain most of the design:
