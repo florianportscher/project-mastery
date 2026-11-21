@@ -51,7 +51,7 @@ Hosted databases are never migrated by hand: GitHub Actions applies a PR's migra
 - **Mock AI:** `AI_PROVIDER=mock` answers every AI call with a deterministic reply, streamed slowly enough to be stopped, without any key or network access. The Playwright suite runs the production build in this mode; it is refused on Vercel.
 - **Background jobs:** `pnpm dev` runs workflows locally with no setup (the local world stores runs in `.next/workflow-data`). Inspect runs with `pnpm exec workflow web` or `pnpm exec workflow inspect runs`.
 - **Tracing (optional):** create a project in [Langfuse EU cloud](https://cloud.langfuse.com) and set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` to trace every real AI call (not the mock provider's). Without keys, tracing is off.
-- **AI quality:** there are no evals for now ([ADR 0012](docs/adr/0012-ai-observability-and-evals.md)). `pnpm smoke <name>` runs one feature path on a real model, and quality is checked by hand on the gold materials in `evals/gold/`.
+- **AI quality:** there are no eval datasets or judges in the app ([ADR 0012](docs/adr/0012-ai-observability-and-evals.md)). `pnpm smoke <name>` runs one feature path on a real model, `pnpm tutor-eval` and `pnpm brief-eval` run the maintainer's tutoring and Brief scenarios (`evals/tutor/scenarios/`, `evals/brief/scenarios/`), and quality is otherwise checked by hand on the gold materials in `evals/gold/`.
 
 ### Agent CLI
 
@@ -81,7 +81,13 @@ pnpm -s agent check           # compile issues, runtime and server errors
 | `pnpm test:e2e`                | Playwright E2E tests (run `pnpm db:start` first; rebuilds when the build is stale) |
 | `pnpm check`                   | Lint + typecheck + format check + unit tests                                       |
 | `pnpm smoke <name>`            | Run one feature path once against a real model and check it (not in CI)            |
+| `pnpm gold <command>`          | Pull, seed or list gold course snapshots (`evals/gold/`)                           |
+| `pnpm tutor-eval <command>`    | Run a tutoring scenario against the local database (`evals/tutor/scenarios/`)      |
+| `pnpm brief-eval <command>`    | Run a Brief scenario against the local database (`evals/brief/scenarios/`)         |
+| `pnpm -s metrics`              | Score Chats in Langfuse (local operator script)                                    |
 | `pnpm langfuse:models`         | Push the model prices in `src/lib/ai/prices.ts` to Langfuse                        |
+| `pnpm sitting`                 | Start a Claude Code `/sitting` session (maintainer)                                |
+| `pnpm shift <issue>`           | Start a Claude Code `/build` shift on an issue (maintainer)                        |
 | `pnpm -s agent`                | Drive the running app from the terminal                                            |
 | `pnpm nit "<title>"`           | File a one-line inbox issue                                                        |
 | `pnpm -s retro`                | Digest recent Claude Code runs of this repo for a retro                            |
@@ -105,7 +111,7 @@ The layers, the anatomy of a feature and the lint rules that enforce them are in
 3. Make your change with tests. Run `pnpm check` before pushing; a pre-commit hook lints and formats staged files.
 4. Open a pull request and link the issue (`Closes #12`). Vercel posts a preview URL.
 5. The PR title must follow [Conventional Commits](https://www.conventionalcommits.org) — PRs are squash-merged, so the title becomes the commit on `main` and feeds the changelog.
-6. Merging into `main` deploys to production. release-please then opens a release PR with a generated changelog; merging it tags a version.
+6. Merging into `main` updates the release PR that release-please keeps open, with a generated changelog. Merging the release PR tags a version, migrates production and deploys it, once the maintainer approves the run ([ADR 0030](docs/adr/0030-migrations-from-github-actions.md)).
 
 | Prefix      | Use for                             | Version bump |
 | ----------- | ----------------------------------- | ------------ |
@@ -126,8 +132,10 @@ Add `!` (e.g. `feat!:`) for breaking changes.
 
 - Lint, typecheck & unit tests
 - Build & E2E tests
-- CodeQL
-- Conventional Commits PR title
+- Analyze (javascript-typescript), CodeQL
+- Analyze (actions), CodeQL
+- Conventional Commits
+- Vercel
 
 ## Testing
 
