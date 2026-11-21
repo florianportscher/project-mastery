@@ -7,7 +7,7 @@
 # with issues, only `.claude/worktrees/build-<issue>`. For each it stops the
 # processes running in the worktree (the dev server from `pnpm -s agent up` and
 # any other process whose working directory is inside it), removes the worktree
-# and deletes its branch. It lists and keeps a worktree that is locked, has
+# and deletes its branch. It lists and keeps a worktree that has
 # uncommitted changes, whose branch has no PR or an open one, and the
 # `chore/279-*` one until #342 is merged. At the end it prunes stale worktree
 # records and the remote branches GitHub deleted, and fast-forwards `main` when
@@ -31,17 +31,9 @@ cleanup() {
   }
 
   branch=$(git -C "$worktree" branch --show-current)
-  if [[ -z "$branch" ]]; then
-    echo "Kept: $name has no branch (detached HEAD)." >&2
-    return 1
-  fi
   # TODO(#342): drop this once #342 is merged.
   if [[ "$branch" == chore/279-* ]]; then
     echo "Kept: $name ($branch) waits for #342." >&2
-    return 1
-  fi
-  if git worktree list --porcelain | grep -A3 -F "worktree $worktree" | grep -q '^locked'; then
-    echo "Kept: $name is locked." >&2
     return 1
   fi
 

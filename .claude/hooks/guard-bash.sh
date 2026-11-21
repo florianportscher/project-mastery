@@ -44,7 +44,7 @@ if [[ "$cwd" == */.claude/worktrees/* ]]; then
   # A write whose every target is under /tmp/ skips nothing that matters: drop
   # those targets from the checked text. Paths with .. are not exempt.
   if ! grep -qF '..' <<<"$cmd"; then
-    cmd=$(sed -E 's#>>?\s*/tmp/[^[:space:];&|]*##g; s#tee\s+(-[a-zA-Z]+\s+)*/tmp/[^[:space:];&|]*##g' <<<"$cmd")
+    cmd=$(sed -E 's#>>?\s*/tmp/[^[:space:];&|]*##g; s#tee\s+(-[a-zA-Z]+\s+)*(/tmp/[^[:space:];&|]*\s*)+([;&|]|$)#\3#g' <<<"$cmd")
   fi
   arg='[^;&|[:space:]]+\s+'
   guard ALLOW_SHELL_WRITE \

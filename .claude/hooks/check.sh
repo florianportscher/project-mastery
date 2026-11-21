@@ -21,17 +21,16 @@ root=$(checkout_root "$(jq -r '.cwd // empty' <<<"$input")") ||
   root=$(checkout_root "$CLAUDE_PROJECT_DIR") || exit 0
 cd "$root" || exit 0
 
-# Each checkout records the state it last saw green: a hash of HEAD, the
-# status, the diff and the content of untracked files.
-stamp=$(git rev-parse --path-format=absolute --git-path claude-checked-state)
+# Each checkout records the commit it last saw green, and a hash of the status
+# and diff it last saw green.
+stamp=$(git rev-parse --path-format=absolute --git-path claude-checked-head)
+state_stamp=$(git rev-parse --path-format=absolute --git-path claude-checked-state)
 dirty=$(git status --porcelain)
 state=$({
-  git rev-parse HEAD
   git status --porcelain=v1 -uall
   git diff HEAD
-  git ls-files -o --exclude-standard -z | xargs -0 -r git hash-object
 } 2>/dev/null | git hash-object --stdin)
-[[ "$state" == "$(cat "$stamp" 2>/dev/null)" ]] && exit 0
+[[ "$state" == "$(cat "$state_stamp" 2>/dev/null)" ]] && exit 0
 
 if [[ $(jq -r '.hook_event_name' <<<"$input") == SubagentStop ]]; then
   # Subagents in the main checkout are covered by the main session's Stop.
@@ -44,6 +43,7 @@ if [[ $(jq -r '.hook_event_name' <<<"$input") == SubagentStop ]]; then
   # commits too: anything not yet pushed and not yet seen green.
   if [[ -z "$dirty" ]]; then
     [[ -n $(git for-each-ref --contains HEAD refs/remotes) ]] && exit 0
+    [[ "$(git rev-parse HEAD)" == "$(cat "$stamp" 2>/dev/null)" ]] && exit 0
   fi
   [[ -d node_modules ]] ||
     block "This worktree has changes but no node_modules, so pnpm check cannot run. Run tools/build/setup.sh <spec-issue> first."
@@ -55,5 +55,6 @@ fi
 out=$(pnpm check 2>&1) ||
   block "pnpm check failed in $root. Fix the errors below before finishing:
 $(tail -n 80 <<<"$out")"
-echo "$state" >"$stamp"
+echo "$state" >"$state_stamp"
+[[ -z "$dirty" ]] && git rev-parse HEAD >"$stamp"
 exit 0

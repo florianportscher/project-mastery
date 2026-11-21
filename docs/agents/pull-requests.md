@@ -7,7 +7,7 @@ The maintainer reviews on GitHub: they read the PR, try it on its Vercel preview
 - **Branch:** `<type>/<issue>-<kebab-description>`, or `<type>/<kebab-description>` without an issue. The type is a Conventional Commits type: `feat`, `fix`, `refactor`, `test`, `chore` or `docs`.
 - **Title:** Conventional Commits, in lower case after the type (`feat: parse materials into chunks`). It becomes the commit on `main`.
 - **Body:** write it with the Write tool into your scratchpad and pass it with `--body-file`, also for `gh pr edit`. Multi-line `--body` strings break on shell quoting.
-- **Draft:** a long run opens the PR as a draft after its first commit (`gh pr create --draft --base main`), pushes as it goes, and runs `gh pr ready` when done.
+- **Opening:** a long run pushes as it goes and opens the PR once, when done, with `tools/build/ready.sh`; there is no draft.
 
 ## Body
 
