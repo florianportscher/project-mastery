@@ -24,9 +24,6 @@ export const ROLES: Role[] = [
   "other",
 ];
 
-/** Built-in commands that change settings and do not start work. */
-const SETTINGS_COMMANDS = new Set(["/model", "/clear", "/effort", "/config"]);
-
 /** True when the session has no model turn: nothing was answered. */
 export function hasNoModelTurn(recs: Rec[]): boolean {
   return !recs.some(
@@ -49,7 +46,7 @@ export function startCommand(recs: Rec[]): string | undefined {
           ? c.map((b: Rec) => b.text ?? "").join("\n")
           : "";
     const name = text.match(/<command-name>\s*(\S+?)\s*<\/command-name>/)?.[1];
-    if (!name || SETTINGS_COMMANDS.has(name)) continue;
+    if (!name) continue;
     const args =
       text.match(/<command-args>([\s\S]*?)<\/command-args>/)?.[1]?.trim() ?? "";
     return args ? `${name} ${args}` : name;

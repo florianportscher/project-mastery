@@ -442,8 +442,6 @@ process.stdout.on("error", () => process.exit(0));
 
 const args = process.argv.slice(2);
 const sinceArg = args[args.indexOf("--since") + 1];
-if (args.includes("--since") && !/^\d{4}-\d{2}-\d{2}$/.test(sinceArg ?? ""))
-  throw new Error("--since takes a date: --since YYYY-MM-DD");
 const since = args.includes("--since") ? new Date(sinceArg ?? "") : undefined;
 const id = args.find(
   (a, i) => !a.startsWith("--") && args[i - 1] !== "--since",

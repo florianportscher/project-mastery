@@ -13,9 +13,8 @@ const user = (content: string) => ({ type: "user", message: { content } });
 const turn = { type: "assistant", message: { model: "m", usage: {} } };
 
 describe("starting command", () => {
-  it("skips settings commands and keeps the arguments", () => {
+  it("keeps the arguments of the command", () => {
     const recs = [
-      user("<command-name>/model</command-name><command-args></command-args>"),
       user(
         "<command-message>build</command-message>\n<command-name>/build</command-name>\n<command-args>335 336 337</command-args>",
       ),
