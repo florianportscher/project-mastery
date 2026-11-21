@@ -24,8 +24,13 @@ import { flagReadyProblem } from "@/features/study/server/problems";
 import { closeIdleSession, endSession } from "@/features/study/server/sessions";
 import type { ProblemFlag, SessionSummary } from "@/features/study/types";
 import { getUser } from "@/lib/auth/user";
+import { failed } from "@/lib/supabase/failed";
 import { createClient } from "@/lib/supabase/server";
-import { parseActionInput, type ActionResult } from "@/lib/validation/action";
+import {
+  parseActionInput,
+  signedOut,
+  type ActionResult,
+} from "@/lib/validation/action";
 
 /**
  * Saves the Student's edit of a Course's Memory: replaces the whole text,
@@ -37,7 +42,7 @@ export async function saveMemory(input: {
   text: string;
 }): Promise<ActionResult> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(saveMemorySchema, input);
   if (!parsed.ok) return parsed;
@@ -51,7 +56,7 @@ export async function saveMemory(input: {
   if (error?.code === "42501") {
     return { ok: false, message: "This Course was not found." };
   }
-  if (error) throw new Error(`Saving the Memory failed: ${error.message}`);
+  if (error) failed("Saving the Memory", error);
 
   revalidatePath(briefPath(courseId));
   return { ok: true, data: undefined };
@@ -66,7 +71,7 @@ export async function endStudySession(input: {
   chatId: string;
 }): Promise<ActionResult> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(endSessionSchema, input);
   if (!parsed.ok) return parsed;
@@ -91,7 +96,7 @@ export async function getSessionSummary(input: {
   chatId: string;
 }): Promise<ActionResult<SessionSummary>> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(endSessionSchema, input);
   if (!parsed.ok) return parsed;
@@ -117,7 +122,7 @@ export async function rateStudySession(input: {
   note?: string;
 }): Promise<ActionResult> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(rateSessionSchema, input);
   if (!parsed.ok) return parsed;
@@ -144,7 +149,7 @@ export async function flagProblem(input: {
   flag: ProblemFlag;
 }): Promise<ActionResult> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(flagProblemSchema, input);
   if (!parsed.ok) return parsed;
@@ -169,7 +174,7 @@ export async function queueMockExam(input: {
   courseId: string;
 }): Promise<ActionResult<{ mockId: string }>> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(queueMockExamSchema, input);
   if (!parsed.ok) return parsed;
@@ -191,7 +196,7 @@ export async function startMockExam(input: {
   mockId: string;
 }): Promise<ActionResult> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(mockExamSchema, input);
   if (!parsed.ok) return parsed;
@@ -211,7 +216,7 @@ export async function saveMockTaskAnswer(input: {
   confidence: number | null;
 }): Promise<ActionResult> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(saveMockAnswerSchema, input);
   if (!parsed.ok) return parsed;
@@ -240,7 +245,7 @@ export async function submitMockExam(input: {
   mockId: string;
 }): Promise<ActionResult> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(mockExamSchema, input);
   if (!parsed.ok) return parsed;
@@ -276,7 +281,7 @@ export async function setTopicChoice(input: {
   reason?: string;
 }): Promise<ActionResult<{ reasonKept: boolean }>> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(setTopicChoiceSchema, input);
   if (!parsed.ok) return parsed;
@@ -289,9 +294,7 @@ export async function setTopicChoice(input: {
     .eq("id", topicId)
     .eq("course_id", courseId)
     .maybeSingle();
-  if (topicError) {
-    throw new Error(`Reading the Topic failed: ${topicError.message}`);
-  }
+  if (topicError) failed("Reading the Topic", topicError);
   if (!topic) return { ok: false, message: "This Topic was not found." };
 
   const { error } =
@@ -305,7 +308,7 @@ export async function setTopicChoice(input: {
           },
           { onConflict: "owner,topic_id" },
         );
-  if (error) throw new Error(`Saving the choice failed: ${error.message}`);
+  if (error) failed("Saving the choice", error);
 
   let reasonKept = true;
   if (choice === "skipped" && reason) {
@@ -333,7 +336,7 @@ export async function saveExamResult(input: {
   grade: string | null;
 }): Promise<ActionResult> {
   if (!(await getUser())) {
-    return { ok: false, message: "Sign in again to continue." };
+    return signedOut;
   }
   const parsed = parseActionInput(examResultSchema, input);
   if (!parsed.ok) return parsed;

@@ -2,7 +2,7 @@ import { getToolName, isToolUIPart } from "ai";
 import type { ChatUIMessage } from "@/features/chat/types";
 
 /** How far a KC got today. */
-export type DotState = "new" | "practised" | "shown";
+type DotState = "new" | "practised" | "shown";
 
 /** What the strip above a Chat's messages shows. */
 export type SessionStrip = {

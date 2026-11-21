@@ -15,7 +15,6 @@ import {
   type CannedPairing,
   type SentPairing,
 } from "@/features/ingestion/workflows/parse-testing";
-import { dailyLimitReason } from "@/features/ingestion/domain/parse-failure";
 import { mockEmbeddingModel } from "@/lib/ai/testing";
 import { markAdminClient } from "@/lib/supabase/admin-brand";
 import type { Supabase } from "@/lib/supabase/types";
@@ -260,7 +259,7 @@ describe("pairing exercises with solutions", () => {
 
     expect(db.tables.materials[0]).toMatchObject({
       parse_status: "failed",
-      parse_failure: dailyLimitReason,
+      parse_failure: "Daily limit reached",
     });
     expect(pairingPrompts).toHaveLength(0);
   });

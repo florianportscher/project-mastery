@@ -1,5 +1,8 @@
 import type { DailyLimitStatus } from "@/features/usage/types";
 
+/** Why a build or parse stopped when the Daily limit or provider quota ran out. */
+export const dailyLimitReason = "Daily limit reached";
+
 /** The share of the Daily limit from which the Chat warns the Student. */
 const DAILY_LIMIT_WARNING_SHARE = 0.8;
 

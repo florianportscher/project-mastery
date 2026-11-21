@@ -8,7 +8,7 @@ import type { KnowledgeMap } from "@/features/knowledge-map/schemas";
  */
 
 /** The most pages one Reading section spans. */
-export const MAX_SECTION_PAGES = 3;
+const MAX_SECTION_PAGES = 3;
 
 /** A chunk's place: its Material and the pages it covers, and its label. */
 export type ChunkSpan = {

@@ -8,7 +8,7 @@
 export type PairingChunk = { id: string; label: "exercise" | "solution" };
 
 /** The most exercise and solution chunks one pairing call sees. */
-export const MAX_PAIRING_CHUNKS = 400;
+const MAX_PAIRING_CHUNKS = 400;
 
 /**
  * The chunks of each pairing call: the Course's exercise and solution

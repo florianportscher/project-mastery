@@ -6,7 +6,6 @@ import {
   type OfferedKc,
   type OfferedName,
 } from "@/features/knowledge-map/ai/prerequisite-check";
-import { dailyLimitReason } from "@/features/knowledge-map/domain/build-failure";
 import { acyclicLinks } from "@/features/knowledge-map/domain/prerequisite-cycles";
 import { kcAssumesSchema } from "@/features/knowledge-map/schemas";
 import {
@@ -22,7 +21,10 @@ import {
   kcsInCourseOrder,
   loadMapInput,
 } from "@/features/knowledge-map/workflows/map-input";
-import { RATE_LIMITED_STEP_RETRIES } from "@/features/usage/server";
+import {
+  dailyLimitReason,
+  RATE_LIMITED_STEP_RETRIES,
+} from "@/features/usage/server";
 import { allRows } from "@/lib/supabase/all-rows";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { failed } from "@/lib/supabase/failed";

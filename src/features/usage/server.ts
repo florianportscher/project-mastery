@@ -2,6 +2,7 @@
 // and checking the Daily limit, for every feature that calls models.
 import "server-only";
 
+export { dailyLimitReason } from "./domain/daily-limit";
 export {
   checkDailyLimit,
   dailyLimitReachedMessage,

@@ -274,8 +274,7 @@ async function streamReply({
 }
 
 /** What the Student sees when a step ran past its time limit. */
-export const replyTimeoutMessage =
-  "The AI took too long to reply. Please try again.";
+const replyTimeoutMessage = "The AI took too long to reply. Please try again.";
 
 /**
  * Turns the abort a step's time limit causes into an error, which the

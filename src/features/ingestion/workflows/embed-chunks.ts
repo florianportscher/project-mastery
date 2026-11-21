@@ -2,12 +2,12 @@ import "server-only";
 import { APICallError, RetryError } from "ai";
 import { FatalError, RetryableError } from "workflow";
 import { retryDelayMs } from "@/features/ingestion/ai/retry-delay";
-import { dailyLimitReason } from "@/features/ingestion/domain/parse-failure";
 import {
   loadMaterial,
   type ParseOutcome,
 } from "@/features/ingestion/workflows/parse-steps";
 import {
+  dailyLimitReason,
   meteredEmbed,
   RATE_LIMITED_STEP_RETRIES,
 } from "@/features/usage/server";

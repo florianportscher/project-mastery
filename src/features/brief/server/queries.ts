@@ -55,14 +55,8 @@ async function loadPanelData(supabase: Supabase, courseId: string) {
     loadTopics(supabase, courseId),
     loadExamScopes(supabase, courseId),
   ]);
-  if (brief.error) {
-    throw new Error(`Loading the Brief failed: ${brief.error.message}`);
-  }
-  if (excluded.error) {
-    throw new Error(
-      `Loading the excluded Materials failed: ${excluded.error.message}`,
-    );
-  }
+  if (brief.error) failed("Loading the Brief", brief.error);
+  if (excluded.error) failed("Loading the excluded Materials", excluded.error);
   const { data } = brief;
   const fields: BriefFields = {
     examDate: data.exam_date,
@@ -134,7 +128,7 @@ export async function getExamFacts(
     .select("exam_date, goal")
     .eq("course_id", courseId)
     .maybeSingle();
-  if (error) throw new Error(`Loading the Brief failed: ${error.message}`);
+  if (error) failed("Loading the Brief", error);
   return {
     examDate: data?.exam_date ?? null,
     goal: (data?.goal ?? null) as ExamFacts["goal"],

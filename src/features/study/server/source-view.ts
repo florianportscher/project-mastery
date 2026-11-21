@@ -1,11 +1,7 @@
 import "server-only";
-import { materialChunksPath } from "@/features/courses/server";
+import { materialChunksPath, pagesLabel } from "@/features/courses/server";
 import type { loadChunkSources } from "@/features/ingestion/server";
 import type { SourceChunkView } from "@/features/study/types";
-
-/** Such as "p. 3" or "pp. 3–4". */
-export const pagesLabel = (from: number, to: number) =>
-  from === to ? `p. ${from}` : `pp. ${from}–${to}`;
 
 /** Such as "Lecture 3, pp. 12–14". */
 export const readingLabel = (section: {

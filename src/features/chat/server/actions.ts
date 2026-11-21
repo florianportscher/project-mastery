@@ -25,9 +25,12 @@ import {
 } from "@/features/chat/server/chat-store";
 import { getUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
-import { parseActionInput, type ActionResult } from "@/lib/validation/action";
+import {
+  parseActionInput,
+  signedOut,
+  type ActionResult,
+} from "@/lib/validation/action";
 
-const signedOut = { ok: false, message: "Sign in again to continue." } as const;
 const chatNotFound = {
   ok: false,
   message: chatNotFoundMessage,

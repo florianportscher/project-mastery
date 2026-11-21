@@ -14,6 +14,7 @@ export {
   COURSE_LIST_PATH,
   materialChunksPath,
   materialsPath,
+  pagesLabel,
 } from "./domain/course-paths";
 export {
   MATERIAL_MEDIA_TYPES,

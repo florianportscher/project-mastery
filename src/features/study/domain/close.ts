@@ -4,7 +4,7 @@
  */
 
 /** A Memory longer than this is condensed by the close call. */
-export const CONDENSE_MEMORY_FROM = 3_000;
+const CONDENSE_MEMORY_FROM = 3_000;
 
 /** The most characters of a Topic note. */
 export const MAX_TOPIC_NOTE_LENGTH = 1_500;

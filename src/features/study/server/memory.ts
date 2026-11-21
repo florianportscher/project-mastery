@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { getUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
+import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
 /**
@@ -24,7 +25,7 @@ export async function loadMemory(
     .select("text")
     .eq("course_id", courseId)
     .maybeSingle();
-  if (error) throw new Error(`Reading the Memory failed: ${error.message}`);
+  if (error) failed("Reading the Memory", error);
   return data?.text ?? "";
 }
 
@@ -41,6 +42,6 @@ export async function appendMemory(
     course_id: courseId,
     text,
   });
-  if (error) throw new Error(`Saving to the Memory failed: ${error.message}`);
+  if (error) failed("Saving to the Memory", error);
   return data === true;
 }

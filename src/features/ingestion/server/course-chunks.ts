@@ -1,67 +1,12 @@
 import "server-only";
-import { z } from "zod";
 import {
   chapterSubtree,
   examChapterIds,
   type ExamChapterNode,
 } from "@/features/ingestion/domain/old-exam-chapters";
-import { CHUNK_LABELS, type ChunkLabel } from "@/features/ingestion/types";
-import { getUser } from "@/lib/auth/user";
 import { allRows } from "@/lib/supabase/all-rows";
 import { failed } from "@/lib/supabase/failed";
-import { createClient } from "@/lib/supabase/server";
-import type { AdminSupabase, Supabase } from "@/lib/supabase/types";
-
-/** A chunk of a parsed Material, as a Course-wide pipeline reads it. */
-export type CourseChunk = {
-  id: string;
-  materialId: string;
-  materialName: string;
-  pageFrom: number;
-  label: ChunkLabel;
-  markdown: string;
-};
-
-/** Where a chunk is: its Material, first page and position. */
-export type ChunkPlace = {
-  id: string;
-  materialId: string;
-  pageFrom: number;
-  position: number;
-};
-
-/**
- * Where the signed-in Student's chunks among `chunkIds` are. Row Level
- * Security leaves out other Students' chunks; deleted ones are missing.
- * Reads with `client`, a Student's session client, when given.
- */
-export async function getChunkPlaces(
-  chunkIds: string[],
-  client?: Supabase,
-): Promise<ChunkPlace[]> {
-  if (chunkIds.length === 0) return [];
-  if (!client && !(await getUser())) return [];
-  const supabase = client ?? (await createClient());
-  const ids = [...new Set(chunkIds)];
-  const places: ChunkPlace[] = [];
-  // Ids go in the query string, so long lists are read in slices.
-  for (let start = 0; start < ids.length; start += ID_SLICE) {
-    const { data, error } = await supabase
-      .from("chunks")
-      .select("id, material_id, page_from, position")
-      .in("id", ids.slice(start, start + ID_SLICE));
-    if (error) failed("Loading the chunks", error);
-    for (const chunk of data) {
-      places.push({
-        id: chunk.id,
-        materialId: chunk.material_id,
-        pageFrom: chunk.page_from,
-        position: chunk.position,
-      });
-    }
-  }
-  return places;
-}
+import type { Supabase } from "@/lib/supabase/types";
 
 /** A chunk with its text and where it is, as the AI cites it. */
 export type ChunkSource = {
@@ -212,90 +157,8 @@ export async function loadChapterChunkIds(
     .map(({ id }) => id);
 }
 
-/** A chunk's text as a Reading section shows it. */
-export type ChunkText = {
-  id: string;
-  pageFrom: number;
-  pageTo: number;
-  label: ChunkLabel;
-  markdown: string;
-};
-
-/**
- * The texts of the chunks among `chunkIds` that `supabase` may read, by id;
- * deleted ones are missing. Reads on the admin client, or on a Student's
- * session client, where Row Level Security scopes it.
- */
-export async function loadChunkTexts(
-  supabase: Supabase,
-  chunkIds: string[],
-): Promise<Record<string, ChunkText>> {
-  const ids = [...new Set(chunkIds)];
-  const texts: Record<string, ChunkText> = {};
-  // Ids go in the query string, so long lists are read in slices.
-  for (let start = 0; start < ids.length; start += ID_SLICE) {
-    const { data, error } = await supabase
-      .from("chunks")
-      .select("id, page_from, page_to, label, markdown")
-      .in("id", ids.slice(start, start + ID_SLICE));
-    if (error) failed("Loading the chunks", error);
-    for (const chunk of data) {
-      texts[chunk.id] = {
-        id: chunk.id,
-        pageFrom: chunk.page_from,
-        pageTo: chunk.page_to,
-        label: z.enum(CHUNK_LABELS).parse(chunk.label),
-        markdown: chunk.markdown,
-      };
-    }
-  }
-  return texts;
-}
-
 /** Chunk ids per `in` filter, which keeps the query string short. */
 const ID_SLICE = 100;
-
-/**
- * Every chunk of the Course's `parsed` Materials in Course order: Materials
- * by position, then chunks by position. For workflows on the admin client,
- * so it scopes the reads to the Course itself.
- */
-export async function loadCourseChunks(
-  supabase: AdminSupabase,
-  courseId: string,
-): Promise<CourseChunk[]> {
-  const materials = await supabase
-    .from("materials")
-    .select("id, name")
-    .eq("course_id", courseId)
-    .eq("parse_status", "parsed")
-    .order("position");
-  if (materials.error) failed("Loading the Materials", materials.error);
-  if (materials.data.length === 0) return [];
-
-  const chunks: CourseChunk[] = [];
-  for (const material of materials.data) {
-    const rows = await allRows("Loading the chunks", (from, to) =>
-      supabase
-        .from("chunks")
-        .select("id, position, page_from, label, markdown")
-        .eq("material_id", material.id)
-        .order("position")
-        .range(from, to),
-    );
-    for (const chunk of rows) {
-      chunks.push({
-        id: chunk.id,
-        materialId: material.id,
-        materialName: material.name,
-        pageFrom: chunk.page_from,
-        label: z.enum(CHUNK_LABELS).parse(chunk.label),
-        markdown: chunk.markdown,
-      });
-    }
-  }
-  return chunks;
-}
 
 /** Where a chunk is in the Course, and its label, without its text. */
 export type ChunkSpan = {

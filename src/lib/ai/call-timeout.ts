@@ -15,7 +15,7 @@ export const CALL_TIMEOUT_MS = 170_000;
 export const BUILD_CALL_TIMEOUT_MS = 260_000;
 
 /** How long a step may run, with a margin under Vercel's 300 seconds. */
-export const STEP_LIMIT_MS = 290_000;
+const STEP_LIMIT_MS = 290_000;
 
 /** The shortest time a retry made with what is left of a step gets. */
 const MIN_RETRY_MS = 60_000;

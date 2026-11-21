@@ -36,8 +36,3 @@ export function citedSource(
 
 /** The note when a cited page is not in the Material. */
 export const pageNotFoundMessage = "The cited page wasn't found.";
-
-/** Such as "p. 3" or "pp. 3–5". */
-export function pagesLabel(pageFrom: number, pageTo: number): string {
-  return pageFrom === pageTo ? `p. ${pageFrom}` : `pp. ${pageFrom}–${pageTo}`;
-}
