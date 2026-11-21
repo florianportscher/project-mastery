@@ -1,7 +1,9 @@
 /**
  * Digests Claude Code transcripts of this repo for a retro:
  *
- *   pnpm -s retro              recent runs, newest first
+ *   pnpm -s retro              the 20 newest runs, with the command that started each
+ *   pnpm -s retro --since <YYYY-MM-DD>   every run since that date
+ *   pnpm -s retro --issues [--since <date>]   cost per issue by role, and per starting command
  *   pnpm -s retro <id>         one run and its subagents (id prefix from the list)
  *
  * A /build run leaves megabytes of JSONL. This prints what a retro looks at
@@ -14,6 +16,17 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import {
+  commandName,
+  costByIssue,
+  hasNoModelTurn,
+  issueOfText,
+  issuesOfCommand,
+  ROLES,
+  roleOf,
+  startCommand,
+  type Role,
+} from "./sessions";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped transcript JSON
 type Rec = Record<string, any>;
@@ -269,9 +282,69 @@ function analyze(recs: Rec[]) {
   };
 }
 
-function list() {
-  for (const s of sessions().slice(0, 20)) {
-    const recs = readJsonl(s.file);
+/** Sessions to list: all since the date, else the 20 newest; none without a model turn. */
+function listed(since: Date | undefined) {
+  const all = sessions().filter((s) => !since || s.mtime >= since);
+  return (since ? all : all.slice(0, 20))
+    .map((s) => ({ ...s, recs: readJsonl(s.file) }))
+    .filter((s) => !hasNoModelTurn(s.recs));
+}
+
+function issuesReport(since: Date | undefined) {
+  const perIssue = new Map<
+    number,
+    { sessions: Set<string>; roles: Partial<Record<Role, number>> }
+  >();
+  const perCommand = new Map<string, number>();
+  for (const s of listed(since)) {
+    const command = startCommand(s.recs);
+    const agents = agentFiles(s.file).map((a) => {
+      const recs = a.file === s.file ? s.recs : readJsonl(a.file);
+      const an = analyze(recs);
+      const meta = { name: a.name, models: an.models, prompt: an.prompt };
+      return {
+        role: roleOf(meta),
+        cost: an.cost,
+        issue: a.name === "main" ? undefined : issueOfText(a.name, an.prompt),
+      };
+    });
+    const total = agents.reduce((sum, a) => sum + a.cost, 0);
+    const key = commandName(command);
+    perCommand.set(key, (perCommand.get(key) ?? 0) + total);
+    const issues = issuesOfCommand(command);
+    if (!issues.length) continue;
+    for (const [issue, roles] of costByIssue(issues, agents)) {
+      const row = perIssue.get(issue) ?? { sessions: new Set(), roles: {} };
+      row.sessions.add(s.id.slice(0, 8));
+      for (const [role, c] of Object.entries(roles))
+        row.roles[role as Role] = (row.roles[role as Role] ?? 0) + c;
+      perIssue.set(issue, row);
+    }
+  }
+  console.log(
+    ["issue", "total", ...ROLES, "sessions"]
+      .map((h, i) => (i === 0 || i === ROLES.length + 2 ? h : h.padStart(9)))
+      .join("  "),
+  );
+  for (const [issue, row] of [...perIssue].sort((a, b) => a[0] - b[0])) {
+    const total = Object.values(row.roles).reduce((sum, c) => sum + c, 0);
+    console.log(
+      [
+        `#${issue}`.padEnd(5),
+        usd(total).padStart(9),
+        ...ROLES.map((r) => usd(row.roles[r] ?? 0).padStart(9)),
+        [...row.sessions].join(","),
+      ].join("  "),
+    );
+  }
+  console.log("\ncost per starting command");
+  for (const [command, cost] of [...perCommand].sort((a, b) => b[1] - a[1]))
+    console.log(`  ${command.padEnd(14)} ${usd(cost).padStart(9)}`);
+}
+
+function list(since: Date | undefined) {
+  for (const s of listed(since)) {
+    const recs = s.recs;
     const agents = agentFiles(s.file);
     const cost =
       recordedCost(recs) ??
@@ -285,14 +358,14 @@ function list() {
       recs.findLast((r) => r.type === "last-prompt")?.lastPrompt ??
       "";
     const subs = agents.length - 1;
+    const command = startCommand(recs);
     console.log(
       [
         s.mtime.toISOString().slice(0, 16).replace("T", " "),
         s.id.slice(0, 8),
-        s.where.padEnd(12),
         usd(cost).padStart(7),
-        subs ? `${subs} agents` : "        ",
-        short(String(title), 70),
+        subs ? `${subs} agents`.padStart(9) : "         ",
+        command ? short(command, 40) : `free-form: ${short(String(title), 50)}`,
       ].join("  "),
     );
   }
@@ -367,6 +440,14 @@ function digest(id: string) {
 // Piping into `head` closes stdout early; that is not an error.
 process.stdout.on("error", () => process.exit(0));
 
-const id = process.argv[2];
-if (id) digest(id);
-else list();
+const args = process.argv.slice(2);
+const sinceArg = args[args.indexOf("--since") + 1];
+if (args.includes("--since") && !/^\d{4}-\d{2}-\d{2}$/.test(sinceArg ?? ""))
+  throw new Error("--since takes a date: --since YYYY-MM-DD");
+const since = args.includes("--since") ? new Date(sinceArg) : undefined;
+const id = args.find(
+  (a, i) => !a.startsWith("--") && args[i - 1] !== "--since",
+);
+if (args.includes("--issues")) issuesReport(since);
+else if (id) digest(id);
+else list(since);

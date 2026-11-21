@@ -8,7 +8,7 @@ How this repo equips coding agents: what to change when a run goes wrong, and wh
 - **Cheap runs.** Cost is turns × context. Few agents, small contexts, compact tool output (a clean check prints one line), and the cheapest model that does the role well.
 - **Lean.** Every always-loaded line costs on every turn. Each fact has one home and is reached by pointer; deleting a line nobody needs beats adding one. The `writing-for-agents` skill covers how to write them.
 - **Simple.** The smallest change that removes the failure. No framework for a single case.
-- **Parked until launch:** `/sweep`, `/sweep-apply` and `/retro`. In the five weeks before 2026-11-11, 38 of 133 agent PRs changed the harness, applied a sweep or hardened tests, for an app without users yet. The exception is one `/retro` around 2026-12-02, which compares the two-shift workflow (`/sitting`, then `/build` on a queue) with the report of 2026-11-09.
+- **Parked until launch:** `/sweep`, `/sweep-apply` and `/retro`. In the five weeks before 2026-11-11, 38 of 133 agent PRs changed the harness, applied a sweep or hardened tests, for an app without users yet. The cleanup audit of 2026-11-20 (`docs/retros/2026-11-20.md`) replaced the `/retro` planned for 2026-12-02. Transcripts are kept for 90 days: `cleanupPeriodDays: 90` was set in the maintainer's user settings on 2026-11-20.
 
 ## Where things live
 
