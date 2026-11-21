@@ -24,7 +24,7 @@ function fakeStaging(rows: Record<string, object[]>) {
 
 it("pulls every snapshot table and the Materials' files from staging", async () => {
   const { fetchFn, requests } = fakeStaging({
-    courses: [{ id: "c", name: "Algebra", pairing_requested: 1 }],
+    courses: [{ id: "c", name: "Algebra" }],
     materials: [
       {
         id: "m1",
@@ -45,10 +45,7 @@ it("pulls every snapshot table and the Materials' files from staging", async () 
   const snapshot = decodeSnapshot(
     await readFile(path.join(dir, "algebra", "snapshot.json.gz")),
   );
-  expect(snapshot).toMatchObject({
-    courseName: "Algebra",
-    pairingRequested: 1,
-  });
+  expect(snapshot).toMatchObject({ courseName: "Algebra" });
   expect(snapshot.tables.chunks?.[0]?.embedding).toBe("[0.1,0.2]");
   expect(await readdir(path.join(dir, "algebra", "materials"))).toEqual([
     "m1.pdf",

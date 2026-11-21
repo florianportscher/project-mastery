@@ -9,6 +9,7 @@ const report = (over: Partial<CheckReport>): CheckReport => ({
   unitsBelowCoverage: [],
   unreadPages: [],
   unitsNotExtracted: [],
+  exercisesNotGrouped: false,
   ...over,
 });
 

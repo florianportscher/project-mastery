@@ -26,6 +26,7 @@ const TABLES = [
   "prerequisite_links",
   "exercises",
   "exercise_kcs",
+  "exercise_chunks",
   "exam_scopes",
   "knowledge_map_builds",
   "topics",
@@ -205,10 +206,16 @@ function seedCourse({ exam = false }: { exam?: boolean } = {}) {
       id,
       ...owned,
       question_chunk_id: `cccccccc-0000-4000-8000-00000000000${position}`,
-      solution_chunk_id: null,
       difficulty: 2,
       position,
       final_answers: null,
+    });
+    t.exercise_chunks.push({
+      ...owned,
+      exercise_id: id,
+      chunk_id: `cccccccc-0000-4000-8000-00000000000${position}`,
+      role: "question",
+      position: 0,
     });
     t.exercise_kcs.push({ ...owned, exercise_id: id, kc_id: kc });
   };

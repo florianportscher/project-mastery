@@ -67,9 +67,16 @@ function createDb() {
         ofCourse({
           id: `exercise-${n(i)}`,
           question_chunk_id: chunkId(i),
-          solution_chunk_id: null,
           difficulty: 1,
           position: i,
+        }),
+      ),
+      exercise_chunks: each((i) =>
+        ofCourse({
+          exercise_id: `exercise-${n(i)}`,
+          chunk_id: chunkId(i),
+          role: "question",
+          position: 0,
         }),
       ),
       exercise_kcs: each((i) =>

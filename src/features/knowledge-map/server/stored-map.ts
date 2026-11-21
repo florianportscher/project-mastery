@@ -48,7 +48,7 @@ export async function loadStoredMap(
   supabase: Supabase,
   courseId: string,
 ): Promise<KnowledgeMap> {
-  const [kcs, sources, prerequisites, exercises, exerciseKcs] =
+  const [kcs, sources, prerequisites, exercises, exerciseKcs, exerciseChunks] =
     await Promise.all([
       allRows("Loading the KCs", (from, to) =>
         supabase
@@ -79,9 +79,7 @@ export async function loadStoredMap(
       allRows("Loading the exercises", (from, to) =>
         supabase
           .from("exercises")
-          .select(
-            "id, question_chunk_id, solution_chunk_id, difficulty, final_answers",
-          )
+          .select("id, question_chunk_id, difficulty, final_answers")
           .eq("course_id", courseId)
           .order("position")
           .range(from, to),
@@ -95,8 +93,22 @@ export async function loadStoredMap(
           .order("kc_id")
           .range(from, to),
       ),
+      allRows("Loading the exercise chunks", (from, to) =>
+        supabase
+          .from("exercise_chunks")
+          .select("exercise_id, chunk_id, role, position")
+          .eq("course_id", courseId)
+          .order("exercise_id")
+          .order("chunk_id")
+          .range(from, to),
+      ),
     ]);
 
+  const chunksOf = (exerciseId: string, role: "question" | "solution") =>
+    exerciseChunks
+      .filter((row) => row.exercise_id === exerciseId && row.role === role)
+      .toSorted((a, b) => a.position - b.position)
+      .map((row) => row.chunk_id);
   const kcOrder = new Map(kcs.map((kc, index) => [kc.id, index]));
   return knowledgeMapSchema.parse({
     kcs: kcs.map((kc) => ({
@@ -112,18 +124,25 @@ export async function loadStoredMap(
     prerequisites: prerequisites
       .filter((link) => kcOrder.has(link.from_kc) && kcOrder.has(link.to_kc))
       .map((link) => ({ from: link.from_kc, to: link.to_kc })),
-    exercises: exercises.map((exercise) => ({
-      id: exercise.id,
-      questionChunk: exercise.question_chunk_id,
-      solutionChunk: exercise.solution_chunk_id,
-      difficulty: exercise.difficulty,
-      kcs: exerciseKcs
-        .filter(
-          (link) => link.exercise_id === exercise.id && kcOrder.has(link.kc_id),
-        )
-        .map((link) => link.kc_id)
-        .toSorted((a, b) => (kcOrder.get(a) ?? 0) - (kcOrder.get(b) ?? 0)),
-      finalAnswers: exercise.final_answers,
-    })),
+    exercises: exercises.map((exercise) => {
+      const questions = chunksOf(exercise.id, "question");
+      return {
+        id: exercise.id,
+        questionChunk: exercise.question_chunk_id,
+        // An Exercise from before its chunks were stored has its first one.
+        questionChunks:
+          questions.length > 0 ? questions : [exercise.question_chunk_id],
+        solutionChunks: chunksOf(exercise.id, "solution"),
+        difficulty: exercise.difficulty,
+        kcs: exerciseKcs
+          .filter(
+            (link) =>
+              link.exercise_id === exercise.id && kcOrder.has(link.kc_id),
+          )
+          .map((link) => link.kc_id)
+          .toSorted((a, b) => (kcOrder.get(a) ?? 0) - (kcOrder.get(b) ?? 0)),
+        finalAnswers: exercise.final_answers,
+      };
+    }),
   });
 }

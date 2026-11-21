@@ -39,14 +39,18 @@ export function ExercisesSection({
               {kcs.length === 0 && <Flag>no KCs</Flag>}
             </div>
             <Row label="Question">
-              <ChunkRefs ids={[exercise.questionChunkId]} lookup={lookup} />{" "}
-              <ChunkMarkdown chunkId={exercise.questionChunkId} />
+              <ChunkRefs ids={exercise.questionChunkIds} lookup={lookup} />{" "}
+              {exercise.questionChunkIds.map((id) => (
+                <ChunkMarkdown key={id} chunkId={id} />
+              ))}
             </Row>
             <Row label="Solution">
-              {exercise.solutionChunkId ? (
+              {exercise.solutionChunkIds.length > 0 ? (
                 <>
-                  <ChunkRefs ids={[exercise.solutionChunkId]} lookup={lookup} />{" "}
-                  <ChunkMarkdown chunkId={exercise.solutionChunkId} />
+                  <ChunkRefs ids={exercise.solutionChunkIds} lookup={lookup} />{" "}
+                  {exercise.solutionChunkIds.map((id) => (
+                    <ChunkMarkdown key={id} chunkId={id} />
+                  ))}
                 </>
               ) : (
                 <span className="text-muted-foreground">none</span>

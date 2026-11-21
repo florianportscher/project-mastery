@@ -32,16 +32,12 @@ export type Snapshot = {
     id: string;
     position: number;
     questionChunkId: string;
-    solutionChunkId: string | null;
+    questionChunkIds: string[];
+    solutionChunkIds: string[];
     difficulty: number;
     finalAnswers: unknown;
   }>;
   exerciseKcs: Array<{ exerciseId: string; kcId: string }>;
-  exerciseSolutions: Array<{
-    exerciseChunkId: string;
-    solutionChunkId: string | null;
-    status: string;
-  }>;
   topics: Array<{
     id: string;
     parentId: string | null;

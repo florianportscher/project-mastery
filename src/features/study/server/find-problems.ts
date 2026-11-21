@@ -111,7 +111,7 @@ export async function findProblems(
 
   const questionChunks = await loadChunkSources(
     supabase,
-    askable.map((exercise) => exercise.questionChunk),
+    askable.flatMap((exercise) => exercise.questionChunks),
   );
   const question = new Map(questionChunks.map((c) => [c.id, c]));
   const candidates: Candidate[] = [
@@ -154,13 +154,19 @@ export async function findProblems(
     )
     .slice(0, MAX_PROBLEMS);
   const solutionIds = found.flatMap((candidate) =>
-    candidate.kind === "exercise"
-      ? (candidate.exercise.solutionChunk ?? [])
-      : [],
+    candidate.kind === "exercise" ? candidate.exercise.solutionChunks : [],
   );
   const solutions = new Map(
     (await loadChunkSources(supabase, solutionIds)).map((c) => [c.id, c]),
   );
+  /** The Markdown of these chunks, in order, as one; null without any. */
+  const joined = (
+    ids: readonly string[],
+    of: ReadonlyMap<string, { markdown: string }>,
+  ) => {
+    const markdowns = ids.flatMap((id) => of.get(id)?.markdown ?? []);
+    return markdowns.length > 0 ? markdowns.join("\n\n") : null;
+  };
   const kcName = new Map(map.kcs.map((kc) => [kc.id, kc.name]));
   const kcs = (ids: string[]) =>
     ids.flatMap((id) => {
@@ -189,15 +195,15 @@ export async function findProblems(
         };
       }
       const { exercise, chunk } = candidate;
-      const solutionChunk = solutions.get(exercise.solutionChunk ?? "");
+      const solution = joined(exercise.solutionChunks, solutions);
       return {
         ...common,
         name: exerciseLabel(chunk),
-        question: chunk.markdown,
+        question: joined(exercise.questionChunks, question) ?? chunk.markdown,
         link: chunkLink(courseId, chunk),
         solution: {
-          status: solutionLabel(solutionChunk !== undefined),
-          markdown: solutionChunk?.markdown ?? null,
+          status: solutionLabel(solution !== null),
+          markdown: solution,
         },
       };
     }),

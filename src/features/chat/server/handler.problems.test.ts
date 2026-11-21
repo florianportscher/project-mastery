@@ -59,10 +59,29 @@ function addExercise(
     ...owned,
     id: `ex-${n}`,
     question_chunk_id: chunkOf(n),
-    solution_chunk_id: solutionChunk,
     difficulty,
     position: n,
   });
+  db.tables.exercise_chunks.push(
+    {
+      ...owned,
+      exercise_id: `ex-${n}`,
+      chunk_id: chunkOf(n),
+      role: "question",
+      position: 0,
+    },
+    ...(solutionChunk
+      ? [
+          {
+            ...owned,
+            exercise_id: `ex-${n}`,
+            chunk_id: solutionChunk,
+            role: "solution",
+            position: 0,
+          },
+        ]
+      : []),
+  );
   for (const kc of kcs) {
     db.tables.exercise_kcs.push({
       ...owned,

@@ -75,7 +75,8 @@ export type Snapshot = {
     id: string;
     position: number;
     difficulty: number;
-    solutionChunkId: string | null;
+    questionChunkIds: string[];
+    solutionChunkIds: string[];
     finalAnswers: unknown;
   }>;
   exerciseKcs: Array<{ exerciseId: string; kcId: string }>;
@@ -470,7 +471,7 @@ export function formatSection(
     case "exercises":
       for (const e of s.exercises) {
         lines.push(
-          `#${e.position} ${short(e.id)} difficulty ${e.difficulty} solution ${e.solutionChunkId ? short(e.solutionChunkId) : "none"} KCs ${
+          `#${e.position} ${short(e.id)} difficulty ${e.difficulty} question ${e.questionChunkIds.map(short).join(",")} solution ${e.solutionChunkIds.length > 0 ? e.solutionChunkIds.map(short).join(",") : "none"} KCs ${
             s.exerciseKcs
               .filter((x) => x.exerciseId === e.id)
               .map((x) => name(x.kcId))

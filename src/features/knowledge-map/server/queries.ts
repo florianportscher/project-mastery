@@ -52,6 +52,7 @@ export async function getKnowledgeMap(
     materials,
     exercises,
     exerciseKcs,
+    exerciseChunks,
   ] = await Promise.all([
     supabase
       .from("knowledge_map_builds")
@@ -91,7 +92,7 @@ export async function getKnowledgeMap(
     allRows("Loading the exercises", (from, to) =>
       supabase
         .from("exercises")
-        .select("id, difficulty, question_chunk_id, solution_chunk_id")
+        .select("id, difficulty, question_chunk_id")
         .eq("course_id", courseId)
         .order("position")
         .order("id")
@@ -106,6 +107,15 @@ export async function getKnowledgeMap(
         .order("kc_id")
         .range(from, to),
     ),
+    allRows("Loading the exercise chunks", (from, to) =>
+      supabase
+        .from("exercise_chunks")
+        .select("exercise_id, chunk_id, role, position")
+        .eq("course_id", courseId)
+        .order("exercise_id")
+        .order("chunk_id")
+        .range(from, to),
+    ),
   ]);
   if (build.error) failed("Loading the build", build.error);
 
@@ -115,13 +125,18 @@ export async function getKnowledgeMap(
   // In reading order: Materials in upload order, chunks by position.
   const chunks = await loadChunkSources(supabase, [
     ...sources.map((source) => source.chunk_id),
-    ...exercises.flatMap((exercise) =>
-      exercise.solution_chunk_id
-        ? [exercise.question_chunk_id, exercise.solution_chunk_id]
-        : [exercise.question_chunk_id],
-    ),
+    ...exercises.map((exercise) => exercise.question_chunk_id),
+    ...exerciseChunks.map((row) => row.chunk_id),
   ]);
   const chunkById = new Map(chunks.map((chunk) => [chunk.id, chunk]));
+  /** An Exercise's chunks of one role as one Markdown; null without any. */
+  const textOf = (exerciseId: string, role: "question" | "solution") => {
+    const markdowns = exerciseChunks
+      .filter((row) => row.exercise_id === exerciseId && row.role === role)
+      .toSorted((a, b) => a.position - b.position)
+      .flatMap((row) => chunkById.get(row.chunk_id)?.markdown ?? []);
+    return markdowns.length > 0 ? markdowns.join("\n\n") : null;
+  };
   const sourcesOf = (kcId: string): KcSourceView[] => {
     const ids = new Set(
       sources
@@ -188,9 +203,8 @@ export async function getKnowledgeMap(
         difficulty: z
           .union([z.literal(1), z.literal(2), z.literal(3)])
           .parse(exercise.difficulty),
-        question: question?.markdown ?? null,
-        solution:
-          chunkById.get(exercise.solution_chunk_id ?? "")?.markdown ?? null,
+        question: textOf(exercise.id, "question") ?? question?.markdown ?? null,
+        solution: textOf(exercise.id, "solution"),
       };
     }),
     checkReport: report,

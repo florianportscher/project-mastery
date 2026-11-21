@@ -76,7 +76,6 @@ const snapshot = (parts: Partial<Snapshot>): Snapshot => ({
   prerequisites: [],
   exercises: [],
   exerciseKcs: [],
-  exerciseSolutions: [],
   topics: [],
   build: null,
   ...parts,

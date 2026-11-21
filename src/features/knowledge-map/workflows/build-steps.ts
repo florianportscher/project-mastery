@@ -1,9 +1,13 @@
 import "server-only";
 import { UNIT_MARK } from "@/features/knowledge-map/ai/chapter-extraction";
 import {
-  chapterUnitsByExam,
+  chapterUnits,
   unitHash,
 } from "@/features/knowledge-map/domain/chapter-units";
+import {
+  loadExerciseBatches,
+  type BatchExercise,
+} from "@/features/knowledge-map/workflows/exercise-batches";
 import { keptFailingReason } from "@/features/knowledge-map/domain/build-failure";
 import type { UnitExtraction } from "@/features/knowledge-map/domain/chapter-extraction";
 import {
@@ -159,18 +163,27 @@ export type CourseUnit = {
   materialName: string;
   /** The Material's Outline, with the unit's Chapters marked. */
   outline: string[];
+  /**
+   * What its calls read: a teaching unit's chunks; an exercise batch's
+   * Exercises, each by its first question chunk with its statement and
+   * solutions as Markdown.
+   */
   chunks: Array<{ id: string; markdown: string }>;
+  /** An exercise batch's Exercises, in the order of `chunks`. */
+  exercises?: BatchExercise[];
 };
 
 /**
- * The Course's units of one kind in Course order: Materials by position,
- * then their units in reading order (`chapterUnits`).
+ * The Course's units of one kind in Course order: its teaching units, by
+ * Materials by position, then their units in reading order
+ * (`chapterUnits`); or its exercise batches (`loadExerciseBatches`).
  */
 export async function loadCourseUnits(
   supabase: AdminSupabase,
   courseId: string,
   kind: CourseUnit["kind"],
 ): Promise<CourseUnit[]> {
+  if (kind === "exercise") return loadExerciseBatches(supabase, courseId);
   const [materials, chapters, chunks] = await Promise.all([
     supabase
       .from("materials")
@@ -198,16 +211,14 @@ export async function loadCourseUnits(
     ),
   ]);
   if (materials.error) failed("Loading the Materials", materials.error);
-  // Old exams teach nothing: their chunks form no teaching units. Their
-  // exercise chunks still form exercise units, each exam on its own.
-  const examIds = examChapterIds(
+  // Old exams teach nothing: their chunks form no teaching units.
+  const exams = examChapterIds(
     chapters.map((c) => ({
       id: c.id,
       parentId: c.parent_id,
       isExam: c.is_exam === true,
     })),
   );
-  const exams = kind === "content" ? examIds : new Set<string>();
   const rootOf = new Map(
     chapters.filter((c) => c.parent_id === null).map((c) => [c.material_id, c]),
   );
@@ -220,14 +231,13 @@ export async function loadCourseUnits(
     );
     const chunkOf = new Map(ofMaterial.map((chunk) => [chunk.id, chunk]));
     const titleOf = new Map(outline.map((c) => [c.id, c.title]));
-    return chapterUnitsByExam(
+    return chapterUnits(
       outline.map((c) => ({ id: c.id, parentId: c.parent_id })),
       ofMaterial.map((c) => ({
         id: c.id,
         chapterId: c.chapter_id,
         chars: c.markdown.length,
       })),
-      kind === "exercise" ? examIds : new Set<string>(),
     ).map((unit) => {
       const unitChunks = unit.chunkIds.map((id) => {
         const { markdown } = chunkOf.get(id)!;

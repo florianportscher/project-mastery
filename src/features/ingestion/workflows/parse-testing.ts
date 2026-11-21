@@ -43,7 +43,6 @@ type ParseTable =
   | "material_pages"
   | "chapters"
   | "chunks"
-  | "exercise_solutions"
   | "ai_usage";
 
 /**
@@ -63,7 +62,6 @@ export function createParseDb({
       material_pages: [] as FakeRow[],
       chapters: [] as FakeRow[],
       chunks: [] as FakeRow[],
-      exercise_solutions: [] as FakeRow[],
       ai_usage: [] as FakeRow[],
     },
     foreignKeys: {
@@ -126,47 +124,6 @@ export function createParseDb({
         ];
         return null;
       },
-      // supabase/migrations/…_create_exercise_solutions.sql; tested with
-      // pgTAP.
-      request_exercise_pairing: (args, tables) => {
-        const course = tables.courses.find(
-          (row) => row.id === args.p_course_id,
-        );
-        if (!course) return null;
-        course.pairing_requested = Number(course.pairing_requested ?? 0) + 1;
-        return course.pairing_requested;
-      },
-      replace_exercise_solutions: (args, tables) => {
-        const course = tables.courses.find(
-          (row) => row.id === args.p_course_id,
-        );
-        if (!course || course.pairing_requested !== args.p_request) {
-          return false;
-        }
-        const inCourse = (id: unknown) =>
-          tables.chunks.find(
-            (chunk) => chunk.id === id && chunk.course_id === course.id,
-          );
-        tables.exercise_solutions = [
-          ...tables.exercise_solutions.filter(
-            (row) => row.course_id !== course.id,
-          ),
-          ...(args.p_pairs as FakeRow[])
-            .filter((pair) => inCourse(pair.exercise_chunk_id))
-            .map((pair) => {
-              const solution = inCourse(pair.solution_chunk_id);
-              return {
-                id: crypto.randomUUID(),
-                owner: course.owner,
-                course_id: course.id,
-                exercise_chunk_id: pair.exercise_chunk_id,
-                solution_chunk_id: solution?.id ?? null,
-                status: solution ? "paired" : "no_solution",
-              };
-            }),
-        ];
-        return true;
-      },
     },
   });
 }
@@ -180,51 +137,7 @@ export function seedCourse(db: ParseDb, id = COURSE) {
     id,
     owner: STUDENT,
     name: "Analysis",
-    pairing_requested: 0,
   });
-}
-
-/**
- * What deleting a Material leaves in the tables: its rows are gone, with
- * the pairs of its chunks, as the foreign keys cascade.
- */
-export function deleteMaterialRows(db: ParseDb, materialId: string) {
-  const gone = new Set(
-    db.tables.chunks
-      .filter((chunk) => chunk.material_id === materialId)
-      .map((chunk) => chunk.id),
-  );
-  db.tables.materials = db.tables.materials.filter(
-    (material) => material.id !== materialId,
-  );
-  db.tables.material_pages = db.tables.material_pages.filter(
-    (page) => page.material_id !== materialId,
-  );
-  db.tables.chapters = db.tables.chapters.filter(
-    (chapter) => chapter.material_id !== materialId,
-  );
-  db.tables.chunks = db.tables.chunks.filter((chunk) => !gone.has(chunk.id));
-  db.tables.exercise_solutions = db.tables.exercise_solutions.filter(
-    (row) =>
-      !gone.has(row.exercise_chunk_id as string) &&
-      !gone.has(row.solution_chunk_id as string),
-  );
-}
-
-/**
- * The Course's pairs, each as its exercise's and its solution's markdown,
- * sorted by the exercise's.
- */
-export function storedPairs(db: ParseDb) {
-  const markdown = (id: unknown) =>
-    db.tables.chunks.find((chunk) => chunk.id === id)?.markdown;
-  return db.tables.exercise_solutions
-    .map((row) => ({
-      exercise: markdown(row.exercise_chunk_id),
-      solution: row.solution_chunk_id ? markdown(row.solution_chunk_id) : null,
-      status: row.status,
-    }))
-    .toSorted((a, b) => String(a.exercise).localeCompare(String(b.exercise)));
 }
 
 /** A fixture file from `test-files/`. */
@@ -286,17 +199,6 @@ export const isPageCall = (prompt: unknown) =>
       ),
   );
 
-/** An exercise or solution chunk as a pairing call was sent it. */
-type SentItem = { id: string; material: string; chapter: string; text: string };
-
-/** What a pairing call was sent, by id. */
-export type SentPairing = { exercises: SentItem[]; solutions: SentItem[] };
-
-/** A pairing call's answer: pairs of offered ids. */
-export type CannedPairing = {
-  pairs: Array<{ exerciseId: string; solutionId: string }>;
-};
-
 function promptText(prompt: unknown) {
   return (prompt as Prompt)
     .filter((message) => message.role === "user")
@@ -348,18 +250,15 @@ export type SentOutline = {
 /**
  * The `ingest` model of a parse: answers each batch call (streamed; it
  * carries page images) with the next canned batch result, the structure
- * call (without images) with `outline` of what it was sent, and a pairing
- * call (its JSON has exercises) with `pairing` of what it was sent, or no
- * pairs; all streamed. Remembers what each kind of call was sent.
+ * call (without images) with `outline` of what it was sent; all streamed.
+ * Remembers what each kind of call was sent.
  */
 export function pageModel(
   batches: CannedBatch[],
-  pairing?: (sent: SentPairing) => CannedPairing | Promise<CannedPairing>,
   outline: (sent: SentOutline) => unknown = () => NO_OUTLINE,
 ) {
   const prompts: unknown[] = [];
   const outlinePrompts: SentOutline[] = [];
-  const pairingPrompts: SentPairing[] = [];
   const model = new MockLanguageModelV4({
     doStream: async ({ prompt }) => {
       if (isPageCall(prompt)) {
@@ -372,17 +271,12 @@ export function pageModel(
         };
         return streamedAnswer(JSON.stringify(answer));
       }
-      const sent = JSON.parse(promptText(prompt)) as SentOutline | SentPairing;
-      if ("exercises" in sent) {
-        pairingPrompts.push(sent);
-        const answer = pairing ? await pairing(sent) : { pairs: [] };
-        return streamedAnswer(JSON.stringify(answer));
-      }
+      const sent = JSON.parse(promptText(prompt)) as SentOutline;
       outlinePrompts.push(sent);
       return streamedAnswer(JSON.stringify(outline(sent)));
     },
   });
-  return { model, prompts, outlinePrompts, pairingPrompts };
+  return { model, prompts, outlinePrompts };
 }
 
 /** The image parts each page call sent, as media types. */

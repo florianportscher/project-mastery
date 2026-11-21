@@ -47,7 +47,7 @@ export async function exportCourse(
 ) {
   const { data: course, error } = await supabase
     .from("courses")
-    .select("id, name, pairing_requested")
+    .select("id, name")
     .eq("id", courseId)
     .single();
   if (error) throw new Error(`Course ${courseId}: ${error.message}`);
@@ -67,7 +67,6 @@ export async function exportCourse(
     version: 1,
     courseName: name ?? course.name,
     courseId,
-    pairingRequested: course.pairing_requested,
     tables,
   };
 

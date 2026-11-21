@@ -303,7 +303,9 @@ async function storeKcs(
       extractionId,
       kcIds: kcIds[part]!,
       ...(extraction.exercises && {
-        chunkIds: extraction.exercises.map((exercise) => exercise.chunkId),
+        chunkIds: extraction.exercises.flatMap(
+          (exercise) => exercise.questionChunkIds,
+        ),
         exercises: storedExercises(extraction.exercises, (k) => idOf(part, k)),
       }),
     })),
@@ -355,7 +357,8 @@ function storedExercises(
       ];
       return {
         questionChunkId: exercise.chunkId,
-        solutionChunkId: exercise.solutionChunkId,
+        questionChunkIds: exercise.questionChunkIds,
+        solutionChunkIds: exercise.solutionChunkIds,
         kcIds,
         finalAnswers: exercise.finalAnswers,
         difficulty: exerciseDifficulty(kcIds.length, exercise.solutionLines),

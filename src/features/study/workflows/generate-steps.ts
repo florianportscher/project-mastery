@@ -203,20 +203,24 @@ async function generateInput(
       ({ id }) => id === problem.originalExerciseId,
     );
     if (!exercise) return "The Exercise to vary is gone.";
-    const solutionChunk = exercise.solutionChunk;
     const chunks = await loadChunkSources(supabase, [
-      exercise.questionChunk,
-      ...(solutionChunk ? [solutionChunk] : []),
+      ...exercise.questionChunks,
+      ...exercise.solutionChunks,
     ]);
-    const markdown = (id: string | null | undefined) =>
-      chunks.find((chunk) => chunk.id === id)?.markdown ?? null;
-    const question = markdown(exercise.questionChunk);
+    /** These chunks' Markdown, in order, as one; null without any. */
+    const markdown = (ids: readonly string[]) => {
+      const texts = ids.flatMap(
+        (id) => chunks.find((chunk) => chunk.id === id)?.markdown ?? [],
+      );
+      return texts.length > 0 ? texts.join("\n\n") : null;
+    };
+    const question = markdown(exercise.questionChunks);
     if (question === null) return "The Exercise's question is gone.";
     return {
       kind: "variant",
       exercise: {
         question,
-        solution: markdown(solutionChunk),
+        solution: markdown(exercise.solutionChunks),
         finalAnswers: exercise.finalAnswers ?? null,
         difficulty: exercise.difficulty,
       },

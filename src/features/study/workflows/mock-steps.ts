@@ -269,16 +269,32 @@ async function loadAssembling(supabase: Supabase, mockId: string) {
   return data;
 }
 
-/** The question chunks of the Exercises, by id. */
+/**
+ * The Exercises' first question chunks, by id, each with the whole
+ * statement as its Markdown.
+ */
 async function questionChunks(
   supabase: Supabase,
-  exercises: Array<{ questionChunk: string }>,
+  exercises: Array<{ questionChunk: string; questionChunks: string[] }>,
 ) {
-  const chunks = await loadChunkSources(
-    supabase,
-    exercises.map((exercise) => exercise.questionChunk),
+  const chunks = new Map(
+    (
+      await loadChunkSources(
+        supabase,
+        exercises.flatMap((exercise) => exercise.questionChunks),
+      )
+    ).map((chunk) => [chunk.id, chunk]),
   );
-  return new Map(chunks.map((chunk) => [chunk.id, chunk]));
+  return new Map(
+    exercises.flatMap((exercise) => {
+      const first = chunks.get(exercise.questionChunk);
+      if (!first) return [];
+      const markdown = exercise.questionChunks
+        .flatMap((id) => chunks.get(id)?.markdown ?? [])
+        .join("\n\n");
+      return [[exercise.questionChunk, { ...first, markdown }] as const];
+    }),
+  );
 }
 
 async function setFinal(

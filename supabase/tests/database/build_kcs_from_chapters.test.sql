@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(23);
+select plan(24);
 
 insert into auth.users (id, email)
 values
@@ -132,7 +132,8 @@ select is(
         'kcIds', '["bbbbbbbb-0000-0000-0000-000000000002"]'::jsonb,
         'chunkIds', jsonb_build_array(pg_temp.chunk(1), pg_temp.chunk(2)),
         'exercises', jsonb_build_array(jsonb_build_object('questionChunkId', pg_temp.chunk(1),
-          'solutionChunkId', null, 'kcIds', '["bbbbbbbb-0000-0000-0000-000000000002"]'::jsonb,
+          'questionChunkIds', jsonb_build_array(pg_temp.chunk(1), pg_temp.chunk(2)),
+          'solutionChunkIds', '[]'::jsonb, 'kcIds', '["bbbbbbbb-0000-0000-0000-000000000002"]'::jsonb,
           'finalAnswers', '[{"label": "dim U", "value": "2", "anyOrder": false}]'::jsonb, 'difficulty', 1))))),
   true, 'the running build stores KCs');
 select results_eq(
@@ -145,6 +146,11 @@ select results_eq(
     where e.course_id = pg_temp.course()$$,
   $$values ('[{"label": "dim U", "value": "2", "anyOrder": false}]'::jsonb, 'Subspace'::text)$$,
   'the exercise unit stores its Exercise with its KCs');
+select results_eq(
+  $$select ec.chunk_id, ec.role, ec.position from public.exercise_chunks ec
+    where ec.course_id = pg_temp.course() order by ec.position$$,
+  $$values (pg_temp.chunk(1), 'question'::text, 0), (pg_temp.chunk(2), 'question', 1)$$,
+  'the Exercise holds its question chunks in order');
 select results_eq(
   $$select unit, kc_ids, output -> 'kcs' -> 0 ? 'embedding' from public.chapter_extractions
     where course_id = pg_temp.course() and kind = 'content'$$,

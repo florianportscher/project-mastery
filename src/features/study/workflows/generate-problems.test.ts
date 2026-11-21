@@ -28,6 +28,7 @@ const TABLES = [
   "prerequisite_links",
   "exercises",
   "exercise_kcs",
+  "exercise_chunks",
   "exam_scopes",
   "knowledge_map_builds",
   "topics",
@@ -175,10 +176,16 @@ function seedCourse(kcIds: string[], taught: string[] = []) {
     id: "x1",
     ...owned,
     question_chunk_id: QUESTION_CHUNK,
-    solution_chunk_id: null,
     difficulty: 2,
     position: 0,
     final_answers: [{ label: "Thrust", value: "17.5 kN", anyOrder: false }],
+  });
+  t.exercise_chunks.push({
+    ...owned,
+    exercise_id: "x1",
+    chunk_id: QUESTION_CHUNK,
+    role: "question",
+    position: 0,
   });
   t.exercise_kcs.push({ ...owned, exercise_id: "x1", kc_id: "k1" });
   const at = new Date(Date.now() - 3 * DAY_MS).toISOString();

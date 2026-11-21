@@ -616,7 +616,6 @@ export type Database = {
           language: string | null;
           name: string;
           owner: string;
-          pairing_requested: number;
           updated_at: string;
         };
         ComputedFields: never;
@@ -626,7 +625,6 @@ export type Database = {
           language?: string | null;
           name: string;
           owner?: string;
-          pairing_requested?: number;
           updated_at?: string;
         };
         Update: {
@@ -635,7 +633,6 @@ export type Database = {
           language?: string | null;
           name?: string;
           owner?: string;
-          pairing_requested?: number;
           updated_at?: string;
         };
         Relationships: [
@@ -768,6 +765,63 @@ export type Database = {
           },
         ];
       };
+      exercise_chunks: {
+        Row: {
+          chunk_id: string;
+          course_id: string;
+          exercise_id: string;
+          owner: string;
+          position: number;
+          role: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          chunk_id: string;
+          course_id: string;
+          exercise_id: string;
+          owner: string;
+          position: number;
+          role: string;
+        };
+        Update: {
+          chunk_id?: string;
+          course_id?: string;
+          exercise_id?: string;
+          owner?: string;
+          position?: number;
+          role?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "exercise_chunks_chunk_id_fkey";
+            columns: ["chunk_id"];
+            isOneToOne: true;
+            referencedRelation: "chunks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "exercise_chunks_course_id_fkey";
+            columns: ["course_id"];
+            isOneToOne: false;
+            referencedRelation: "courses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "exercise_chunks_exercise_id_fkey";
+            columns: ["exercise_id"];
+            isOneToOne: false;
+            referencedRelation: "exercises";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "exercise_chunks_owner_fkey";
+            columns: ["owner"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       exercise_kcs: {
         Row: {
           course_id: string;
@@ -819,66 +873,6 @@ export type Database = {
           },
         ];
       };
-      exercise_solutions: {
-        Row: {
-          course_id: string;
-          created_at: string;
-          exercise_chunk_id: string;
-          id: string;
-          owner: string;
-          solution_chunk_id: string | null;
-          status: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          course_id: string;
-          created_at?: string;
-          exercise_chunk_id: string;
-          id?: string;
-          owner: string;
-          solution_chunk_id?: string | null;
-          status: string;
-        };
-        Update: {
-          course_id?: string;
-          created_at?: string;
-          exercise_chunk_id?: string;
-          id?: string;
-          owner?: string;
-          solution_chunk_id?: string | null;
-          status?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "exercise_solutions_course_id_fkey";
-            columns: ["course_id"];
-            isOneToOne: false;
-            referencedRelation: "courses";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "exercise_solutions_exercise_chunk_id_fkey";
-            columns: ["exercise_chunk_id"];
-            isOneToOne: true;
-            referencedRelation: "chunks";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "exercise_solutions_owner_fkey";
-            columns: ["owner"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "exercise_solutions_solution_chunk_id_fkey";
-            columns: ["solution_chunk_id"];
-            isOneToOne: false;
-            referencedRelation: "chunks";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       exercises: {
         Row: {
           course_id: string;
@@ -889,7 +883,6 @@ export type Database = {
           owner: string;
           position: number;
           question_chunk_id: string;
-          solution_chunk_id: string | null;
         };
         ComputedFields: never;
         Insert: {
@@ -901,7 +894,6 @@ export type Database = {
           owner: string;
           position: number;
           question_chunk_id: string;
-          solution_chunk_id?: string | null;
         };
         Update: {
           course_id?: string;
@@ -912,7 +904,6 @@ export type Database = {
           owner?: string;
           position?: number;
           question_chunk_id?: string;
-          solution_chunk_id?: string | null;
         };
         Relationships: [
           {
@@ -933,13 +924,6 @@ export type Database = {
             foreignKeyName: "exercises_question_chunk_id_fkey";
             columns: ["question_chunk_id"];
             isOneToOne: true;
-            referencedRelation: "chunks";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "exercises_solution_chunk_id_fkey";
-            columns: ["solution_chunk_id"];
-            isOneToOne: false;
             referencedRelation: "chunks";
             referencedColumns: ["id"];
           },
@@ -1058,6 +1042,8 @@ export type Database = {
         Row: {
           check_report: Json | null;
           course_id: string;
+          exercise_grouping_hash: string | null;
+          exercise_groups: Json | null;
           failure_reason: string | null;
           finished_at: string | null;
           heartbeat_at: string;
@@ -1071,6 +1057,8 @@ export type Database = {
         Insert: {
           check_report?: Json | null;
           course_id: string;
+          exercise_grouping_hash?: string | null;
+          exercise_groups?: Json | null;
           failure_reason?: string | null;
           finished_at?: string | null;
           heartbeat_at?: string;
@@ -1083,6 +1071,8 @@ export type Database = {
         Update: {
           check_report?: Json | null;
           course_id?: string;
+          exercise_grouping_hash?: string | null;
+          exercise_groups?: Json | null;
           failure_reason?: string | null;
           finished_at?: string | null;
           heartbeat_at?: string;
@@ -2173,17 +2163,9 @@ export type Database = {
       };
       release_mock_exam: { Args: { p_mock_id: string }; Returns: boolean };
       release_problem_run: { Args: { p_course_id: string }; Returns: boolean };
-      replace_exercise_solutions: {
-        Args: { p_course_id: string; p_pairs: Json; p_request: number };
-        Returns: boolean;
-      };
       replace_material_chunks: {
         Args: { p_chapters: Json; p_chunks: Json; p_material_id: string };
         Returns: undefined;
-      };
-      request_exercise_pairing: {
-        Args: { p_course_id: string };
-        Returns: number;
       };
       restart_mock_grading: { Args: { p_mock_id: string }; Returns: boolean };
       retire_unsourced_kcs: { Args: { p_course_id: string }; Returns: number };

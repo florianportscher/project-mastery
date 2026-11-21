@@ -49,9 +49,9 @@ export function createBuildDb() {
       kcs: [] as FakeRow[],
       kc_sources: [] as FakeRow[],
       prerequisite_links: [] as FakeRow[],
-      exercise_solutions: [] as FakeRow[],
       exercises: [] as FakeRow[],
       exercise_kcs: [] as FakeRow[],
+      exercise_chunks: [] as FakeRow[],
       attempts: [] as FakeRow[],
       topics: [] as FakeRow[],
       topic_kcs: [] as FakeRow[],
@@ -173,11 +173,6 @@ export function createBuildDb() {
           for (const x of listed) {
             const answers = x.finalAnswers as unknown[];
             const values = {
-              solution_chunk_id: tables.chunks.some(
-                (chunk) => chunk.id === x.solutionChunkId,
-              )
-                ? x.solutionChunkId
-                : null,
               difficulty: x.difficulty,
               final_answers: answers.length > 0 ? answers : null,
             };
@@ -196,6 +191,33 @@ export function createBuildDb() {
               tables.exercises.push(row);
             }
             const exerciseId = row.id;
+            // Its chunks replace what it and they held.
+            const members = [
+              ...(x.questionChunkIds as string[]).map((id, position) => ({
+                id,
+                role: "question",
+                position,
+              })),
+              ...(x.solutionChunkIds as string[]).map((id, position) => ({
+                id,
+                role: "solution",
+                position,
+              })),
+            ].filter((m) => tables.chunks.some((chunk) => chunk.id === m.id));
+            tables.exercise_chunks = [
+              ...tables.exercise_chunks.filter(
+                (ec) =>
+                  ec.exercise_id !== exerciseId &&
+                  !members.some((m) => m.id === ec.chunk_id),
+              ),
+              ...members.map((m) => ({
+                ...owned,
+                exercise_id: exerciseId,
+                chunk_id: m.id,
+                role: m.role,
+                position: m.position,
+              })),
+            ];
             tables.exercise_kcs = [
               ...tables.exercise_kcs.filter(
                 (link) => link.exercise_id !== exerciseId,
@@ -454,18 +476,13 @@ export function deleteMaterial(db: BuildDb, materialId: string) {
   db.tables.kc_sources = db.tables.kc_sources.filter(
     (row) => !chunks.has(row.chunk_id),
   );
-  db.tables.exercise_solutions = db.tables.exercise_solutions.filter(
-    (row) =>
-      !chunks.has(row.exercise_chunk_id) && !chunks.has(row.solution_chunk_id),
-  );
   db.tables.exercises = db.tables.exercises.filter(
     (row) => !chunks.has(row.question_chunk_id),
   );
-  for (const exercise of db.tables.exercises) {
-    if (chunks.has(exercise.solution_chunk_id)) {
-      exercise.solution_chunk_id = null;
-    }
-  }
+  const exercises = new Set(db.tables.exercises.map((row) => row.id));
+  db.tables.exercise_chunks = db.tables.exercise_chunks.filter(
+    (row) => !chunks.has(row.chunk_id) && exercises.has(row.exercise_id),
+  );
 }
 
 /** The id of the seeded chunk with this Markdown. */
@@ -474,20 +491,23 @@ export function chunkWith(db: BuildDb, markdown: string): string {
     .id as string;
 }
 
-/** Pairs an exercise chunk with a solution chunk, as pairing stores it. */
-export function pair(db: BuildDb, exercise: string, solution: string) {
-  db.tables.exercise_solutions.push({
-    owner: STUDENT,
-    course_id: COURSE,
-    exercise_chunk_id: chunkWith(db, exercise),
-    solution_chunk_id: chunkWith(db, solution),
-    status: "paired",
+/** The Markdown of each Exercise's question and solution chunks, in order. */
+export function exerciseTexts(db: BuildDb) {
+  const markdown = (id: unknown) =>
+    db.tables.chunks.find((chunk) => chunk.id === id)?.markdown;
+  return db.tables.exercises.map((exercise) => {
+    const of = (role: string) =>
+      db.tables.exercise_chunks
+        .filter((row) => row.exercise_id === exercise.id && row.role === role)
+        .toSorted((a, b) => Number(a.position) - Number(b.position))
+        .map((row) => markdown(row.chunk_id));
+    return { question: of("question"), solution: of("solution") };
   });
 }
 
 /**
  * Queues a build, as `queue_knowledge_map_build` does, keeping what the
- * stored Topic tree was built from.
+ * stored Topic tree and Exercise groups were made from.
  */
 export function queueBuild(db: BuildDb) {
   const last = db.tables.knowledge_map_builds[0];
@@ -501,6 +521,8 @@ export function queueBuild(db: BuildDb) {
       started_at: now(),
       heartbeat_at: now(),
       topic_tree_hash: last?.topic_tree_hash ?? null,
+      exercise_groups: last?.exercise_groups ?? null,
+      exercise_grouping_hash: last?.exercise_grouping_hash ?? null,
     },
   ];
 }

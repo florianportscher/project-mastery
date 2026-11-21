@@ -52,7 +52,7 @@ beforeEach(() => {
           markdown: "Text",
         },
       ] as FakeRow[],
-      exercise_solutions: [] as FakeRow[],
+      exercise_chunks: [] as FakeRow[],
     },
     userId: STUDENT,
   });
@@ -62,7 +62,7 @@ beforeEach(() => {
   });
 });
 
-test("an exercise carries its paired solution in another Material, or no solution", async () => {
+test("an exercise carries its Exercise's solution in another Material, or no solution", async () => {
   const SOLUTIONS = "aaaaaaaa-0000-4000-8000-000000000051";
   const exercise = (id: string, position: number, number: string) => ({
     id,
@@ -89,9 +89,10 @@ test("an exercise carries its paired solution in another Material, or no solutio
     label: "solution",
     markdown: "Since ...",
   });
-  tables.exercise_solutions!.push(
-    { exercise_chunk_id: "e1", solution_chunk_id: "s1", status: "paired" },
-    { exercise_chunk_id: "e2", solution_chunk_id: null, status: "no_solution" },
+  tables.exercise_chunks!.push(
+    { exercise_id: "x1", chunk_id: "e1", role: "question", position: 0 },
+    { exercise_id: "x1", chunk_id: "s1", role: "solution", position: 0 },
+    { exercise_id: "x2", chunk_id: "e2", role: "question", position: 0 },
   );
 
   const material = await getMaterialChunks(MATERIAL);
@@ -123,10 +124,11 @@ test("a Material past the row limit comes back whole, each exercise with its sol
       ...tables,
       // Stored against reading order, which the read restores.
       chunks: [...exercises.toReversed(), ...tables.chunks!],
-      exercise_solutions: exercises.map((exercise) => ({
-        exercise_chunk_id: exercise.id,
-        solution_chunk_id: null,
-        status: "no_solution",
+      exercise_chunks: exercises.map((exercise) => ({
+        exercise_id: `x${exercise.id}`,
+        chunk_id: exercise.id,
+        role: "question",
+        position: 0,
       })),
     },
     userId: STUDENT,
