@@ -51,7 +51,7 @@ export function startCommand(recs: Rec[]): string | undefined {
     const name = text.match(/<command-name>\s*(\S+?)\s*<\/command-name>/)?.[1];
     if (!name || SETTINGS_COMMANDS.has(name)) continue;
     const args =
-      text.match(/<command-args>([\s\S]*?)<\/command-args>/)?.[1].trim() ?? "";
+      text.match(/<command-args>([\s\S]*?)<\/command-args>/)?.[1]?.trim() ?? "";
     return args ? `${name} ${args}` : name;
   }
   return undefined;
@@ -59,12 +59,12 @@ export function startCommand(recs: Rec[]): string | undefined {
 
 /** The command alone, or "free-form" when the session began with a plain message. */
 export const commandName = (command: string | undefined): string =>
-  command ? command.split(/\s+/)[0] : "free-form";
+  command?.split(/\s+/)[0] ?? "free-form";
 
 /** Issue numbers in the arguments of a `/build` command. */
 export function issuesOfCommand(command: string | undefined): number[] {
   const m = command?.match(/^\/build\b(.*)$/);
-  return m ? [...m[1].matchAll(/\d+/g)].map((n) => Number(n[0])) : [];
+  return m ? [...(m[1] ?? "").matchAll(/\d+/g)].map((n) => Number(n[0])) : [];
 }
 
 /** The issue a builder was given: `Issue number: 335`, `issue 335`, `issue #335`. */
