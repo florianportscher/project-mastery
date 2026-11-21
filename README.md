@@ -123,7 +123,7 @@ Open work is tracked on the [project board](https://github.com/users/florianport
 | Data           | Supabase: Postgres with pgvector, Auth, Storage, Row Level Security            |
 | AI             | Vercel AI SDK through Vercel AI Gateway, Langfuse tracing, mathjs              |
 | Background     | Vercel Workflow                                                                |
-| Tests          | Vitest and React Testing Library, Playwright, pgTAP, Stryker                   |
+| Tests          | Vitest and React Testing Library, Playwright, pgTAP                            |
 | Quality and CI | ESLint, Prettier, Husky, GitHub Actions, CodeQL, Dependabot, release-please    |
 | Hosting        | Vercel and Supabase, both in the EU                                            |
 
@@ -143,9 +143,9 @@ The workflow:
 2. **Build.** `/build` works through a queue of specs, each in its own git worktree: a fresh `builder` agent per slice, a `reviewer` pass against the spec and the repo's standards, a live smoke check against a real model, then a PR set to auto-merge on my approval.
 3. **Verify.** Agents check their own work. `pnpm -s agent` drives the running app in a real browser and database, hooks lint every edit, and an agent cannot stop until the full `pnpm check` passes.
 4. **Accept.** I try each PR against its spec on its Vercel preview, which runs on staging data, and approve it on GitHub, which merges it. What I want changed I write on the PR, and the next build shift settles it on the same branch. A `/sitting` session shows what stands in each PR's way, sorts the inbox and shapes the next queue.
-5. **Clean up.** From time to time, `/sweep` audits the codebase with parallel auditor agents and opens one issue of ranked changes; `/sweep-apply` builds the ones I tick, and `/retro` reviews what recent runs cost and where they went wrong.
+5. **Clean up.** From time to time, `/retro` reviews what recent runs cost and where they went wrong.
 
-The harness follows a few rules: fix a failure in the environment (a lint rule, a script, a hook) before adding a sentence to a prompt, keep always-loaded instructions short, and use the cheapest model that does a role well. They are written down in [docs/agents/harness.md](docs/agents/harness.md), with the skills and agents in [`.claude/`](.claude/), run reports in [docs/retros/](docs/retros/) and audits in [docs/sweeps/](docs/sweeps/).
+The harness follows a few rules: fix a failure in the environment (a lint rule, a script, a hook) before adding a sentence to a prompt, keep always-loaded instructions short, and use the cheapest model that does a role well. They are written down in [docs/agents/harness.md](docs/agents/harness.md), with the skills and agents in [`.claude/`](.claude/) and run reports in [docs/retros/](docs/retros/).
 
 ## Run it locally
 
