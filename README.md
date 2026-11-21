@@ -145,7 +145,7 @@ The workflow:
 4. **Accept.** I try each PR against its spec on its Vercel preview, which runs on staging data, and approve it on GitHub, which merges it. What I want changed I write on the PR, and the next build shift settles it on the same branch. A `/sitting` session shows what stands in each PR's way, sorts the inbox and shapes the next queue.
 5. **Clean up.** From time to time, `/retro` reviews what recent runs cost and where they went wrong.
 
-The harness follows a few rules: fix a failure in the environment (a lint rule, a script, a hook) before adding a sentence to a prompt, keep always-loaded instructions short, and use the cheapest model that does a role well. They are written down in [docs/agents/harness.md](docs/agents/harness.md), with the skills and agents in [`.claude/`](.claude/), run reports in [docs/retros/](docs/retros/) and audits in [docs/sweeps/](docs/sweeps/).
+The harness follows a few rules: fix a failure in the environment (a lint rule, a script, a hook) before adding a sentence to a prompt, keep always-loaded instructions short, and use the cheapest model that does a role well. They are written down in [docs/agents/harness.md](docs/agents/harness.md), with the skills and agents in [`.claude/`](.claude/) and run reports in [docs/retros/](docs/retros/).
 
 ## Run it locally
 

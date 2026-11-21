@@ -7,10 +7,10 @@ Deployments call models through AI Gateway (ADR 0006). Locally, the text tasks c
 - **Every other model** (other `AI_MODEL_*` overrides, Pro models) only when the user asks for it in the session or a spec requires it. The free credit serves only a subset of the Gateway's models; the others answer 403.
 - **No evals but the tutoring and Brief scenarios:** the maintainer checks AI quality by hand (ADR 0012), and runs the scenarios in `evals/` on demand ([evals/gold/README.md](../../evals/gold/README.md)). Don't build other eval datasets, judges or scripted sessions, and don't make one a spec's gate.
 - **The guard:** the Bash guard refuses smoke checks and direct model calls unless the command starts with `ALLOW_LIVE_AI=1`. `pnpm -s metrics` only reads the database and writes Langfuse scores, and `pnpm gold` only reads and writes the local database; both are allowed.
-- **Smoke checks:** `pnpm smoke <name>` runs `evals/smoke/<name>.ts`: one real feature path once, on a small input, with every generating task on `google/gemini-3.5-flash-lite` when `GOOGLE_GENERATIVE_AI_API_KEY` is set (locally), otherwise on `meta/muse-ember`; `AI_SMOKE_MODEL=meta/muse-ember` runs a check on the model that ships even with a Google key, and is the way to check the quality of an answer (ADR 0016). At most 30 model calls (a check may set its own cap), checking the feature's invariants. A check stops after 4 minutes (`AI_SMOKE_MAX_MINUTES`; `pnpm smoke map` on a slow model needs 10, run it in the background): a subagent's prompt cache expires after 5 idle minutes, and the turn after a longer wait writes the whole context again, about $1 for an Opus builder at 190k tokens. A spec names its smoke check, and `/build` runs it before the PR. They never run in `pnpm check` or CI.
-- **Credit exhausted or rate limited:** a 429 or 402 that retrying does not clear means the free credit is gone or the key is limited. Stop making live calls and say what stayed unverified. The user sees the balance in the Vercel dashboard under AI Gateway.
+- **Smoke checks:** `pnpm smoke <name>` runs `evals/smoke/<name>.ts`: one real feature path once, on a small input, with every generating task on `google/gemini-3.5-flash-lite` when `GOOGLE_GENERATIVE_AI_API_KEY` is set (locally), otherwise on `meta/muse-ember`; `AI_SMOKE_MODEL=meta/muse-ember` runs a check on the model that ships even with a Google key, and is the way to check the quality of an answer (ADR 0016). At most 30 model calls (a check may set its own cap), checking the feature's invariants. A check stops after 4 minutes (`AI_SMOKE_MAX_MINUTES`; `pnpm smoke map` on a slow model needs 10, run it in the background): a subagent's prompt cache expires after 5 idle minutes. A spec names its smoke check, and `/build` runs it before the PR. They never run in `pnpm check` or CI.
+- **Credit exhausted or rate limited:** a 429 or 402 that retrying does not clear means the free credit is gone or the key is limited (not yet seen live: read the body). Stop making live calls and say what stayed unverified. The user sees the balance in the Vercel dashboard under AI Gateway.
 
-When a live call shows a provider behaviour the mock lacks (no usage reported, an error shape, an empty result), add it to the mock and a line to `docs/agents/notes/`. Provider facts verified live are in `docs/agents/notes/` (`muse-ember.md`, `ai-sdk.md`, `model-file-input-limits.md`).
+When a live call shows a provider behaviour the mock lacks (no usage reported, an error shape, an empty result), add it to the mock and a line to `docs/agents/notes/`.
 
 ## What a call costs
 
@@ -23,8 +23,8 @@ Read the body before deciding. In the AI SDK the status is `statusCode` on the `
 | Status | Meaning                                                                                                        |
 | ------ | -------------------------------------------------------------------------------------------------------------- |
 | 401    | The key is missing, wrong or expired (an OIDC token from `vercel env pull` lasts 12 hours).                    |
-| 403    | "Free tier users do not have access to this model": the free credit does not serve it.                         |
-| 402    | Probably the credit is used up.                                                                                |
+| 403    | "Free tier users do not have access to this model": the free credit does not serve it (verified).              |
+| 402    | Probably the credit is used up (not yet seen live).                                                            |
 | 429    | Rate limited. `retry-after` headers say how long; waiting works.                                               |
 | 400    | Malformed request, or input the model does not take (a PDF sent to a model without file input): read the body. |
 | 404    | Unknown model id.                                                                                              |
