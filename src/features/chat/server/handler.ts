@@ -68,7 +68,7 @@ import {
   recordReplyUsage,
 } from "@/features/usage/server";
 import { tokenUsage } from "@/lib/ai/cost";
-import { answeringModel, textOnlyStep } from "@/lib/ai/models";
+import { textOnlyStep } from "@/lib/ai/models";
 import { messageText, replyErrorMessage } from "@/lib/ai/reply";
 import { getUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
@@ -302,10 +302,9 @@ async function streamReply({
   const settings = chatReplySettings();
   const contextText = renderTutorContext(tutoring.context);
   // What the provider reports when the call completes: its usage over all
-  // steps and the model that answered, a gateway fallback when the primary
-  // failed. A stopped or failed call reports neither.
+  // steps. A stopped or failed call reports none.
   let reportedUsage: LanguageModelUsage | undefined;
-  let modelId = settings.model;
+  const modelId = settings.model;
 
   const startReply = () =>
     withTraceAttributes(
@@ -330,9 +329,8 @@ async function streamReply({
           // A disconnect, such as Stop or a closed tab, aborts generation.
           abortSignal: request.signal,
           onError: ({ error }) => console.error("Chat reply failed:", error),
-          onEnd: ({ totalUsage, response }) => {
+          onEnd: ({ totalUsage }) => {
             reportedUsage = totalUsage;
-            modelId = answeringModel(settings, response.modelId);
           },
         }),
     );
@@ -373,7 +371,7 @@ async function streamReply({
           part.type === "start"
             ? { modelId, tutorContext: tutoring.context }
             : part.type === "finish-step"
-              ? { modelId: answeringModel(settings, part.response.modelId) }
+              ? { modelId }
               : part.type === "finish"
                 ? {
                     usage: replyUsage(

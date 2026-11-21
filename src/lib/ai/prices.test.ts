@@ -5,12 +5,9 @@ import { AUDIO_PRICES, MODEL_PRICES } from "./prices";
 
 vi.mock("server-only", () => ({}));
 
-// Every model a call can reach: defaults and gateway fallbacks.
+// Every default model of a task.
 const configuredModels = new Set(
-  Object.values<TaskConfig>(AI_TASKS).flatMap((config) => [
-    config.model,
-    ...config.fallbacks,
-  ]),
+  Object.values<TaskConfig>(AI_TASKS).map((config) => config.model),
 );
 
 test.each([...configuredModels])("%s has a price", (id) => {
