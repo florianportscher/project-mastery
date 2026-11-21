@@ -240,7 +240,7 @@ async function generateInput(
   const sourceIds = kcs.map((kc) => kc.sources.slice(0, SOURCES_PER_KC));
   const chunks = await loadChunkSources(supabase, [
     ...sourceIds.flat(),
-    ...anchors.map((exercise) => exercise.questionChunk),
+    ...anchors.flatMap((exercise) => exercise.questionChunks),
   ]);
   const markdown = new Map(chunks.map((chunk) => [chunk.id, chunk.markdown]));
   const texts = (ids: string[]) => ids.flatMap((id) => markdown.get(id) ?? []);
@@ -251,9 +251,10 @@ async function generateInput(
       sources: texts(sourceIds[i] ?? []),
     })),
     difficulty: problem.difficulty,
-    styleAnchors: anchors.flatMap((exercise) =>
-      texts([exercise.questionChunk]).map((question) => ({ question })),
-    ),
+    styleAnchors: anchors.flatMap((exercise) => {
+      const question = texts(exercise.questionChunks).join("\n\n");
+      return question ? [{ question }] : [];
+    }),
   };
 }
 
