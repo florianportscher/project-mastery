@@ -23,7 +23,6 @@ const snapshot: Snapshot = {
       position: 0,
       title: "Limits",
       pageFrom: 1,
-      isExam: false,
     },
     {
       id: "ch2",
@@ -33,7 +32,6 @@ const snapshot: Snapshot = {
       position: 1,
       title: "Series",
       pageFrom: 2,
-      isExam: false,
     },
   ],
   chunks: [
@@ -77,6 +75,7 @@ const snapshot: Snapshot = {
   ],
   prerequisites: [],
   exercises: [],
+  exams: [],
   exerciseKcs: [],
   topics: [],
   build: null,
