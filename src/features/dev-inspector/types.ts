@@ -34,8 +34,16 @@ export type Snapshot = {
     questionChunkId: string;
     questionChunkIds: string[];
     solutionChunkIds: string[];
+    examId: string | null;
     difficulty: number;
     finalAnswers: unknown;
+  }>;
+  exams: Array<{
+    id: string;
+    name: string;
+    position: number;
+    confirmed: boolean | null;
+    asked: boolean;
   }>;
   exerciseKcs: Array<{ exerciseId: string; kcId: string }>;
   topics: Array<{

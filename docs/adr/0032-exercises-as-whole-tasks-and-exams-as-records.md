@@ -1,0 +1,17 @@
+# Exercises as whole tasks and old exams as records
+
+> Supersedes the exam parts of [ADR 0023](0023-knowledge-map-from-chapters.md): the pairing call of the parse, and old exams as Chapters (`is_exam`) that teach nothing. The rest of 0023 stands.
+
+**Context.** Pairing kept only the first solution chunk of each exercise, so a solution printed over several pages or in another Material was lost. An exam subtask lost the stem its siblings share, because each exercise chunk became one Exercise. Exam detection depended on the Outline: an exam had to be a Chapter, so several exams in one file, an exam at the end of a script or solutions in another file were missed, and an exam's text taught nothing (#350).
+
+**Decision.**
+
+- **An Exercise is a whole task**: its statement with any shared stem, all its subtasks and every solution chunk, wherever printed. A **grouping call** in the build (task `ingest`) replaces the pairing call. It sees every exercise and solution chunk of the Course in Course order (Material, Chapter path, first 600 characters) and the stored exams, and answers Exercises as question and solution chunk ids, each with the name of the exam it belongs to or none, plus the exams, each with the stored id it `continues`. It runs before the exercise extraction and only when the Course's exercise and solution chunks changed (a hash on `knowledge_map_builds`). The parse makes no exercise call.
+- **Code checks the answer**: unknown ids are dropped, a chunk belongs to at most one Exercise (first wins), a left-out exercise chunk becomes an Exercise of its own, an unlisted exam name means no exam. A call that fails twice makes every exercise chunk its own Exercise without a solution, and the check report says so; such a fallback keeps the stored exams.
+- **Data.** `exercise_chunks` holds each Exercise's question and solution chunks with role and order; `exercises` is still keyed by its first question chunk and gains `exam_id`. `solution_chunk_id` and `exercise_solutions` go.
+- **Exercise extraction** works on batches of whole Exercises in Course order, packed up to `UNIT_CHARS` of statements and solutions. `notAnExercise` deletes the Exercise.
+- **Old exams are records.** `exams` (course, name as printed, position, the Student's answer `confirmed` null/true/false, `asked`) has RLS like `chapters`. A separate `assignExams` step after the extraction stores them and sets `exercises.exam_id`, because the Exercises exist only then. The Chapter exam columns, the exam-title heuristic and "old exams teach nothing" go: an exam's text is ordinary content.
+- **The Brief asks once per exam found**, by name. A confirmed exam's Exercises count for Priority and Mock exams, a rejected exam's are ordinary Exercises. The Reserved exam is an `exams` row. Priority, Mock exams and the Reserved exam read `exams` and `exercises.exam_id` at read time, so an answer no longer marks the map as needing an update.
+- **Shipping.** One migration drops the old pairs and exam flags and marks every Course's map as needing Update map. Confirmations are not moved: the Brief asks again.
+
+**Consequences.** One call per changed Course reads every exercise and solution chunk at 600 characters, so a Course over 400 such chunks goes in runs, and a model that mis-groups costs an Exercise's solution, not the build (the left-out and fallback rules). Exams the model misses are never asked about. A confirmed answer survives a regrouping only through `continues`; an exam the grouping no longer finds is deleted with its answer.
