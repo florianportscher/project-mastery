@@ -1,0 +1,29 @@
+name: Keep alive
+
+# The free Supabase project pauses after 7 days without activity (ADR 0002),
+# which takes the public demo down. GET /demo signs into the demo account and
+# reads its Courses, so one request reaches the production database.
+
+on:
+  schedule:
+    - cron: "17 5 * * 1,4"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request the demo link
+        run: |
+          # A failed sign-in redirects to /login, so a redirect elsewhere
+          # means the database answered.
+          location=$(curl -sS --max-time 60 -o /dev/null -w '%{http_code} %{redirect_url}' https://project-mastery-dun.vercel.app/demo)
+          echo "$location"
+          case "$location" in
+            307\ *login*|[45]*) echo "::error::The demo sign-in did not reach the database."; exit 1 ;;
+            3*) ;;
+            *) echo "::error::Unexpected response."; exit 1 ;;
+          esac
