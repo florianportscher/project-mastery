@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
   DRAFT,
+  memoizeMathRunner,
   useGenerateModel,
 } from "@/features/study/workflows/generate-problems-testing";
 import { markAdminClient } from "@/lib/supabase/admin-brand";
@@ -9,6 +10,12 @@ import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
 import type { Supabase } from "@/lib/supabase/types";
 
 vi.mock("server-only", () => ({}));
+// Each run of a program starts a process; the same program runs once per file.
+vi.mock("@/features/study/server/math-runner", async (original) =>
+  memoizeMathRunner(
+    await original<typeof import("@/features/study/server/math-runner")>(),
+  ),
+);
 
 const COURSE = "aaaaaaaa-c000-4000-8000-000000000001";
 const STUDENT = "11111111-1111-1111-1111-111111111111";

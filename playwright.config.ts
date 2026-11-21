@@ -28,7 +28,12 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile", use: { ...devices["Pixel 7"] } },
+    {
+      // Only the specs that depend on screen size.
+      name: "mobile",
+      use: { ...devices["Pixel 7"] },
+      testMatch: /(sidebar|chat|home)\.spec\.ts/,
+    },
   ],
   // Test against the production build with mock AI and local Supabase.
   // Skipped when PLAYWRIGHT_BASE_URL points at an already-running deployment
