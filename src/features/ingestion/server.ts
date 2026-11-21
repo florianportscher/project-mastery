@@ -8,7 +8,6 @@ export { examChapterIds } from "./domain/old-exam-chapters";
 export { withLease } from "./domain/parse-state";
 export { getMaterialChunks } from "./server/chunk-queries";
 export {
-  findChunkSpan,
   loadAdminChunks,
   loadChunkMaterials,
   loadCourseChunkSpans,
