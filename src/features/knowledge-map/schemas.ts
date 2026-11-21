@@ -55,6 +55,10 @@ const exerciseSchema = z.object({
   difficulty: z.int().min(1).max(3),
   kcs: z.array(id),
   finalAnswers: z.array(answerKeySchema).min(1).nullish(),
+  /** The exam the build found it in; null or missing for none. */
+  examId: id.nullish(),
+  /** Whether that exam is an old exam the Student confirmed. */
+  oldExam: z.boolean().optional(),
 });
 
 /**

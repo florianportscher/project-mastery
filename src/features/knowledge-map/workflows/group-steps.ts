@@ -4,12 +4,17 @@ import {
   groupingAnswerSchema,
   groupingCallSettings,
   groupingMessages,
+  type GroupingExam,
   type GroupingItem,
 } from "@/features/knowledge-map/ai/exercise-grouping";
 import { dailyLimitReason } from "@/features/knowledge-map/domain/build-failure";
 import {
   chapterPath,
+  checkedExams,
   checkedGroups,
+  courseExams,
+  type CheckedGroup,
+  type FoundExam,
   groupingHash,
   groupingRuns,
   offeredIds,
@@ -77,14 +82,20 @@ export async function groupExercises(
   if (stored.groups && stored.hash === hash) return { ok: true, left: 0 };
 
   const runs = groupingRuns(chunks);
-  const exercises: ExerciseGroup[] = [];
+  const storedExams = await loadExams(supabase, courseId);
+  const answered: RunAnswer[] = [];
   let fallback = false;
   for (const [index, run] of runs.entries()) {
     const key = `grouping/${index}`;
     if (!callFits(startedAt, BUILD_CALL_TIMEOUT_MS)) {
       return { ok: true, left: runs.length - index };
     }
-    const answer = await groupRun(supabase, { owner, courseId }, run);
+    const answer = await groupRun(
+      supabase,
+      { owner, courseId },
+      run,
+      storedExams,
+    );
     if (answer === "limit") return { ok: false, reason: dailyLimitReason };
     if (answer instanceof RateLimited) {
       return { ok: true, left: runs.length - index, waitMs: answer.waitMs };
@@ -93,13 +104,26 @@ export async function groupExercises(
       if (!failedKeys.includes(key)) {
         return { ok: true, left: runs.length - index, failed: [key] };
       }
-      exercises.push(...ownGroups(run));
+      answered.push({ groups: ownGroups(run), exams: [] });
       fallback = true;
       continue;
     }
-    exercises.push(...answer);
+    answered.push(answer);
   }
 
+  const found = courseExams(answered);
+  const examIds = await storeExams(supabase, {
+    owner,
+    courseId,
+    exams: found.exams,
+    stored: storedExams,
+    // A run that fell back saw no exams, so the stored ones stay.
+    keepOthers: fallback,
+  });
+  const exercises: ExerciseGroup[] = found.groups.map(({ exam, ...group }) => ({
+    ...group,
+    examId: exam === null ? null : examIds[exam]!,
+  }));
   const groups: StoredGroups = { exercises, fallback };
   const { error } = await supabase
     .from("knowledge_map_builds")
@@ -124,8 +148,16 @@ async function groupRun(
   supabase: AdminSupabase,
   { owner, courseId }: { owner: string; courseId: string },
   run: CourseChunk[],
-): Promise<ExerciseGroup[] | "limit" | "failed" | RateLimited> {
+  storedExams: readonly StoredExam[],
+): Promise<RunAnswer | "limit" | "failed" | RateLimited> {
   const offered = offeredIds(run);
+  const exams: GroupingExam[] = storedExams.map((exam, index) => ({
+    id: `x${index + 1}`,
+    name: exam.name,
+  }));
+  const storedOf = new Map(
+    exams.map((exam, index) => [exam.id, storedExams[index]!.id]),
+  );
   const items = (label: GroupingChunk["label"]): GroupingItem[] =>
     [...offered]
       .filter(([, chunk]) => chunk.label === label)
@@ -146,15 +178,120 @@ async function groupRun(
       metadata: { courseId },
     },
     {
-      ...groupingCallSettings(exercises, solutions),
-      messages: groupingMessages(exercises, solutions),
+      ...groupingCallSettings(exercises, solutions, exams),
+      messages: groupingMessages(exercises, solutions, exams),
     },
     groupingAnswerSchema(),
   );
   if (typeof answer === "string" || answer instanceof RateLimited) {
     return answer;
   }
-  return checkedGroups(answer.exercises, offered);
+  const found = checkedExams(answer.exams, storedOf);
+  return {
+    exams: found,
+    groups: checkedGroups(
+      answer.exercises,
+      offered,
+      new Set(found.map((exam) => exam.name)),
+    ),
+  };
+}
+
+/** What one grouping call gave, checked. */
+type RunAnswer = { groups: CheckedGroup[]; exams: FoundExam[] };
+
+/** A stored exam of the Course. */
+type StoredExam = { id: string; name: string };
+
+/** The Course's stored exams in order. */
+async function loadExams(
+  supabase: AdminSupabase,
+  courseId: string,
+): Promise<StoredExam[]> {
+  const { data, error } = await supabase
+    .from("exams")
+    .select("id, name")
+    .eq("course_id", courseId)
+    .order("position")
+    .order("id");
+  if (error) failed("Loading the exams", error);
+  return data;
+}
+
+/**
+ * Stores the found exams in order: one that continues a stored exam keeps
+ * its row, and with it the Student's answer, under its new name and
+ * position; the others are new. Unless `keepOthers`, a stored exam no
+ * longer found goes, and its Exercises are in none. Returns each found
+ * exam's id.
+ */
+async function storeExams(
+  supabase: AdminSupabase,
+  {
+    owner,
+    courseId,
+    exams,
+    stored,
+    keepOthers,
+  }: {
+    owner: string;
+    courseId: string;
+    exams: FoundExam[];
+    stored: readonly StoredExam[];
+    keepOthers: boolean;
+  },
+): Promise<string[]> {
+  const ids: string[] = [];
+  for (const [position, exam] of exams.entries()) {
+    if (exam.storedId !== null) {
+      const { error } = await supabase
+        .from("exams")
+        .update({ name: exam.name, position })
+        .eq("id", exam.storedId)
+        .eq("course_id", courseId);
+      if (error) failed("Storing an exam", error);
+      ids.push(exam.storedId);
+      continue;
+    }
+    const { data, error } = await supabase
+      .from("exams")
+      .insert({ owner, course_id: courseId, name: exam.name, position })
+      .select("id")
+      .single();
+    if (error) failed("Storing an exam", error);
+    ids.push(data.id);
+  }
+  const gone = stored.filter(({ id }) => !ids.includes(id)).map(({ id }) => id);
+  if (!keepOthers && gone.length > 0) {
+    const { error } = await supabase
+      .from("exams")
+      .delete()
+      .eq("course_id", courseId)
+      .in("id", gone);
+    if (error) failed("Removing the exams no longer found", error);
+  }
+  return ids;
+}
+
+/**
+ * The exam step of a build, after the exercise extraction: gives each
+ * stored Exercise the exam the grouping found for it (`set_exercise_exams`).
+ */
+export async function assignExams(courseId: string): Promise<StepOutcome> {
+  "use step";
+  const supabase = createAdminClient();
+  const owner = await touchBuild(supabase, courseId);
+  if (!owner) return { ok: true, left: null };
+  const { groups } = await loadStoredGroups(supabase, courseId);
+  const { error } = await supabase.rpc("set_exercise_exams", {
+    p_course_id: courseId,
+    p_exercises: (groups?.exercises ?? []).map((group) => ({
+      questionChunkId: group.questionChunkIds[0]!,
+      examId: group.examId ?? null,
+    })),
+  });
+  if (error) failed("Giving the Exercises their exams", error);
+  return { ok: true, left: 0 };
 }
 
 /**

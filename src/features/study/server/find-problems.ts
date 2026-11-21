@@ -124,7 +124,7 @@ export async function findProblems(
               id: exercise.id,
               kcs: exercise.kcs,
               difficulty: exercise.difficulty,
-              source: chunk.isExam ? "old_exam" : "exercise",
+              source: exercise.oldExam ? "old_exam" : "exercise",
               exercise,
               chunk,
             } satisfies Candidate,

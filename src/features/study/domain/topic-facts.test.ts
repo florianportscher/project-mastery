@@ -23,11 +23,10 @@ test("a Topic's facts: later Topics (at most 5), old-exam Exercises and what eac
       { from: "a", to: "k2" },
     ],
     exercises: [
-      { questionChunk: "exam-1", kcs: ["a", "b"] },
-      { questionChunk: "sheet-1", kcs: ["a"] },
-      { questionChunk: "exam-2", kcs: ["k3"] },
+      { kcs: ["a", "b"], oldExam: true },
+      { kcs: ["a"] },
+      { kcs: ["k3"], oldExam: true },
     ],
-    examChunkIds: ["exam-1", "exam-2"],
   });
   expect(facts.get("t1")).toEqual({
     buildingTopics: ["Topic 2", "Topic 3", "Topic 4", "Topic 5", "Topic 6"],

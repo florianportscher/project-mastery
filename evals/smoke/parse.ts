@@ -202,7 +202,7 @@ async function checkParse(
       .order("position"),
     supabase
       .from("chapters")
-      .select("id, parent_id, position, depth, title, page_from, exam_proposed")
+      .select("id, parent_id, position, depth, title, page_from")
       .eq("material_id", materialId)
       .order("position"),
   ]);
@@ -256,7 +256,7 @@ async function checkParse(
       (c) => c.chapter_id === chapter.id,
     ).length;
     console.info(
-      `  ${"  ".repeat(chapter.depth)}${chapter.title} (p. ${chapter.page_from}${chapter.exam_proposed ? ", exam" : ""}): ${chunkCount} chunks`,
+      `  ${"  ".repeat(chapter.depth)}${chapter.title} (p. ${chapter.page_from}):${chunkCount} chunks`,
     );
   }
   const labels = Object.entries(Object.groupBy(chunkRows, (c) => c.label)).map(

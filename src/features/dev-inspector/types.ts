@@ -66,8 +66,6 @@ export type SnapshotChapter = {
   position: number;
   title: string;
   pageFrom: number;
-  isExam: boolean | null;
-  examProposed: boolean;
 };
 
 export type SnapshotChunk = {

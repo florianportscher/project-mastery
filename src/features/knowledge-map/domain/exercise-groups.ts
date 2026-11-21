@@ -14,7 +14,18 @@ export type GroupingChunk = { id: string; label: "exercise" | "solution" };
 export type ExerciseGroup = {
   questionChunkIds: string[];
   solutionChunkIds: string[];
+  /** The stored exam it belongs to; null or missing for none. */
+  examId?: string | null;
 };
+
+/** An Exercise of one grouping call, with the name of its exam. */
+export type CheckedGroup = Omit<ExerciseGroup, "examId"> & {
+  /** One of the call's exams, by name; null for none. */
+  exam: string | null;
+};
+
+/** An exam a grouping call found, with the stored exam it continues. */
+export type FoundExam = { name: string; storedId: string | null };
 
 /** The most exercise and solution chunks one grouping call sees. */
 export const MAX_GROUPING_CHUNKS = 400;
@@ -54,19 +65,25 @@ export function offeredIds<Chunk extends GroupingChunk>(
 }
 
 /** An Exercise as the call answers it, by offered ids. */
-export type AnsweredExercise = { questionIds: string[]; solutionIds: string[] };
+export type AnsweredExercise = {
+  questionIds: string[];
+  solutionIds: string[];
+  exam?: string | null;
+};
 
 /**
  * The Exercises of one run, from the call's answer: an id that names no
  * offered chunk of the right label is dropped, a chunk belongs to the first
  * Exercise that names it, an Exercise left without a question chunk goes,
  * and an exercise chunk the answer left out becomes an Exercise of its own.
- * Exercises come in Course order, each one's chunks too.
+ * An exam name not among `examNames` means no exam. Exercises come in
+ * Course order, each one's chunks too.
  */
 export function checkedGroups(
   answer: readonly AnsweredExercise[],
   offered: ReadonlyMap<string, GroupingChunk>,
-): ExerciseGroup[] {
+  examNames: ReadonlySet<string> = new Set(),
+): CheckedGroup[] {
   const order = new Map([...offered.values()].map((c, i) => [c.id, i]));
   const taken = new Set<string>();
   const take = (ids: readonly string[], label: GroupingChunk["label"]) => {
@@ -79,18 +96,24 @@ export function checkedGroups(
     }
     return chunkIds.toSorted((a, b) => order.get(a)! - order.get(b)!);
   };
-  const groups: ExerciseGroup[] = [];
+  const groups: CheckedGroup[] = [];
   for (const exercise of answer) {
     const questionChunkIds = take(exercise.questionIds, "exercise");
     if (questionChunkIds.length === 0) continue;
+    const exam = exercise.exam?.trim() ?? "";
     groups.push({
       questionChunkIds,
       solutionChunkIds: take(exercise.solutionIds, "solution"),
+      exam: examNames.has(exam) ? exam : null,
     });
   }
   for (const chunk of offered.values()) {
     if (chunk.label === "exercise" && !taken.has(chunk.id)) {
-      groups.push({ questionChunkIds: [chunk.id], solutionChunkIds: [] });
+      groups.push({
+        questionChunkIds: [chunk.id],
+        solutionChunkIds: [],
+        exam: null,
+      });
     }
   }
   return groups.toSorted(
@@ -100,10 +123,70 @@ export function checkedGroups(
 }
 
 /** Each exercise chunk of the run as an Exercise of its own, without a solution. */
-export function ownGroups(chunks: readonly GroupingChunk[]): ExerciseGroup[] {
+export function ownGroups(chunks: readonly GroupingChunk[]): CheckedGroup[] {
   return chunks
     .filter((chunk) => chunk.label === "exercise")
-    .map((chunk) => ({ questionChunkIds: [chunk.id], solutionChunkIds: [] }));
+    .map((chunk) => ({
+      questionChunkIds: [chunk.id],
+      solutionChunkIds: [],
+      exam: null,
+    }));
+}
+
+/** An exam as the call answers it: its printed name, the stored id it continues. */
+export type AnsweredExam = { name: string; continues?: string | null };
+
+/**
+ * The exams of one run, from the call's answer: names trimmed, an empty or
+ * repeated name dropped, and `continues` turned into the stored exam's id
+ * when it names one of `stored` (offered id to stored id) that no earlier
+ * exam continues; otherwise the exam is new.
+ */
+export function checkedExams(
+  answer: readonly AnsweredExam[],
+  stored: ReadonlyMap<string, string>,
+): FoundExam[] {
+  const exams: FoundExam[] = [];
+  for (const exam of answer) {
+    const name = exam.name.trim();
+    if (name === "" || exams.some((e) => e.name === name)) continue;
+    const storedId = stored.get(exam.continues?.trim() ?? "") ?? null;
+    const taken = exams.some(
+      (e) => e.storedId !== null && e.storedId === storedId,
+    );
+    exams.push({ name, storedId: taken ? null : storedId });
+  }
+  return exams;
+}
+
+/**
+ * The Course's exams from every run's Exercises, in Course order of their
+ * first Exercise, with each Exercise's exam as an index into them. Two runs'
+ * exams are one when they continue the same stored exam or have the same
+ * name. An exam without an Exercise is left out.
+ */
+export function courseExams(
+  runs: ReadonlyArray<{ groups: CheckedGroup[]; exams: FoundExam[] }>,
+): {
+  exams: FoundExam[];
+  groups: Array<Omit<CheckedGroup, "exam"> & { exam: number | null }>;
+} {
+  const exams: FoundExam[] = [];
+  const groups = runs.flatMap((run) =>
+    run.groups.map(({ exam: name, ...group }) => {
+      const found = run.exams.find((e) => e.name === name);
+      if (!found) return { ...group, exam: null };
+      let index = exams.findIndex(
+        (e) =>
+          (found.storedId !== null && e.storedId === found.storedId) ||
+          e.name === found.name,
+      );
+      if (index === -1) index = exams.push({ ...found }) - 1;
+      else exams[index]!.storedId ??= found.storedId;
+      return { ...group, exam: index };
+    }),
+  );
+  return { exams, groups };
 }
 
 /** What the grouping is made from: the chunks' ids and labels, in order. */

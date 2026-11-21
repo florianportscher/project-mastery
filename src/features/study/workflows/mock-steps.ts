@@ -1,10 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { getExamFacts, getReservedExam } from "@/features/brief/server";
-import {
-  loadChunkSources,
-  loadChapterChunkIds,
-} from "@/features/ingestion/server";
+import { loadChunkSources } from "@/features/ingestion/server";
 import {
   loadStoredMap,
   loadStoredTopics,
@@ -89,9 +86,6 @@ export async function planMockExam(
       loadReadyProblems(supabase, courseId),
       getReservedExam(supabase, courseId),
     ]);
-  const reserved = new Set(
-    reservedId === null ? [] : await loadChapterChunkIds(supabase, reservedId),
-  );
   const [kcRecall, choices] = await Promise.all([
     loadRecall(supabase, courseId, exam, now),
     loadTopicChoices(supabase, courseId),
@@ -122,7 +116,7 @@ export async function planMockExam(
   });
   const exercises = map.exercises.map((exercise) => ({
     ...exercise,
-    reserved: reserved.has(exercise.questionChunk),
+    reserved: reservedId !== null && exercise.examId === reservedId,
     seen: asked.has(exercise.id),
   }));
 
@@ -174,7 +168,7 @@ export async function planMockExam(
             {
               id: exercise.id,
               kind: "exercise" as const,
-              source: chunk.isExam
+              source: exercise.oldExam
                 ? ("old_exam" as const)
                 : ("exercise" as const),
               kcs: exercise.kcs,
@@ -300,11 +294,11 @@ async function questionChunks(
 async function setFinal(
   supabase: Supabase,
   mockId: string,
-  chapterId: string,
+  examId: string,
 ): Promise<void> {
   const { error } = await supabase
     .from("mock_exams")
-    .update({ reserved_chapter_id: chapterId })
+    .update({ reserved_exam_id: examId })
     .eq("id", mockId)
     .eq("status", "assembling");
   if (error) failed("Marking the final mock exam", error);

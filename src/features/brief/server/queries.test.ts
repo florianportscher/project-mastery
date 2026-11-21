@@ -41,24 +41,14 @@ function createDb() {
     name,
     created_at: createdAt,
   });
-  const chapter = (
-    id: string,
-    materialId: string,
-    parentId: string | null,
-    position: number,
-    title: string,
-  ) => ({
+  const exam = (id: string, name: string, position: number) => ({
     id,
     owner: STUDENT,
     course_id: COURSE,
-    material_id: materialId,
-    parent_id: parentId,
+    name,
     position,
-    depth: position,
-    title,
-    exam_proposed: false,
-    is_exam: null,
-    exam_asked: false,
+    confirmed: null,
+    asked: false,
   });
   return fakeSupabase({
     tables: {
@@ -70,11 +60,10 @@ function createDb() {
         material(LATER, "Lecture 2", "2026-10-02T00:00:00Z"),
         material(EARLIER, "Lecture 1", "2026-10-01T00:00:00Z"),
       ] as FakeRow[],
-      // Lecture 2 holds an old exam, Klausur 2023, with a problem inside.
-      chapters: [
-        chapter("l2", LATER, null, 0, "Lecture 2"),
-        chapter("klausur", LATER, "l2", 1, "Klausur 2023"),
-        chapter("problem", LATER, "klausur", 2, "Aufgabe 1"),
+      // The build found two exams; the Student has not answered yet.
+      exams: [
+        exam("klausur", "Klausur 2023", 0),
+        exam("probe", "Probeklausur", 1),
       ] as FakeRow[],
       briefs: [] as FakeRow[],
       brief_excluded_materials: [] as FakeRow[],
@@ -181,11 +170,11 @@ describe("getBrief", () => {
     db.tables.briefs.push({
       ...brief({ done: true }),
       reserved_exam_answered: true,
-      reserved_exam_chapter_id: "klausur",
+      reserved_exam_id: "klausur",
     });
-    // The problem inside the confirmed exam is no old exam of its own.
-    for (const id of ["klausur", "problem"]) {
-      db.tables.chapters.find((chapter) => chapter.id === id)!.is_exam = true;
+    // The Student answered: only the confirmed exam is an old exam.
+    for (const exam of db.tables.exams) {
+      Object.assign(exam, { confirmed: exam.id === "klausur", asked: true });
     }
     db.tables.exam_scopes.push({
       owner: STUDENT,
@@ -229,17 +218,8 @@ describe("getBrief", () => {
           href: materialChunksPath(COURSE, LATER),
         },
       ],
-      oldExams: [
-        {
-          id: "klausur",
-          name: "Lecture 2 › Klausur 2023",
-          href: materialChunksPath(COURSE, LATER),
-        },
-      ],
-      reservedExam: {
-        name: "Lecture 2 › Klausur 2023",
-        href: materialChunksPath(COURSE, LATER),
-      },
+      oldExams: [{ id: "klausur", name: "Klausur 2023" }],
+      reservedExam: { name: "Klausur 2023" },
       examScopes: [
         {
           name: "Integrals",

@@ -31,8 +31,8 @@ English, precise, mid-length sentences. Names the Chapter they mean. Answers the
 
 Each item scores 0 (missed), 1 (partly) or 2 (as Opus would).
 
-- Stored state: Course A has only the Final Exam as an old exam; Course B has none (`examChapterIds` an empty list) and no exam scope; the other fields match.
-- Proposes the likely old exams by name ("<Material> › <Chapter>") in the scope batch, without ids.
+- Stored state: Course A has only the Final Exam as an old exam; Course B has none (`examIds` an empty list) and no exam scope; the other fields match.
+- Proposes the likely old exams by their printed names in the scope batch, without ids.
 - Takes the correction at once, without arguing or asking again.
 - Course A: asks the reserved exam with only the Final Exam listed and suggests keeping none; stores the Student's answer. Course B: asks no reserved-exam question, since no old exam is stored.
 - Course B: after the Student rejects the admin text, stores no exam scope and does not bring it up again.

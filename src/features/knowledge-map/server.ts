@@ -29,7 +29,11 @@ export {
 } from "./server/course-topics";
 export { getKnowledgeMap } from "./server/queries";
 export { getTopicNames } from "./server/topic-names";
-export { loadKcAssumes, loadStoredMap } from "./server/stored-map";
+export {
+  loadExamChunkIds,
+  loadKcAssumes,
+  loadStoredMap,
+} from "./server/stored-map";
 export {
   loadStoredTopics,
   loadTopicTree,
@@ -42,5 +46,5 @@ export { loadCourseUnits, unitKey } from "./workflows/build-steps";
 // The grouping smoke check runs the grouping step alone.
 export { groupExercises } from "./workflows/group-steps";
 // The developer view forms the units from its snapshot.
-export { chapterUnitsByExam } from "./domain/chapter-units";
+export { chapterUnits } from "./domain/chapter-units";
 export { MIN_UNIT_COVERAGE } from "./domain/unit-coverage";

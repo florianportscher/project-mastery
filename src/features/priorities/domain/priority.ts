@@ -35,13 +35,12 @@ export type ExamScope = {
 /** What Priority is computed from. */
 export type PriorityInput = {
   kcs: PriorityKc[];
-  exercises: Array<{ questionChunk: string; kcs: string[] }>;
+  /** `oldExam`: in an exam the Student confirmed as an old exam. */
+  exercises: Array<{ kcs: string[]; oldExam?: boolean }>;
   /** Each chunk's Material by chunk id. */
   chunkMaterials: Record<string, string>;
   /** The Course's Materials by id. */
   materials: Record<string, { name: string }>;
-  /** The chunks in an old exam: their Chapter or one above it is one. */
-  examChunkIds: string[];
   /** The Materials the Brief excludes. */
   excludedMaterialIds: string[];
   examScopes: ExamScope[];
@@ -65,9 +64,8 @@ function exerciseCounts(input: PriorityInput) {
   const counts = new Map(
     input.kcs.map((kc) => [kc.id, { exercises: 0, oldExam: 0 }]),
   );
-  const examChunks = new Set(input.examChunkIds);
   for (const exercise of input.exercises) {
-    const oldExam = examChunks.has(exercise.questionChunk);
+    const oldExam = exercise.oldExam === true;
     for (const id of new Set(exercise.kcs)) {
       const count = counts.get(id);
       if (!count) continue;

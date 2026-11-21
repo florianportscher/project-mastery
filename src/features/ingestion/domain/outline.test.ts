@@ -19,7 +19,6 @@ const chapter = (overrides: Partial<ProposedChapter>): ProposedChapter => ({
   level: 1,
   heading: null,
   page: null,
-  exam: false,
   ...overrides,
 });
 

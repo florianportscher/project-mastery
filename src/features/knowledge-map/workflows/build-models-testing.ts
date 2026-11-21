@@ -47,14 +47,19 @@ export type SentExerciseUnit = {
   kcs: Array<{ id: string; name: string }>;
 };
 
-/** A grouping call's input: exercise and solution chunks by short id. */
+/** A grouping call's input: exercise and solution chunks and stored exams by short id. */
 export type SentGrouping = {
+  exams: Array<{ id: string; name: string }>;
   exercises: Array<{ id: string; text: string }>;
   solutions: Array<{ id: string; text: string }>;
 };
 
-/** An Exercise the grouping mock answers, by its chunks' texts. */
-export type GroupAnswer = { question: string[]; solution?: string[] };
+/** An Exercise the grouping mock answers, by its chunks' texts and its exam's name. */
+export type GroupAnswer = {
+  question: string[];
+  solution?: string[];
+  exam?: string;
+};
 
 /** What the exercise mock answers for an Exercise: KCs by name. */
 export type SubtaskAnswer = {
@@ -337,12 +342,22 @@ export function useBuildModels({
       if (groupings.length <= groupingFails) return answer(undefined);
       const idOf = (items: SentGrouping["exercises"], text: string) =>
         items.find((item) => item.text === text)?.id ?? text;
+      const groups = groupsOf(sent);
+      const examNames = [
+        ...new Set(groups.flatMap((group) => group.exam ?? [])),
+      ];
       return answer({
-        exercises: groupsOf(sent).map((group) => ({
+        // An exam continues the stored one of the same name.
+        exams: examNames.map((name) => ({
+          name,
+          continues: sent.exams.find((e) => e.name === name)?.id ?? null,
+        })),
+        exercises: groups.map((group) => ({
           questionIds: group.question.map((t) => idOf(sent.exercises, t)),
           solutionIds: (group.solution ?? []).map((t) =>
             idOf(sent.solutions, t),
           ),
+          exam: group.exam ?? null,
         })),
       });
     },

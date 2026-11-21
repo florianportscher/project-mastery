@@ -141,7 +141,8 @@ export function fakeSupabase<Table extends string>(
   // Strictly increasing timestamps, so rows keep their insertion order.
   let tick = 0;
   const timestamp = () => new Date(Date.UTC(2026, 0, 1) + tick++).toISOString();
-  const rowsOf = (table: Table) => tables[table];
+  // A table the test left out starts empty.
+  const rowsOf = (table: Table) => (tables[table] ??= []);
   const visible = (table: Table, row: FakeRow) =>
     options.canAccess?.(table, row, tables) ?? true;
 

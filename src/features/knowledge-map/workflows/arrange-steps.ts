@@ -145,10 +145,7 @@ async function checkReport(
   const name = new Map(input.kcs.map((kc) => [kc.id, kc.name]));
   return {
     chaptersWithoutKcs: input.chapters
-      .filter(
-        (chapter) =>
-          !chapter.inExam && teaching.has(chapter.id) && !cited.has(chapter.id),
-      )
+      .filter((chapter) => teaching.has(chapter.id) && !cited.has(chapter.id))
       .map((chapter) => chapter.title),
     exercisesWithoutKcs: exercises,
     duplicates: alike.data.flatMap(({ a, b, similarity }) =>

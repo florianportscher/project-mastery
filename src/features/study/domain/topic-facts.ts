@@ -23,14 +23,11 @@ export function topicFacts(input: {
   kcNames: Map<string, string>;
   arrows: Array<{ source: string; target: string }>;
   prerequisites: Array<{ from: string; to: string }>;
-  exercises: Array<{ questionChunk: string; kcs: string[] }>;
-  examChunkIds: string[];
+  /** `oldExam`: in an exam the Student confirmed as an old exam. */
+  exercises: Array<{ kcs: string[]; oldExam?: boolean }>;
 }): Map<string, TopicFacts> {
   const nameOf = new Map(input.topics.map((topic) => [topic.id, topic.name]));
-  const examChunks = new Set(input.examChunkIds);
-  const oldExam = input.exercises.filter(({ questionChunk }) =>
-    examChunks.has(questionChunk),
-  );
+  const oldExam = input.exercises.filter((exercise) => exercise.oldExam);
   return new Map(
     input.topics.map((topic) => {
       const own = new Set(topic.kcs);

@@ -1,10 +1,9 @@
 -- The map needs Update map (#249) once a Material finished parsing or was
--- deleted, or the Student confirmed or withdrew an old exam, since its build
--- began. Run with `pnpm db:test`.
+-- deleted since its build began. Run with `pnpm db:test`.
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(5);
+select plan(3);
 
 insert into auth.users (id, email)
 values ('11111111-1111-1111-1111-111111111111', 'alice@example.com');
@@ -38,19 +37,6 @@ $$;
 
 select pg_temp.clear();
 select is(pg_temp.needs_update(), false, 'a built map needs no update');
-
-set local role authenticated;
-set local request.jwt.claims = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
-update public.chapters set is_exam = true where title = 'Final exam';
-reset role;
-select is(pg_temp.needs_update(), true, 'the Student confirming an old exam marks it');
-
-select pg_temp.clear();
-set local role authenticated;
-set local request.jwt.claims = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
-update public.chapters set is_exam = true where title = 'Final exam';
-reset role;
-select is(pg_temp.needs_update(), false, 'answering the same again does not');
 
 update public.materials set parse_status = 'parsed' where name = 'Notes';
 select is(pg_temp.needs_update(), true, 'a Material that finished parsing marks it');

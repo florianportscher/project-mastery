@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
+  checkedExams,
   checkedGroups,
+  courseExams,
   exerciseBatches,
   groupingRuns,
   offeredIds,
@@ -28,8 +30,9 @@ describe("checkedGroups", () => {
       {
         questionChunkIds: ["stem", "a", "b"],
         solutionChunkIds: ["sol-a", "sol-b"],
+        exam: null,
       },
-      { questionChunkIds: ["other"], solutionChunkIds: [] },
+      { questionChunkIds: ["other"], solutionChunkIds: [], exam: null },
     ]);
   });
 
@@ -44,11 +47,77 @@ describe("checkedGroups", () => {
         offered,
       ),
     ).toEqual([
-      { questionChunkIds: ["stem"], solutionChunkIds: [] },
-      { questionChunkIds: ["a"], solutionChunkIds: ["sol-a"] },
-      { questionChunkIds: ["b"], solutionChunkIds: ["sol-b"] },
-      { questionChunkIds: ["other"], solutionChunkIds: [] },
+      { questionChunkIds: ["stem"], solutionChunkIds: [], exam: null },
+      { questionChunkIds: ["a"], solutionChunkIds: ["sol-a"], exam: null },
+      { questionChunkIds: ["b"], solutionChunkIds: ["sol-b"], exam: null },
+      { questionChunkIds: ["other"], solutionChunkIds: [], exam: null },
     ]);
+  });
+
+  test("keeps an exam name the answer lists and drops one it does not", () => {
+    const groups = checkedGroups(
+      [
+        { questionIds: ["e1"], solutionIds: [], exam: " Klausur 2023 " },
+        { questionIds: ["e2"], solutionIds: [], exam: "Klausur 1999" },
+      ],
+      offered,
+      new Set(["Klausur 2023"]),
+    );
+    expect(groups.map((g) => g.exam)).toEqual([
+      "Klausur 2023",
+      null,
+      null,
+      null,
+    ]);
+  });
+});
+
+describe("exams", () => {
+  test("a run's exams continue an offered stored exam once, and a repeated name is one exam", () => {
+    expect(
+      checkedExams(
+        [
+          { name: "Klausur 2023", continues: "x1" },
+          { name: "Klausur 2024", continues: "x1" },
+          { name: "Klausur 2023", continues: null },
+          { name: "Resit", continues: "x9" },
+        ],
+        new Map([["x1", "stored-2023"]]),
+      ),
+    ).toEqual([
+      { name: "Klausur 2023", storedId: "stored-2023" },
+      { name: "Klausur 2024", storedId: null },
+      { name: "Resit", storedId: null },
+    ]);
+  });
+
+  test("runs share an exam by name or stored id; one without Exercises goes", () => {
+    const group = (id: string, exam: string | null) => ({
+      questionChunkIds: [id],
+      solutionChunkIds: [],
+      exam,
+    });
+    const { exams, groups } = courseExams([
+      {
+        groups: [group("a", null), group("b", "Klausur 2023")],
+        exams: [
+          { name: "Klausur 2023", storedId: null },
+          { name: "Unused", storedId: null },
+        ],
+      },
+      {
+        groups: [group("c", "Exam 2023"), group("d", "Klausur 2023")],
+        exams: [
+          { name: "Klausur 2023", storedId: null },
+          { name: "Exam 2023", storedId: "s1" },
+        ],
+      },
+    ]);
+    expect(exams).toEqual([
+      { name: "Klausur 2023", storedId: null },
+      { name: "Exam 2023", storedId: "s1" },
+    ]);
+    expect(groups.map((g) => g.exam)).toEqual([null, 0, 1, 0]);
   });
 });
 

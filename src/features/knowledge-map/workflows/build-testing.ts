@@ -49,6 +49,7 @@ export function createBuildDb() {
       kcs: [] as FakeRow[],
       kc_sources: [] as FakeRow[],
       prerequisite_links: [] as FakeRow[],
+      exams: [] as FakeRow[],
       exercises: [] as FakeRow[],
       exercise_kcs: [] as FakeRow[],
       exercise_chunks: [] as FakeRow[],
@@ -60,30 +61,32 @@ export function createBuildDb() {
     defaults: {
       ai_usage: () => ({ created_at: now() }),
       chapter_extractions: () => ({ id: crypto.randomUUID() }),
+      exams: () => ({ id: crypto.randomUUID(), confirmed: null, asked: false }),
     },
     functions: {
-      retire_unsourced_kcs: (args, tables) => {
-        // Old exams teach nothing: their content chunks lose their sources.
-        const exams = new Set(
-          tables.chapters.filter((c) => c.is_exam === true).map((c) => c.id),
+      set_exercise_exams: (args, tables) => {
+        const listed = args.p_exercises as Array<{
+          questionChunkId: string;
+          examId: string | null;
+        }>;
+        const examOf = new Map(
+          listed.map((x) => [
+            x.questionChunkId,
+            tables.exams.some(
+              (e) => e.id === x.examId && e.course_id === args.p_course_id,
+            )
+              ? x.examId
+              : null,
+          ]),
         );
-        for (let grew = true; grew;) {
-          grew = false;
-          for (const c of tables.chapters) {
-            if (exams.has(c.parent_id) && !exams.has(c.id)) {
-              exams.add(c.id);
-              grew = true;
-            }
-          }
+        for (const exercise of tables.exercises) {
+          if (exercise.course_id !== args.p_course_id) continue;
+          exercise.exam_id =
+            examOf.get(exercise.question_chunk_id as string) ?? null;
         }
-        const examChunks = new Set(
-          tables.chunks
-            .filter((c) => c.label === "content" && exams.has(c.chapter_id))
-            .map((c) => c.id),
-        );
-        tables.kc_sources = tables.kc_sources.filter(
-          (source) => !examChunks.has(source.chunk_id),
-        );
+        return null;
+      },
+      retire_unsourced_kcs: (args, tables) => {
         const retired = tables.kcs.filter(
           (kc) =>
             kc.course_id === args.p_course_id &&
@@ -368,8 +371,6 @@ type SeedChunk =
 type SeedChapter = {
   title: string;
   exercise?: boolean;
-  /** Confirmed as an old exam. */
-  exam?: boolean;
   chunks?: SeedChunk[];
   children?: SeedChapter[];
 };
@@ -427,7 +428,6 @@ export function seedMaterial(
       depth,
       title: chapter.title,
       page_from: 1,
-      is_exam: chapter.exam ?? null,
     });
     const chunks = chapter.chunks ?? (root ? [] : [`About ${chapter.title}.`]);
     for (const chunk of chunks) {

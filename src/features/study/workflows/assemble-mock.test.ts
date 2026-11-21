@@ -20,6 +20,7 @@ const TABLES = [
   "problem_kcs",
   "materials",
   "chapters",
+  "exams",
   "chunks",
   "kcs",
   "kc_sources",
@@ -82,7 +83,7 @@ const assembling = (courseId = COURSE): FakeRow => ({
   owner: STUDENT,
   course_id: courseId,
   status: "assembling",
-  reserved_chapter_id: null,
+  reserved_exam_id: null,
   gaps_total: 0,
   gaps_done: 0,
   failure: null,
@@ -159,8 +160,16 @@ function seedCourse({ exam = false }: { exam?: boolean } = {}) {
     parent_id: null,
     title: "Exam 2025",
     depth: 0,
-    is_exam: exam,
   });
+  if (exam) {
+    t.exams.push({
+      id: "e1",
+      ...owned,
+      name: "Exam 2025",
+      position: 0,
+      confirmed: true,
+    });
+  }
   ["k1", "k2"].forEach((id, position) => {
     t.kcs.push({
       id,
@@ -209,6 +218,7 @@ function seedCourse({ exam = false }: { exam?: boolean } = {}) {
       difficulty: 2,
       position,
       final_answers: null,
+      exam_id: exam ? "e1" : null,
     });
     t.exercise_chunks.push({
       ...owned,
@@ -311,7 +321,7 @@ test("in the final week with a reservation, the mock is that exam's Exercises in
   db.tables.briefs.push({
     ...owned,
     exam_date: new Date(Date.now() + 3 * DAY_MS).toISOString().slice(0, 10),
-    reserved_exam_chapter_id: "ch1",
+    reserved_exam_id: "e1",
   });
   const model = useGenerateModel(DRAFT);
 
@@ -320,7 +330,7 @@ test("in the final week with a reservation, the mock is that exam's Exercises in
   expect(model.doGenerateCalls).toHaveLength(0);
   expect(mock()).toMatchObject({
     status: "ready",
-    reserved_chapter_id: "ch1",
+    reserved_exam_id: "e1",
     duration_minutes: 24,
   });
   expect(items().map((i) => i.exercise_id)).toEqual(["x1", "x2"]);

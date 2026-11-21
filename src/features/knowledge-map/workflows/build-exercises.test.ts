@@ -48,9 +48,12 @@ const kcNamesOf = (exerciseId: unknown) =>
 
 const kcsOf = () => ["Dimension"];
 
+const EXAM_MATERIAL = "exam-material";
+
 /** An exam whose subtasks share a stem, each followed by its solution. */
 function seedExam() {
   return seedMaterial(db, {
+    id: EXAM_MATERIAL,
     chapters: [
       {
         title: "Exam 2025",
@@ -222,5 +225,63 @@ describe("Update map's Exercises", () => {
     expect(db.tables.exercises).toEqual([
       expect.objectContaining({ id: exercise!.id, final_answers: null }),
     ]);
+  });
+
+  test("stores the exams the grouping finds, keeps the Student's answer, and drops one no longer found", async () => {
+    seedExam();
+    useBuildModels({
+      kcsOf,
+      groupsOf: () => [{ ...wholeTask()[0]!, exam: "Exam 2025" }],
+      subtaskOf: () => ({ kcs: ["Dimension"] }),
+    });
+    await update();
+
+    expect(db.tables.exams).toEqual([
+      expect.objectContaining({
+        course_id: COURSE,
+        name: "Exam 2025",
+        position: 0,
+        confirmed: null,
+      }),
+    ]);
+    const exam = db.tables.exams[0]!;
+    expect(db.tables.exercises.map((e) => e.exam_id)).toEqual([exam.id]);
+
+    // The Student confirms it; a new sheet changes the chunks, and the
+    // grouping finds the exam again under its printed name.
+    exam.confirmed = true;
+    seedMaterial(db, {
+      chapters: [{ title: "Sheet 1", exercise: true, chunks: ["Task 1."] }],
+    });
+    const { groupings } = useBuildModels({
+      kcsOf,
+      groupsOf: () => [
+        { ...wholeTask()[0]!, exam: "Exam 2025" },
+        { question: ["Task 1."] },
+      ],
+      subtaskOf: () => ({ kcs: ["Dimension"] }),
+    });
+    await update();
+
+    expect(groupings[0]!.exams).toEqual([{ id: "x1", name: "Exam 2025" }]);
+    expect(db.tables.exams).toEqual([
+      expect.objectContaining({ id: exam.id, confirmed: true }),
+    ]);
+    const examOf = (text: string) =>
+      db.tables.exercises.find(
+        (e) => e.question_chunk_id === chunkWith(db, text),
+      )?.exam_id;
+    expect([examOf(STEM), examOf("Task 1.")]).toEqual([exam.id, null]);
+
+    // The exam is gone from the Materials: its row and the Exercise's link go.
+    deleteMaterial(db, EXAM_MATERIAL);
+    useBuildModels({
+      kcsOf,
+      groupsOf: () => [{ question: ["Task 1."] }],
+      subtaskOf: () => ({ kcs: ["Dimension"] }),
+    });
+    await update();
+
+    expect(db.tables.exams).toEqual([]);
   });
 });

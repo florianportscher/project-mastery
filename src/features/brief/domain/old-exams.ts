@@ -1,167 +1,57 @@
-import type { BriefChapter, ExamChapter } from "@/features/brief/domain/intake";
+import type { BriefExam, OldExam } from "@/features/brief/domain/intake";
 
 /**
- * Old exams are Chapters of the Materials' Outlines, which the Student
- * confirms in the Brief. A confirmed Chapter covers its subtree, so an
- * exam inside a script counts.
+ * Old exams are the exams the build's grouping call found in the
+ * Materials, each a set of Exercises; the Student confirms or rejects each
+ * once in the Brief.
  */
 
-/** Words in a Material's name that make it a likely old exam. */
-const LIKELY_EXAM = /klausur|exam|prüfung|resit/i;
-
-/**
- * Whether a Material's name marks it as a likely old exam, such as
- * "Altklausur 2023" or "Resit exam". The Student still confirms it.
- */
-export function isLikelyExam(name: string): boolean {
-  return LIKELY_EXAM.test(name);
+/** The Course's old exams: the exams the Student confirmed, in order. */
+export function confirmedExams(exams: readonly BriefExam[]): OldExam[] {
+  return exams
+    .filter((exam) => exam.confirmed === true)
+    .map(({ id, name }) => ({ id, name }));
 }
 
-/** A Material's Chapter as the Brief loads it, in reading order. */
-export type StoredChapter = {
-  id: string;
-  parentId: string | null;
-  title: string;
-  depth: number;
-  /** The parse's structure call took it for an old exam. */
-  examProposed: boolean;
-  exam: boolean | null;
-  examAsked: boolean;
-};
-
-/**
- * Whether the Brief proposes a Chapter as an old exam: the parse took it
- * for one, or it is a Material's root Chapter, titled by the Material's
- * name, and the name looks like one.
- */
-export function proposedExam(
-  chapter: Pick<StoredChapter, "title" | "depth" | "examProposed">,
-): boolean {
-  return (
-    chapter.examProposed || (chapter.depth === 0 && isLikelyExam(chapter.title))
-  );
-}
-
-/** "<Material> › <Chapter>", or the Material's name for its root Chapter. */
-export function examChapterName(
-  materialName: string,
-  chapter: Pick<StoredChapter, "title" | "depth">,
-): string {
-  return chapter.depth === 0
-    ? materialName
-    : `${materialName} › ${chapter.title}`;
-}
-
-/** The deepest Chapter the Brief's context lists for every Material. */
-const LISTED_DEPTH = 2;
-
-/**
- * A Material's Chapters as the Brief's context lists them: to depth 2, and
- * any deeper one that is proposed or answered as an old exam.
- */
-export function briefChapters(chapters: StoredChapter[]): BriefChapter[] {
-  return chapters
-    .filter(
-      (chapter) =>
-        chapter.depth <= LISTED_DEPTH ||
-        proposedExam(chapter) ||
-        chapter.exam !== null,
-    )
-    .map(({ id, title, depth, exam, examAsked, ...chapter }) => ({
-      id,
-      title,
-      depth,
-      proposed: proposedExam({ title, depth, ...chapter }),
-      exam,
-      examAsked,
-    }));
-}
-
-/**
- * The Course's old exams: every confirmed Chapter that is not inside
- * another, Materials in Course order, then Chapters in reading order.
- */
-export function confirmedExams(
-  materials: ReadonlyArray<{ name: string; chapters: StoredChapter[] }>,
-): ExamChapter[] {
-  return materials.flatMap(({ name, chapters }) => {
-    const byId = new Map(chapters.map((chapter) => [chapter.id, chapter]));
-    const insideExam = (chapter: StoredChapter): boolean => {
-      const parent = byId.get(chapter.parentId ?? "");
-      return (
-        parent !== undefined && (parent.exam === true || insideExam(parent))
-      );
-    };
-    return chapters
-      .filter((chapter) => chapter.exam === true && !insideExam(chapter))
-      .map((chapter) => ({
-        id: chapter.id,
-        name: examChapterName(name, chapter),
-      }));
-  });
-}
-
-/**
- * The Chapters the static old-exam question asks about: proposed, not
- * asked and not answered yet, in the parsed Materials.
- */
-export function unaskedExams(
-  materials: ReadonlyArray<{
-    name: string;
-    parsed: boolean;
-    chapters: StoredChapter[];
-  }>,
-): ExamChapter[] {
-  return materials.flatMap(({ name, parsed, chapters }) =>
-    parsed
-      ? chapters
-          .filter(
-            (chapter) =>
-              proposedExam(chapter) &&
-              !chapter.examAsked &&
-              chapter.exam === null,
-          )
-          .map((chapter) => ({
-            id: chapter.id,
-            name: examChapterName(name, chapter),
-          }))
-      : [],
-  );
+/** The exams the static old-exam question asks about: unasked and unanswered. */
+export function unaskedExams(exams: readonly BriefExam[]): OldExam[] {
+  return exams
+    .filter((exam) => !exam.asked && exam.confirmed === null)
+    .map(({ id, name }) => ({ id, name }));
 }
 
 const OLD_EXAMS_PART = "data-old-exams";
 
 /**
- * The part of the static old-exam question that lists the Chapters it
- * asks about. The model does not see data parts, and the page shows only
- * text.
+ * The part of the static old-exam question that lists the exams it asks
+ * about. The model does not see data parts, and the page shows only text.
  */
-export function oldExamsPart(chapterIds: string[]) {
-  return { type: OLD_EXAMS_PART, data: { chapterIds } };
+export function oldExamsPart(examIds: string[]) {
+  return { type: OLD_EXAMS_PART, data: { examIds } };
 }
 
 /**
- * The Chapters the Student was asked about: those the static old-exam
- * questions in `messages` listed and, while intake runs, every Chapter of
- * the context, as the AI asks about them itself.
+ * The exams the Student was asked about: those the static old-exam
+ * questions in `messages` listed and, while intake runs, every exam of the
+ * context, as the AI asks about them itself.
  */
-export function askedChapterIds(
+export function askedExamIds(
   messages: ReadonlyArray<{ parts: ReadonlyArray<{ type: string }> }>,
-  intakeChapterIds: readonly string[],
+  intakeExamIds: readonly string[],
 ): string[] {
   const listed = messages.flatMap(({ parts }) =>
     parts.flatMap((part) =>
       part.type === OLD_EXAMS_PART
-        ? ((part as ReturnType<typeof oldExamsPart>).data.chapterIds ?? [])
+        ? ((part as ReturnType<typeof oldExamsPart>).data.examIds ?? [])
         : [],
     ),
   );
-  return [...new Set([...listed, ...intakeChapterIds])];
+  return [...new Set([...listed, ...intakeExamIds])];
 }
 
 /**
- * The static question the Brief posts about Chapters that look like old
- * exams and were not asked about yet, each named "<Material> › <Chapter>".
+ * The static question the Brief posts about the exams the build found and
+ * the Brief did not ask about yet, each by its printed name.
  */
 export function oldExamQuestion(
   exams: ReadonlyArray<{ name: string }>,

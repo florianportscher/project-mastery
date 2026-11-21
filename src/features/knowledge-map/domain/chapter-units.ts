@@ -149,51 +149,6 @@ export function chapterUnits(
   );
 }
 
-/**
- * The units of one Material's chunks with each old exam on its own: the
- * units of the Chapters outside the exams, and the units of each exam (a
- * confirmed Chapter and its subtree, in `examIds`), never packed together.
- * In reading order.
- */
-export function chapterUnitsByExam(
-  chapters: readonly UnitChapter[],
-  chunks: readonly UnitChunk[],
-  examIds: ReadonlySet<string>,
-  cap = UNIT_CHARS,
-): ChapterUnit[] {
-  const root = chapters.find((chapter) => chapter.parentId === null);
-  if (!root || examIds.size === 0) return chapterUnits(chapters, chunks, cap);
-  const parentOf = new Map(chapters.map((c) => [c.id, c.parentId]));
-  const topOf = (id: string): string => {
-    const parent = parentOf.get(id) ?? null;
-    return parent !== null && examIds.has(parent) ? topOf(parent) : id;
-  };
-  const place = (chunk: UnitChunk) =>
-    chunk.chapterId && parentOf.has(chunk.chapterId)
-      ? chunk.chapterId
-      : root.id;
-  const tops = chapters.filter(
-    (c) => examIds.has(c.id) && topOf(c.id) === c.id,
-  );
-  const order = new Map(chunks.map((chunk, index) => [chunk.id, index]));
-  return [
-    ...chapterUnits(
-      chapters.filter((c) => !examIds.has(c.id)),
-      chunks.filter((chunk) => !examIds.has(place(chunk))),
-      cap,
-    ),
-    ...tops.flatMap((top) =>
-      chapterUnits(
-        chapters
-          .filter((c) => examIds.has(c.id) && topOf(c.id) === top.id)
-          .map((c) => (c.id === top.id ? { ...c, parentId: null } : c)),
-        chunks.filter((chunk) => topOf(place(chunk)) === top.id),
-        cap,
-      ),
-    ),
-  ].toSorted((a, b) => order.get(a.chunkIds[0]!)! - order.get(b.chunkIds[0]!)!);
-}
-
 /** Chunks in runs of at most `cap` characters, split between chunks. */
 function slices(chunks: readonly UnitChunk[], cap: number): UnitChunk[][] {
   const runs: UnitChunk[][] = [];
