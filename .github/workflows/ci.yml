@@ -3,7 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
-    # release-please's commits touch only these files.
+    # release-please's commits touch only these files (the release bumps the
+    # version in package.json).
     paths-ignore:
       - CHANGELOG.md
       - .release-please-manifest.json

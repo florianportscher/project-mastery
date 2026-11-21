@@ -74,6 +74,26 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+// A refused action reaches no helper, so no one's rows are read or written.
+function expectNoHelperCalled() {
+  for (const helper of [
+    sessions.closeIdleSession,
+    sessions.endSession,
+    summary.loadSessionSummary,
+    summary.saveRating,
+    problems.flagReadyProblem,
+    examResults.recordExamResult,
+    assembly.queueMockAssembly,
+    grading.startMockGrading,
+    sheet.startMock,
+    sheet.submitMock,
+    sheet.saveMockAnswer,
+    brief.noteInBrief,
+  ]) {
+    expect(helper).not.toHaveBeenCalled();
+  }
+}
+
 describe("saveMemory", () => {
   test("creates the Memory, then replaces it, then clears it", async () => {
     expect(await getMemory(COURSE)).toBe("");
@@ -199,18 +219,14 @@ describe.each([
     expect(await run()).toMatchObject({ ok: false });
     expect(db.tables.topic_choices).toEqual([]);
     expect(revalidatePath).not.toHaveBeenCalled();
-    expect(sheet.startMock).not.toHaveBeenCalled();
-    expect(sessions.endSession).not.toHaveBeenCalled();
-    expect(examResults.recordExamResult).not.toHaveBeenCalled();
+    expectNoHelperCalled();
   });
 
   test("refuses invalid input", async () => {
     expect(await runInvalid()).toMatchObject({ ok: false });
     expect(db.tables.topic_choices).toEqual([]);
     expect(revalidatePath).not.toHaveBeenCalled();
-    expect(sheet.startMock).not.toHaveBeenCalled();
-    expect(sessions.endSession).not.toHaveBeenCalled();
-    expect(examResults.recordExamResult).not.toHaveBeenCalled();
+    expectNoHelperCalled();
   });
 });
 
