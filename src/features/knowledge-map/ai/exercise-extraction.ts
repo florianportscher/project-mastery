@@ -59,7 +59,7 @@ export const exerciseExtractionSchema = (
             }),
           )
           .describe(
-            "Only for a notion or result no listed KC teaches, which another exam task could ask for again. Usually empty.",
+            "Only for a KC, as defined above, that no listed KC covers. Usually empty.",
           ),
         finalAnswers: z
           .array(
