@@ -45,9 +45,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
+      - name: Read the Supabase CLI version from the lockfile
+        id: cli
+        run: echo "version=$(grep -m1 -oP '^  supabase@\K[0-9][^:]*(?=:)' pnpm-lock.yaml)" >> "$GITHUB_OUTPUT"
       - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
         with:
-          version: 3.0.0
+          version: ${{ steps.cli.outputs.version }}
       - name: Apply migrations to production
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}

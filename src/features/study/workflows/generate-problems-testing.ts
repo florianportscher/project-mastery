@@ -22,6 +22,27 @@ const usage = {
   outputTokens: { total: 20, text: 20, reasoning: undefined },
 };
 
+type MathRunnerModule = typeof import("@/features/study/server/math-runner");
+
+/**
+ * The math-runner module with each program run once: every run starts a
+ * process, and the tests draft the same programs again and again.
+ */
+export function memoizeMathRunner(real: MathRunnerModule): MathRunnerModule {
+  const runs = new Map<string, ReturnType<typeof real.mathRunner.run>>();
+  return {
+    ...real,
+    mathRunner: {
+      run: (program, answers) => {
+        const key = JSON.stringify([program, answers]);
+        if (!runs.has(key))
+          runs.set(key, real.mathRunner.run(program, answers));
+        return runs.get(key)!;
+      },
+    },
+  };
+}
+
 /** A `generate` model answering in turn, the last answer from then on. */
 export function useGenerateModel(...answers: Array<object | Error>) {
   let call = 0;

@@ -51,10 +51,6 @@ next-env.d.ts
 /src/app/.well-known/workflow/
 /.swc
 
-# /sweep outputs and Stryker sandboxes
-/.sweep/
-/.stryker-tmp/
-
 # datasets exported from real courses (the repo is public)
 /evals/datasets/private/
 

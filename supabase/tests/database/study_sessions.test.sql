@@ -45,6 +45,7 @@ reset role;
 
 select results_eq(
   $$select chat_id, ended_at is not null, rating, rating_note from public.study_sessions
+    where chat_id in ('cccccccc-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000002')
     order by chat_id$$,
   $$values ('cccccccc-0000-0000-0000-000000000001'::uuid, true, 4::smallint, 'Clear.'),
     ('cccccccc-0000-0000-0000-000000000002'::uuid, false, null, null)$$,

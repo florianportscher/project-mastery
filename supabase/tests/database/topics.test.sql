@@ -58,7 +58,8 @@ select throws_ok(
 savepoint nested;
 delete from public.topics where id = 'dddddddd-0000-0000-0000-000000000000';
 set constraints all immediate;
-select is((select count(*)::int from public.topics), 0, 'a Topic goes with its parent');
+select is((select count(*)::int from public.topics where course_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
+  0, 'a Topic goes with its parent');
 rollback to savepoint nested;
 
 -- Students read their own Topics and write none.
@@ -98,11 +99,13 @@ select results_eq(
       array(select k.name from public.topic_kcs x join public.kcs k on k.id = x.kc_id
         where x.topic_id = t.id order by x.position)
     from public.topics t left join public.topics p on p.id = t.parent_id
+    where t.course_id = 'aaaaaaaa-0000-0000-0000-000000000001'
     order by t.position$$,
   $$values ('Thrust'::text, null::text, 0, array['KC 1', 'KC 2']::text[]),
     ('Nozzles', 'Thrust', 1, array['KC 3'])$$,
   'the new Topic sits inside the continued one, and the others go');
-select is((select id from public.topics where name = 'Thrust'),
+select is((select id from public.topics where name = 'Thrust'
+    and course_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
   'dddddddd-0000-0000-0000-000000000001'::uuid, 'the continued Topic keeps its id');
 
 select * from finish();

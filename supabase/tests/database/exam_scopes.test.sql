@@ -58,7 +58,8 @@ select ok(
   'set_exam_scope replaces it');
 
 select results_eq(
-  $$select scope, words from public.exam_scopes$$,
+  $$select scope, words from public.exam_scopes
+    where course_id = 'aaaaaaaa-c000-0000-0000-000000000001'$$,
   $$values ('emphasized', 'Matrices matter')$$,
   'one row per Topic, with the Student''s words');
 
@@ -75,7 +76,8 @@ select ok(
   'scope null removes the outer Topic''s scope');
 
 select results_eq(
-  $$select topic_id from public.exam_scopes$$,
+  $$select topic_id from public.exam_scopes
+    where course_id = 'aaaaaaaa-c000-0000-0000-000000000001'$$,
   $$values ('aaaaaaaa-7000-0000-0000-000000000001'::uuid)$$,
   'only the Topic''s scope is left');
 
@@ -124,7 +126,8 @@ select results_eq(
 set local request.jwt.claims = '{"sub": "22222222-2222-2222-2222-222222222222", "role": "authenticated"}';
 delete from public.exam_scopes;
 set local request.jwt.claims = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
-select is((select count(*)::int from public.exam_scopes), 1, 'another Student neither reads nor deletes the scopes');
+select is((select count(*)::int from public.exam_scopes
+  where course_id = 'aaaaaaaa-c000-0000-0000-000000000001'), 1, 'another Student neither reads nor deletes the scopes');
 
 reset role;
 

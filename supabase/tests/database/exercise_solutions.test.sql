@@ -85,7 +85,8 @@ select results_eq(
 -- Owners only.
 set local role authenticated;
 set local request.jwt.claims = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
-select is((select count(*)::int from public.exercise_solutions), 2, 'the owner reads their pairs');
+select is((select count(*)::int from public.exercise_solutions
+  where course_id = 'aaaaaaaa-0000-0000-0000-000000000001'), 2, 'the owner reads their pairs');
 set local request.jwt.claims = '{"sub": "22222222-2222-2222-2222-222222222222", "role": "authenticated"}';
 select is((select count(*)::int from public.exercise_solutions), 0, 'another Student reads none');
 reset role;

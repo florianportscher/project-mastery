@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import { describe, expect, test, vi } from "vitest";
+import { silenceLogs } from "@/lib/log-testing";
 
 vi.mock("server-only", () => ({}));
 
@@ -37,6 +38,8 @@ describe("openPdf", () => {
   });
 
   test("a page with only a page number renders blank, a page with a word does not", async () => {
+    // pdf.js warns that this fixture's cross-reference table is rebuilt.
+    silenceLogs("warn", "error");
     const pdf = await openPdf(new Uint8Array(await readFile(BLANK)));
 
     expect((await pdf.renderPage(3)).blank).toBe(true);

@@ -10,7 +10,7 @@ The coordinator runs `tools/build/setup.sh <spec-issue>` once, right after enter
 
 Claude Code's worktree guard reads each Bash command before it runs and refuses one whose program, directory or git target is computed at runtime. Write every command with literal arguments, one command per call, run from the worktree root: `pnpm test:run src/features/chat`. A pipe between literal commands is fine. `eval`, `$(…)`, shell variables, loops, `xargs` and `find -exec` get refused.
 
-Change files with the Write and Edit tools, several Edit calls in one turn for batch edits. They run the lint hook, which fixes formatting and blocks on lint errors on every edit; warnings such as unused variables wait for `pnpm check`. The Bash guard refuses shell writes (`cat >`, `tee`, `sed -i`, Python patch scripts) in worktrees, because they skip the hook.
+Change files with the Write and Edit tools, several Edit calls in one turn for batch edits. They run the lint hook, which fixes formatting and blocks on lint errors on every edit; warnings such as unused variables wait for `pnpm check`. The Bash guard refuses shell writes (`cat >`, `tee`, `sed -i`, Python patch scripts) in worktrees, because they skip the hook. `>`, `>>` and `tee` whose targets are all under `/tmp/` are fine. `pnpm -s agent browser js` is an alias of `eval`.
 
 ## Reading
 

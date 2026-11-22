@@ -323,7 +323,7 @@ Paths are relative to `src/features/`.
 | Priority                                | `priorities/domain/priority.ts`                                                                                      |
 | Session close                           | `study/workflows/close-*.ts`, `study/ai/close-call.ts`, `study/domain/close.ts`                                      |
 | Problems and Mock exams                 | `study/server/find-problems.ts`, `study/domain/exercises.ts`, `study/domain/problem-stock.ts`, `study/workflows/`    |
-| Questions and tool cards in the Chat    | `chat/components/`, `chat/domain/reply-steps.ts`, `chat/domain/checked-today.ts`                                     |
+| Questions and tool cards in the Chat    | `chat/components/`, `chat/domain/reply-steps.ts`, `checkedToday` in `study/domain/tutor-context.ts`                  |
 
 To see it run: `pnpm smoke tutor`, `close`, `generate`, `mock` and `grade-mock` call real models, so read [docs/agents/live-ai.md](../agents/live-ai.md) first, and [docs/agents/notes/tutor-smoke.md](../agents/notes/tutor-smoke.md) for how one run reads. A change to the instructions means running `pnpm smoke tutor`.
 

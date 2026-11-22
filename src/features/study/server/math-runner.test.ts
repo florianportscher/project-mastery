@@ -65,7 +65,7 @@ describe("mathRunner", () => {
 
   // Whether the heap or the time limit stops it first depends on the machine.
   test("fails a program that runs out of memory, and only it", async () => {
-    await expect(run("total = sum(range(1, 1e8))")).resolves.toMatchObject({
+    await expect(run("total = sum(range(1, 3e7))")).resolves.toMatchObject({
       ok: false,
       error: expect.stringMatching(/out of memory|ran longer than 2 s/),
     });

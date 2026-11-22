@@ -1,8 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
-  // Used by `pnpm -s sweep` (tools/sweep). Generated code and e2e specs are
-  // left out, and so are their imports: a dependency only they use is
-  // reported as unused. Test files are entries through knip's Vitest plugin.
+  // Generated code and e2e specs are left out, and so are their imports: a
+  // dependency only they use is reported as unused. Test files are entries
+  // through knip's Vitest plugin.
   "entry": ["tools/*/cli.ts"],
   "ignore": [
     "src/components/ui/**",
@@ -12,11 +12,6 @@
     "e2e/**",
   ],
   "ignoreDependencies": [
-    // Run as binaries from tools/sweep/cli.ts; Stryker's command runner is
-    // part of its core package.
-    "jscpd",
-    "@stryker-mutator/core",
-    "@stryker-mutator/command-runner",
     // Run as a binary by tools/agent (ADR 0015).
     "agent-browser",
     // Resolved through react-pdf's own pin, hoisted on purpose

@@ -1,0 +1,31 @@
+name: Dependabot auto-merge
+
+# Dependabot's minor-and-patch group merges itself once the required checks
+# pass. Majors and the next-react group stay manual (docs/agents/pull-requests.md).
+
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    name: Arm auto-merge
+    if: >-
+      github.actor == 'dependabot[bot]'
+      && contains(github.head_ref, 'minor-and-patch')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+    steps:
+      # The "Protect main" ruleset requires one approving review.
+      # A rejected approval must not block arming.
+      - name: Approve
+        continue-on-error: true
+        run: gh pr review --approve "$PR_URL"
+      - name: Arm auto-merge
+        run: gh pr merge --auto --squash "$PR_URL"
