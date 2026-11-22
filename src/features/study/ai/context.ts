@@ -33,7 +33,6 @@ const kcLine = (kc: ContextKc) =>
 
 const list = (lines: string[]) => lines.map((line) => `- ${line}`).join("\n");
 
-/** The tutor context as one block of text. */
 export function renderTutorContext(context: TutorContext): string {
   const sections = [
     dates(context),

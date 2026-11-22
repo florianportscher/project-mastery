@@ -16,7 +16,6 @@ import {
  */
 const FINAL_STRETCH_DAYS = 7;
 
-/** Whether `now` falls in the final stretch before `examDate`. */
 export function inFinalStretch(examDate: string | null, now: Date): boolean {
   if (examDate === null) return false;
   const days = daysBetween(utcDay(now), examDate);

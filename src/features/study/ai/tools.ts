@@ -236,7 +236,6 @@ export class TutorToolError extends Error {
   override name = "TutorToolError";
 }
 
-/** The tools the AI tutors with in a Chat. */
 export function tutorTools(actions: TutorToolActions) {
   return {
     getTopic: tool({

@@ -64,7 +64,6 @@ const SCOPE = `Scope and format:
 - Reply in the language the Student writes in, in Markdown. When it differs from the Materials' language, give the Materials' term beside yours the first time you use it.
 - Write all mathematics in LaTeX: inline between single dollar signs, like $f'(x) = 2x$, and displayed equations between double dollar signs on their own lines. Never write math as plain text or Unicode symbols, and never use \\( \\) or \\[ \\] delimiters.`;
 
-/** The AI's instructions in a Chat. */
 export const TUTOR_INSTRUCTIONS = [ROLE, EVIDENCE, GROUNDING, SCOPE].join(
   "\n\n",
 );

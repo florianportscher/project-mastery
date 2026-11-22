@@ -28,7 +28,6 @@ export type TutorSession = {
   plannedMinutes: number | null;
 };
 
-/** The Chat's Study session, or null without one. */
 export async function loadTutorSession(
   supabase: Supabase,
   chatId: string,

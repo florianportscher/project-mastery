@@ -151,7 +151,6 @@ export async function loadTutorContext(
   };
 }
 
-/** The Topic notes of `topicIds`, by Topic id. */
 async function loadTopicNotes(
   supabase: Supabase,
   topicIds: string[],
