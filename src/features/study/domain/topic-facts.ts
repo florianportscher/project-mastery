@@ -1,4 +1,3 @@
-/** The most later Topics a Topic's facts name. */
 const MAX_BUILDING_TOPICS = 5;
 
 /**
@@ -8,7 +7,6 @@ const MAX_BUILDING_TOPICS = 5;
 export type TopicFacts = {
   /** Up to 5 later Topics that build on it, by the Course map's arrows. */
   buildingTopics: string[];
-  /** How many old-exam Exercises test any of its KCs. */
   oldExamExercises: number;
   /** For each KC, the KCs of the same Topic it builds on, by name. */
   kcBuildsOn: Record<string, string[]>;

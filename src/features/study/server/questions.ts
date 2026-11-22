@@ -79,7 +79,6 @@ export async function insertQuestion(
     sessionId: string;
     prompt: string;
     kcIds: string[];
-    /** The Exercise it poses, or null. */
     exerciseId: string | null;
     /** The generated Problem it poses, or null; never with an Exercise. */
     problemId: string | null;

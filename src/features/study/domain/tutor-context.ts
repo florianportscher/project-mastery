@@ -27,11 +27,8 @@ import type {
   TutorContext,
 } from "@/features/study/types";
 
-/** The due Reviews the proposal names. */
 const PROPOSED_REVIEWS = 10;
-/** The ranking's first items the proposal names in the final stretch. */
 const FINAL_STRETCH_ITEMS = 10;
-/** The refreshes the context names as practice candidates. */
 const PRACTICE_CANDIDATES = 8;
 /** The longest Brief's notes the context gives, from their end. */
 const MAX_BRIEF_NOTES = 4000;
@@ -59,7 +56,6 @@ export type TutorContextInput = {
   scope: TopicScope[];
   ranked: RankedItem[];
   recall: Map<string, KcRecall>;
-  /** The Course's Attempts, oldest first. */
   attempts: Array<{
     kcId: string;
     sessionId: string;
@@ -81,11 +77,8 @@ export type TutorContextInput = {
     }>;
     readings: ReadingSectionView[];
   };
-  /** Each Topic's Reading sections, by Topic id. */
   readings: Map<string, ReadingSectionView[]>;
-  /** The KCs of each unseen Problem of the Course. */
   unseenProblems: Array<{ kcs: string[] }>;
-  /** Each Topic's facts (`topicFacts`), by Topic id. */
   topicFacts: Map<string, TopicFacts>;
   notes: {
     /** By Topic id. */

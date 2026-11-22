@@ -9,7 +9,6 @@ import { spawn } from "node:child_process";
  * later. The failure rules are in `docs/agents/notes/mathjs-programs.md`.
  */
 
-/** The longest program run. */
 export const MAX_PROGRAM_LENGTH = 4_000;
 
 /** How long a program may run once mathjs has loaded in its worker. */

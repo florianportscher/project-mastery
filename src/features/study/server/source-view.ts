@@ -11,7 +11,6 @@ export const readingLabel = (section: {
 }) =>
   `${section.materialName}, ${pagesLabel(section.pageFrom, section.pageTo)}`;
 
-/** The chunk's Material at the chunk's pages, which the source pane opens. */
 export const chunkLink = (
   courseId: string,
   chunk: { materialId: string; pageFrom: number; pageTo: number },

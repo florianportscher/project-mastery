@@ -5,7 +5,6 @@ import {
   planProblems,
 } from "@/features/study/workflows/stock-steps";
 
-/** How long a run waits before its first model call. */
 const START_DELAY_MS = 5 * 60 * 1000;
 
 /**

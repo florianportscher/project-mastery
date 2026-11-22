@@ -13,12 +13,10 @@ import type { Supabase } from "@/lib/supabase/types";
 export type ReadyProblem = {
   id: string;
   source: "variant" | "new";
-  /** The KCs it tests. */
   kcs: string[];
   difficulty: number;
   statement: string;
   solution: string;
-  /** Whether its numbers come from a program. */
   hasProgram: boolean;
   /** The Exercise a variant varies, while it exists. */
   originalExerciseId: string | null;

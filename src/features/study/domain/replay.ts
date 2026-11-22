@@ -32,7 +32,6 @@ export type ReplayAttempt = {
 };
 
 export type KcRecall = {
-  /** It has a card: it has an Attempt. */
   taught: boolean;
   /** It has at least one `full` Attempt without help. */
   learned: boolean;
@@ -40,7 +39,6 @@ export type KcRecall = {
   recallToday: number;
   /** FSRS recall on the exam day; `recallToday` without an exam ahead. */
   recallOnExamDay: number;
-  /** Its card's due day is today or earlier. */
   due: boolean;
   /** Its card's due day, as YYYY-MM-DD; null untaught. */
   nextReview: string | null;

@@ -27,7 +27,6 @@ import type { Supabase } from "@/lib/supabase/types";
 
 type KnowledgeMap = Awaited<ReturnType<typeof loadStoredMap>>;
 
-/** How long ago a Problem was last asked to be asked again. */
 const ASK_AGAIN_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 

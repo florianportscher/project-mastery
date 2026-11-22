@@ -27,10 +27,8 @@ import type { Supabase } from "@/lib/supabase/types";
  * when that fails.
  */
 
-/** Source chunks a new Problem gets per KC. */
 const SOURCES_PER_KC = 3;
 
-/** Exercises a new Problem gets as style anchors. */
 const STYLE_ANCHORS = 2;
 
 export type GenerateOutcome = "ready" | "failed" | "limited" | "gone";

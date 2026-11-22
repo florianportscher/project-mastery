@@ -1,13 +1,11 @@
 import { z } from "zod";
 import type { ProblemFlag } from "@/features/study/types";
 
-/** The most characters a Course's Memory holds. */
 export const MAX_MEMORY_LENGTH = 4000;
 
 /** The input of End session's Server Action, and of the close card's read. */
 export const endSessionSchema = z.object({ chatId: z.uuid() });
 
-/** The most characters of the note on a session's rating. */
 export const MAX_RATING_NOTE_LENGTH = 300;
 
 export const rateSessionSchema = z.object({
@@ -26,7 +24,6 @@ export const rateSessionSchema = z.object({
 export const sessionEndedMessage =
   "This study session has ended, so it takes no more messages. Start a new session to keep studying.";
 
-/** The most characters of a reason for skipping a Topic. */
 export const MAX_SKIP_REASON_LENGTH = 200;
 
 /**

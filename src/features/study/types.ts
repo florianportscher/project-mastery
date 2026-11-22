@@ -210,7 +210,6 @@ export type StudyState = {
   readiness: CourseReadiness;
   /** The latest graded Mock exam's score, 0 to 100; null without one. */
   lastMockPercent: number | null;
-  /** Whether any KC is taught. */
   taught: boolean;
   pace: Pace;
   /**
@@ -244,7 +243,6 @@ export type AskedProblem = {
 };
 
 export type ProblemView = {
-  /** The Problem's id, which a question on it names. */
   id: string;
   /**
    * An Exercise of an old exam or another one, or a generated variant of an
@@ -254,13 +252,11 @@ export type ProblemView = {
   name: string;
   /** 1 to 3. */
   difficulty: number;
-  /** The question's Markdown. */
   question: string;
   /**
    * The question's Material at its pages; null for a generated Problem.
    */
   link: string | null;
-  /** The KCs it tests, by id and name. */
   kcs: Array<{ id: string; name: string }>;
   solution: {
     /** Where it comes from and how far it is checked. */
@@ -304,7 +300,6 @@ export type SessionSummary = {
     id: string;
     name: string;
     result: AttemptResult;
-    /** The help of that Attempt. */
     help: AttemptHelp;
     /** As YYYY-MM-DD; null without a card. */
     nextReview: string | null;
@@ -358,7 +353,6 @@ export type MockExamView = {
   /** The sum of its items' minutes; null until ready. */
   durationMinutes: number | null;
   itemCount: number;
-  /** The aids the Brief allows. */
   aids: string[];
   /** Whether it is the reserved exam itself. */
   final: boolean;
@@ -368,7 +362,6 @@ export type MockExamView = {
   serverNow: string;
   /** Its tasks in order, once started; empty before. */
   tasks: MockTask[];
-  /** How many tasks grading has finished, of all. */
   grading: { done: number; total: number };
   /** Once graded: the score against the prediction; null before. */
   result: MockResult | null;

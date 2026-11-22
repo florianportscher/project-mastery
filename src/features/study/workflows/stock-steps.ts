@@ -68,7 +68,6 @@ async function loadCourseProblems(
   }));
 }
 
-/** What a run generates: the Student's queued Problems, oldest first. */
 export type RunPlan = { studentId: string; problemIds: string[] };
 
 /**
@@ -192,7 +191,6 @@ export async function planProblems(
   return { studentId: owner, problemIds: queued };
 }
 
-/** The Course's KCs due within the review window at `now`, soonest first. */
 async function dueKcs(
   supabase: Supabase,
   courseId: string,

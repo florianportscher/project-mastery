@@ -40,7 +40,6 @@ type PlannedItem = {
   exerciseId: string | null;
   /** A ready Problem, or the queued one a gap generates. */
   problemId: string | null;
-  /** Whether it waits for its Problem to be generated. */
   gap: boolean;
   topicId: string | null;
   /** The statement; null for a gap until its Problem is written. */

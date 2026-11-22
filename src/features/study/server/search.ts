@@ -5,7 +5,6 @@ import { meteredEmbed } from "@/features/usage/server";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
-/** The most chunks a search gives. */
 const SEARCH_RESULTS = 4;
 
 /** How many more chunks a search reads when it leaves some out. */
