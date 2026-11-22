@@ -18,7 +18,7 @@ Build an issue as written, all of it. When it cannot be built that way (a depend
 
 ## Waiting for a builder
 
-Builders run in the background and notify you when they end. While one runs, keep `sleep 1800` running in the background and start it again when it ends: a builder stopped by the usage limit can fail without a notification, and your next turn is what makes Claude Code wait for the reset. After a reset, send the builder a `SendMessage` to continue from what it committed. A builder that stopped early for another reason (a blocker) gets a `SendMessage` with the most likely way around it.
+Builders run in the background and notify you when they end. For each running builder, start one `sleep 1800` in the background as a safety timer: a builder stopped by the usage limit can fail without a notification, and your next turn is what makes Claude Code wait for the reset. When a timer ends, start no new one unless a builder is still running. After a reset, send the builder a `SendMessage` to continue from what it committed. A builder that stopped early for another reason (a blocker) gets a `SendMessage` with the most likely way around it.
 
 ## A change request
 
@@ -30,12 +30,12 @@ A queued PR waits on its open points: the maintainer's comments, a failed check,
 
 2. **Slices.** For each slice in order, start one `builder`, without `isolation`, so it works in this worktree. Pass `model: "opus"` for a slice marked `opus`. Its prompt holds the issue number, the slice's line from the issue, and the earlier slices' handoffs. Afterwards, check that the worktree is clean and that the slice's commits are on the branch. A slice that fails twice is skipped, with the later slices that depend on it, and noted for the PR.
 
-3. **Draft PR.** After the first slice, push and open a draft PR whose body holds `Closes #<issue>` and the slices as a checklist, and remove the issue's `ready-for-agent` label, which marks what still waits for a build. Push after each later slice, and tick it off.
+3. **Push.** After each slice, push the branch. There is no draft PR and no checklist: the PR opens once, at Ready.
 
 4. **Review.** Start two `reviewer` agents in parallel on `git diff origin/main...HEAD`: the Spec axis with the issue as its brief, and the Standards axis with `AGENTS.md`, `docs/ARCHITECTURE.md` and the ADRs the diff touches.
 
-5. **Finish.** Start one more `builder` with the job `finish`, the issue number, both reports and any skipped slices.
+5. **Finish.** Start one more `builder` with the job `finish`, on the default model (no `model` override), the issue number, both reports and any skipped slices.
 
-6. **Ready.** Push, complete the PR body from the handoffs, mark the PR ready and arm auto-merge (`gh pr merge <pr> --auto --squash`), so the maintainer's approval merges it. Wait for CI with `gh pr checks <pr> --watch` run in the background. A red check goes to a `builder` with its failed log (`gh run view <run> --log-failed`); push its fix and wait again.
+6. **Ready.** Write the PR body to a file: `Closes #<issue>`, the handoffs and the finish builder's `## Checked`. Push, open the PR with `gh pr create --title <title> --body-file <file>`, and remove the issue's `ready-for-agent` label. Then run `tools/build/ready.sh <pr> <file>` in the background: it pushes, sets the body, marks the PR ready, arms auto-merge and watches the checks. A red check goes to a `builder` with its failed log (`gh run view <run> --log-failed`); push its fix and wait again.
 
 7. **Report.** After the last one, one line per issue or PR: its PR link or what blocked it, and what failed or was skipped. The user approves the PRs on GitHub, and `/sitting` shows what stands in their way.
