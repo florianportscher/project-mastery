@@ -12,7 +12,6 @@ export const UNIT_LABELS = [...CHUNK_LABELS, "heading"] as const;
 
 export type UnitLabel = (typeof UNIT_LABELS)[number];
 
-/** How a heading is set on the page. */
 export const HEADING_STYLES = ["title", "large", "bold"] as const;
 
 /** Why a parse stored a page without reading it (`material_pages.skipped`). */

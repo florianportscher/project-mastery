@@ -49,7 +49,6 @@ const FOREIGN_KEY_VIOLATION = "23503";
 /** Postgres error code of a row that is there already. */
 const UNIQUE_VIOLATION = "23505";
 
-/** The most pages one read step reads: four batches. */
 export const PAGES_PER_STEP = 4 * PAGES_PER_BATCH;
 
 export type ParseOutcome = { ok: true } | { ok: false; reason: string };
@@ -216,7 +215,6 @@ export async function preparePages(
 class PageCallFailed extends Error {}
 
 type PageSource = {
-  /** The page's image, or null when it is blank. */
   image(pageNumber: number): Promise<{
     bytes: Uint8Array;
     mediaType: string;
@@ -551,7 +549,6 @@ async function recordProgress(
   if (progress.error) failed("Recording the progress", progress.error);
 }
 
-/** Marks the Material parsed: the last step of a parse. */
 export async function markParsed(materialId: string): Promise<void> {
   "use step";
   const { error } = await createAdminClient()

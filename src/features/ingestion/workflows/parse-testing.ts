@@ -107,7 +107,6 @@ export function createParseDb({
 
 export type ParseDb = ReturnType<typeof createParseDb>;
 
-/** The Student's Course, unless it is there already. */
 export function seedCourse(db: ParseDb, id = COURSE) {
   if (db.tables.courses.some((course) => course.id === id)) return;
   db.tables.courses.push({
@@ -117,7 +116,6 @@ export function seedCourse(db: ParseDb, id = COURSE) {
   });
 }
 
-/** A fixture file from `test-files/`. */
 export const fixture = (name: string) =>
   readFile(path.join(import.meta.dirname, "test-files", name));
 
@@ -234,7 +232,6 @@ export function pageModel(batches: CannedBatch[]) {
   return { model, prompts };
 }
 
-/** The image parts each page call sent, as media types. */
 export function sentImages(prompts: unknown[]) {
   return prompts.map((prompt) =>
     (prompt as Prompt)
@@ -245,7 +242,6 @@ export function sentImages(prompts: unknown[]) {
   );
 }
 
-/** The stored chunks in reading order, with the columns tests compare. */
 export function storedChunks(db: ParseDb) {
   return db.tables.chunks
     .toSorted((a, b) => Number(a.position) - Number(b.position))

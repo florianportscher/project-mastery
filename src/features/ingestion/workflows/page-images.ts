@@ -10,10 +10,8 @@ import { MATERIALS_BUCKET } from "@/lib/supabase/buckets";
 import { failed } from "@/lib/supabase/failed";
 import type { AdminSupabase } from "@/lib/supabase/types";
 
-/** A rendered page's long edge, in pixels. */
 const LONG_EDGE_PX = 2000;
 
-/** JPEG quality of a rendered page, 0 to 100. */
 const JPEG_QUALITY = 85;
 
 /**
@@ -36,7 +34,6 @@ definePDFJSModule(() => import("pdfjs-dist/legacy/build/pdf.mjs"));
 const canvasImport = () => import("@napi-rs/canvas");
 
 export type RenderedPage = {
-  /** JPEG bytes, with the long edge at 2,000 pixels. */
   jpeg: Uint8Array;
   /** Almost all white: nothing for a page call to read. */
   blank: boolean;
@@ -77,7 +74,6 @@ export async function openPdf(bytes: Uint8Array) {
     CanvasFactory,
   });
 
-  /** A 1-based page's text layer, empty when it has none. */
   async function pageText(pageNumber: number): Promise<string> {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
@@ -91,7 +87,6 @@ export async function openPdf(bytes: Uint8Array) {
   return {
     pageCount: pdf.numPages,
     pageText,
-    /** Every page's text layer, in page order. */
     async pageTexts(): Promise<string[]> {
       const texts: string[] = [];
       for (let page = 1; page <= pdf.numPages; page++) {
@@ -99,7 +94,6 @@ export async function openPdf(bytes: Uint8Array) {
       }
       return texts;
     },
-    /** Renders a 1-based page as JPEG, and tells whether it is blank. */
     async renderPage(pageNumber: number): Promise<RenderedPage> {
       const page = await pdf.getPage(pageNumber);
       const { width, height } = page.getViewport({ scale: 1 });

@@ -27,7 +27,6 @@ function pageRange({ pageFrom, pageTo }: ChunkView): string {
 
 type ChunkListProps = {
   material: MaterialChunks;
-  /** Where "Back to materials" leads. */
   backHref: string;
   /** The chunk view of a Material of the same Course, for solution links. */
   materialHref: (materialId: string) => string;

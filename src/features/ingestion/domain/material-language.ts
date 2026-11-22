@@ -1,7 +1,6 @@
 /** A `materials.language` is 2 to 35 characters long. */
 const LANGUAGE_CHARS = { min: 2, max: 35 };
 
-/** The longest `materials.notes` gets. */
 export const MAX_NOTES_CHARS = 1000;
 
 export type PageAnswer = { language: string | null; notes: string | null };

@@ -8,7 +8,6 @@ import {
 } from "@/features/ingestion/types";
 import { aiTask } from "@/lib/ai/models";
 
-/** One unit of a page batch, in reading order. */
 const batchUnitSchema = z.object({
   markdown: z
     .string()

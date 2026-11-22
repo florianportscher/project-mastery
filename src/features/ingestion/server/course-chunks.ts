@@ -119,9 +119,7 @@ export async function loadCourseChunkSpans(
 }
 
 export type ChunkMaterials = {
-  /** Each chunk's Material id by chunk id. */
   chunkMaterials: Record<string, string>;
-  /** The Course's Materials' names by id. */
   materials: Record<string, { name: string }>;
 };
 
