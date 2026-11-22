@@ -257,7 +257,7 @@ export async function queryStagingSql(
  * `prerequisite_links`, `attempts`, `question_kcs`, `problem_kcs` and
  * `kc_priorities`. Materials, `material_pages` and `chunks` (the parse) stay.
  */
-export const MAP_BUILD_TABLES = [
+const MAP_BUILD_TABLES = [
   "topics",
   "exercises",
   "exams",
