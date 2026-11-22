@@ -60,7 +60,6 @@ export function fakeStorage(userId: string | undefined) {
 
   /** Test handle: seed, inspect and break storage. */
   const files = {
-    /** Stores an object without any policy check, for any owner. */
     seed(bucket: string, path: string, { body, contentType }: SeedOptions) {
       // Seeding is synchronous, so convert the common bodies right away.
       const bytes =

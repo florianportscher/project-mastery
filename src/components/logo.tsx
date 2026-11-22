@@ -1,7 +1,6 @@
 import { GraduationCapIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** The product's mark and name, as the sidebar and the sign-in pages show it. */
 export function Logo({ className }: { className?: string }) {
   return (
     <span

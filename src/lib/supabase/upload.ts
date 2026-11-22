@@ -9,7 +9,6 @@ type UploadOptions = {
   file: File;
   /** Called as bytes go out, with the share sent so far, from 0 to 1. */
   onProgress?: (fraction: number) => void;
-  /** Aborting it cancels the upload. */
   signal?: AbortSignal;
 };
 

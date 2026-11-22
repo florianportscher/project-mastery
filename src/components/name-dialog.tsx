@@ -37,7 +37,6 @@ type NameDialogProps = {
   onSave: (value: string) => Promise<ActionResult<unknown>>;
 };
 
-/** Asks for one short text, such as a name, and closes once it is saved. */
 export function NameDialog({ open, onOpenChange, ...form }: NameDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

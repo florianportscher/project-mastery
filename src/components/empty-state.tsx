@@ -13,7 +13,6 @@ type EmptyStateProps = {
   className?: string;
 };
 
-/** What a page or list shows while it has nothing to show yet. */
 export function EmptyState({
   icon,
   title,

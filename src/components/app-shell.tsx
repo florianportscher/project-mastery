@@ -14,17 +14,14 @@ import {
 type AppShellProps = {
   /** Whether the sidebar starts open on a desktop, from its cookie. */
   defaultOpen: boolean;
-  /** Where the logo leads. */
   homeHref: string;
   /** Shown under the logo, such as navigation links. */
   header?: ReactNode;
-  /** The sidebar's scrolling content. */
   content?: ReactNode;
   /** The sidebar's footer, such as the account menu. */
   footer?: ReactNode;
   /** Where the page is, in the top bar beside the sidebar toggle. */
   breadcrumb?: ReactNode;
-  /** The page. */
   children: ReactNode;
 };
 

@@ -11,7 +11,6 @@ import { getTracingEnvironment, isLangfuseConfigured } from "./env";
  */
 export type TracedCall = {
   id: string;
-  /** The trace name, such as `extract-chapter`. */
   name: string;
   model: string | null;
   startTime: string;

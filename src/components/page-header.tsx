@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type PageHeaderProps = {
-  /** The page's level-1 heading. */
   title: ReactNode;
   /** One line under the title on what the page is for. */
   description?: ReactNode;
@@ -13,7 +12,6 @@ type PageHeaderProps = {
   className?: string;
 };
 
-/** The heading block every signed-in page starts with. */
 export function PageHeader({
   title,
   description,

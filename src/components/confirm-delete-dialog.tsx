@@ -30,7 +30,6 @@ type ConfirmDeleteDialogProps = {
   onConfirm: () => Promise<ActionResult<unknown>>;
 };
 
-/** Asks before deleting something for good, and stays open until it is gone. */
 export function ConfirmDeleteDialog({
   open,
   onOpenChange,

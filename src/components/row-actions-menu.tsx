@@ -27,7 +27,6 @@ type RowActionsMenuProps = {
   align?: ComponentProps<typeof DropdownMenuContent>["align"];
 };
 
-/** A row's "…" menu with Rename and Delete. */
 export function RowActionsMenu({
   label,
   onRename,

@@ -20,7 +20,6 @@ export type AdminSupabase = Supabase & { readonly [ADMIN_CLIENT]: true };
  */
 export type SessionSupabase = Supabase & { readonly [ADMIN_CLIENT]?: never };
 
-/** Marks `client` as the admin client. For `createAdminClient` and tests. */
 export function markAdminClient(client: Supabase): AdminSupabase {
   return Object.assign(client, { [ADMIN_CLIENT]: true as const });
 }

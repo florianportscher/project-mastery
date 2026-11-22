@@ -17,7 +17,6 @@ export type Crumb = { href: string; label: ReactNode };
 
 /** A part of the app the current path may be in. */
 export type BreadcrumbSection = {
-  /** The path the section starts at. */
   path: string;
   label: ReactNode;
   /** Matches only `path` itself, not the paths below it. */
