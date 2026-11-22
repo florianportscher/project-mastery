@@ -30,12 +30,14 @@ A queued PR waits on its open points: the maintainer's comments, a failed check,
 
 2. **Slices.** For each slice in order, start one `builder`, without `isolation`, so it works in this worktree. Pass `model: "opus"` for a slice marked `opus`. Its prompt holds the issue number, the slice's line from the issue, and the earlier slices' handoffs. Afterwards, check that the worktree is clean and that the slice's commits are on the branch. A slice that fails twice is skipped, with the later slices that depend on it, and noted for the PR.
 
-3. **Push.** After each slice, push the branch. There is no draft PR and no checklist: the PR opens once, at Ready.
+3. **Push.** After each slice, push the branch. There is no draft PR and no checklist: the PR opens once, at Ready (or as a blocked draft, see step 6).
 
 4. **Review.** Start two `reviewer` agents in parallel on `git diff origin/main...HEAD`: the Spec axis with the issue as its brief, and the Standards axis with `AGENTS.md`, `docs/ARCHITECTURE.md` and the ADRs the diff touches.
 
 5. **Finish.** Start one more `builder` with the job `finish`, on the default model (no `model` override), the issue number, both reports and any skipped slices.
 
-6. **Ready.** Write the PR body to a file: `Closes #<issue>`, the handoffs and the finish builder's `## Checked`. Push, open the PR with `gh pr create --title <title> --body-file <file>`, and remove the issue's `ready-for-agent` label. Then run `tools/build/ready.sh <pr> <file>` in the background: it pushes, sets the body, marks the PR ready, arms auto-merge and watches the checks. A red check goes to a `builder` with its failed log (`gh run view <run> --log-failed`); push its fix and wait again.
+6. **Ready.** Write the PR body to a file: `Closes #<issue>`, the handoffs and the finish builder's `## Checked`. Push, open the PR with `gh pr create --title <title> --body-file <file>`, and remove the issue's `ready-for-agent` label. Then run `tools/build/ready.sh <pr> <file>` in the background: it pushes, sets the body, marks the PR ready, arms auto-merge and watches the checks. A red check goes to a `builder` with its failed log (`gh run view <run> --log-failed`); push its fix and wait again once.
+
+   **Still red.** If any check (`pnpm check`, `db:test`, e2e, smoke, CI) is red after the finish job and that one CI-fix round, the PR does not go to the maintainer as a normal one: open it with `gh pr create --draft`, don't run `tools/build/ready.sh` and don't arm auto-merge, add the label `status: blocked` (`gh pr edit <pr> --add-label "status: blocked"`) and comment on it (`gh pr comment <pr> --body-file <file>`) with the red check's name and the last 30 lines of its output. Remove the issue's `ready-for-agent` label, report the PR as blocked in step 7 and go on to the next issue. `tools/sitting/waiting.sh` lists blocked drafts.
 
 7. **Report.** After the last one, one line per issue or PR: its PR link or what blocked it, and what failed or was skipped. The user approves the PRs on GitHub, and `/sitting` shows what stands in their way.

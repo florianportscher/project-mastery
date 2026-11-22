@@ -9,7 +9,7 @@ The maintainer reviews on GitHub: they read the PR, try it on its Vercel preview
 - **Branch:** `<type>/<issue>-<kebab-description>`, or `<type>/<kebab-description>` without an issue. The type is a Conventional Commits type: `feat`, `fix`, `refactor`, `test`, `chore` or `docs`.
 - **Title:** Conventional Commits, in lower case after the type (`feat: parse materials into chunks`). It becomes the commit on `main`.
 - **Body:** write it with the Write tool into your scratchpad and pass it with `--body-file`, also for `gh pr edit`. Multi-line `--body` strings break on shell quoting.
-- **Opening:** a long run pushes as it goes and opens the PR once, when done, with `tools/build/ready.sh`; there is no draft.
+- **Opening:** a long run pushes as it goes and opens the PR once, when done, with `tools/build/ready.sh`; there is no draft, with one exception: a build whose checks stay red after the finish job and one CI-fix round opens `--draft`, without auto-merge, labelled `status: blocked`, with a comment naming the red check and the last 30 lines of its output. The maintainer decides what happens to it.
 
 ## Body
 
