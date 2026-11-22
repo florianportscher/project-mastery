@@ -72,11 +72,8 @@ export async function recordReplyUsage(
     modelId: string;
     /** What the provider reported, undefined for a stopped or failed call. */
     reported: LanguageModelUsage | undefined;
-    /** The text sent: the instructions and the history. */
     input: string;
-    /** The reply's text. */
     output: string;
-    /** The files sent with the history. */
     files?: SentFile[];
     chatId?: string;
     replyId?: string;

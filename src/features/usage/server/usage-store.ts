@@ -56,9 +56,7 @@ export type AiUsageRecord = {
   costUsd?: number;
   /** True when `usage` or `costUsd` is an estimate, as for an aborted call. */
   estimated?: boolean;
-  /** The Chat the call was made for, if any. */
   chatId?: string;
-  /** The id of the Chat reply the call produced, if any. */
   replyId?: string;
 };
 
