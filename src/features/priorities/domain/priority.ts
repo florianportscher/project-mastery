@@ -10,7 +10,6 @@
  * Pure code; `server/priorities.ts` feeds it the stored map and Brief.
  */
 
-/** A KC as Priority reads it. */
 type PriorityKc = {
   id: string;
   name: string;
@@ -32,7 +31,6 @@ type ExamScope = {
   words: string;
 };
 
-/** What Priority is computed from. */
 export type PriorityInput = {
   kcs: PriorityKc[];
   /** `oldExam`: in an exam the Student confirmed as an old exam. */
@@ -48,7 +46,6 @@ export type PriorityInput = {
 
 type PriorityLevel = "high" | "medium" | "low" | "excluded";
 
-/** A KC's Priority with the map page's level and reasons. */
 export type KcPriority = {
   kcId: string;
   priority: number;
@@ -119,7 +116,6 @@ function levelsOf(values: Array<{ kcId: string; priority: number }>) {
   );
 }
 
-/** Every KC's Priority, level and reasons, in the order of `input.kcs`. */
 export function kcPriorities(input: PriorityInput): KcPriority[] {
   const counts = exerciseCounts(input);
   const maxOldExam = Math.max(0, ...[...counts.values()].map((c) => c.oldExam));
