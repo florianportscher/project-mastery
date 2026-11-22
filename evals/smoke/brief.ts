@@ -42,7 +42,7 @@ export const briefSmoke: SmokeCheck = {
   name: "brief",
   usage:
     "pnpm smoke brief (four scripted messages in a seeded Course's Brief: answers, old exam, exam scope; then the reserved exam)",
-  // One recorded call per reply (6), with slack for retries.
+  // One recorded call per reply (5), with slack for retries.
   maxCalls: 12,
   async run({ supabase, studentId }) {
     const seeded = await seedSmallCourse(supabase, studentId, "Smoke check");
@@ -50,10 +50,16 @@ export const briefSmoke: SmokeCheck = {
 
     // The Brief runs as the Student, with Row Level Security as in the app.
     const client = await signInAsUser(supabase, studentId);
+    const replies: string[] = [];
     for (const text of MESSAGES) {
       console.info(`Student: ${text}`);
-      console.info(`AI: ${await send(client, studentId, courseId, text)}`);
+      const reply = await send(client, studentId, courseId, text);
+      console.info(`AI: ${reply}`);
+      replies.push(reply);
     }
+    // The old exam is stored by the third message, so its reply asks about
+    // the reserved exam.
+    const asked = replies[2]!;
 
     const [brief, excluded, exams, scopes] = await Promise.all([
       supabase
@@ -106,6 +112,7 @@ export const briefSmoke: SmokeCheck = {
       studentId,
       courseId,
       seeded.examId,
+      asked,
     );
     return [
       ...fields,
@@ -168,8 +175,8 @@ async function completeIntake(supabase: AdminSupabase, courseId: string) {
 }
 
 /**
- * With intake done and an old exam in the Course, the AI asks whether to
- * keep it aside for the final Mock exam; the Student keeps it.
+ * The AI asked in the reply that followed the old exam whether to keep it
+ * aside for the final Mock exam (`asked`); the Student keeps it.
  */
 async function answerReservation(
   supabase: AdminSupabase,
@@ -177,11 +184,8 @@ async function answerReservation(
   studentId: string,
   courseId: string,
   examId: string,
+  asked: string,
 ) {
-  const prompt = "What else do you need from me?";
-  console.info(`Student: ${prompt}`);
-  const asked = await send(client, studentId, courseId, prompt);
-  console.info(`AI: ${asked}`);
   const answer = `Keep ${EXAM_TITLE} aside for my final mock exam.`;
   console.info(`Student: ${answer}`);
   console.info(`AI: ${await send(client, studentId, courseId, answer)}`);

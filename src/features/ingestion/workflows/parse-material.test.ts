@@ -17,6 +17,7 @@ import {
   unit,
   useMockModels,
 } from "@/features/ingestion/workflows/parse-testing";
+import { silenceLogs } from "@/lib/log-testing";
 import { markAdminClient } from "@/lib/supabase/admin-brand";
 import type { Supabase } from "@/lib/supabase/types";
 
@@ -34,6 +35,7 @@ const seedMaterial = (mediaType: string, body: Uint8Array) =>
 
 beforeEach(() => {
   db = createParseDb();
+  silenceLogs("error", "warn");
 });
 
 type Prompt = Array<{ role: string; content: Array<{ text?: string }> }>;

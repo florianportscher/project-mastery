@@ -60,7 +60,8 @@ select is(
   (select count(*)::int from public.exercises) + (select count(*)::int from public.exercise_kcs),
   0, 'another Student reads no exercises');
 set local request.jwt.claims = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
-select is((select final_answers from public.exercises),
+select is((select final_answers from public.exercises
+    where course_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
   '[{"label": "Thermal efficiency", "value": "0.508", "anyOrder": false}]'::jsonb,
   'the owner reads their exercises with their final answers');
 select throws_ok(

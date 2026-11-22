@@ -14,7 +14,7 @@ _Avoid_: Subject, class, folder
 
 **Material**:
 A file a Student uploaded to one Course, such as slides, a script, an exercise sheet or an old exam, under a name the Student can change.
-_Avoid_: File, document, upload, attachment
+_Avoid_: File, document, upload (as a noun; "upload" is fine as a verb), attachment
 
 **Outline**:
 A Material's tree of Chapters, found when it is parsed from its headings, the starts of its pages and its PDF outline. Its root Chapter is titled by the Material's name.
@@ -110,7 +110,7 @@ _Avoid_: Dashboard, daily plan, agenda
 
 **AI**:
 The tutoring intelligence a Student studies with: it explains, asks and gives feedback.
-_Avoid_: Tutor, assistant, bot. The code's "tutor context", `TutorTools` and the like name what the AI is given to tutor with, not the AI.
+_Avoid_: Tutor (as the name of the AI; "an AI tutor" is fine in descriptive copy for the product), assistant, bot. The code's "tutor context", `TutorTools` and the like name what the AI is given to tutor with, not the AI.
 
 **Chat**:
 One ongoing conversation between a Student and the AI within one Course, kept until the Student deletes it or its Course. It is where the AI tutors the Student from the Course's Knowledge map: it gets the facts of their study and a proposal of what to do next, teaches freely, and follows the Student when they want something else.

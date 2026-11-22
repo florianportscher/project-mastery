@@ -39,4 +39,24 @@ describe("briefReplySettings", () => {
     );
     expect(instructions).toContain("[Course map](/courses/course-1/map)");
   });
+
+  test("names the batches whose answers are all stored", () => {
+    const { instructions } = briefReplySettings(
+      {
+        ...context,
+        fields: {
+          ...context.fields,
+          examDate: "2027-03-04",
+          goal: "pass",
+          openBook: false,
+          formulaSheet: null,
+          scopeConfirmed: true,
+        },
+      },
+      "/courses/course-1/map",
+    );
+    expect(instructions).toContain(
+      "Batches fully answered, never to ask again: 1 (date and goal), 3 (scope).",
+    );
+  });
 });

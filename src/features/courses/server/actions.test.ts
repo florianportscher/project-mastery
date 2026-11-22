@@ -61,6 +61,8 @@ beforeEach(() => {
   signedIn = STUDENT;
   db = createDb();
   startWorkflow.mockClear();
+  // The Storage failure tests make the code log what it handles.
+  vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 describe("createCourse", () => {

@@ -3,6 +3,12 @@ name: CodeQL
 on:
   push:
     branches: [main]
+    # release-please's commits touch only these files (the release bumps the
+    # version in package.json).
+    paths-ignore:
+      - CHANGELOG.md
+      - .release-please-manifest.json
+      - package.json
   pull_request:
   schedule:
     - cron: "27 4 * * 1"

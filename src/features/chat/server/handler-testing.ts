@@ -1,6 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { beforeEach, vi } from "vitest";
+import { silenceLogs } from "@/lib/log-testing";
 import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
 
 /**
@@ -304,6 +305,8 @@ beforeEach(() => {
   db = createDb();
   startedWorkflows.length = 0;
   vi.stubEnv("AI_DAILY_LIMIT_USD", "");
+  // Naming the Chat fails, and logs it, in each test that mocks no title task.
+  silenceLogs("error");
 });
 
 export function userMessage(text: string, id: string = randomUUID()) {

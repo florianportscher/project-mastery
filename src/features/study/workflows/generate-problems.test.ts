@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
   DRAFT,
+  memoizeMathRunner,
   useGenerateModel,
 } from "@/features/study/workflows/generate-problems-testing";
 import { markAdminClient } from "@/lib/supabase/admin-brand";
@@ -9,6 +10,12 @@ import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
 import type { Supabase } from "@/lib/supabase/types";
 
 vi.mock("server-only", () => ({}));
+// Each run of a program starts a process; the same program runs once per file.
+vi.mock("@/features/study/server/math-runner", async (original) =>
+  memoizeMathRunner(
+    await original<typeof import("@/features/study/server/math-runner")>(),
+  ),
+);
 
 const COURSE = "aaaaaaaa-c000-4000-8000-000000000001";
 const STUDENT = "11111111-1111-1111-1111-111111111111";
@@ -214,8 +221,13 @@ function seedCourse(kcIds: string[], taught: string[] = []) {
   }
 }
 
-/** A confirmed old exam, e1, holding Exercise x1. */
-function confirmedExam() {
+/** A confirmed old exam, e1, holding Exercise x1, kept aside by the Brief. */
+function reservedExam() {
+  db.tables.briefs.push({
+    course_id: COURSE,
+    owner: STUDENT,
+    reserved_exam_id: "e1",
+  });
   db.tables.exams.push({
     id: "e1",
     owner: STUDENT,
@@ -306,12 +318,7 @@ describe("Topic stock", () => {
 
   test("the reserved exam's Exercises are no stock and no variant source", async () => {
     seedCourse(["k1"]);
-    confirmedExam();
-    db.tables.briefs.push({
-      course_id: COURSE,
-      owner: STUDENT,
-      reserved_exam_id: "e1",
-    });
+    reservedExam();
     seedRun("topic");
     useGenerateModel(DRAFT);
 
@@ -325,12 +332,7 @@ describe("Topic stock", () => {
 
   test("once a submitted mock used the reservation, its exam is an ordinary Material", async () => {
     seedCourse(["k1"]);
-    confirmedExam();
-    db.tables.briefs.push({
-      course_id: COURSE,
-      owner: STUDENT,
-      reserved_exam_id: "e1",
-    });
+    reservedExam();
     db.tables.mock_exams.push({
       id: "mock1",
       course_id: COURSE,

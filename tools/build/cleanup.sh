@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# Removes /build worktrees whose PRs are merged, from the main checkout:
+# Removes agent worktrees whose PRs are merged or closed, from the main checkout:
 #
 #   tools/build/cleanup.sh [spec-issue ...]
 #
-# Without an issue it goes through every `.claude/worktrees/build-<issue>`.
-# For each it stops the processes running in the worktree (the dev server from
-# `pnpm -s agent up` and any other process whose working directory is inside
-# it), removes the worktree and deletes its branch. It keeps everything when
-# the PR is not merged or the worktree has uncommitted changes. At the end it
-# prunes the remote branches GitHub deleted and fast-forwards `main` when it is
-# checked out.
+# Without an issue it goes through every worktree under `.claude/worktrees/`;
+# with issues, only `.claude/worktrees/build-<issue>`. For each it stops the
+# processes running in the worktree (the dev server from `pnpm -s agent up` and
+# any other process whose working directory is inside it), removes the worktree
+# and deletes its branch. It lists and keeps a worktree that has
+# uncommitted changes, whose branch has no PR or an open one, and the
+# `chore/279-*` one until #342 is merged. At the end it prunes stale worktree
+# records and the remote branches GitHub deleted, and fast-forwards `main` when
+# it is checked out.
 set -euo pipefail
 
 usage='usage: tools/build/cleanup.sh [spec-issue ...]'
@@ -21,22 +23,34 @@ fi
 
 # Prints why a worktree stays and returns 1, or removes it and returns 0.
 cleanup() {
-  local issue=$1 worktree branch merged changes pid cwd
-  worktree="$main/.claude/worktrees/build-$issue"
+  local worktree=$1 branch state changes pid cwd
+  local name=${worktree#"$main"/}
   [[ -d "$worktree" ]] || {
-    echo "No worktree at ${worktree#"$main"/}." >&2
+    echo "No worktree at $name." >&2
     return 1
   }
 
   branch=$(git -C "$worktree" branch --show-current)
-  merged=$(gh pr list --head "$branch" --state merged --json number --jq '.[0].number // empty')
-  if [[ -z "$merged" ]]; then
-    echo "Kept: no merged PR for $branch yet." >&2
+  # TODO(#342): drop this once #342 is merged.
+  if [[ "$branch" == chore/279-* ]]; then
+    echo "Kept: $name ($branch) waits for #342." >&2
     return 1
   fi
+
+  state=$(gh pr list --head "$branch" --state all --json number,state --jq '.[0] | select(.) | "\(.state) #\(.number)"')
+  case "$state" in
+    "")
+      echo "Kept: no PR for $branch." >&2
+      return 1
+      ;;
+    OPEN*)
+      echo "Kept: the PR of $branch is still open (${state#OPEN })." >&2
+      return 1
+      ;;
+  esac
   changes=$(git -C "$worktree" status --porcelain)
   if [[ -n "$changes" ]]; then
-    echo "Kept: ${worktree#"$main"/} has uncommitted changes:" >&2
+    echo "Kept: $name has uncommitted changes:" >&2
     echo "$changes" >&2
     return 1
   fi
@@ -56,7 +70,7 @@ cleanup() {
   git worktree remove --force "$worktree" || return 1
   # -D: a squash merge leaves the branch unmerged in git's eyes.
   git branch -D --quiet "$branch" || return 1
-  echo "Removed ${worktree#"$main"/} and $branch (PR #$merged)."
+  echo "Removed $name and $branch (PR ${state#* })."
 }
 
 status=0
@@ -69,17 +83,16 @@ if [[ $# -gt 0 ]]; then
   done
   # A named issue that stays is an error; in a sweep over all it is the rule.
   for issue in "$@"; do
-    cleanup "$issue" || status=1
+    cleanup "$main/.claude/worktrees/build-$issue" || status=1
   done
 else
-  for worktree in "$main"/.claude/worktrees/build-*/; do
-    issue=$(basename "$worktree")
-    issue=${issue#build-}
-    [[ "$issue" =~ ^[0-9]+$ ]] || continue
-    cleanup "$issue" || true
+  for worktree in "$main"/.claude/worktrees/*/; do
+    [[ -d "$worktree" ]] || continue
+    cleanup "${worktree%/}" || true
   done
 fi
 
+git worktree prune
 git fetch --prune --quiet
 if [[ "$(git branch --show-current)" == main ]]; then
   git pull --ff-only --quiet && echo "main is at $(git log -1 --format='%h %s')."

@@ -21,9 +21,16 @@ root=$(checkout_root "$(jq -r '.cwd // empty' <<<"$input")") ||
   root=$(checkout_root "$CLAUDE_PROJECT_DIR") || exit 0
 cd "$root" || exit 0
 
-# Each checkout records the commit it last saw green.
+# Each checkout records the commit it last saw green, and a hash of the status
+# and diff it last saw green.
 stamp=$(git rev-parse --path-format=absolute --git-path claude-checked-head)
+state_stamp=$(git rev-parse --path-format=absolute --git-path claude-checked-state)
 dirty=$(git status --porcelain)
+state=$({
+  git status --porcelain=v1 -uall
+  git diff HEAD
+} 2>/dev/null | git hash-object --stdin)
+[[ "$state" == "$(cat "$state_stamp" 2>/dev/null)" ]] && exit 0
 
 if [[ $(jq -r '.hook_event_name' <<<"$input") == SubagentStop ]]; then
   # Subagents in the main checkout are covered by the main session's Stop.
@@ -48,5 +55,6 @@ fi
 out=$(pnpm check 2>&1) ||
   block "pnpm check failed in $root. Fix the errors below before finishing:
 $(tail -n 80 <<<"$out")"
+echo "$state" >"$state_stamp"
 [[ -z "$dirty" ]] && git rev-parse HEAD >"$stamp"
 exit 0

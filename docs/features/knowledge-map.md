@@ -346,16 +346,16 @@ The map is the tutoring's only source of what there is to learn. The tutoring re
 
 ## Where the code is
 
-| To change                            | Look in                                                                                                                                                                                               |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| What a model is asked                | `ai/*.ts`, `ingestion/ai/*.ts`                                                                                                                                                                        |
-| How an answer is checked             | `domain/chapter-extraction.ts`, `domain/exercise-extraction.ts`, `ingestion/domain/outline.ts`, `domain/exercise-groups.ts`                                                                           |
-| Order and bounds of the steps        | `workflows/build-knowledge-map.ts`, `workflows/*-steps.ts`, `ingestion/workflows/parse-material.ts`                                                                                                   |
-| Limits                               | `UNIT_CHARS`, `UNITS_PER_STEP`, `CALL_TIMEOUT_MS`, `MIN_UNIT_COVERAGE`, `CANDIDATE_KCS`, `NAMES_PER_CALL`, `PAGES_PER_BATCH`, `MAX_GROUPING_CHUNKS`, `MAX_CHUNK_CHARS`, each in the file that uses it |
-| Thresholds for alike and revived KCs | `SAME_KC_SIMILARITY`, `REVIVE_SIMILARITY` in `domain/kc-clusters.ts`                                                                                                                                  |
-| Tree rules                           | `domain/topic-tree.ts`                                                                                                                                                                                |
-| Anchors and Reading sections         | `domain/topic-reading.ts`                                                                                                                                                                             |
-| What is written in one transaction   | The `store_*`, `arrange_*` and `replace_*` functions in `supabase/migrations/`, newest definition                                                                                                     |
+| To change                            | Look in                                                                                                                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| What a model is asked                | `ai/*.ts`, `ingestion/ai/*.ts`                                                                                                                                                       |
+| How an answer is checked             | `domain/chapter-extraction.ts`, `domain/exercise-extraction.ts`, `ingestion/domain/outline.ts`, `domain/exercise-groups.ts`                                                          |
+| Order and bounds of the steps        | `workflows/build-knowledge-map.ts`, `workflows/*-steps.ts`, `ingestion/workflows/parse-material.ts`                                                                                  |
+| Limits                               | `UNIT_CHARS`, `UNITS_PER_STEP`, `CALL_TIMEOUT_MS`, `MIN_UNIT_COVERAGE`, `NAMES_PER_CALL`, `PAGES_PER_BATCH`, `MAX_GROUPING_CHUNKS`, `MAX_CHUNK_CHARS`, each in the file that uses it |
+| Thresholds for alike and revived KCs | `SAME_KC_SIMILARITY`, `REVIVE_SIMILARITY` in `domain/kc-clusters.ts`                                                                                                                 |
+| Tree rules                           | `domain/topic-tree.ts`                                                                                                                                                               |
+| Anchors and Reading sections         | `domain/topic-reading.ts`                                                                                                                                                            |
+| What is written in one transaction   | The `store_*`, `arrange_*` and `replace_*` functions in `supabase/migrations/`, newest definition                                                                                    |
 
 To see it run: `pnpm smoke parse`, `pnpm smoke pair` (the grouping check) and `pnpm smoke map` call real models, so read [docs/agents/live-ai.md](../agents/live-ai.md) first. `pnpm gold` loads the [gold course](../../evals/gold/README.md)'s stored output instead of running the pipeline.
 
