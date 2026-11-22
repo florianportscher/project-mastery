@@ -5,7 +5,6 @@ import { SidebarLink } from "@/components/sidebar-link";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { materialsPath } from "@/features/courses/domain/course-paths";
 
-/** The sidebar's link to the Course's Materials page. */
 export function MaterialsLink({ courseId }: { courseId: string }) {
   return (
     <SidebarMenu>
