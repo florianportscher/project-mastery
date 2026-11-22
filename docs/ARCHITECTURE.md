@@ -202,6 +202,17 @@ Each technical decision is an ADR in [adr/](adr/), with its context, the choice 
 - [0032](adr/0032-exercises-as-whole-tasks-and-exams-as-records.md): Exercises as whole tasks and old exams as records: a grouping call in the build replaces pairing, `exams` replace the Chapter exam flags; supersedes the exam parts of 0023
 - [0033](adr/0033-topics-from-kcs-and-parse-without-outline.md): Topics from KCs, parse without Outline: the tree call groups KCs by subject, chunks carry their heading, teaching batches per Material replace Chapter units; supersedes the Outline, Chapter units and Topics-from-Chapters parts of 0023
 
+## Comments
+
+A comment in `src/` holds a why the code cannot show: an external constraint, an invariant, a non-obvious order. Out are:
+
+- what-comments that restate the code: use a better name, or a test title;
+- comments that defend a shortcut: fix the code instead;
+- commented-out code: git keeps history;
+- divider lines (`// -----`).
+
+Lint fails on commented-out code and divider lines (`project/no-dead-comments`); the reviewer flags the rest. `src/components/ui` and `ai-elements` are vendored and exempt.
+
 ## Open questions
 
 - Models for ingestion, the Chat and embeddings, chosen by testing on real course materials.

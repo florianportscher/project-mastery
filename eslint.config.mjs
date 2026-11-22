@@ -3,6 +3,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier/flat";
 import { architecture } from "./eslint/architecture.mjs";
+import project from "./eslint/plugin/index.mjs";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -54,6 +55,13 @@ const eslintConfig = defineConfig([
         { max: 500, skipBlankLines: true, skipComments: true },
       ],
     },
+  },
+  // Comments hold only a why (docs/ARCHITECTURE.md#comments).
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/components/ui/**", "src/components/ai-elements/**"],
+    plugins: { project },
+    rules: { "project/no-dead-comments": "error" },
   },
   // Folder structure and layer boundaries (docs/ARCHITECTURE.md).
   ...architecture,
