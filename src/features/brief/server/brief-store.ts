@@ -168,7 +168,6 @@ export async function saveMessage(
 
 type BriefUpdate = Database["public"]["Tables"]["briefs"]["Update"];
 
-/** The Course's Brief fields, or null when it has no Brief yet. */
 export async function loadFields(
   supabase: Supabase,
   courseId: string,
@@ -318,7 +317,6 @@ async function loadExcludedIds(supabase: Supabase, courseId: string) {
   return new Set(data.map((row) => row.material_id));
 }
 
-/** The fixed fields `saveBrief` can change, by column. */
 export type BriefFieldsUpdate = Pick<
   BriefUpdate,
   | "exam_date"

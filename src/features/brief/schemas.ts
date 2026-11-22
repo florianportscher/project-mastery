@@ -12,7 +12,6 @@ export const briefMessageMetadataSchema = z
   .object({ modelId: z.string().optional() })
   .optional();
 
-/** A Student's message: text only, no attachments. */
 const studentMessageSchema = z.object({
   id: z.uuid(),
   role: z.literal("user"),

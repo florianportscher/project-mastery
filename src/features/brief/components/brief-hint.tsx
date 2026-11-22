@@ -2,7 +2,6 @@ import { ChevronRightIcon, MessageSquareTextIcon } from "lucide-react";
 import Link from "next/link";
 import { briefPath } from "@/features/brief/domain/brief-paths";
 
-/** Invites the Student to the Brief while they have not finished it. */
 export function BriefHint({ courseId }: { courseId: string }) {
   return (
     <div className="mx-auto w-full max-w-4xl px-4 pt-6 sm:px-6">

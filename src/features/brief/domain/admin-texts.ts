@@ -4,7 +4,6 @@ import type { AdminText } from "@/features/brief/domain/intake";
 const MAX_ADMIN_TOKENS = 4_000;
 const CHARACTERS_PER_TOKEN = 4;
 
-/** An admin chunk of the Course, in Course order. */
 export type AdminChunk = {
   materialName: string;
   pageFrom: number;

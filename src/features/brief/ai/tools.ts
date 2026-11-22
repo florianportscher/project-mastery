@@ -118,7 +118,6 @@ async function run(action: () => Promise<string>): Promise<string> {
   }
 }
 
-/** The tools the AI stores the Student's answers with during a Brief. */
 export function briefTools(actions: BriefToolActions) {
   return {
     saveBrief: tool({

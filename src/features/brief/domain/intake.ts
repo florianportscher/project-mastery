@@ -16,14 +16,12 @@ export type BriefFields = {
 /** The longest a Brief's notes may grow, in characters (the column's check). */
 export const MAX_BRIEF_NOTES_LENGTH = 20_000;
 
-/** A Course's Material as the AI sees it in the Brief. */
 export type BriefMaterial = {
   id: string;
   name: string;
   excluded: boolean;
 };
 
-/** An exam the build found in the Materials, as the Brief sees it. */
 export type BriefExam = {
   id: string;
   /** As printed, such as "Klausur WS 2023/24". */
@@ -37,7 +35,6 @@ export type BriefExam = {
 /** An old exam of the Course: an exam the Student confirmed. */
 export type OldExam = { id: string; name: string };
 
-/** The Student's answer to the reservation question. */
 export type ReservedExam = {
   /** Whether the Student answered, with an exam or with none. */
   answered: boolean;
@@ -64,7 +61,6 @@ export type BriefExamScope = {
   words: string;
 };
 
-/** A Topic of the Course's Topic tree, as the AI sees it. */
 export type BriefTopic = {
   id: string;
   name: string;
@@ -79,7 +75,6 @@ export type AdminText = {
   source: string;
 };
 
-/** Everything the AI is told about a Brief before it replies. */
 export type BriefContext = {
   fields: BriefFields;
   notes: string | null;
