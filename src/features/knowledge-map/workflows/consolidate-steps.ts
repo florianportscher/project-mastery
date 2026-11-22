@@ -149,7 +149,7 @@ async function embedMissing(
       });
       for (const part of batch) {
         const { error } = await supabase
-          .from("chapter_extractions")
+          .from("unit_extractions")
           .update({ output: part.extraction })
           .eq("id", part.extractionId);
         if (error) failed("Storing the KC vectors", error);
@@ -209,7 +209,7 @@ async function reviveRetired(
   return revived;
 }
 
-/** A KC row of `store_chapter_kcs`. */
+/** A KC row of `store_unit_kcs`. */
 type StoredKcRow = {
   id: string;
   new: boolean;
@@ -222,7 +222,7 @@ type StoredKcRow = {
 
 /**
  * Stores the batch's KCs, the sources of the KCs its units teach again and
- * the Prerequisites with `store_chapter_kcs`: each unit's KC ids, by index
+ * the Prerequisites with `store_unit_kcs`: each unit's KC ids, by index
  * into its `kcs`, or null when the build no longer runs.
  */
 async function storeKcs(
@@ -292,7 +292,7 @@ async function storeKcs(
   const kcIds = batch.map(({ extraction }, part) =>
     extraction.kcs.map((_, k) => idOf(part, k)),
   );
-  const { data, error } = await supabase.rpc("store_chapter_kcs", {
+  const { data, error } = await supabase.rpc("store_unit_kcs", {
     p_course_id: courseId,
     p_kcs: [...rows.values()],
     p_prerequisites: acyclicLinks(
@@ -342,7 +342,7 @@ async function storeOutside(
 }
 
 /**
- * The Exercises of an exercise unit's extraction as `store_chapter_kcs`
+ * The Exercises of an exercise unit's extraction as `store_unit_kcs`
  * takes them: its new KCs by their stored ids, and its difficulty.
  */
 function storedExercises(

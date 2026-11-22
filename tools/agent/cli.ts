@@ -74,7 +74,7 @@ Staging (real data; reads, and REST writes for testing; from .env.local, ADR 002
                          e.g. staging-write "PATCH materials?id=eq.7" '{"title":"x"}'
   staging-sql "<query>"  one read-only SQL statement; at most 200 rows printed
                          e.g. staging-sql "select count(*) from materials"
-  inspect <courseId> [materials|outline|units|kcs|exercises|topics|build|calls]
+  inspect <courseId> [materials|chunks|units|kcs|exercises|topics|build|calls]
                          a Course's stored map build and its model calls as text, suspect
                          spots first; the first stop when diagnosing a map
   inspect <courseId> call <callId>

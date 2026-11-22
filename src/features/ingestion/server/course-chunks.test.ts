@@ -25,20 +25,6 @@ const material = (
   position,
 });
 
-const chapter = (
-  id: string,
-  parentId: string | null,
-  depth: number,
-  title: string,
-): FakeRow => ({
-  id,
-  course_id: COURSE,
-  material_id: "a",
-  parent_id: parentId,
-  depth,
-  title,
-});
-
 /** `count` chunks of `materialId`, stored in reverse reading order. */
 const chunksOf = (materialId: string, count: number): FakeRow[] =>
   Array.from({ length: count }, (_, i) => ({
@@ -49,23 +35,19 @@ const chunksOf = (materialId: string, count: number): FakeRow[] =>
     page_to: 1,
     label: "content",
     markdown: `text ${i}`,
-    chapter_id: null,
+    heading: null,
   })).reverse();
 
 /**
  * The fake with PostgREST's limits: at most 1,000 rows per response. Records
  * the length of every `in` list, which must stay short for the query string.
  */
-function withRowLimit(tables: {
-  materials: FakeRow[];
-  chunks: FakeRow[];
-  chapters: FakeRow[];
-}) {
+function withRowLimit(tables: { materials: FakeRow[]; chunks: FakeRow[] }) {
   const db = fakeSupabase({ tables });
   const inLengths: number[] = [];
   const client = {
     ...db,
-    from(table: "materials" | "chunks" | "chapters") {
+    from(table: "materials" | "chunks") {
       const builder = db.from(table);
       const { in: filterIn, then } = builder;
       builder.in = (column, values) => {
@@ -89,7 +71,7 @@ function withRowLimit(tables: {
   return { client, inLengths };
 }
 
-let tables: { materials: FakeRow[]; chunks: FakeRow[]; chapters: FakeRow[] };
+let tables: { materials: FakeRow[]; chunks: FakeRow[] };
 beforeEach(() => {
   tables = {
     materials: [
@@ -103,13 +85,6 @@ beforeEach(() => {
       ...chunksOf("a", 1500),
       ...chunksOf("unparsed", 3),
       ...chunksOf("other", 3),
-    ],
-    // Material a: 4 Vector Spaces, and Klausur 2023 with a problem inside.
-    chapters: [
-      chapter("root-a", null, 0, "Material a"),
-      chapter("c4", "root-a", 1, "4 Vector Spaces"),
-      chapter("exam", "root-a", 1, "Klausur 2023"),
-      chapter("problem", "exam", 2, "Aufgabe 1"),
     ],
   };
 });
@@ -146,12 +121,8 @@ describe("loadChunkSources", () => {
   ];
 
   test("read more than 100 ids whole, skipping missing ones", async () => {
-    const chapterOf = (id: string, chapterId: string) => {
-      tables.chunks.find((chunk) => chunk.id === id)!.chapter_id = chapterId;
-    };
-    chapterOf("a-0000", "c4");
-    chapterOf("a-0001", "root-a");
-    chapterOf("a-0002", "problem");
+    tables.chunks.find((chunk) => chunk.id === "a-0000")!.heading =
+      "4 Vector Spaces";
     const { client, inLengths } = withRowLimit(tables);
 
     const sources = await loadChunkSources(client as unknown as Supabase, ids);
@@ -167,14 +138,9 @@ describe("loadChunkSources", () => {
     expect(sources[0]).toMatchObject({
       materialName: "Material a",
       pageTo: 1,
-      chapterTitle: "4 Vector Spaces",
+      heading: "4 Vector Spaces",
     });
-    // A Material's root Chapter is no Chapter title.
-    expect(sources[1]!.chapterTitle).toBeNull();
-    expect(sources[2]!.chapterTitle).toBe("Aufgabe 1");
-    expect(sources.slice(3).map((source) => source.chapterTitle)).toEqual(
-      sources.slice(3).map(() => null),
-    );
+    expect(sources[1]!.heading).toBeNull();
     expect(Math.max(...inLengths)).toBeLessThanOrEqual(100);
   });
 

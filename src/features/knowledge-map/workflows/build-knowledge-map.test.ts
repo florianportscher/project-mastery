@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { nothingToMapReason } from "@/features/knowledge-map/domain/build-failure";
-import { UNIT_CHARS } from "@/features/knowledge-map/domain/chapter-units";
+import { UNIT_CHARS } from "@/features/knowledge-map/domain/teaching-batches";
 import { silenceLogs } from "@/lib/log-testing";
 import { markAdminClient } from "@/lib/supabase/admin-brand";
 import type { Supabase } from "@/lib/supabase/types";
@@ -16,13 +16,12 @@ import {
   queueBuild,
   seedMaterial,
   STUDENT,
-  unitTitle,
   useBuildModels,
 } from "./build-testing";
 
 /**
  * Update map in-process on the admin client's tables, with mock `map` and
- * `embed` models: KCs from units of Chapters, consolidated, in Course
+ * `embed` models: KCs from batches of Materials, consolidated, in Course
  * order, resumed where a build stopped.
  */
 
@@ -71,19 +70,19 @@ beforeEach(() => {
 });
 
 describe("Update map", () => {
-  test("extracts each Material under the cap as one unit, with its Outline, and puts the KCs in Course order", async () => {
+  test("extracts each Material under the cap as one batch, with its chunks' headings, and puts the KCs in Course order", async () => {
     // Uploaded second, but first in Course order.
     seedMaterial(db, {
       position: 1,
       language: "German",
-      chapters: [{ title: "Sums" }, { title: "Sheet 1", exercise: true }],
+      sections: [{ title: "Sums" }, { title: "Sheet 1", exercise: true }],
     });
     seedMaterial(db, {
       position: 0,
       language: "German",
-      chapters: [{ title: "Vectors", children: [{ title: "Bases" }] }],
+      sections: [{ title: "Vectors", children: [{ title: "Bases" }] }],
     });
-    seedMaterial(db, { position: 2, language: "English", chapters: [] });
+    seedMaterial(db, { position: 2, language: "English", sections: [] });
     const { extractions, reasoning } = useBuildModels({
       kcsOf: (unit) => unit.chunks.map((chunk) => chunk.markdown),
       chunkIdOf: (kc, unit) =>
@@ -97,16 +96,15 @@ describe("Update map", () => {
     expect(extractions).toEqual([
       {
         material: "Material 0",
-        outline: ["Material 0  <- this unit", "  Vectors", "    Bases"],
         language: "German",
         chunks: [
-          { id: "c1", markdown: "About Vectors." },
-          { id: "c2", markdown: "About Bases." },
+          { id: "c1", heading: "Vectors", markdown: "About Vectors." },
+          { id: "c2", heading: "Bases", markdown: "About Bases." },
         ],
         knownKcs: [],
       },
       expect.objectContaining({
-        chunks: [{ id: "c1", markdown: "About Sums." }],
+        chunks: [{ id: "c1", heading: "Sums", markdown: "About Sums." }],
       }),
     ]);
     expect(reasoning.every((setting) => setting === "medium")).toBe(true);
@@ -118,17 +116,11 @@ describe("Update map", () => {
     expect(db.tables.kc_sources).toHaveLength(3);
   });
 
-  test("splits a Chapter over the cap into its children, its own chunks joining the first child's unit", async () => {
-    seedMaterial(db, {
-      chapters: [
-        {
-          title: "Vector spaces",
-          chunks: ["Opening."],
-          children: [
-            { title: "Subspaces", chunks: [halfAUnit] },
-            { title: "Bases", chunks: [`${halfAUnit}.`] },
-          ],
-        },
+  test("cuts a Material over the cap into batches, keyed by Material, kind and batch", async () => {
+    const id = seedMaterial(db, {
+      sections: [
+        { title: "Vector spaces", chunks: ["Opening.", halfAUnit] },
+        { title: "Bases", chunks: [`${halfAUnit}.`] },
       ],
     });
     const { extractions } = useBuildModels({
@@ -138,19 +130,16 @@ describe("Update map", () => {
 
     await update();
 
-    // "Opening." goes with the unit of Subspaces, the first child.
     expect(extractions.map((unit) => unit.chunks.length)).toEqual([2, 1]);
-    expect(extractions[0]!.outline).toEqual([
-      "Material 0",
-      "  Vector spaces  <- this unit",
-      "    Subspaces  <- this unit",
-      "    Bases",
-    ]);
     expect(
-      db.tables.chapter_extractions.map((row) => [row.kind, row.unit]),
+      db.tables.unit_extractions.map((row) => [
+        row.material_id,
+        row.kind,
+        row.batch,
+      ]),
     ).toEqual([
-      ["content", 0],
-      ["content", 0],
+      [id, "content", 0],
+      [id, "content", 1],
     ]);
   });
 
@@ -161,7 +150,7 @@ describe("Update map", () => {
       afterCall?: (n: number) => void,
     ) => {
       seedMaterial(db, {
-        chapters: [{ title: "Vectors", chunks: ["Short.", halfAUnit] }],
+        sections: [{ title: "Vectors", chunks: ["Short.", halfAUnit] }],
       });
       return useBuildModels({
         kcsOf: () => (answers.length > 1 ? answers.shift()! : answers[0]!),
@@ -186,7 +175,7 @@ describe("Update map", () => {
       expect(liveKcs(db)).toEqual(["Short"]);
       expect(build()?.check_report).toMatchObject({
         unitsBelowCoverage: [
-          { chapter: "Material 0", coverage: expect.any(Number) },
+          { unit: "Material 0 p. 1–2", coverage: expect.any(Number) },
         ],
       });
     });
@@ -200,13 +189,13 @@ describe("Update map", () => {
       await update();
       // The limit stops the build once the first answer is stored.
       expect(extractions).toHaveLength(1);
-      expect(db.tables.chapter_extractions).toHaveLength(1);
+      expect(db.tables.unit_extractions).toHaveLength(1);
       expect(build()?.failure_reason).toBe("Daily limit reached");
     });
   });
 
   test("drops a KC that cites a chunk it was not offered, and builds the rest", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }] });
+    seedMaterial(db, { sections: [{ title: "Vectors" }] });
     useBuildModels({
       kcsOf: () => ["Vectors", "Ghost"],
       chunkIdOf: (kc, unit) => (kc === "Ghost" ? "c99" : unit.chunks[0]!.id),
@@ -219,8 +208,8 @@ describe("Update map", () => {
   });
 
   test("offers each unit's call the KCs the units before it stored, in Course order", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }, { title: "Bases" }] });
-    seedMaterial(db, { chapters: [{ title: "Sums" }] });
+    seedMaterial(db, { sections: [{ title: "Vectors" }, { title: "Bases" }] });
+    seedMaterial(db, { sections: [{ title: "Sums" }] });
     const { extractions } = useBuildModels(kcPerChunk);
 
     await update();
@@ -230,13 +219,13 @@ describe("Update map", () => {
       [
         {
           id: "k1",
-          chapter: "Vectors",
+          heading: "Vectors",
           name: "About Vectors.",
           description: "About About Vectors..",
         },
         {
           id: "k2",
-          chapter: "Bases",
+          heading: "Bases",
           name: "About Bases.",
           description: "About About Bases..",
         },
@@ -245,12 +234,12 @@ describe("Update map", () => {
   });
 
   test("adds a repeat's chunks to the known KC's sources and stores no KC for it", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }] });
+    seedMaterial(db, { sections: [{ title: "Vectors" }] });
     useBuildModels({ kcsOf: () => ["Vector"] });
     await update();
     const [first] = db.tables.kcs;
 
-    seedMaterial(db, { chapters: [{ title: "More vectors" }] });
+    seedMaterial(db, { sections: [{ title: "More vectors" }] });
     useBuildModels({ kcsOf: () => [], repeatsOf: () => ["Vector"] });
     await update();
 
@@ -262,8 +251,8 @@ describe("Update map", () => {
   });
 
   test("makes no call for units it extracted before", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }] });
-    seedMaterial(db, { chapters: [{ title: "Sums" }] });
+    seedMaterial(db, { sections: [{ title: "Vectors" }] });
+    seedMaterial(db, { sections: [{ title: "Sums" }] });
     useBuildModels();
     await update();
 
@@ -276,11 +265,11 @@ describe("Update map", () => {
   });
 
   test("links Prerequisites by id across units and within one, drops an unknown id, and keeps what is outside as text, once", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }] });
-    seedMaterial(db, { chapters: [{ title: "Bases" }] });
+    seedMaterial(db, { sections: [{ title: "Vectors" }] });
+    seedMaterial(db, { sections: [{ title: "Bases" }] });
     const { checks } = useBuildModels({
       kcsOf: (unit) =>
-        unitTitle(unit) === "Material 0" ? ["Vectors"] : ["Spans", "Bases"],
+        unit.material === "Material 0" ? ["Vectors"] : ["Spans", "Bases"],
       prerequisitesOf: (kc) =>
         kc === "Bases" ? ["Vectors", "Spans", "Ghost"] : [],
       assumesOf: (kc) => (kc === "Bases" ? ["Fields", " fields"] : []),
@@ -303,7 +292,7 @@ describe("Update map", () => {
     const titleKc = (unit: { chunks: Array<{ markdown: string }> }) => [
       unit.chunks[0]!.markdown.slice("About ".length, -1),
     ];
-    seedMaterial(db, { position: 1, chapters: [{ title: "Bases" }] });
+    seedMaterial(db, { position: 1, sections: [{ title: "Bases" }] });
     useBuildModels({
       kcsOf: titleKc,
       assumesOf: (kc) => (kc === "Bases" ? ["Vectors", "Limits"] : []),
@@ -312,7 +301,7 @@ describe("Update map", () => {
     expect(assumedBy("Bases")).toEqual(["Vectors", "Limits"]);
 
     // A Material earlier in Course order teaches Vectors.
-    seedMaterial(db, { position: 0, chapters: [{ title: "Vectors" }] });
+    seedMaterial(db, { position: 0, sections: [{ title: "Vectors" }] });
     const { checks } = useBuildModels({ kcsOf: titleKc });
     await update();
 
@@ -337,7 +326,7 @@ describe("Update map", () => {
   test("resumes a build the Daily limit stopped without repeating stored extractions", async () => {
     vi.stubEnv("AI_DAILY_LIMIT_USD", "1");
     for (const title of ["Vectors", "Sums", "Bases"]) {
-      seedMaterial(db, { chapters: [{ title }] });
+      seedMaterial(db, { sections: [{ title }] });
     }
     const spend = {
       owner: STUDENT,
@@ -357,7 +346,7 @@ describe("Update map", () => {
       status: "failed",
       failure_reason: "Daily limit reached",
     });
-    expect(db.tables.chapter_extractions).toHaveLength(1);
+    expect(db.tables.unit_extractions).toHaveLength(1);
 
     db.tables.ai_usage = [];
     const { extractions } = useBuildModels();
@@ -368,12 +357,12 @@ describe("Update map", () => {
       "Material 2",
     ]);
     expect(build()?.status).toBe("built");
-    expect(liveKcs(db)).toEqual(["Material 0", "Material 1", "Material 2"]);
+    expect(liveKcs(db)).toEqual(["Vectors", "Sums", "Bases"]);
   });
 
   test("retires the KCs of a deleted Material, keeping their Attempts, and revives one taught again", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }] });
-    const notes = seedMaterial(db, { chapters: [{ title: "Sums" }] });
+    seedMaterial(db, { sections: [{ title: "Vectors" }] });
+    const notes = seedMaterial(db, { sections: [{ title: "Sums" }] });
     useBuildModels({ kcsOf: (unit) => [unit.chunks[0]!.markdown] });
     await update();
     const sums = db.tables.kcs.find((kc) => kc.name === "About Sums.")!;
@@ -386,7 +375,7 @@ describe("Update map", () => {
     expect(sums.retired_at).toBeTruthy();
     expect(db.tables.attempts).toHaveLength(1);
 
-    seedMaterial(db, { chapters: [{ title: "Sums" }] });
+    seedMaterial(db, { sections: [{ title: "Sums" }] });
     await update();
 
     expect(sums.retired_at).toBeNull();
@@ -394,14 +383,14 @@ describe("Update map", () => {
     expect(liveKcs(db)).toEqual(["About Vectors.", "About Sums."]);
   });
 
-  test("reports Chapters no KC cites", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }, { title: "Sums" }] });
-    useBuildModels();
+  test("reports the pages no KC cites", async () => {
+    seedMaterial(db, { sections: [{ title: "Vectors" }, { title: "Sums" }] });
+    useBuildModels({ kcsOf: () => ["Vectors"] });
 
     await update();
 
     expect(build()?.check_report).toMatchObject({
-      chaptersWithoutKcs: ["Sums"],
+      uncitedPages: [{ material: "Material 0", pages: [2] }],
       exercisesWithoutKcs: [],
     });
   });
@@ -409,7 +398,7 @@ describe("Update map", () => {
   test("makes the Topic tree call once, then keeps the tree and its ids without a call", async () => {
     seedMaterial(db, {
       language: "German",
-      chapters: [
+      sections: [
         {
           title: "Vector spaces",
           children: [{ title: "Subspaces" }, { title: "Bases" }],
@@ -457,12 +446,12 @@ describe("Update map", () => {
   });
 
   test("calls again when the KCs change, and keeps the Topics it continues", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }] });
+    seedMaterial(db, { sections: [{ title: "Vectors" }] });
     useBuildModels(kcPerChunk);
     await update();
     const [vectors] = db.tables.topics;
 
-    seedMaterial(db, { chapters: [{ title: "Sums" }] });
+    seedMaterial(db, { sections: [{ title: "Sums" }] });
     const { trees } = useBuildModels(kcPerChunk);
     await update();
 
@@ -478,7 +467,7 @@ describe("Update map", () => {
   });
 
   test("puts a KC the call leaves out in the Topic of the KC before it", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }, { title: "Sums" }] });
+    seedMaterial(db, { sections: [{ title: "Vectors" }, { title: "Sums" }] });
     useBuildModels({
       ...kcPerChunk,
       treeOf: (course) => flatTree(course).slice(0, 1),
@@ -490,11 +479,11 @@ describe("Update map", () => {
   });
 
   test("keeps the stored tree when the tree call fails twice, and calls again on the next update", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }] });
+    seedMaterial(db, { sections: [{ title: "Vectors" }] });
     useBuildModels(kcPerChunk);
     await update();
 
-    seedMaterial(db, { chapters: [{ title: "Sums" }] });
+    seedMaterial(db, { sections: [{ title: "Sums" }] });
     const { trees } = useBuildModels({
       ...kcPerChunk,
       treeOf: () => undefined,
@@ -512,7 +501,7 @@ describe("Update map", () => {
   });
 
   test("makes a Topic per Material when the first tree call fails twice", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }, { title: "Sums" }] });
+    seedMaterial(db, { sections: [{ title: "Vectors" }, { title: "Sums" }] });
     useBuildModels({ ...kcPerChunk, treeOf: () => undefined });
 
     await update();
@@ -521,7 +510,7 @@ describe("Update map", () => {
   });
 
   test("reports the pages read without units", async () => {
-    const id = seedMaterial(db, { chapters: [{ title: "Vectors" }] });
+    const id = seedMaterial(db, { sections: [{ title: "Vectors" }] });
     db.tables.material_pages.push(
       { material_id: id, page_number: 4, skipped: "uncovered" },
       { material_id: id, page_number: 2, skipped: "unreadable" },
@@ -537,7 +526,7 @@ describe("Update map", () => {
   });
 
   test("fails with nothing to map when the Course has no chunks", async () => {
-    seedMaterial(db, { chapters: [] });
+    seedMaterial(db, { sections: [] });
     useBuildModels();
 
     await update();

@@ -70,7 +70,6 @@ describe("smallCourseRows", () => {
     expect(inserts.map((i) => i.table)).toEqual([
       "courses",
       "materials",
-      "chapters",
       "chunks",
       "topics",
       "kcs",
@@ -104,7 +103,7 @@ describe("smallCourseRows", () => {
         kc_id: seeded.chapter2Kcs[0],
       }),
     );
-    for (const { rows: tableRows } of inserts.slice(1, 6)) {
+    for (const { rows: tableRows } of inserts.slice(1, 5)) {
       for (const row of tableRows) {
         expect(row).toMatchObject({ course_id: seeded.courseId });
       }

@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   createParseDb,
   isPageCall,
-  NO_OUTLINE,
   streamedAnswer,
   unit,
   useMockModels,
@@ -118,20 +117,24 @@ const dailyQuotaError = () =>
 
 /**
  * A page model that answers the n-th batch call with `answers[n]`: a batch
- * result, or an error it throws, and the structure call with no Chapters.
- * It counts its batch calls.
+ * result, or an error it throws. It counts its batch calls.
  */
 function pageModel(answers: Answer[], onCall?: (call: number) => void) {
   let calls = 0;
   const model = new MockLanguageModelV4({
     doStream: async ({ prompt }) => {
-      if (!isPageCall(prompt)) {
-        return streamedAnswer(JSON.stringify(NO_OUTLINE));
-      }
+      if (!isPageCall(prompt)) throw new Error("Not a page call.");
       const answer = answers[calls++] ?? { units: [] };
       onCall?.(calls);
       if (answer instanceof Error) throw answer;
-      return streamedAnswer(JSON.stringify({ skippedPages: [], ...answer }));
+      return streamedAnswer(
+        JSON.stringify({
+          language: "English",
+          notes: "",
+          skippedPages: [],
+          ...answer,
+        }),
+      );
     },
   });
   return { model, calls: () => calls };

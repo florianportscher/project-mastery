@@ -52,7 +52,7 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * The extraction steps of a build: one call per teaching unit (task `map`)
  * whose content has no stored extraction, one after another in Course
  * order. Each call is offered every live KC stored so far, and its answer
- * is stored in `chapter_extractions` and then as KCs before the next call,
+ * is stored in `unit_extractions` and then as KCs before the next call,
  * so a stopped build resumes without paying again.
  */
 
@@ -157,7 +157,7 @@ export async function loadKnownKcs(
   const kcs = kcsInCourseOrder(await loadMapInput(supabase, courseId));
   const offered = kcs.map((kc, index) => ({
     id: `k${index + 1}`,
-    chapter: kc.chapter,
+    heading: kc.heading,
     name: kc.name,
     description: kc.description,
   }));
@@ -200,11 +200,11 @@ async function extractUnit(
   const unit = { ...whole, chunks };
   const offered = unit.chunks.map((chunk, index): OfferedChunk => ({
     id: `c${index + 1}`,
+    heading: chunk.heading,
     markdown: chunk.markdown,
   })) as [OfferedChunk, ...OfferedChunk[]];
   const offeredUnit: OfferedUnit = {
     material: unit.materialName,
-    outline: unit.outline,
     language,
     chunks: offered,
     knownKcs: known.offered,

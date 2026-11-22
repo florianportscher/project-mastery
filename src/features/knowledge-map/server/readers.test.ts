@@ -123,7 +123,9 @@ describe("getKnowledgeMap", () => {
         solution: null,
       },
     ]);
-    expect(view.checkReport?.chaptersWithoutKcs).toEqual(["Thrust"]);
+    expect(view.checkReport?.uncitedPages).toEqual([
+      { material: "Thrust", pages: [2] },
+    ]);
   });
 
   test.each([

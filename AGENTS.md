@@ -62,6 +62,6 @@ Tests and app runs use `AI_PROVIDER=mock`. Read [docs/agents/live-ai.md](docs/ag
 
 ## Staging database
 
-To diagnose a wrong map, start with `pnpm -s agent inspect <courseId>` (suspect spots first, then Materials, Outline, Units, KCs, Exercises, Topics, Build and model calls; `inspect <courseId> call <callId>` prints one call's input and output).
+To diagnose a wrong map, start with `pnpm -s agent inspect <courseId>` (suspect spots first, then Materials, Chunks, Units, KCs, Exercises, Topics, Build and model calls; `inspect <courseId> call <callId>` prints one call's input and output).
 
 The staging project holds real data: `pnpm -s agent help` lists the commands that read it and the one that writes to it, and writes have no undo. Read [ADR 0025](docs/adr/0025-staging-for-agent-review.md) and [ADR 0029](docs/adr/0029-agent-writes-to-staging.md) first.

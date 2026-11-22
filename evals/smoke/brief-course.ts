@@ -52,48 +52,17 @@ export function smallCourseRows(
     parse_status: "parsed",
     created_at: new Date(Date.UTC(2026, 9, 1 + index)).toISOString(),
   }));
-  // The lab manual's root Chapter, and the lecture notes' root Chapter with
-  // its three Chapters, each titled as printed.
-  const [labRoot, notesRoot, chapter1, chapter2, examChapter] = [
-    newId(),
-    newId(),
-    newId(),
-    newId(),
-    newId(),
-  ];
-  const chapter = (
-    id: string,
-    materialId: string,
-    parentId: string | null,
-    position: number,
-    title: string,
-  ) => ({
-    ...owned,
-    id,
-    material_id: materialId,
-    parent_id: parentId,
-    position,
-    depth: parentId === null ? 0 : 1,
-    title,
-    page_from: Math.max(position, 1),
-  });
-  const chapters = [
-    chapter(labRoot, labManualId, null, 0, "Lab manual"),
-    chapter(notesRoot, notesId, null, 0, "Lecture notes"),
-    chapter(chapter1, notesId, notesRoot, 1, "Chapter 1: Vectors"),
-    chapter(chapter2, notesId, notesRoot, 2, "Chapter 2: Matrices"),
-    chapter(examChapter, notesId, notesRoot, 3, EXAM_TITLE),
-  ];
+  // The lecture notes' chunks, under their headings as printed.
   const chunk = (
     page: number,
-    chapterId: string,
+    heading: string | null,
     label: string,
     markdown: string,
   ) => ({
     ...owned,
     id: newId(),
     material_id: notesId,
-    chapter_id: chapterId,
+    heading,
     position: page - 1,
     page_from: page,
     page_to: page,
@@ -101,12 +70,22 @@ export function smallCourseRows(
     markdown,
   });
   const chunks = [
-    chunk(1, notesRoot, "admin", "Chapter 2 is not examined."),
-    chunk(2, chapter1, "content", "# Chapter 1: Vectors\nA vector is ..."),
-    chunk(3, chapter2, "content", "# Chapter 2: Matrices\nA matrix is ..."),
+    chunk(1, null, "admin", "Chapter 2 is not examined."),
+    chunk(
+      2,
+      "Chapter 1: Vectors",
+      "content",
+      "# Chapter 1: Vectors\nA vector is ...",
+    ),
+    chunk(
+      3,
+      "Chapter 2: Matrices",
+      "content",
+      "# Chapter 2: Matrices\nA matrix is ...",
+    ),
     chunk(
       4,
-      examChapter,
+      EXAM_TITLE,
       "exercise",
       `# ${EXAM_TITLE}\n**Problem 1.** Add the vectors (1, 2) and (3, 4).`,
     ),
@@ -136,7 +115,6 @@ export function smallCourseRows(
     inserts: [
       { table: "courses", rows: [{ id: courseId, owner: studentId, name }] },
       { table: "materials", rows: materials },
-      { table: "chapters", rows: chapters },
       { table: "chunks", rows: chunks },
       {
         table: "topics",

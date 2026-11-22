@@ -38,12 +38,7 @@ export function useMockModels(models: Parameters<typeof useModels>[0]) {
 }
 
 type ParseTable =
-  | "courses"
-  | "materials"
-  | "material_pages"
-  | "chapters"
-  | "chunks"
-  | "ai_usage";
+  "courses" | "materials" | "material_pages" | "chunks" | "ai_usage";
 
 /**
  * The admin client a workflow has: no session, no Row Level Security.
@@ -60,7 +55,6 @@ export function createParseDb({
       courses: [] as FakeRow[],
       materials: [] as FakeRow[],
       material_pages: [] as FakeRow[],
-      chapters: [] as FakeRow[],
       chunks: [] as FakeRow[],
       ai_usage: [] as FakeRow[],
     },
@@ -97,30 +91,13 @@ export function createParseDb({
           course_id: material.course_id,
           material_id: material.id,
         };
-        const chapters: FakeRow[] = (args.p_chapters as FakeRow[]).map(
-          (chapter) => ({ id: crypto.randomUUID(), ...owned, ...chapter }),
-        );
-        const chapterAt = (position: unknown) =>
-          chapters.find((chapter) => chapter.position === position)?.id ?? null;
-        tables.chapters = [
-          ...tables.chapters.filter(
-            (chapter) => chapter.material_id !== material.id,
-          ),
-          ...chapters.map(({ parent_position, ...chapter }) => ({
-            ...chapter,
-            parent_id: chapterAt(parent_position),
-          })),
-        ];
         tables.chunks = [
           ...tables.chunks.filter((chunk) => chunk.material_id !== material.id),
-          ...(args.p_chunks as FakeRow[]).map(
-            ({ chapter_position, ...chunk }) => ({
-              id: crypto.randomUUID(),
-              ...owned,
-              chapter_id: chapterAt(chapter_position),
-              ...chunk,
-            }),
-          ),
+          ...(args.p_chunks as FakeRow[]).map((chunk) => ({
+            id: crypto.randomUUID(),
+            ...owned,
+            ...chunk,
+          })),
         ];
         return null;
       },
@@ -184,8 +161,13 @@ export const unit = (overrides: Record<string, unknown>) => ({
   ...overrides,
 });
 
-/** A canned batch result. */
-type CannedBatch = { units: unknown; skippedPages?: unknown };
+/** A canned batch result; English without notes unless it says otherwise. */
+type CannedBatch = {
+  units: unknown;
+  skippedPages?: unknown;
+  language?: string;
+  notes?: string;
+};
 
 type Prompt = Array<{ role: string; content: unknown }>;
 
@@ -198,14 +180,6 @@ export const isPageCall = (prompt: unknown) =>
         (part) => part.type === "file",
       ),
   );
-
-function promptText(prompt: unknown) {
-  return (prompt as Prompt)
-    .filter((message) => message.role === "user")
-    .flatMap((message) => message.content as Array<{ text?: string }>)
-    .map((part) => part.text ?? "")
-    .join("");
-}
 
 const usage = {
   inputTokens: {
@@ -235,48 +209,29 @@ export function streamedAnswer(text: string) {
   };
 }
 
-/** A structure call's answer: an English Material without Chapters. */
-export const NO_OUTLINE = { language: "English", notes: "", chapters: [] };
-
-/** What a structure call was sent: the Material as JSON. */
-export type SentOutline = {
-  material: string;
-  pages: number;
-  pdfOutline?: Array<{ title: string; level: number; page: number }>;
-  headings: Array<{ id: string; page: number; style: string; text: string }>;
-  pageStarts: Array<{ page: number; text: string }>;
-};
-
 /**
  * The `ingest` model of a parse: answers each batch call (streamed; it
- * carries page images) with the next canned batch result, the structure
- * call (without images) with `outline` of what it was sent; all streamed.
- * Remembers what each kind of call was sent.
+ * carries page images) with the next canned batch result, and remembers
+ * what each was sent.
  */
-export function pageModel(
-  batches: CannedBatch[],
-  outline: (sent: SentOutline) => unknown = () => NO_OUTLINE,
-) {
+export function pageModel(batches: CannedBatch[]) {
   const prompts: unknown[] = [];
-  const outlinePrompts: SentOutline[] = [];
   const model = new MockLanguageModelV4({
     doStream: async ({ prompt }) => {
-      if (isPageCall(prompt)) {
-        prompts.push(prompt);
-        // A strict schema makes the model list skipped pages every time.
-        const answer = {
-          skippedPages: [],
-          units: [],
-          ...batches[prompts.length - 1],
-        };
-        return streamedAnswer(JSON.stringify(answer));
-      }
-      const sent = JSON.parse(promptText(prompt)) as SentOutline;
-      outlinePrompts.push(sent);
-      return streamedAnswer(JSON.stringify(outline(sent)));
+      if (!isPageCall(prompt)) throw new Error("Not a page call.");
+      prompts.push(prompt);
+      // A strict schema makes the model list skipped pages every time.
+      const answer = {
+        language: "English",
+        notes: "",
+        skippedPages: [],
+        units: [],
+        ...batches[prompts.length - 1],
+      };
+      return streamedAnswer(JSON.stringify(answer));
     },
   });
-  return { model, prompts, outlinePrompts };
+  return { model, prompts };
 }
 
 /** The image parts each page call sent, as media types. */

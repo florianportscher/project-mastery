@@ -104,7 +104,7 @@ export const pairSmoke: SmokeCheck = {
   },
 };
 
-/** A parsed Material of these chunks, under its root Chapter. */
+/** A parsed Material of these chunks. */
 async function seedMaterial(
   {
     supabase,
@@ -116,7 +116,6 @@ async function seedMaterial(
   chunks: SeedChunk[],
 ) {
   const materialId = crypto.randomUUID();
-  const chapterId = crypto.randomUUID();
   const owned = { owner: studentId, course_id: courseId };
   const material = await supabase.from("materials").insert({
     ...owned,
@@ -129,21 +128,10 @@ async function seedMaterial(
     parse_status: "parsed",
   });
   if (material.error) throw new Error(material.error.message);
-  const chapter = await supabase.from("chapters").insert({
-    ...owned,
-    id: chapterId,
-    material_id: materialId,
-    depth: 0,
-    position: 0,
-    page_from: 1,
-    title: name,
-  });
-  if (chapter.error) throw new Error(chapter.error.message);
   const stored = await supabase.from("chunks").insert(
     chunks.map((chunk, index) => ({
       ...owned,
       material_id: materialId,
-      chapter_id: chapterId,
       position: index,
       page_from: chunk.page,
       page_to: chunk.page,

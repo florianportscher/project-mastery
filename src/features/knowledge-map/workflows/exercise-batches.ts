@@ -1,9 +1,9 @@
 import "server-only";
-import { UNIT_MARK } from "@/features/knowledge-map/ai/chapter-extraction";
 import {
+  batchTitle,
   UNIT_CHARS,
   unitHash,
-} from "@/features/knowledge-map/domain/chapter-units";
+} from "@/features/knowledge-map/domain/teaching-batches";
 import {
   exerciseBatches,
   type ExerciseGroup,
@@ -52,8 +52,8 @@ const joined = (markdowns: string[]) => markdowns.join("\n\n");
 
 /**
  * The Course's exercise batches in Course order. Each is keyed by the
- * Chapter of its first Exercise's first question chunk, numbered among the
- * batches of that Chapter, and its hash covers its Exercises' chunks. A
+ * Material of its first Exercise's first question chunk, numbered among
+ * that Material's batches, and its hash covers its Exercises' chunks. A
  * chunk gone since the grouping is left out, and so is an Exercise left
  * without a question chunk.
  */
@@ -61,26 +61,17 @@ export async function loadExerciseBatches(
   supabase: AdminSupabase,
   courseId: string,
 ): Promise<CourseUnit[]> {
-  const [{ groups }, materials, chapters, chunks] = await Promise.all([
+  const [{ groups }, materials, chunks] = await Promise.all([
     loadStoredGroups(supabase, courseId),
     supabase
       .from("materials")
       .select("id, name")
       .eq("course_id", courseId)
       .order("position"),
-    allRows("Loading the Chapters", (from, to) =>
-      supabase
-        .from("chapters")
-        .select("id, material_id, parent_id, depth, title")
-        .eq("course_id", courseId)
-        .order("material_id")
-        .order("position")
-        .range(from, to),
-    ),
     allRows("Loading the exercise chunks", (from, to) =>
       supabase
         .from("chunks")
-        .select("id, material_id, chapter_id, markdown")
+        .select("id, material_id, heading, markdown, page_from, page_to")
         .eq("course_id", courseId)
         .in("label", ["exercise", "solution"])
         .order("id")
@@ -90,9 +81,6 @@ export async function loadExerciseBatches(
   if (materials.error) failed("Loading the Materials", materials.error);
   if (!groups) return [];
   const chunkOf = new Map(chunks.map((chunk) => [chunk.id, chunk]));
-  const rootOf = new Map(
-    chapters.filter((c) => c.parent_id === null).map((c) => [c.material_id, c]),
-  );
   const exercises = groups.exercises.flatMap((group) => {
     const present = (ids: string[]) => ids.filter((id) => chunkOf.has(id));
     const questionChunkIds = present(group.questionChunkIds);
@@ -107,7 +95,8 @@ export async function loadExerciseBatches(
     return [
       {
         material: first.material_id,
-        chapterId: first.chapter_id ?? rootOf.get(first.material_id)?.id ?? "",
+        heading: first.heading,
+        pages: { pageFrom: first.page_from, pageTo: first.page_to },
         chars: statement.length + (solution?.length ?? 0),
         exercise: {
           id: first.id,
@@ -120,42 +109,36 @@ export async function loadExerciseBatches(
     ];
   });
 
-  const unitsOf = new Map<string, number>();
-  return exerciseBatches(exercises, UNIT_CHARS).flatMap((batch) => {
-    const { chapterId, material: materialId } = batch[0]!;
+  const batchesOf = new Map<string, number>();
+  return exerciseBatches(exercises, UNIT_CHARS).flatMap((items) => {
+    const materialId = items[0]!.material;
     const material = materials.data.find((m) => m.id === materialId);
-    if (!material || !chapterId) return [];
-    const unit = unitsOf.get(chapterId) ?? 0;
-    unitsOf.set(chapterId, unit + 1);
-    const outline = chapters.filter((c) => c.material_id === materialId);
-    const marked = new Set(batch.map((item) => item.chapterId));
-    const title = outline.find((c) => c.id === chapterId)?.title ?? "";
-    const items = batch.map((item) => item.exercise);
+    if (!material) return [];
+    const batch = batchesOf.get(materialId) ?? 0;
+    batchesOf.set(materialId, batch + 1);
     return [
       {
-        chapterId,
+        materialId,
         kind: "exercise" as const,
-        unit,
-        chapterIds: [...marked],
-        title,
+        batch,
+        title: batchTitle(
+          material.name,
+          items.map((item) => item.pages),
+        ),
         contentHash: unitHash(
-          title,
-          items.map((e) =>
+          items.map(({ exercise: e }) =>
             [...e.questionChunkIds, "|", ...e.solutionChunkIds].join(","),
           ),
         ),
         materialName: material.name,
-        outline: outline.map(
-          (c) =>
-            `${"  ".repeat(c.depth)}${c.title}${marked.has(c.id) ? UNIT_MARK : ""}`,
-        ),
-        chunks: items.map((e) => ({
+        chunks: items.map(({ exercise: e, heading }) => ({
           id: e.id,
+          heading,
           markdown: e.solution
             ? `${e.statement}\n\n${e.solution}`
             : e.statement,
         })),
-        exercises: items,
+        exercises: items.map((item) => item.exercise),
       },
     ];
   });

@@ -18,13 +18,12 @@ values ('aaaaaaaa-1111-0000-0000-000000000001', '11111111-1111-1111-1111-1111111
   '11111111-1111-1111-1111-111111111111/aaaaaaaa-0000-0000-0000-000000000001/aaaaaaaa-1111-0000-0000-000000000001',
   'parsed');
 select public.replace_material_chunks('aaaaaaaa-1111-0000-0000-000000000001',
-  '[{"position": 0, "parent_position": null, "depth": 0, "title": "Lecture 1", "page_from": 1}]',
-  '[{"position": 0, "page_from": 1, "page_to": 1, "label": "content", "markdown": "Bases.", "chapter_position": 0},
-    {"position": 1, "page_from": 1, "page_to": 1, "label": "content", "markdown": "Ranks.", "chapter_position": 0}]');
-insert into public.chapter_extractions (id, chapter_id, owner, course_id, kind, unit, content_hash, output, kc_ids)
+  '[{"position": 0, "page_from": 1, "page_to": 1, "label": "content", "markdown": "Bases.", "heading": null},
+    {"position": 1, "page_from": 1, "page_to": 1, "label": "content", "markdown": "Ranks.", "heading": null}]');
+insert into public.unit_extractions (id, material_id, owner, course_id, kind, batch, content_hash, output, kc_ids)
 select 'eeeeeeee-0000-0000-0000-000000000001', id, owner, course_id, 'content', 0, repeat('a', 64),
   '{"kcs": [], "prerequisites": []}', '{}'
-from public.chapters where course_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+from public.materials where course_id = 'aaaaaaaa-0000-0000-0000-000000000001';
 
 insert into public.kcs (id, owner, course_id, name, description, origin, position)
 values
@@ -54,7 +53,7 @@ select is(
   'what no KC means stays on the assuming KC as text, once per name');
 select results_eq(
   $$select (select count(*)::int from public.prerequisite_links where course_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
-      assumes_matched from public.chapter_extractions where course_id = 'aaaaaaaa-0000-0000-0000-000000000001'$$,
+      assumes_matched from public.unit_extractions where course_id = 'aaaaaaaa-0000-0000-0000-000000000001'$$,
   $$values (1, true)$$,
   'the Prerequisite is stored and the extraction marked matched');
 

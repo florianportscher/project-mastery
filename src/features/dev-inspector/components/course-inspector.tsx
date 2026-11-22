@@ -5,8 +5,8 @@ import {
   TopicsSection,
 } from "@/features/dev-inspector/components/exercises-topics-build";
 import {
+  ChunksSection,
   MaterialsSection,
-  OutlineSection,
 } from "@/features/dev-inspector/components/materials-outline";
 import {
   KcsSection,
@@ -23,7 +23,7 @@ import type {
 
 const SECTIONS = [
   ["materials", "Materials"],
-  ["outline", "Outline"],
+  ["chunks", "Chunks"],
   ["units", "Units"],
   ["kcs", "KCs"],
   ["exercises", "Exercises"],
@@ -52,7 +52,7 @@ export function CourseInspector({
   const traced = calls.status === "ok" ? calls.calls : [];
   const marks = callFlags(traced);
   const counts = [
-    `${flags.chaptersWithoutKcs.size} Chapters without KCs`,
+    `${flags.chunksWithoutKcs.size} content chunks without KCs`,
     `${flags.kcsWithoutSources.size} KCs without sources`,
     `${flags.nearDuplicates.size} near-duplicate KCs`,
     `${flags.unitsBelowCoverage.size} units below coverage`,
@@ -88,7 +88,7 @@ export function CourseInspector({
         </p>
       </header>
       <MaterialsSection snapshot={snapshot} flags={flags} />
-      <OutlineSection snapshot={snapshot} lookup={lookup} flags={flags} />
+      <ChunksSection snapshot={snapshot} lookup={lookup} flags={flags} />
       <UnitsSection
         snapshot={snapshot}
         units={units}

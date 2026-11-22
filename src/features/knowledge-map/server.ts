@@ -40,5 +40,10 @@ export { loadCourseUnits, unitKey } from "./workflows/build-steps";
 // The grouping smoke check runs the grouping step alone.
 export { groupExercises } from "./workflows/group-steps";
 // The developer view forms the units from its snapshot.
-export { chapterUnits } from "./domain/chapter-units";
+export {
+  batchTitle,
+  teachingBatches,
+  UNIT_CHARS,
+} from "./domain/teaching-batches";
+export { exerciseBatches } from "./domain/exercise-groups";
 export { MIN_UNIT_COVERAGE } from "./domain/unit-coverage";

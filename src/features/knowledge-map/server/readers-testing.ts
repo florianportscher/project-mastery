@@ -66,7 +66,7 @@ export function createDb() {
           failure_reason: null,
           finished_at: "2026-01-02",
           check_report: {
-            chaptersWithoutKcs: ["Thrust"],
+            uncitedPages: [{ material: "Thrust", pages: [2] }],
             exercisesWithoutKcs: [],
             duplicates: [],
             unitsBelowCoverage: [],

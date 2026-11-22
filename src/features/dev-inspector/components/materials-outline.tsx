@@ -16,7 +16,7 @@ import {
 import type {
   Flags,
   Snapshot,
-  SnapshotChapter,
+  SnapshotChunk,
 } from "@/features/dev-inspector/types";
 import { cn } from "@/lib/utils";
 
@@ -118,8 +118,8 @@ export function MaterialsSection({
   );
 }
 
-/** Each Material's Chapter tree with its chunks. */
-export function OutlineSection({
+/** Each Material's chunks in reading order, under the headings they follow. */
+export function ChunksSection({
   snapshot,
   lookup,
   flags,
@@ -129,23 +129,34 @@ export function OutlineSection({
   flags: Flags;
 }) {
   return (
-    <Section id="outline" title="Outline">
+    <Section id="chunks" title="Chunks">
       {snapshot.materials.map((material) => {
-        const roots = snapshot.chapters.filter(
-          (c) => c.materialId === material.id && c.parentId === null,
-        );
+        const chunks = snapshot.chunks
+          .filter((c) => c.materialId === material.id)
+          .toSorted((a, b) => a.position - b.position);
+        // Runs of chunks that follow the same heading.
+        const runs: SnapshotChunk[][] = [];
+        for (const chunk of chunks) {
+          const run = runs.at(-1);
+          if (run && run[0]!.heading === chunk.heading) run.push(chunk);
+          else runs.push([chunk]);
+        }
         return (
           <div key={material.id} className="space-y-1">
             <h3 className="font-medium">
               <Ref to={anchor.material(material.id)}>{material.name}</Ref>
             </h3>
-            {roots.map((root) => (
-              <ChapterNode
-                key={root.id}
-                chapter={root}
-                lookup={lookup}
-                flags={flags}
-              />
+            {runs.map((run) => (
+              <div key={run[0]!.id} className="border-l pl-3">
+                <div className="text-sm font-medium">
+                  {run[0]!.heading ?? (
+                    <span className="text-muted-foreground">no heading</span>
+                  )}
+                </div>
+                <ul className="my-1 space-y-1">
+                  {run.map((chunk) => chunkItem(chunk, lookup, flags))}
+                </ul>
+              </div>
             ))}
           </div>
         );
@@ -154,84 +165,34 @@ export function OutlineSection({
   );
 }
 
-function ChapterNode({
-  chapter,
-  lookup,
-  flags,
-}: {
-  chapter: SnapshotChapter;
-  lookup: Lookup;
-  flags: Flags;
-}) {
-  const chunks = lookup.chunksOfChapter.get(chapter.id) ?? [];
-  const children = (lookup.children.get(chapter.id) ?? []).toSorted(
-    (a, b) => a.position - b.position,
-  );
-  const units = lookup.unitsOfChapter.get(chapter.id) ?? [];
-  const report = flags.chaptersInReport.get(chapter.id) ?? [];
+/**
+ * One chunk's line. A function, not a component: a server component per
+ * chunk would carry the whole `lookup` in its dev-mode debug info.
+ */
+function chunkItem(chunk: SnapshotChunk, lookup: Lookup, flags: Flags) {
   return (
-    <div
-      id={anchor.chapter(chapter.id)}
-      className="scroll-mt-4 border-l pl-3 target:bg-yellow-50 dark:target:bg-yellow-950"
+    <li
+      key={chunk.id}
+      id={anchor.chunk(chunk.id)}
+      className="scroll-mt-4 text-xs target:bg-yellow-50 dark:target:bg-yellow-950"
     >
-      <div className="flex flex-wrap items-baseline gap-2 text-sm">
-        <span className="font-medium">{chapter.title}</span>
-        <span className="text-xs text-muted-foreground">
-          p. {chapter.pageFrom}
-        </span>
-        {flags.chaptersWithoutKcs.has(chapter.id) && (
-          <Flag>content, no KC</Flag>
-        )}
-        {report.map((note) => (
-          <Flag key={note}>check report: {note}</Flag>
-        ))}
-        {units.map((unit) => (
-          <Ref key={unit.key} to={anchor.unit(unit.key)} className="text-xs">
-            unit {unit.kind} {unit.unit}
-          </Ref>
-        ))}
-      </div>
-      {chunks.length > 0 && (
-        <ul className="my-1 space-y-1">
-          {chunks.map((chunk) => (
-            <li
-              key={chunk.id}
-              id={anchor.chunk(chunk.id)}
-              className="scroll-mt-4 text-xs target:bg-yellow-50 dark:target:bg-yellow-950"
-            >
-              <span className="font-mono">{chunkName(chunk.id, lookup)}</span>{" "}
-              <span className="text-muted-foreground">
-                {chunk.chars.toLocaleString("en")} ch.
-              </span>{" "}
-              <KcRefs
-                ids={lookup.kcsOfChunk.get(chunk.id) ?? []}
-                lookup={lookup}
-              />{" "}
-              {(lookup.unitsOfChunk.get(chunk.id) ?? []).map((unit) => (
-                <Ref key={unit.key} to={anchor.unit(unit.key)}>
-                  [{unitName(unit, lookup)}]
-                </Ref>
-              ))}{" "}
-              {lookup.exerciseOfChunk.has(chunk.id) && (
-                <Ref
-                  to={anchor.exercise(lookup.exerciseOfChunk.get(chunk.id)!)}
-                >
-                  [Exercise]
-                </Ref>
-              )}{" "}
-              <ChunkMarkdown chunkId={chunk.id} />
-            </li>
-          ))}
-        </ul>
-      )}
-      {children.map((child) => (
-        <ChapterNode
-          key={child.id}
-          chapter={child}
-          lookup={lookup}
-          flags={flags}
-        />
-      ))}
-    </div>
+      <span className="font-mono">{chunkName(chunk.id, lookup)}</span>{" "}
+      <span className="text-muted-foreground">
+        {chunk.chars.toLocaleString("en")} ch.
+      </span>{" "}
+      {flags.chunksWithoutKcs.has(chunk.id) && <Flag>content, no KC</Flag>}{" "}
+      <KcRefs ids={lookup.kcsOfChunk.get(chunk.id) ?? []} lookup={lookup} />{" "}
+      {(lookup.unitsOfChunk.get(chunk.id) ?? []).map((unit) => (
+        <Ref key={unit.key} to={anchor.unit(unit.key)}>
+          [{unitName(unit)}]
+        </Ref>
+      ))}{" "}
+      {lookup.exerciseOfChunk.has(chunk.id) && (
+        <Ref to={anchor.exercise(lookup.exerciseOfChunk.get(chunk.id)!)}>
+          [Exercise]
+        </Ref>
+      )}{" "}
+      <ChunkMarkdown chunkId={chunk.id} />
+    </li>
   );
 }

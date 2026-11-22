@@ -43,7 +43,7 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * The exercise steps of a build: one call (task `exercise`) per exercise
  * batch (`exercise-batches.ts`), with its Exercises' whole statements and
  * solutions and every live KC of the Course. Batches run one after another
- * in Course order, and each extraction is stored in `chapter_extractions`
+ * in Course order, and each extraction is stored in `unit_extractions`
  * and then as KCs and Exercises before the next batch's call, so the KCs
  * one proposed are listed for the next. A batch is called again when its
  * Exercises' chunks changed.
@@ -173,7 +173,6 @@ async function extractUnit(
   }));
   const offered: OfferedExerciseUnit = {
     material: unit.materialName,
-    outline: unit.outline,
     language,
     exercises: exercises.map((exercise, index) => ({
       id: exercise.id,

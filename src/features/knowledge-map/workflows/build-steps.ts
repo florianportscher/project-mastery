@@ -1,9 +1,9 @@
 import "server-only";
-import { UNIT_MARK } from "@/features/knowledge-map/ai/chapter-extraction";
 import {
-  chapterUnits,
+  batchTitle,
+  teachingBatches,
   unitHash,
-} from "@/features/knowledge-map/domain/chapter-units";
+} from "@/features/knowledge-map/domain/teaching-batches";
 import {
   loadExerciseBatches,
   type BatchExercise,
@@ -113,33 +113,30 @@ export async function runCalls<Item>(
   );
 }
 
-/** A unit of the Course, as the build reads it. */
+/** A unit of the Course, as the build reads it: a batch of one Material. */
 export type CourseUnit = {
-  chapterId: string;
+  materialId: string;
   kind: "content" | "exercise";
-  unit: number;
-  /** Every Chapter whose subtree the unit reads. */
-  chapterIds: string[];
-  /** Its Chapter's title; a packed unit's Chapters' titles, joined. */
+  /** 0-based, among the Material's batches of that kind. */
+  batch: number;
+  /** Where it is, for the check report: "Material p. 3–7". */
   title: string;
   contentHash: string;
   materialName: string;
-  /** The Material's Outline, with the unit's Chapters marked. */
-  outline: string[];
   /**
-   * What its calls read: a teaching unit's chunks; an exercise batch's
+   * What its calls read: a teaching batch's chunks; an exercise batch's
    * Exercises, each by its first question chunk with its statement and
    * solutions as Markdown.
    */
-  chunks: Array<{ id: string; markdown: string }>;
+  chunks: Array<{ id: string; heading: string | null; markdown: string }>;
   /** An exercise batch's Exercises, in the order of `chunks`. */
   exercises?: BatchExercise[];
 };
 
 /**
- * The Course's units of one kind in Course order: its teaching units, by
- * Materials by position, then their units in reading order
- * (`chapterUnits`); or its exercise batches (`loadExerciseBatches`).
+ * The Course's units of one kind in Course order: its teaching batches, by
+ * Materials by position, then their batches in reading order
+ * (`teachingBatches`); or its exercise batches (`loadExerciseBatches`).
  */
 export async function loadCourseUnits(
   supabase: AdminSupabase,
@@ -147,25 +144,16 @@ export async function loadCourseUnits(
   kind: CourseUnit["kind"],
 ): Promise<CourseUnit[]> {
   if (kind === "exercise") return loadExerciseBatches(supabase, courseId);
-  const [materials, chapters, chunks] = await Promise.all([
+  const [materials, chunks] = await Promise.all([
     supabase
       .from("materials")
       .select("id, name")
       .eq("course_id", courseId)
       .order("position"),
-    allRows("Loading the Chapters", (from, to) =>
-      supabase
-        .from("chapters")
-        .select("id, material_id, parent_id, depth, title")
-        .eq("course_id", courseId)
-        .order("material_id")
-        .order("position")
-        .range(from, to),
-    ),
     allRows("Loading the chunks", (from, to) =>
       supabase
         .from("chunks")
-        .select("id, material_id, chapter_id, markdown")
+        .select("id, material_id, heading, markdown, page_from, page_to")
         .eq("course_id", courseId)
         .eq("label", kind)
         .order("material_id")
@@ -175,41 +163,31 @@ export async function loadCourseUnits(
   ]);
   if (materials.error) failed("Loading the Materials", materials.error);
   return materials.data.flatMap((material) => {
-    const outline = chapters.filter((c) => c.material_id === material.id);
     const ofMaterial = chunks.filter((c) => c.material_id === material.id);
     const chunkOf = new Map(ofMaterial.map((chunk) => [chunk.id, chunk]));
-    const titleOf = new Map(outline.map((c) => [c.id, c.title]));
-    return chapterUnits(
-      outline.map((c) => ({ id: c.id, parentId: c.parent_id })),
+    return teachingBatches(
       ofMaterial.map((c) => ({
         id: c.id,
-        chapterId: c.chapter_id,
+        heading: c.heading,
         chars: c.markdown.length,
       })),
-    ).map((unit) => {
-      const unitChunks = unit.chunkIds.map((id) => {
-        const { markdown } = chunkOf.get(id)!;
-        return { id, markdown };
-      });
-      const title = unit.chapterIds
-        .map((id) => titleOf.get(id) ?? "")
-        .join(", ");
+    ).map((ids, batch) => {
+      const rows = ids.map((id) => chunkOf.get(id)!);
       return {
-        chapterId: unit.chapterId,
+        materialId: material.id,
         kind,
-        unit: unit.unit,
-        chapterIds: unit.chapterIds,
-        title,
-        contentHash: unitHash(
-          title,
-          unitChunks.map((chunk) => chunk.markdown),
+        batch,
+        title: batchTitle(
+          material.name,
+          rows.map((row) => ({ pageFrom: row.page_from, pageTo: row.page_to })),
         ),
+        contentHash: unitHash(rows.map((row) => row.markdown)),
         materialName: material.name,
-        outline: outline.map(
-          (c) =>
-            `${"  ".repeat(c.depth)}${c.title}${unit.chapterIds.includes(c.id) ? UNIT_MARK : ""}`,
-        ),
-        chunks: unitChunks,
+        chunks: rows.map((row) => ({
+          id: row.id,
+          heading: row.heading,
+          markdown: row.markdown,
+        })),
       };
     });
   });
@@ -217,10 +195,10 @@ export async function loadCourseUnits(
 
 /** A unit's key among the stored extractions. */
 export const unitKey = (unit: {
-  chapterId: string;
+  materialId: string;
   kind: string;
-  unit: number;
-}) => `${unit.chapterId}/${unit.kind}/${unit.unit}`;
+  batch: number;
+}) => `${unit.materialId}/${unit.kind}/${unit.batch}`;
 
 /** A stored unit extraction, keyed as `unitKey`. */
 export type StoredUnit = {
@@ -239,9 +217,9 @@ export async function loadStoredUnits(
 ): Promise<StoredUnit[]> {
   const rows = await allRows("Loading the unit extractions", (from, to) =>
     supabase
-      .from("chapter_extractions")
+      .from("unit_extractions")
       .select(
-        "id, chapter_id, kind, unit, content_hash, output, kc_ids, assumes_matched",
+        "id, material_id, kind, batch, content_hash, output, kc_ids, assumes_matched",
       )
       .eq("course_id", courseId)
       .order("id")
@@ -249,7 +227,11 @@ export async function loadStoredUnits(
   );
   return rows.map((row) => ({
     id: row.id,
-    key: unitKey({ chapterId: row.chapter_id, kind: row.kind, unit: row.unit }),
+    key: unitKey({
+      materialId: row.material_id,
+      kind: row.kind,
+      batch: row.batch,
+    }),
     contentHash: row.content_hash,
     output: row.output,
     kcIds: row.kc_ids,
@@ -272,11 +254,11 @@ async function storeExtraction(
   output: UnitExtraction | StoredExtraction,
   partial = false,
 ) {
-  const { error } = await supabase.from("chapter_extractions").upsert(
+  const { error } = await supabase.from("unit_extractions").upsert(
     {
-      chapter_id: unit.chapterId,
+      material_id: unit.materialId,
       kind: unit.kind,
-      unit: unit.unit,
+      batch: unit.batch,
       owner,
       course_id: courseId,
       content_hash: partial ? partialHash(unit.contentHash) : unit.contentHash,
@@ -284,7 +266,7 @@ async function storeExtraction(
       kc_ids: null,
       assumes_matched: false,
     },
-    { onConflict: "chapter_id,kind,unit" },
+    { onConflict: "material_id,kind,batch" },
   );
   if (error) failed("Storing a unit extraction", error);
 }
@@ -481,7 +463,7 @@ export async function loadCurrentExtractions(
   const gone = stored.filter((row) => !order.has(row.key));
   if (gone.length > 0) {
     const { error } = await supabase
-      .from("chapter_extractions")
+      .from("unit_extractions")
       .delete()
       .in(
         "id",

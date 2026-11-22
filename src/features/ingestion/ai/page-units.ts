@@ -38,6 +38,16 @@ const batchUnitSchema = z.object({
 
 /** What one page batch call returns. */
 export const batchResultSchema = z.object({
+  language: z
+    .string()
+    .describe(
+      "The language these pages are written in, as an English name such as German or English.",
+    ),
+  notes: z
+    .string()
+    .describe(
+      "Unusual notation and conventions on these pages that a reader of a single passage needs, such as vectors written as rows or ⊂ allowing equality. Empty when there are none.",
+    ),
   units: z.array(batchUnitSchema),
   skippedPages: z
     .array(
@@ -75,7 +85,9 @@ const BATCH_INSTRUCTIONS = `You transcribe consecutive pages of a Student's cour
 - Describe a plot, chart or technical drawing inside its unit as a blockquote that starts with **Figure:**, saying what it shows. Leave out decorative images such as logos.
 - Do not transcribe running headers, footers, page numbers, logos, title pages, tables of contents, indexes or reference lists. A page with nothing else has no units: list it in skippedPages with its reason. Every page of the batch either has units or is listed there.
 - Give each unit the page it starts on and the page it ends on. A unit may run over several of these pages.
-- When the context unit from before these pages is given, do not transcribe it again. Mark the first unit when it starts mid-way and goes on from before these pages, and the last unit when it is cut off at the end of the last page.`;
+- When the context unit from before these pages is given, do not transcribe it again. Mark the first unit when it starts mid-way and goes on from before these pages, and the last unit when it is cut off at the end of the last page.
+- language: the language these pages are written in, as an English name.
+- notes: notation and conventions on these pages that differ from the usual ones and that a reader of one passage needs. Never their structure, headings or numbering. Empty when there are none.`;
 
 /**
  * Call settings for one page batch call of a parse (task `ingest`),

@@ -11,8 +11,8 @@ export type ChunkSource = {
   pageFrom: number;
   pageTo: number;
   markdown: string;
-  /** Its deepest Chapter's title; null when it is in none below the root. */
-  chapterTitle: string | null;
+  /** The heading it follows; null before its Material's first. */
+  heading: string | null;
 };
 
 /**
@@ -31,7 +31,7 @@ export async function loadChunkSources(
     const { data, error } = await supabase
       .from("chunks")
       .select(
-        "id, material_id, position, page_from, page_to, markdown, chapter_id",
+        "id, material_id, position, page_from, page_to, markdown, heading",
       )
       .in("id", ids.slice(start, start + ID_SLICE));
     if (error) failed("Loading the chunks", error);
@@ -40,19 +40,12 @@ export async function loadChunkSources(
   if (rows.length === 0) return [];
 
   const materialIds = [...new Set(rows.map((row) => row.material_id))];
-  const [materials, chapters] = await Promise.all([
-    supabase
-      .from("materials")
-      .select("id, name, position")
-      .in("id", materialIds),
-    loadMaterialChapters(supabase, materialIds),
-  ]);
+  const materials = await supabase
+    .from("materials")
+    .select("id, name, position")
+    .in("id", materialIds);
   if (materials.error) failed("Loading the Materials", materials.error);
   const material = new Map(materials.data.map((m) => [m.id, m]));
-  // A root Chapter's title is its Material's name, so it is left out.
-  const chapterTitles = new Map(
-    chapters.flatMap((c) => (c.depth > 0 ? [[c.id, c.title]] : [])),
-  );
   return rows
     .filter((row) => material.has(row.material_id))
     .toSorted(
@@ -67,25 +60,8 @@ export async function loadChunkSources(
       pageFrom: row.page_from,
       pageTo: row.page_to,
       markdown: row.markdown,
-      chapterTitle: chapterTitles.get(row.chapter_id ?? "") ?? null,
+      heading: row.heading,
     }));
-}
-
-/** Every Chapter of these Materials. No ids make no request. */
-async function loadMaterialChapters(supabase: Supabase, materialIds: string[]) {
-  const chapters: Array<{ id: string; title: string; depth: number }> = [];
-  for (let start = 0; start < materialIds.length; start += ID_SLICE) {
-    const rows = await allRows("Loading the Chapters", (from, to) =>
-      supabase
-        .from("chapters")
-        .select("id, title, depth")
-        .in("material_id", materialIds.slice(start, start + ID_SLICE))
-        .order("id")
-        .range(from, to),
-    );
-    chapters.push(...rows);
-  }
-  return chapters;
 }
 
 /** Chunk ids per `in` filter, which keeps the query string short. */

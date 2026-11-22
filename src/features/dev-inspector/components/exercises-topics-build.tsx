@@ -85,7 +85,7 @@ export function ExercisesSection({
   );
 }
 
-/** The Topic tree with each Topic's KCs and Chapters. */
+/** The Topic tree with each Topic's KCs. */
 export function TopicsSection({
   snapshot,
   lookup,

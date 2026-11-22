@@ -54,7 +54,7 @@ const EXAM_MATERIAL = "exam-material";
 function seedExam() {
   return seedMaterial(db, {
     id: EXAM_MATERIAL,
-    chapters: [
+    sections: [
       {
         title: "Exam 2025",
         exercise: true,
@@ -76,7 +76,7 @@ const wholeTask = () => [
 
 beforeEach(() => {
   db = createBuildDb();
-  seedMaterial(db, { chapters: [{ title: "Dimension" }] });
+  seedMaterial(db, { sections: [{ title: "Dimension" }] });
 });
 
 describe("Update map's Exercises", () => {
@@ -168,7 +168,7 @@ describe("Update map's Exercises", () => {
   test("offers a batch every live KC of the Course, not only the nearest", async () => {
     const names = Array.from({ length: 60 }, (_, i) => `K${i + 1}`);
     seedMaterial(db, {
-      chapters: [{ title: "Sheet 3", exercise: true, chunks: ["Subject."] }],
+      sections: [{ title: "Sheet 3", exercise: true, chunks: ["Subject."] }],
     });
     const { exercises } = useBuildModels({ kcsOf: () => names });
     await update();
@@ -179,7 +179,7 @@ describe("Update map's Exercises", () => {
 
   test("extracts an Exercise again in place when its solution comes later or goes", async () => {
     seedMaterial(db, {
-      chapters: [{ title: "Sheet 2", exercise: true, chunks: [PART_A] }],
+      sections: [{ title: "Sheet 2", exercise: true, chunks: [PART_A] }],
     });
     useBuildModels({ kcsOf, subtaskOf: () => ({ kcs: ["Dimension"] }) });
     await update();
@@ -188,7 +188,7 @@ describe("Update map's Exercises", () => {
     db.tables.attempts.push({ exercise_id: exercise!.id, result: "full" });
 
     const solutions = seedMaterial(db, {
-      chapters: [
+      sections: [
         {
           title: "Solutions",
           chunks: [{ markdown: SOLUTION_A, label: "solution" }],
@@ -251,7 +251,7 @@ describe("Update map's Exercises", () => {
     // grouping finds the exam again under its printed name.
     exam.confirmed = true;
     seedMaterial(db, {
-      chapters: [{ title: "Sheet 1", exercise: true, chunks: ["Task 1."] }],
+      sections: [{ title: "Sheet 1", exercise: true, chunks: ["Task 1."] }],
     });
     const { groupings } = useBuildModels({
       kcsOf,

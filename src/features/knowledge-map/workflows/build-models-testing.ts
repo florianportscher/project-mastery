@@ -18,30 +18,27 @@ function userJson(prompt: unknown): Record<string, unknown> {
   return JSON.parse(part!.text) as Record<string, unknown>;
 }
 
-/** A teaching unit as its extraction call sent it. */
+/** A teaching batch as its extraction call sent it. */
 export type SentUnit = {
   material: string;
-  outline: string[];
   language: string;
-  chunks: Array<{ id: string; markdown: string }>;
+  chunks: Array<{ id: string; heading: string | null; markdown: string }>;
   knownKcs: Array<{
     id: string;
-    chapter: string;
+    heading: string;
     name: string;
     description: string;
   }>;
 };
 
-/** The title of the unit's Chapter: its marked Outline line. */
-export function unitTitle(unit: { outline: string[] }): string {
-  const marked = unit.outline.find((line) => line.endsWith("<- this unit"));
-  return marked!.replace("<- this unit", "").trim();
+/** The headings a batch's chunks follow, each once, in reading order. */
+export function unitHeadings(unit: SentUnit): string[] {
+  return [...new Set(unit.chunks.flatMap((chunk) => chunk.heading ?? []))];
 }
 
 /** An exercise batch as its call sent it. */
 export type SentExerciseUnit = {
   material: string;
-  outline: string[];
   language: string;
   exercises: Array<{ id: string; statement: string; solution: string | null }>;
   kcs: Array<{ id: string; name: string }>;
@@ -150,7 +147,8 @@ export type SentCheck = {
 /**
  * Routes the `map`, `exercise` and `embed` tasks to mocks, one call at a
  * time. The extraction gives each unit the KCs `kcsOf` names (by default
- * one named after the unit's Chapter), citing its first chunk (or the id
+ * one per heading its chunks follow, named by it), citing the first chunk
+ * under the heading of its name, else its first chunk (or the id
  * `chunkIdOf` gives), using the KCs `prerequisitesOf` names (a known KC's
  * or an earlier new KC's id by name, else the name itself as an id) and
  * using from outside the names `assumesOf` says (by default nothing), each
@@ -168,11 +166,12 @@ export type SentCheck = {
  * first `groupingFails` calls with nothing valid.
  */
 export function useBuildModels({
-  kcsOf = (unit) => [unitTitle(unit)],
+  kcsOf = unitHeadings,
   assumesOf = () => [],
   prerequisitesOf = () => [],
   repeatsOf = () => [],
-  chunkIdOf = (_kc, unit) => unit.chunks[0]!.id,
+  chunkIdOf = (kc, unit) =>
+    (unit.chunks.find((chunk) => chunk.heading === kc) ?? unit.chunks[0]!).id,
   meaningOf = (name) => name.name,
   subtaskOf = () => ({}),
   groupsOf = () => [],

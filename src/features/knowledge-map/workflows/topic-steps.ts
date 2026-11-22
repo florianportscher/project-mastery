@@ -76,7 +76,7 @@ function offeredCourse(
       id: kcIds.get(kc.id)!,
       name: kc.name,
       material: kc.material,
-      heading: kc.chapter,
+      heading: kc.heading,
     })),
     storedTopics: stored.map((topic, index) => ({
       id: topicIds.get(topic.id)!,

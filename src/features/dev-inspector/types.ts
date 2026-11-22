@@ -23,7 +23,6 @@ export type Snapshot = {
     skipped: string | null;
     labels: string[];
   }>;
-  chapters: SnapshotChapter[];
   chunks: SnapshotChunk[];
   extractions: SnapshotExtraction[];
   kcs: SnapshotKc[];
@@ -65,20 +64,11 @@ export type Snapshot = {
   } | null;
 };
 
-export type SnapshotChapter = {
-  id: string;
-  materialId: string;
-  parentId: string | null;
-  depth: number;
-  position: number;
-  title: string;
-  pageFrom: number;
-};
-
 export type SnapshotChunk = {
   id: string;
   materialId: string;
-  chapterId: string | null;
+  /** The heading it follows; null before its Material's first. */
+  heading: string | null;
   position: number;
   label: string;
   pageFrom: number;
@@ -89,9 +79,9 @@ export type SnapshotChunk = {
 
 type SnapshotExtraction = {
   id: string;
-  chapterId: string;
+  materialId: string;
   kind: string;
-  unit: number;
+  batch: number;
   contentHash: string;
   kcIds: string[] | null;
   assumesMatched: boolean;
@@ -111,16 +101,17 @@ export type SnapshotKc = {
 };
 
 /**
- * A Chapter unit of the build as the current chunks form it, keyed as
- * `chapter_extractions` is (`unitKey`), with its stored extraction if any.
+ * A batch of the build as the current chunks form it, keyed as
+ * `unit_extractions` is (`unitKey`), with its stored extraction if any.
  */
 export type DevUnit = {
   key: string;
   kind: "content" | "exercise";
   materialId: string;
-  chapterId: string;
-  unit: number;
-  chapterIds: string[];
+  batch: number;
+  /** Where it is, as the check report names it: "Material p. 3–7". */
+  title: string;
+  /** A teaching batch's chunks; an exercise batch's question chunks. */
   chunkIds: string[];
   extraction: SnapshotExtraction | null;
 };
@@ -159,10 +150,10 @@ export type DevCallDetail = DevCall & { input: unknown; output: unknown };
 
 /** The suspect spots of a build, by the ids the page marks. */
 export type Flags = {
-  /** Chapters with `content` chunks of their own that no live KC cites. */
-  chaptersWithoutKcs: Set<string>;
-  /** Chapters the stored check report names, by id, with what it says. */
-  chaptersInReport: Map<string, string[]>;
+  /** `content` chunks that no live KC cites. */
+  chunksWithoutKcs: Set<string>;
+  /** Units the stored check report names, by key, with what it says. */
+  unitsInReport: Map<string, string[]>;
   /** Live KCs without a source chunk. */
   kcsWithoutSources: Set<string>;
   /** Live KCs the check report pairs as alike, with their partners. */

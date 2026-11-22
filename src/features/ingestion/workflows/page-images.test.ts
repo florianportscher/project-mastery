@@ -45,36 +45,4 @@ describe("openPdf", () => {
     expect((await pdf.renderPage(3)).blank).toBe(true);
     expect((await pdf.renderPage(1)).blank).toBe(false);
   });
-
-  test.each([
-    [
-      "lecture-notes.pdf",
-      [
-        "Preliminaries: Logic, Sets and Maps",
-        "Algebraic Structures: Groups, Rings, Fields",
-        "Systems of Linear Equations",
-        "Vector Spaces",
-        "Linear Maps and Matrices",
-        "Determinants",
-        "Eigenvalues and Diagonalisation",
-      ],
-    ],
-    [
-      "past-exams.pdf",
-      ["Final Exam, Winter Term 2025/26", "Resit Exam, Winter Term 2025/26"],
-    ],
-  ])("the gold %s's outline has the chapters %j", async (file, chapters) => {
-    const pdf = await openPdf(
-      new Uint8Array(
-        await readFile(
-          path.join(process.cwd(), "evals/gold/linear-algebra-I", file),
-        ),
-      ),
-    );
-    const outline = await pdf.outline();
-
-    expect(outline.map((entry) => entry.title)).toEqual(
-      expect.arrayContaining(chapters),
-    );
-  });
 });

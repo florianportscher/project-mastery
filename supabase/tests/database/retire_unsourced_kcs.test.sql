@@ -21,11 +21,9 @@ values ('aaaaaaaa-1111-0000-0000-000000000001', '11111111-1111-1111-1111-1111111
   '11111111-1111-1111-1111-111111111111/aaaaaaaa-0000-0000-0000-000000000001/aaaaaaaa-1111-0000-0000-000000000001',
   'parsed');
 select public.replace_material_chunks('aaaaaaaa-1111-0000-0000-000000000001',
-  '[{"position": 0, "parent_position": null, "depth": 0, "title": "Script", "page_from": 1},
-    {"position": 1, "parent_position": 0, "depth": 1, "title": "Final exam", "page_from": 2}]',
-  '[{"position": 0, "page_from": 1, "page_to": 1, "label": "content", "markdown": "Exam text.", "chapter_position": 1},
-    {"position": 1, "page_from": 2, "page_to": 2, "label": "exercise", "markdown": "Find a basis.", "chapter_position": 1},
-    {"position": 2, "page_from": 2, "page_to": 2, "label": "exercise", "markdown": "Find a kernel.", "chapter_position": 1}]');
+  '[{"position": 0, "page_from": 1, "page_to": 1, "label": "content", "markdown": "Exam text.", "heading": "Final exam"},
+    {"position": 1, "page_from": 2, "page_to": 2, "label": "exercise", "markdown": "Find a basis.", "heading": "Final exam"},
+    {"position": 2, "page_from": 2, "page_to": 2, "label": "exercise", "markdown": "Find a kernel.", "heading": "Final exam"}]');
 
 insert into public.kcs (id, owner, course_id, name, description, origin, position)
 values

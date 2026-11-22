@@ -297,140 +297,6 @@ export type Database = {
           },
         ];
       };
-      chapter_extractions: {
-        Row: {
-          assumes_matched: boolean;
-          chapter_id: string;
-          content_hash: string;
-          course_id: string;
-          created_at: string;
-          id: string;
-          kc_ids: string[] | null;
-          kind: string;
-          output: NonNullable<Json>;
-          owner: string;
-          unit: number;
-        };
-        ComputedFields: never;
-        Insert: {
-          assumes_matched?: boolean;
-          chapter_id: string;
-          content_hash: string;
-          course_id: string;
-          created_at?: string;
-          id?: string;
-          kc_ids?: string[] | null;
-          kind: string;
-          output: NonNullable<Json>;
-          owner: string;
-          unit: number;
-        };
-        Update: {
-          assumes_matched?: boolean;
-          chapter_id?: string;
-          content_hash?: string;
-          course_id?: string;
-          created_at?: string;
-          id?: string;
-          kc_ids?: string[] | null;
-          kind?: string;
-          output?: NonNullable<Json>;
-          owner?: string;
-          unit?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "chapter_extractions_chapter_id_fkey";
-            columns: ["chapter_id"];
-            isOneToOne: false;
-            referencedRelation: "chapters";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "chapter_extractions_course_id_fkey";
-            columns: ["course_id"];
-            isOneToOne: false;
-            referencedRelation: "courses";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "chapter_extractions_owner_fkey";
-            columns: ["owner"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      chapters: {
-        Row: {
-          course_id: string;
-          created_at: string;
-          depth: number;
-          id: string;
-          material_id: string;
-          owner: string;
-          page_from: number;
-          parent_id: string | null;
-          position: number;
-          title: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          course_id: string;
-          created_at?: string;
-          depth: number;
-          id?: string;
-          material_id: string;
-          owner: string;
-          page_from: number;
-          parent_id?: string | null;
-          position: number;
-          title: string;
-        };
-        Update: {
-          course_id?: string;
-          created_at?: string;
-          depth?: number;
-          id?: string;
-          material_id?: string;
-          owner?: string;
-          page_from?: number;
-          parent_id?: string | null;
-          position?: number;
-          title?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "chapters_course_id_fkey";
-            columns: ["course_id"];
-            isOneToOne: false;
-            referencedRelation: "courses";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "chapters_material_id_fkey";
-            columns: ["material_id"];
-            isOneToOne: false;
-            referencedRelation: "materials";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "chapters_owner_fkey";
-            columns: ["owner"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "chapters_parent_id_fkey";
-            columns: ["parent_id"];
-            isOneToOne: false;
-            referencedRelation: "chapters";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       chat_messages: {
         Row: {
           chat_id: string;
@@ -527,10 +393,10 @@ export type Database = {
       };
       chunks: {
         Row: {
-          chapter_id: string | null;
           course_id: string;
           created_at: string;
           embedding: string | null;
+          heading: string | null;
           id: string;
           label: string;
           markdown: string;
@@ -542,10 +408,10 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
-          chapter_id?: string | null;
           course_id: string;
           created_at?: string;
           embedding?: string | null;
+          heading?: string | null;
           id?: string;
           label: string;
           markdown: string;
@@ -556,10 +422,10 @@ export type Database = {
           position: number;
         };
         Update: {
-          chapter_id?: string | null;
           course_id?: string;
           created_at?: string;
           embedding?: string | null;
+          heading?: string | null;
           id?: string;
           label?: string;
           markdown?: string;
@@ -570,13 +436,6 @@ export type Database = {
           position?: number;
         };
         Relationships: [
-          {
-            foreignKeyName: "chunks_chapter_id_fkey";
-            columns: ["chapter_id"];
-            isOneToOne: false;
-            referencedRelation: "chapters";
-            referencedColumns: ["id"];
-          },
           {
             foreignKeyName: "chunks_course_id_fkey";
             columns: ["course_id"];
@@ -1153,7 +1012,9 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
+          language: string | null;
           material_id: string;
+          notes: string | null;
           owner: string;
           page_number: number;
           skipped: string | null;
@@ -1163,7 +1024,9 @@ export type Database = {
         Insert: {
           created_at?: string;
           id?: string;
+          language?: string | null;
           material_id: string;
+          notes?: string | null;
           owner: string;
           page_number: number;
           skipped?: string | null;
@@ -1172,7 +1035,9 @@ export type Database = {
         Update: {
           created_at?: string;
           id?: string;
+          language?: string | null;
           material_id?: string;
+          notes?: string | null;
           owner?: string;
           page_number?: number;
           skipped?: string | null;
@@ -2128,6 +1993,71 @@ export type Database = {
           },
         ];
       };
+      unit_extractions: {
+        Row: {
+          assumes_matched: boolean;
+          batch: number;
+          content_hash: string;
+          course_id: string;
+          created_at: string;
+          id: string;
+          kc_ids: string[] | null;
+          kind: string;
+          material_id: string;
+          output: NonNullable<Json>;
+          owner: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          assumes_matched?: boolean;
+          batch: number;
+          content_hash: string;
+          course_id: string;
+          created_at?: string;
+          id?: string;
+          kc_ids?: string[] | null;
+          kind: string;
+          material_id: string;
+          output: NonNullable<Json>;
+          owner: string;
+        };
+        Update: {
+          assumes_matched?: boolean;
+          batch?: number;
+          content_hash?: string;
+          course_id?: string;
+          created_at?: string;
+          id?: string;
+          kc_ids?: string[] | null;
+          kind?: string;
+          material_id?: string;
+          output?: NonNullable<Json>;
+          owner?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chapter_extractions_course_id_fkey";
+            columns: ["course_id"];
+            isOneToOne: false;
+            referencedRelation: "courses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chapter_extractions_owner_fkey";
+            columns: ["owner"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "unit_extractions_material_id_fkey";
+            columns: ["material_id"];
+            isOneToOne: false;
+            referencedRelation: "materials";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -2211,7 +2141,7 @@ export type Database = {
       release_mock_exam: { Args: { p_mock_id: string }; Returns: boolean };
       release_problem_run: { Args: { p_course_id: string }; Returns: boolean };
       replace_material_chunks: {
-        Args: { p_chapters: Json; p_chunks: Json; p_material_id: string };
+        Args: { p_chunks: Json; p_material_id: string };
         Returns: undefined;
       };
       restart_mock_grading: { Args: { p_mock_id: string }; Returns: boolean };
@@ -2263,15 +2193,6 @@ export type Database = {
         };
         Returns: boolean;
       };
-      store_chapter_kcs: {
-        Args: {
-          p_course_id: string;
-          p_kcs: Json;
-          p_prerequisites: Json;
-          p_units: Json;
-        };
-        Returns: boolean;
-      };
       store_session_close: {
         Args: {
           p_condensed_memory?: string;
@@ -2279,6 +2200,15 @@ export type Database = {
           p_memory_read_at?: string;
           p_session_id: string;
           p_topic_notes?: Json;
+        };
+        Returns: boolean;
+      };
+      store_unit_kcs: {
+        Args: {
+          p_course_id: string;
+          p_kcs: Json;
+          p_prerequisites: Json;
+          p_units: Json;
         };
         Returns: boolean;
       };

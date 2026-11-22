@@ -28,7 +28,6 @@ const TABLES = [
   "problems",
   "problem_kcs",
   "materials",
-  "chapters",
   "exams",
   "chunks",
   "kcs",
@@ -138,19 +137,11 @@ function seedCourse(kcIds: string[], taught: string[] = []) {
     name: "Sheet 7",
     created_at: "2026-10-01T00:00:00Z",
   });
-  t.chapters.push({
-    id: "ch1",
-    ...owned,
-    material_id: "m1",
-    parent_id: null,
-    title: "Sheet 7",
-    depth: 0,
-  });
   t.chunks.push({
     id: QUESTION_CHUNK,
     ...owned,
     material_id: "m1",
-    chapter_id: "ch1",
+    heading: null,
     position: 0,
     page_from: 1,
     page_to: 1,

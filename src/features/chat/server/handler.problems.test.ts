@@ -40,7 +40,7 @@ function addChunk(n: number, material: string, markdown: string) {
     ...owned,
     id: chunkOf(n),
     material_id: material,
-    chapter_id: `root-${material}`,
+    heading: null,
     position: n,
     page_from: n,
     page_to: n,

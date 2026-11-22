@@ -229,7 +229,7 @@ test("the graph has zoom buttons and no library attribution", async () => {
 const withDuplicate = {
   ...map,
   checkReport: {
-    chaptersWithoutKcs: [],
+    uncitedPages: [],
     exercisesWithoutKcs: [],
     duplicates: [{ a: "Nozzles", b: "Jet nozzles", similarity: 0.9 }],
     unitsBelowCoverage: [],

@@ -7,6 +7,7 @@ import {
   type BatchPage,
   type PageUnit,
 } from "@/features/ingestion/ai/page-units";
+import type { PageAnswer } from "@/features/ingestion/domain/material-language";
 import { missingPages } from "@/features/ingestion/domain/missing-pages";
 import {
   PAGES_PER_BATCH,
@@ -106,20 +107,6 @@ export async function hasChunks(
   return data.length > 0;
 }
 
-/** The units of the Material's read pages, in reading order. */
-export async function loadUnits(
-  supabase: AdminSupabase,
-  materialId: string,
-): Promise<PageUnit[]> {
-  const { data, error } = await supabase
-    .from("material_pages")
-    .select("page_number, units")
-    .eq("material_id", materialId)
-    .order("page_number");
-  if (error) failed("Loading the page results", error);
-  return data.flatMap((page) => storedUnitsSchema.parse(page.units));
-}
-
 async function download(supabase: AdminSupabase, path: string) {
   const { data, error } = await supabase.storage.from(BUCKET).download(path);
   if (error) failed(`Reading ${path}`, error);
@@ -139,9 +126,12 @@ async function storedPageNumbers(
   return data.map((page) => page.page_number);
 }
 
-/** One stored page: read, with the units that start on it, or skipped. */
+/**
+ * One stored page: read, with the units that start on it and what its read
+ * answered about language and notation, or skipped.
+ */
 type PageRow =
-  | { pageNumber: number; units: PageUnit[] }
+  | ({ pageNumber: number; units: PageUnit[] } & PageAnswer)
   | { pageNumber: number; skipped: PageSkip };
 
 /**
@@ -159,7 +149,7 @@ async function storePage(
     page_number: page.pageNumber,
     ...("skipped" in page
       ? { units: [], skipped: page.skipped }
-      : { units: page.units }),
+      : { units: page.units, language: page.language, notes: page.notes }),
   });
   if (stored.error?.code === FOREIGN_KEY_VIOLATION) return false;
   if (stored.error && stored.error.code !== UNIQUE_VIOLATION) {
@@ -372,8 +362,16 @@ async function readBatch(
       units,
       pages.map((page) => page.pageNumber),
     );
-  const rows = (onPages: Map<number, PageUnit[]>): PageRow[] =>
-    [...onPages].map(([pageNumber, units]) => ({ pageNumber, units }));
+  const rows = (
+    onPages: Map<number, PageUnit[]>,
+    { language, notes }: PageAnswer,
+  ): PageRow[] =>
+    [...onPages].map(([pageNumber, units]) => ({
+      pageNumber,
+      units,
+      language,
+      notes,
+    }));
 
   let context = await lastUnitBefore(supabase, material.id, batch[0]!);
   const answer = await callBatch(supabase, material, batch, context);
@@ -392,7 +390,7 @@ async function readBatch(
         pages.push({ pageNumber: page.pageNumber, skipped: "unreadable" });
         context = null;
       } else {
-        pages.push(...rows(placed([page], single.units)));
+        pages.push(...rows(placed([page], single.units), single));
         context = single.units.at(-1) ?? null;
       }
     }
@@ -411,7 +409,7 @@ async function readBatch(
   for (const page of batch) {
     const own = onPages.get(page.pageNumber) ?? [];
     if (!uncovered.has(page.pageNumber)) {
-      pages.push({ pageNumber: page.pageNumber, units: own });
+      pages.push({ pageNumber: page.pageNumber, units: own, ...said(answer) });
       context = own.at(-1) ?? context;
       continue;
     }
@@ -431,18 +429,33 @@ async function readBatch(
     }
     const again = single === "failed" ? [] : single.units;
     const onPage = placed([page], again).get(page.pageNumber) ?? [];
-    if (uncoveredPages(onPage, [page.pageNumber]).length > 0) {
+    if (
+      single === "failed" ||
+      uncoveredPages(onPage, [page.pageNumber]).length > 0
+    ) {
       pages.push({ pageNumber: page.pageNumber, skipped: "uncovered" });
     } else {
-      pages.push({ pageNumber: page.pageNumber, units: onPage });
+      pages.push({
+        pageNumber: page.pageNumber,
+        units: onPage,
+        ...said(single),
+      });
       context = onPage.at(-1) ?? context;
     }
   }
   return { pages, limit: false, left };
 }
 
-/** What an answered batch call says: its units and the pages it skips. */
-type BatchAnswer = { units: PageUnit[]; skipped: number[] };
+/**
+ * What an answered batch call says: its units, the pages it skips, and the
+ * pages' language and notation.
+ */
+type BatchAnswer = PageAnswer & { units: PageUnit[]; skipped: number[] };
+
+const said = ({ language, notes }: PageAnswer): PageAnswer => ({
+  language,
+  notes,
+});
 
 /**
  * One streamed batch call: its answer, "failed" when the call fails for
@@ -485,6 +498,8 @@ async function callBatch(
   try {
     const answer = batchResultSchema.parse(await result.output);
     return {
+      language: answer.language,
+      notes: answer.notes,
       units: answer.units,
       skipped: answer.skippedPages.map((page) => page.pageNumber),
     };

@@ -7,11 +7,6 @@ import { aiTask } from "@/lib/ai/models";
 /** What the exercise call gets of one exercise batch. */
 export type OfferedExerciseUnit = {
   material: string;
-  /**
-   * The Material's Outline: one line per Chapter, indented by its depth,
-   * the Chapters of the batch's Exercises marked.
-   */
-  outline: string[];
   /** The course language by name, such as English. */
   language: string;
   exercises: ReadonlyArray<{
@@ -25,8 +20,8 @@ export type OfferedExerciseUnit = {
   /** Every live KC of the Course, in Course order. */
   kcs: ReadonlyArray<{
     id: string;
-    /** The title of the Chapter of its first source. */
-    chapter: string;
+    /** The heading its first source follows; empty without one. */
+    heading: string;
     name: string;
     description: string;
   }>;
@@ -90,7 +85,7 @@ export const exerciseExtractionSchema = (
     ),
   });
 
-const EXERCISE_INSTRUCTIONS = `You get some exercises of a university course as JSON: the material's name, its outline with the exercises' chapters marked, the course language, the exercises, each with an id, its whole statement (a shared introduction and every subtask) and all its printed solutions or null, and every knowledge component (KC) of the course so far, in course order, each with an id and its chapter. Answer for every exercise.
+const EXERCISE_INSTRUCTIONS = `You get some exercises of a university course as JSON: the material's name, the course language, the exercises, each with an id, its whole statement (a shared introduction and every subtask) and all its printed solutions or null, and every knowledge component (KC) of the course so far, in course order, each with an id and the heading it was taught under. Answer for every exercise.
 
 - Give the ids of the listed KCs a Student must master to solve it: the results and methods its solution uses as a step, most important first, usually 1 to 4, at most 6. A KC used in several subtasks counts once. Leave out a KC that only defines a notion the statement is written with when a more specific listed KC covers the step.
 - When the exercise introduces a notion or derives a result that no listed KC teaches and that another exam task could ask for again, such as a named kind of object or a formula it proves, give it as a new KC, never a restatement of a listed one: something an exam task could test on its own and a Student could learn in one sitting, with a short name and a one-line description.
