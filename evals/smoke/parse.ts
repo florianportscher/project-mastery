@@ -45,7 +45,7 @@ async function pageCount(bytes: Uint8Array, mediaType: string) {
 /**
  * Parses one file, or a selection of its pages, as a new Material with the
  * real `parseMaterial` workflow, run in this process, and checks what the
- * parse stored. On the default smoke model (AI_SMOKE_MODEL pins another).
+ * parse stored: plumbing only, not what the model read.
  */
 export const parseSmoke: SmokeCheck = {
   name: "parse",
@@ -165,13 +165,6 @@ async function writePages(
 
 type Unit = { markdown?: unknown };
 
-/** A unit that is only a page number: "19", "- 19 -", "Seite 19 von 38". */
-const PAGE_NUMBER = /^\W*(page|seite|s\.)?\s*\d+(\s*(of|von|\/)\s*\d+)?\W*$/i;
-
-/** A heading that names a statement of teaching text, not a section. */
-const STATEMENT_HEADING =
-  /^(\*\*)?(definition|theorem|lemma|proposition|corollary|example|proof|remark|satz|beweis|beispiel|bemerkung)\b/i;
-
 async function checkParse(
   supabase: Parameters<SmokeCheck["run"]>[0]["supabase"],
   materialId: string,
@@ -223,23 +216,6 @@ async function checkParse(
       !row || (row.skipped !== null && !SKIP_REASONS.includes(row.skipped))
     );
   });
-  const pageNumberUnits = rows.flatMap((page) =>
-    unitsOf(page)
-      .filter((unit) => PAGE_NUMBER.test(String(unit.markdown).trim()))
-      .map(() => page.page_number),
-  );
-  // A running header repeats on every page; a unit on 3 pages is one.
-  const unitPages = new Map<string, Set<number>>();
-  for (const page of rows) {
-    for (const unit of unitsOf(page)) {
-      const text = String(unit.markdown).trim();
-      unitPages.set(
-        text,
-        (unitPages.get(text) ?? new Set()).add(page.page_number),
-      );
-    }
-  }
-  const repeated = [...unitPages].filter(([, on]) => on.size >= 3);
   console.info(`  Language: ${m.language}; notes: ${m.notes || "none"}`);
   // The headings in reading order, each where a chunk starts following it.
   const headings = chunkRows.flatMap((c, i) =>
@@ -255,9 +231,6 @@ async function checkParse(
   );
   console.info(`  Chunks: ${labels.join(", ")}`);
 
-  const statements = headings.filter((h) =>
-    STATEMENT_HEADING.test(h.heading.trim()),
-  );
   const outOfRange = chunkRows.filter(
     (c) => c.page_from < 1 || c.page_to > total || c.page_from > c.page_to,
   );
@@ -276,18 +249,6 @@ async function checkParse(
       unaccounted.length ? `pages ${unaccounted.join(", ")}` : undefined,
     ),
     result(
-      "no unit is a page number",
-      pageNumberUnits.length === 0,
-      pageNumberUnits.length
-        ? `pages ${pageNumberUnits.join(", ")}`
-        : undefined,
-    ),
-    result(
-      "no unit repeats on 3 pages, as a running header would",
-      repeated.length === 0,
-      repeated.map(([text]) => text.slice(0, 60)).join(" | ") || undefined,
-    ),
-    result(
       "chunk positions run from 0 without gaps",
       chunkRows.every((c, i) => c.position === i),
     ),
@@ -296,12 +257,6 @@ async function checkParse(
       chunkRows.every((c) => c.markdown.trim().length > 0) &&
         outOfRange.length === 0,
     ),
-    result(
-      "no heading is a definition, theorem, lemma, example or proof",
-      statements.length === 0,
-      statements.map((h) => h.heading).join(" | ") || undefined,
-    ),
-    result("the page read named the language", m.language !== null),
     result(
       "every non-admin chunk is embedded, no admin chunk is",
       chunkRows.every((c) => (c.label === "admin") === (c.embedding === null)),

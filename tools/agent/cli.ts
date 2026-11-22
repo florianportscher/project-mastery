@@ -43,7 +43,7 @@ import {
 const HELP = `pnpm -s agent <command>   (local stack, except \`staging\`)
 
 Setup
-  up                     start Supabase and next dev if needed, create test users
+  up [--live]            start Supabase and next dev if needed, create test users; the app runs on the mock unless --live keeps the provider of .env.local
   down                   stop the dev server that \`up\` started
   status                 what is running, with URLs
   reset                  recreate the database from migrations and the test users
@@ -100,7 +100,7 @@ async function look(port: number) {
   return problems.length === 0 ? page : `${page}\n\n${problems.join("\n")}`;
 }
 
-async function up() {
+async function up(live: boolean) {
   const lines: string[] = [];
   const supabase = supabaseEnv();
   if (await isSupabaseUp()) {
@@ -121,7 +121,7 @@ async function up() {
   if (running !== null) {
     lines.push(`app       running · http://localhost:${running}`);
   } else {
-    const { port, pid } = await startDevServer();
+    const { port, pid } = await startDevServer(live);
     lines.push(
       `app       started · http://localhost:${port} (pid ${pid}, log ${path.relative(process.cwd(), DEV_LOG)})`,
     );
@@ -219,7 +219,7 @@ async function run(
 ): Promise<string> {
   switch (command) {
     case "up":
-      return up();
+      return up(args.includes("--live"));
     case "down":
       return stopDevServer();
     case "status":
