@@ -37,7 +37,6 @@ export async function getBrief(
   return { courseId, messages, ...panel };
 }
 
-/** What the Brief's panel shows of the Brief itself. */
 async function loadPanelData(supabase: Supabase, courseId: string) {
   const [brief, excluded, exams, topics, scopes] = await Promise.all([
     supabase

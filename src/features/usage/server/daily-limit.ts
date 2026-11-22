@@ -66,7 +66,6 @@ export async function getDailyUsage(now = new Date()): Promise<DailyUsage> {
   };
 }
 
-/** The signed-in Student's Daily limit status, for pages. */
 export async function getDailyLimitStatus(): Promise<DailyLimitStatus> {
   return checkDailyLimit(await createClient());
 }

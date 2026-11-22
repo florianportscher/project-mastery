@@ -27,7 +27,6 @@ export const PAGE_SKIP_REASONS = ["nothing_to_learn"] as const;
 export type ParseStatus =
   "not_parsed" | "queued" | "parsing" | "parsed" | "failed";
 
-/** A chunk as the chunk view shows it. */
 export type ChunkView = {
   id: string;
   position: number;
