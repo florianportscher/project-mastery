@@ -46,7 +46,6 @@ type SubmitButtonProps = React.ComponentProps<typeof Button> & {
   intent?: string;
 };
 
-/** A submit button that is disabled while its form submits. */
 export function SubmitButton({
   intent,
   children,
@@ -68,7 +67,6 @@ export function SubmitButton({
   );
 }
 
-/** Shown in place of a form once an email with a link is on its way. */
 export function CheckEmail({
   email,
   onBack,

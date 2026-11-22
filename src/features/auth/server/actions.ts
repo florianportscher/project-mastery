@@ -44,7 +44,6 @@ function confirmUrl(origin: string, next: string) {
   return url.toString();
 }
 
-/** Reads the form fields every auth form shares. */
 async function readForm(formData: FormData) {
   const origin = await getOrigin();
   const nextField = formData.get("next");

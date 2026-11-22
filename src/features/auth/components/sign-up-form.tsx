@@ -23,7 +23,6 @@ type SignUpFormProps = {
   onReset: () => void;
 };
 
-/** Create an account with email and password, confirmed by email. */
 export function SignUpForm({ next, onReset }: SignUpFormProps) {
   const [state, formAction] = useActionState(signUp, null);
   if (state?.ok) return <CheckEmail email={state.email} onBack={onReset} />;
