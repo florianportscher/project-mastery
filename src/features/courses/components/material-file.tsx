@@ -30,13 +30,10 @@ export function MaterialFile({
   name: string;
   /** The 1-based PDF page to show first. */
   page?: number;
-  /** Called with the PDF page the Student turns to. */
   onPageChange?: (page: number) => void;
   /** PDF pages to mark as cited. */
   marked?: { from: number; to: number };
-  /** The PDF zoom to start at. */
   defaultZoom?: number;
-  /** Called with the PDF zoom the Student sets. */
   onZoomChange?: (zoom: number) => void;
 }) {
   const [opened, setOpened] = useState<Opened>({ status: "loading" });

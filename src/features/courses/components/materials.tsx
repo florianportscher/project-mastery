@@ -64,7 +64,6 @@ type MaterialsProps = {
   /** The signed-in Student, whose Storage folder uploads go to. */
   ownerId: string;
   courseId: string;
-  /** The Course's Materials in Course order. */
   materials: MaterialListItem[];
   /** In how many Chats a Material is attached, for its delete warning. */
   countMaterialChats: CountMaterialChats;

@@ -30,7 +30,6 @@ export const renameCourseSchema = courseIdSchema.extend({
 /** The largest Material a Student can upload: 20 MB. */
 const MAX_MATERIAL_SIZE_BYTES = 20 * 1024 * 1024;
 
-/** The file types a Material can have. */
 export const MATERIAL_MEDIA_TYPES = [
   "application/pdf",
   "image/png",
@@ -92,7 +91,6 @@ export const renameMaterialSchema = materialIdSchema.extend({
   name: materialNameSchema,
 });
 
-/** Moves a Material one place earlier (up) or later (down) in Course order. */
 export const moveMaterialSchema = materialIdSchema.extend({
   direction: z.enum(["up", "down"]),
 });

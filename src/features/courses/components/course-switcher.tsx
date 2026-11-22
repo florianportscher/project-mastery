@@ -24,7 +24,6 @@ import {
 import type { CourseListItem } from "@/features/courses/types";
 
 type CourseSwitcherProps = {
-  /** The open Course. */
   course: CourseListItem;
   /** All the Student's Courses, most recently used first. */
   courses: CourseListItem[];

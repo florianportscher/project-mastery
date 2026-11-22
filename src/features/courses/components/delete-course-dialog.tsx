@@ -10,7 +10,6 @@ type DeleteCourseDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-/** What the confirmation says goes with the Course. */
 function deletedWith({
   name,
   chatCount,

@@ -15,15 +15,11 @@ type MaterialChipProps = {
   mediaType: string;
   /** The Material was deleted: the chip says so and cannot be opened. */
   deleted?: boolean;
-  /** Opens the Material in the viewer. */
   onOpen?: () => void;
-  /** Removes the Material from a message that is not sent yet. */
   onRemove?: () => void;
   /** The upload is under way: the share sent, from 0 to 1. */
   progress?: number;
-  /** The upload failed: why, shown on the chip. */
   error?: string;
-  /** Uploads the file again after a failure. */
   onRetry?: () => void;
 };
 

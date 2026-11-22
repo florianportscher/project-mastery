@@ -21,9 +21,7 @@ export type MaterialUpload = {
   status: "uploading" | "registering" | "failed";
   /** Share of the bytes sent, from 0 to 1. */
   progress: number;
-  /** The Material it became, once registered. */
   materialId?: string;
-  /** Why it failed. */
   message?: string;
   /** Whether trying again can help: false for a refused file. */
   canRetry: boolean;
@@ -53,7 +51,6 @@ export function useMaterialUploads({
   listedIds?: ReadonlySet<string>;
   ownerId: string;
   courseId: string;
-  /** Called once for each upload that became a Material. */
   onRegistered?: (material: MaterialReference) => void;
   /**
    * When the router refreshes, so pages show the new Material. "on-leave"
@@ -192,7 +189,6 @@ export function useMaterialUploads({
     [courseId, ownerId, refresh, router, update, forget],
   );
 
-  /** Starts uploading the files the Student picked or dropped. */
   const add = useCallback(
     (picked: Iterable<File>) => {
       const added = [...picked].map((file) => {
@@ -216,7 +212,6 @@ export function useMaterialUploads({
     [run],
   );
 
-  /** Uploads a failed file again, under a new Material id. */
   const retry = useCallback(
     (key: string) => {
       const file = files.current.get(key);
@@ -229,7 +224,6 @@ export function useMaterialUploads({
     uploads,
     add,
     retry,
-    /** Cancels an upload, or dismisses a failed one. */
     remove: forget,
   };
 }

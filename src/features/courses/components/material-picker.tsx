@@ -19,11 +19,8 @@ type MaterialPickerProps = {
   onOpenChange: (open: boolean) => void;
   /** The Course's Materials, newest first. */
   materials: MaterialListItem[];
-  /** The ids of the Materials already picked. */
   pickedIds: string[];
-  /** The most Materials that can be picked. */
   max: number;
-  /** Picks a Material, or unpicks a picked one. */
   onToggle: (material: MaterialListItem) => void;
 };
 

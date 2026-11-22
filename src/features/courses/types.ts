@@ -12,7 +12,6 @@ export type MaterialListItem = {
   sizeBytes: number;
   /** When it was uploaded, as an ISO timestamp. */
   createdAt: string;
-  /** How far its parse is. */
   parse: ParseState;
 };
 
@@ -27,8 +26,6 @@ export type StoredMaterial = {
 
 /** A Course in the Course list, with what deleting it takes along. */
 export type CourseWithCounts = CourseListItem & {
-  /** How many Chats the Course holds. */
   chatCount: number;
-  /** How many Materials the Course holds. */
   materialCount: number;
 };
