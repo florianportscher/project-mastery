@@ -60,7 +60,6 @@ type CallScope = MeteredScope & {
   dailyLimit?: "enforce" | "ignore";
 };
 
-/** A `generateText` call, with the settings `aiTask` gives. */
 type GenerateCall = Parameters<typeof generateText>[0] & { model: string };
 
 /**
@@ -126,7 +125,6 @@ export async function meteredGenerate(
   );
 }
 
-/** A `streamText` call, with the settings `aiTask` gives. */
 type StreamCall = Parameters<typeof streamText>[0] & { model: string };
 
 /**
@@ -290,7 +288,6 @@ type SentCall = {
   messages?: unknown;
 };
 
-/** The text and files a call sends, for `estimatedUsage`. */
 function sentInput(call: SentCall): {
   input: string;
   output: string;

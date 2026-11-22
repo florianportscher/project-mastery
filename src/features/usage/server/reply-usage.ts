@@ -6,7 +6,6 @@ import type { Supabase, SessionSupabase } from "@/lib/supabase/types";
 import { failed } from "@/lib/supabase/failed";
 import { recordAiUsage } from "./usage-store";
 
-/** What one reply's model call used, as its `ai_usage` row records it. */
 export type StoredReplyUsage = {
   /** All input tokens, cached ones included. */
   inputTokens: number;

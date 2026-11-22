@@ -26,7 +26,6 @@ export type StudentScope = {
   studentId?: string;
 };
 
-/** The scope the admin client needs: always an explicit Student. */
 export type AdminStudentScope = Required<StudentScope>;
 
 /**
@@ -45,7 +44,6 @@ export function assertStudentScope(
   }
 }
 
-/** One AI call made for the Student, as recorded. */
 export type AiUsageRecord = {
   task: AiTask;
   /** The model that answered, as priced in MODEL_PRICES. */
