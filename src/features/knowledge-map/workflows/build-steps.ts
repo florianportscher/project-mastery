@@ -210,7 +210,6 @@ export type StoredUnit = {
   assumesMatched: boolean;
 };
 
-/** The Course's stored unit extractions. */
 export async function loadStoredUnits(
   supabase: AdminSupabase,
   courseId: string,

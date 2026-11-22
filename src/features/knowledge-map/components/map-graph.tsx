@@ -80,7 +80,6 @@ type ExerciseNodeData = {
 type KcNode = Node<KcNodeData, "kc">;
 type ExerciseNode = Node<ExerciseNodeData, "exercise">;
 
-/** A KC: its name and recall band marker. */
 function KcNodeView({ data }: NodeProps<KcNode>) {
   const { kc, band, selected, related, color, scale, badges } = data;
   return (

@@ -32,7 +32,6 @@ const dateFormat = new Intl.DateTimeFormat("en", {
   timeStyle: "short",
 });
 
-/** How often the page refreshes while a build runs. */
 const BUILD_POLL_MS = 2000;
 
 /**
