@@ -14,6 +14,8 @@ pnpm -s agent up       # idempotent: Supabase, test users, next dev in the backg
 pnpm -s agent status   # what is running, with URLs
 ```
 
+`up` runs the app on the mock provider even when `.env.local` names a live one. `pnpm -s agent up --live` keeps the live provider: only when the task needs real model calls (see [live-ai.md](../../../docs/agents/live-ai.md)).
+
 If `up` reports "permission denied … docker.sock", this shell is not in the `docker` group yet. Tell the user to restart Claude Code from a new login shell; do not use sudo.
 
 ## The loop

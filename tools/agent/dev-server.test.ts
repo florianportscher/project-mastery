@@ -10,8 +10,12 @@ describe("devServerEnv", () => {
     });
   });
 
-  test("keeps the provider the caller set", () => {
-    expect(devServerEnv({ AI_PROVIDER: "gateway" }).AI_PROVIDER).toBe(
+  test("uses the mock even when the environment names a live provider", () => {
+    expect(devServerEnv({ AI_PROVIDER: "gateway" }).AI_PROVIDER).toBe("mock");
+  });
+
+  test("keeps the provider of the environment with live", () => {
+    expect(devServerEnv({ AI_PROVIDER: "gateway" }, true).AI_PROVIDER).toBe(
       "gateway",
     );
   });

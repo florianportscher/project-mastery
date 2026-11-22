@@ -46,16 +46,13 @@ const CHECKS: SmokeCheck[] = [
 
 /**
  * The model every generating task is pinned to unless the check names its
- * own (docs/agents/live-ai.md). With a Google key, as in local development,
- * that is the Gemini model, which answers in seconds (ADR 0016). Otherwise
- * it is meta/muse-ember, the model that ships. `AI_SMOKE_MODEL` pins another
- * model.
+ * own (docs/agents/live-ai.md): the free Gemini model (ADR 0016), because
+ * smoke checks test plumbing, not model quality. `AI_SMOKE_MODEL` pins
+ * another model for the maintainer's own sessions. Without a Google key the
+ * runner refuses to start, and never falls back to a Gateway model.
  */
 const DEFAULT_SMOKE_MODEL =
-  process.env.AI_SMOKE_MODEL ??
-  (process.env.GOOGLE_GENERATIVE_AI_API_KEY
-    ? "google/gemini-3.5-flash-lite"
-    : "meta/muse-ember");
+  process.env.AI_SMOKE_MODEL ?? "google/gemini-3.5-flash-lite";
 
 /** The most model calls a smoke check may record, unless it sets its own. */
 const DEFAULT_MAX_CALLS = 30;
@@ -148,6 +145,11 @@ async function main() {
   }
   if ((process.env.AI_PROVIDER ?? "gateway") === "mock") {
     throw new Error("Smoke checks need a real model: unset AI_PROVIDER=mock.");
+  }
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    throw new Error(
+      "Smoke checks run on the free Gemini API: set GOOGLE_GENERATIVE_AI_API_KEY.",
+    );
   }
   const model = check.model ?? DEFAULT_SMOKE_MODEL;
   for (const override of GENERATING_TASK_OVERRIDES) {
