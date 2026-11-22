@@ -17,7 +17,6 @@ import { startMockExam } from "@/features/study/server/actions";
 import type { MockExamView } from "@/features/study/types";
 import { cn } from "@/lib/utils";
 
-/** How often the page refreshes while the mock assembles or is graded. */
 const POLL_MS = 2000;
 
 function StartButton({ mockId }: { mockId: string }) {
@@ -59,7 +58,6 @@ export function MockExamStatus({
   tutorHref,
 }: {
   mock: MockExamView;
-  /** A new Chat that goes through the graded mock. */
   tutorHref: string;
 }) {
   const router = useRouter();

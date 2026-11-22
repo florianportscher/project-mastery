@@ -12,13 +12,10 @@ const GAP_CAP_SECONDS = 5 * 60;
 /** The longest time to answer a review that counts, in seconds. */
 const REVIEW_CAP_SECONDS = 5 * 60;
 
-/** Teaching sessions needed before minutes per KC is measured. */
 const MIN_TEACHING_SESSIONS = 3;
 
-/** The newest teaching sessions minutes per KC is the median of. */
 const TEACHING_SAMPLE = 5;
 
-/** Review attempts needed before minutes per review is measured. */
 const MIN_REVIEWS = 5;
 
 export type PaceMessage = {
@@ -30,9 +27,7 @@ export type PaceMessage = {
 /** A session that holds KCs' first days, with its Reviews. */
 export type TeachingSession = {
   sessionId: string;
-  /** How many KCs it taught first. */
   kcsTaught: number;
-  /** How many of its attempts were reviews. */
   reviews: number;
   /** Its first scheduling attempt, as an ISO timestamp, for its order. */
   firstAt: string;

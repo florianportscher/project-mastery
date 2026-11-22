@@ -10,13 +10,11 @@
 /** Unseen Problems a Topic's KC should have. */
 const TOPIC_STOCK_PER_KC = 2;
 
-/** The most Problems one Topic stock run queues. */
 const TOPIC_STOCK_CAP = 4;
 
 /** How many days ahead a review stock run looks for due KCs. */
 const REVIEW_DAYS_AHEAD = 3;
 
-/** The most Problems one review stock run queues. */
 const REVIEW_STOCK_CAP = 6;
 
 type StockExercise = {
@@ -29,7 +27,6 @@ type StockExercise = {
 };
 
 export type StockInput = {
-  /** The Course's Exercises, in map order. */
   exercises: StockExercise[];
   /** The KCs of each unseen Problem of the Course. */
   unseen: Array<{ kcs: string[] }>;

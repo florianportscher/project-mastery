@@ -5,7 +5,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SESSION_LENGTHS } from "@/features/study/domain/today-messages";
 
-/** The length preselected when the Student has not chosen one before. */
 const DEFAULT_MINUTES = 30;
 
 /**
@@ -20,7 +19,6 @@ export function StartButtons({
 }: {
   messages: string[];
   chatHref: string;
-  /** The length of the Student's newest session that has one. */
   lastMinutes: number | null;
 }) {
   const [minutes, setMinutes] = useState<number | null>(

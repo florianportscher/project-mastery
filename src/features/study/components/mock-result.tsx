@@ -66,7 +66,6 @@ export function MockResultView({
 }: {
   result: MockResult;
   tasks: MockTask[];
-  /** A new Chat whose Study session goes through the mock. */
   tutorHref: string;
 }) {
   return (

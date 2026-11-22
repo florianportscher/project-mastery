@@ -15,7 +15,6 @@ export type GradedStep = { points: number; reason: string };
  */
 export type MockCheck = AnswerCheck | null;
 
-/** To the nearest half point. */
 const toHalf = (points: number) => Math.round(points * 2) / 2;
 
 /**

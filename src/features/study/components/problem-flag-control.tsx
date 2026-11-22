@@ -24,7 +24,6 @@ export function ProblemFlagControl({
   flag: storedFlag,
 }: {
   problemId: string;
-  /** The stored flag; undefined while the Problem has none. */
   flag: Flag | undefined;
 }) {
   const [flag, setFlag] = useState(storedFlag);

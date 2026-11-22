@@ -73,7 +73,6 @@ export function rankNext(input: {
   prerequisites: Array<{ from: string; to: string }>;
   /** Priority by KC id; a missing one counts as 0. */
   priorities: Record<string, number>;
-  /** The replayed recall of each taught KC. */
   recall: Map<string, KcRecall>;
   pace: Pace;
   scope: TopicScope[];
@@ -199,7 +198,6 @@ function afterAnchors(
   return ordered;
 }
 
-/** The Topics each Topic reaches over one or more Topic arrows, by id. */
 function topicReach(
   topics: PlanTopic[],
   prerequisites: Array<{ from: string; to: string }>,

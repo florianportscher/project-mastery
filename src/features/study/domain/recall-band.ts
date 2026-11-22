@@ -7,7 +7,6 @@ import type { KcRecall } from "@/features/study/domain/replay";
 
 export type RecallBand = "new" | "strong" | "fading" | "weak";
 
-/** Below this recall a taught KC is `weak`. */
 const FADING_RECALL = 0.7;
 
 export type KcBand = {

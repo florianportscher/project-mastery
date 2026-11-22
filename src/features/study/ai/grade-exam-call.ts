@@ -22,7 +22,6 @@ export type GradeExamInput = {
   finalResults: string[];
 };
 
-/** The grading of an item, with each result on its KC's id. */
 export type ExamGrading = {
   steps: GradedStep[];
   results: Array<{ kcId: string; result: AttemptResult }>;
@@ -41,7 +40,6 @@ const INSTRUCTIONS = `You grade one task of a Student's mock exam for a universi
 
 const RESULTS = ["full", "partial", "wrong"] as const;
 
-/** The KC labels the call reads: K1, K2, … */
 const label = (index: number) => `K${index + 1}`;
 
 export function gradeExamCall(input: GradeExamInput) {
@@ -102,7 +100,6 @@ export function gradeExamCall(input: GradeExamInput) {
         },
       ] as ModelMessage[],
     },
-    /** The model's output as a grading; throws when it is no valid one. */
     grading(output: unknown): ExamGrading {
       const parsed = schema.parse(output);
       const results = parsed.results as Record<string, AttemptResult>;

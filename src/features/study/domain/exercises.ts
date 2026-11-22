@@ -22,7 +22,6 @@ const PROBLEM_SOURCES = ["old_exam", "exercise", "variant", "new"] as const;
 
 export type ProblemSource = (typeof PROBLEM_SOURCES)[number];
 
-/** The most Problems `findProblems` returns. */
 export const MAX_PROBLEMS = 3;
 
 /** The difficulty target when the Student has no unassisted success yet. */

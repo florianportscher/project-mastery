@@ -22,7 +22,6 @@ const VARIANT_CHANGES = [
 
 type GenerateKc = { name: string; description: string };
 
-/** What a variant is written from: one Exercise of the Course. */
 type VariantInput = {
   kind: "variant";
   exercise: {
@@ -40,7 +39,6 @@ type VariantInput = {
   kcs: GenerateKc[];
 };
 
-/** What a new Problem is written from. */
 type NewProblemInput = {
   kind: "new";
   /** Each KC with up to 3 of its source chunks' Markdown. */
@@ -137,7 +135,6 @@ export function generateCall(input: GenerateInput) {
         },
       ] as ModelMessage[],
     },
-    /** The model's output as a draft; throws when it is no valid one. */
     draft(output: unknown): ProblemDraft {
       const parsed = schema.parse(output);
       return {

@@ -127,10 +127,8 @@ const gradeInputSchema = z.object({
 
 type GradeInput = z.infer<typeof gradeInputSchema>;
 
-/** The session's newest Question as `ask` and `grade` check it. */
 export type QuestionToGrade = {
   id: string;
-  /** The live KCs it tests. */
   kcIds: string[];
   /** The KCs it tested that were retired since, whose results are dropped. */
   retiredKcIds: string[];
@@ -224,7 +222,6 @@ export type TutorToolActions = {
   compute: (program: string) => Promise<ProgramRun>;
 };
 
-/** A refused tool call: its message tells the model what to fix. */
 export class TutorToolError extends Error {
   override name = "TutorToolError";
 }

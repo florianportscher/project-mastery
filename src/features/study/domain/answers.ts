@@ -3,7 +3,6 @@
  * `ask` and its grade, joined in order. Pure.
  */
 
-/** The most characters `questions.answer_text` holds. */
 export const MAX_ANSWER_TEXT = 20_000;
 
 /**

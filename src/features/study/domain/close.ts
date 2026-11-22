@@ -6,7 +6,6 @@
 /** A Memory longer than this is condensed by the close call. */
 const CONDENSE_MEMORY_FROM = 3_000;
 
-/** The most characters of a Topic note. */
 export const MAX_TOPIC_NOTE_LENGTH = 1_500;
 
 export type TouchedTopic = {
@@ -17,14 +16,12 @@ export type TouchedTopic = {
 };
 
 export type CloseSource = {
-  /** The Chat's messages, oldest first, with their stored parts. */
   messages: Array<{ role: string; parts: unknown }>;
   questions: Array<{
     prompt: string;
     answer: string | null;
     attempts: Array<{ kcName: string; result: string; help: string }>;
   }>;
-  /** The Topics of the KCs of the session's Attempts. */
   topics: TouchedTopic[];
   memory: string;
 };
@@ -36,7 +33,6 @@ export type CloseInput = {
   /** The Topics to write a note for; none without Attempts. */
   topics: TouchedTopic[];
   memory: string;
-  /** Whether the call condenses the Memory, once it is long. */
   condensesMemory: boolean;
 };
 

@@ -21,7 +21,6 @@ const DIFFICULTY_SPLIT: Record<Difficulty, number> = {
   3: 0.2,
 };
 
-/** The most empty slots of one mock that get a generated Problem. */
 const MAX_GAPS = 6;
 
 export type MockSlot = { topicId: string; difficulty: Difficulty };
@@ -82,9 +81,7 @@ export type MockCandidate = {
   source: FillSource;
   kcs: string[];
   difficulty: number;
-  /** Asked as a question already. */
   seen: boolean;
-  /** A Problem the Student flagged. */
   flagged?: boolean;
   /** An Exercise of the active reserved exam. */
   reserved?: boolean;
@@ -208,7 +205,6 @@ export function predictedSuccess(
   return kcs.reduce((sum, kc) => sum + (recall.get(kc) ?? 0), 0) / kcs.length;
 }
 
-/** A mock's duration and predicted score from its items. */
 export function mockTotals(
   items: Array<{ points: number; predictedSuccess: number }>,
 ): { durationMinutes: number; predictedScore: number } {

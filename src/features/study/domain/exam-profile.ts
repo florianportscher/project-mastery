@@ -3,7 +3,6 @@
  * item takes by its difficulty, and the aids the Brief allows.
  */
 
-/** How long a full Mock exam lasts. */
 export const MOCK_MINUTES = 90;
 
 /** An item's minutes by its difficulty; one point counts one minute. */
@@ -24,7 +23,6 @@ export type ExamAids = {
 
 export type ExamProfile = {
   minutes: number;
-  /** The aids the exam allows, as the sheet lists them. */
   aids: string[];
 };
 
