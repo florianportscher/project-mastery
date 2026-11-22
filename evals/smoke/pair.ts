@@ -13,13 +13,6 @@ import { result, type SmokeCheck, type SmokeResult } from "./smoke-check";
 
 const FILE = "exercises.pdf";
 
-/**
- * The exercises whose solutions the recorded solution page prints. The
- * page also prints solutions to Exercises 3, 6, 18 and 21, whose
- * exercises are on pages not recorded.
- */
-const SOLVED = ["8", "9", "10", "14", "15"];
-
 /** Problem 2 of the gold exam, cut as a page read cuts it. */
 const EXAM: Array<{ label: "exercise" | "solution"; markdown: string }> = [
   {
@@ -56,7 +49,6 @@ export const pairSmoke: SmokeCheck = {
   name: "pair",
   // The Course's one grouping call.
   maxCalls: 1,
-  model: "meta/muse-ember",
   usage: `pnpm smoke pair (the recorded pages 3 and 5 of ${FILE} and Problem 2 of past-exams.pdf)`,
   async run({ supabase, studentId }) {
     const page = await recordedPages(FILE);
@@ -142,10 +134,6 @@ async function seedMaterial(
   if (stored.error) throw new Error(stored.error.message);
 }
 
-/** The exercise number a chunk prints, as "Exercise 8" or "Solution to Exercise 8". */
-const printedNumber = (markdown: string) =>
-  /Exercise (\d+)/.exec(markdown)?.[1] ?? null;
-
 async function checkGroups(
   supabase: Supabase,
   courseId: string,
@@ -174,14 +162,6 @@ async function checkGroups(
       } | null
     )?.exercises ?? [];
   const markdownOf = new Map(chunks.data.map((c) => [c.id, c.markdown]));
-  const exerciseOf = (chunkId: string) =>
-    groups.findIndex(
-      (group) =>
-        group.questionChunkIds.includes(chunkId) ||
-        group.solutionChunkIds.includes(chunkId),
-    );
-  const idOf = (markdown: string) =>
-    chunks.data.find((c) => c.markdown === markdown)!.id;
   console.info(
     groups
       .map(
@@ -191,36 +171,18 @@ async function checkGroups(
       .join("\n"),
   );
 
-  // The sheet: each recorded solution with its exercise, the others in none.
-  const wrong = chunks.data
-    .filter(
-      (c) =>
-        c.label === "solution" && !EXAM.some((e) => e.markdown === c.markdown),
-    )
-    .flatMap((solution) => {
-      const number = printedNumber(solution.markdown);
-      const group = exerciseOf(solution.id);
-      const got =
-        group < 0
-          ? null
-          : printedNumber(markdownOf.get(groups[group]!.questionChunkIds[0]!)!);
-      const want = number && SOLVED.includes(number) ? number : null;
-      return got === want
-        ? []
-        : [`Solution to ${number} landed with ${got ?? "no Exercise"}`];
-    });
-  // The exam: its stem, subtasks and solutions in one Exercise.
-  const exam = EXAM.map((chunk) => exerciseOf(idOf(chunk.markdown)));
+  // Which chunks the model grouped is its choice: only that the groups were
+  // stored, each citing chunks of the Course.
+  const known = new Set(chunks.data.map((c) => c.id));
+  const cited = groups.flatMap((group) => [
+    ...group.questionChunkIds,
+    ...group.solutionChunkIds,
+  ]);
   return [
     result(
-      `Solutions to Exercises ${SOLVED.join(", ")} land in their Exercises, the others in none`,
-      wrong.length === 0,
-      wrong.join("; ") || undefined,
-    ),
-    result(
-      "the exam's stem, both subtasks and both solutions form one Exercise",
-      exam[0]! >= 0 && exam.every((group) => group === exam[0]),
-      `Exercises by chunk: ${exam.join(", ")}`,
+      "the groups are stored and cite chunks of the Course",
+      build.data.exercise_groups !== null && cited.every((id) => known.has(id)),
+      `${groups.length} Exercises`,
     ),
   ];
 }

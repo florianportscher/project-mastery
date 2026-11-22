@@ -4,8 +4,9 @@
 #
 #   tools/sitting/waiting.sh [pr ...]
 #
-# Without a number it goes through every open PR that is not a draft and that
-# no bot opened. For each it prints the checks, whether the branch merges into
+# Without a number it goes through every open PR that no bot opened and that is
+# not a draft, except a draft labelled `status: blocked` (a build whose checks
+# stayed red), which it lists too. For each it prints the checks, whether the branch merges into
 # main, the review, the Vercel preview, the migrations the PR adds, whether it
 # is queued for the next shift (`ready-for-agent`) and its open comments.
 #
@@ -43,8 +44,8 @@ repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
 if [[ $# -gt 0 ]]; then
   prs=("$@")
 else
-  mapfile -t prs < <(gh pr list --state open --limit 100 --json number,isDraft,author \
-    --jq 'map(select((.isDraft | not) and (.author.is_bot | not))) | sort_by(.number)[].number')
+  mapfile -t prs < <(gh pr list --state open --limit 100 --json number,isDraft,author,labels \
+    --jq 'map(select(((.isDraft | not) or ([.labels[].name] | index("status: blocked") != null)) and (.author.is_bot | not))) | sort_by(.number)[].number')
 fi
 if [[ ${#prs[@]} -eq 0 ]]; then
   echo "No PR waits for review."
@@ -101,6 +102,7 @@ for pr in "${prs[@]}"; do
     "  main        \({MERGEABLE: "merges cleanly", CONFLICTING: "conflicts with main"}[.mergeable] // "not known yet, run again")",
     "  review      \({APPROVED: "approved", CHANGES_REQUESTED: "changes requested"}[.reviewDecision] // "waiting")",
     "  migrations  \(if (migrations | length) > 0 then migrations | join(", ") else "none" end)",
+    "  blocked     \(if [.labels[].name] | index("status: blocked") then "yes, a red check stopped the build (see its comment)" else "no" end)",
     "  queued      \(if [.labels[].name] | index("ready-for-agent") then "yes" else "no" end)",
     "  comments    \($comments | length) open",
     ($comments[]

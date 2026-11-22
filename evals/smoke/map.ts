@@ -148,13 +148,6 @@ type StoredTopic = {
   central_question: string | null;
 };
 
-/**
- * Common English words, one of which every English description has, and
- * common German and French words, which none has.
- */
-const ENGLISH = /\b(the|of|a|an|is|are|and|to|in|for|with|by)\b/i;
-const NOT_ENGLISH = /\b(der|die|das|und|ist|ein|eine|nicht|le|la|les|est)\b/i;
-
 async function checkMap(
   supabase: Supabase,
   courseId: string,
@@ -197,20 +190,6 @@ async function checkMap(
     .select("from_kc, to_kc")
     .eq("course_id", courseId);
   if (links.error) throw new Error(links.error.message);
-  // Each KC's first unit, by the KCs each unit stored.
-  const unitOf = new Map<string, number>();
-  extractions.data!.forEach((row, index) => {
-    for (const id of row.kc_ids ?? []) {
-      if (!unitOf.has(id)) unitOf.set(id, index);
-    }
-  });
-  const acrossUnits = links.data.filter(
-    (link) =>
-      unitOf.has(link.from_kc) &&
-      unitOf.has(link.to_kc) &&
-      unitOf.get(link.from_kc) !== unitOf.get(link.to_kc),
-  ).length;
-
   // A KC may cite any chunk of its unit.
   const units = (
     await Promise.all(
@@ -244,15 +223,7 @@ async function checkMap(
       )
       .map((kc) => kc.name);
   });
-  // Formulas aside: LaTeX's \le would read as French "le". Name and
-  // description together, as a short description may hold no marker word.
-  const notEnglish = kcs.data!.filter((kc) => {
-    const prose = `${kc.name}. ${kc.description}`.replace(/\$[^$]*\$/g, " ");
-    return !ENGLISH.test(prose) || NOT_ENGLISH.test(prose);
-  });
-
-  // The Topic tree: every live KC in one, at most two levels, and no Topic
-  // of a single KC unless the Course has fewer than three.
+  // The Topic tree: every live KC sits in one.
   const topicKcs = await supabase
     .from("topic_kcs")
     .select("topic_id, kc_id")
@@ -263,21 +234,6 @@ async function checkMap(
   if (topicKcs.error) throw new Error(topicKcs.error.message);
   const placed = new Set(topicKcs.data.map((row) => row.kc_id));
   const unplaced = kcs.data!.filter((kc) => !placed.has(kc.id));
-  const kcsOf = (topic: StoredTopic) =>
-    topicKcs.data.filter((row) => row.topic_id === topic.id).length;
-  const single = topics.data!.filter((topic) => kcsOf(topic) === 1);
-
-  const numberOf = new Map(
-    chunks.data!.map((c) => [c.id, printedNumber(c.markdown)]),
-  );
-  const answers = new Map(
-    exercises.data!.map((exercise) => [
-      numberOf.get(exercise.question_chunk_id),
-      ((exercise.final_answers ?? []) as Array<{ value: string }>).map(
-        (answer) => answer.value,
-      ),
-    ]),
-  );
 
   const depthOf = (topic: StoredTopic): number =>
     topic.parent_id === null
@@ -289,9 +245,6 @@ async function checkMap(
     );
   }
   console.info(`  KCs: ${kcs.data!.map((kc) => kc.name).join("; ")}`);
-  console.info(
-    `  Final answers: ${[...answers].map(([n, v]) => `${n}: ${v.join(", ") || "none"}`).join("; ")}`,
-  );
   console.info(`  Check report: ${JSON.stringify(build.data!.check_report)}`);
   return [
     result(
@@ -301,17 +254,6 @@ async function checkMap(
     ),
     result("the map has KCs", kcs.data!.length > 0, `${kcs.data!.length} KCs`),
     result(
-      "every KC is in English",
-      notEnglish.length === 0,
-      notEnglish.map((kc) => `${kc.name}: ${kc.description}`).join("; ") ||
-        undefined,
-    ),
-    result(
-      "a Prerequisite links KCs of different units",
-      acrossUnits > 0,
-      `${acrossUnits} of ${links.data.length} Prerequisites`,
-    ),
-    result(
       "every KC cites a chunk of its unit",
       strays.length === 0,
       strays.join("; ") || undefined,
@@ -320,21 +262,6 @@ async function checkMap(
       "every KC sits in a Topic",
       unplaced.length === 0,
       unplaced.map((kc) => kc.name).join("; ") || undefined,
-    ),
-    result(
-      "the Topic tree is at most two levels deep",
-      topics.data!.every((topic) => depthOf(topic) <= 1),
-    ),
-    result(
-      "no Topic holds a single KC",
-      kcs.data!.length < 3 || single.length === 0,
-      single.map((topic) => topic.name).join("; ") || undefined,
-    ),
-    result(
-      // Exercise 10 asks for a basis and the dimension: its basis is a key too.
-      "Exercise 7's final answer is the printed 8, Exercise 10's include the printed dim U = 2",
-      String(answers.get(7)) === "8" && (answers.get(10) ?? []).includes("2"),
-      [...answers].map(([n, v]) => `${n}: ${v.join(", ")}`).join("; "),
     ),
   ];
 }

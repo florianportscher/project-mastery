@@ -37,7 +37,7 @@ The Course's home: its Topics drawn as nested boxes, with the arrows between Top
 _Avoid_: Dashboard, overview, home page
 
 **Knowledge component (KC)**:
-One thing an exam task could test on its own and a Student could learn in one sitting, with the chunks of the Materials that teach it. It also lists, as text, what it assumes that no KC means. Every KC sits in one Topic; a KC whose chunks are all gone is retired and keeps its Attempts.
+One skill or understanding that a Student masters as a whole: a method with its variants and special cases, a concept with its properties, a result with its use. Two things are separate KCs only when a Student could master one and still fail the other. Motivation, previews and illustrating findings are no KCs of their own. It has the chunks of the Materials that teach it. It also lists, as text, what it assumes that no KC means. Every KC sits in one Topic; a KC whose chunks are all gone is retired and keeps its Attempts.
 _Avoid_: Skill, learning objective, concept, node
 
 **Topic**:

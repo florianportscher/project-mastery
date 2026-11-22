@@ -1,6 +1,7 @@
 import "server-only";
 import { Output } from "ai";
 import { z } from "zod";
+import { KC_DEFINITION } from "@/features/knowledge-map/ai/kc-definition";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { aiTask } from "@/lib/ai/models";
 
@@ -56,7 +57,7 @@ export const exerciseExtractionSchema = (
             }),
           )
           .describe(
-            "Only for a notion or result no listed KC teaches, which another exam task could ask for again. Usually empty.",
+            "Only for a KC, as defined above, that no listed KC covers. Usually empty.",
           ),
         finalAnswers: z
           .array(
@@ -86,7 +87,8 @@ export const exerciseExtractionSchema = (
 const EXERCISE_INSTRUCTIONS = `You get some exercises of a university course as JSON: the material's name, the course language, the exercises, each with an id, its whole statement (a shared introduction and every subtask) and all its printed solutions or null, and every knowledge component (KC) of the course so far, in course order, each with an id and the heading it was taught under. Answer for every exercise.
 
 - Give the ids of the listed KCs a Student must master to solve it: the results and methods its solution uses as a step, most important first, usually 1 to 4, at most 6. A KC used in several subtasks counts once. Leave out a KC that only defines a notion the statement is written with when a more specific listed KC covers the step.
-- When the exercise introduces a notion or derives a result that no listed KC teaches and that another exam task could ask for again, such as a named kind of object or a formula it proves, give it as a new KC, never a restatement of a listed one: something an exam task could test on its own and a Student could learn in one sitting, with a short name and a one-line description.
+- When the exercise introduces a notion or derives a result that no listed KC teaches and that another exam task could ask for again, such as a named kind of object or a formula it proves, give it as a new KC, never a restatement of a listed one, with a short name and a one-line description. What a KC is, and how big:
+${KC_DEFINITION}
 - Copy each final result that the statement or the solution prints, as printed: a result the statement gives for checking, such as "Result: 12 solutions", or the result the printed solution arrives at, such as "so $\\dim W = 3$". Write it as a mathjs expression: a number with its unit ("12 kg*m/s^2"), a vector ("[2, -3]"), a matrix by rows ("[[1, 2], [0, 1]]"), a complex number ("3 + 4i") or an expression in the statement's symbols ("n + 1"). Mark a list whose order does not matter, such as a set of eigenvalues, as any order. Copy only a result every correct solution states identically: leave out one that depends on a choice the Student makes, such as a representative, an order, a parametrisation, an example or a counterexample. A statement the task asks to show is no result. A value of a parameter that the task asks for, such as the one for which no solution exists, is one. Give none for a result that is not mathematical, such as a proof or a sentence, and none when neither prints one: do not solve anything yourself.
 - Mark an exercise that asks nothing of the Student, such as a heading or an instruction for the whole sheet, as not an exercise.
 - Write every name and description in the course language. Formulas in LaTeX ($...$).`;

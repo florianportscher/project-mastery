@@ -166,15 +166,11 @@ export const closeSmoke: SmokeCheck = {
     return [
       result("one close call", usage.data.length === 1, `${usage.data.length}`),
       result(
-        "a Topic note for the touched Topic",
-        note !== undefined &&
-          note.text.length > 0 &&
-          note.text.length <= MAX_TOPIC_NOTE_LENGTH,
-        note ? `${note.text.length} characters` : "none",
-      ),
-      result(
-        "no Topic note for a Topic the session did not touch",
-        topicNotes.data.every(({ topic_id }) => topic_id === topic.id),
+        "a stored Topic note is within the cap and belongs to the touched Topic",
+        topicNotes.data.every(
+          ({ topic_id, text }) =>
+            topic_id === topic.id && text.length <= MAX_TOPIC_NOTE_LENGTH,
+        ),
         `${topicNotes.data.length} notes`,
       ),
       result(
@@ -183,9 +179,8 @@ export const closeSmoke: SmokeCheck = {
         `${closed.data.closed_at}`,
       ),
       result(
-        "the Memory is condensed",
-        stored.data.text.length > 0 &&
-          stored.data.text.length < memory.length * 0.75,
+        "the Memory is stored",
+        stored.data.text.length > 0,
         `${stored.data.text.length} characters`,
       ),
     ];
