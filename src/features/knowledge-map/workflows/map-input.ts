@@ -90,15 +90,30 @@ export async function loadMapInput(
   };
 }
 
-/** Each live KC's first source's place in Course order. */
+/**
+ * Each live KC's place in Course order: its first source's chunk index. A KC
+ * whose origin is `exercise` goes right after the earliest KC, other than
+ * itself, that its Exercises test (that KC's place plus a half), so it sits
+ * with its subject; without one it keeps its first source's place.
+ */
 export function firstSourcePlaces(map: MapInput): Map<string, number> {
   const place = new Map(map.chunks.map((chunk, index) => [chunk.id, index]));
-  return new Map(
+  const own = new Map(
     map.kcs.flatMap((kc) => {
       const places = kc.sources.flatMap((id) => place.get(id) ?? []);
       return places.length === 0 ? [] : [[kc.id, Math.min(...places)]];
     }),
   );
+  const result = new Map(own);
+  for (const kc of map.kcs) {
+    if (kc.origin !== "exercise") continue;
+    const anchors = map.exercises
+      .filter((tested) => tested.includes(kc.id))
+      .flatMap((tested) => tested)
+      .flatMap((id) => (id === kc.id ? [] : (own.get(id) ?? [])));
+    if (anchors.length > 0) result.set(kc.id, Math.min(...anchors) + 0.5);
+  }
+  return result;
 }
 
 /**
@@ -117,7 +132,7 @@ export function kcsInCourseOrder(map: MapInput): Array<{
   const kcOf = new Map(map.kcs.map((kc) => [kc.id, kc]));
   return courseOrder(map).map((id) => {
     const kc = kcOf.get(id)!;
-    const { heading, materialId } = map.chunks[places.get(id)!]!;
+    const { heading, materialId } = map.chunks[Math.floor(places.get(id)!)]!;
     return {
       id,
       heading: heading ?? "",
