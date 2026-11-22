@@ -168,7 +168,6 @@ function ChapterNode({
     (a, b) => a.position - b.position,
   );
   const units = lookup.unitsOfChapter.get(chapter.id) ?? [];
-  const topics = lookup.topicsOfChapter.get(chapter.id) ?? [];
   const report = flags.chaptersInReport.get(chapter.id) ?? [];
   return (
     <div
@@ -189,11 +188,6 @@ function ChapterNode({
         {units.map((unit) => (
           <Ref key={unit.key} to={anchor.unit(unit.key)} className="text-xs">
             unit {unit.kind} {unit.unit}
-          </Ref>
-        ))}
-        {topics.map((id) => (
-          <Ref key={id} to={anchor.topic(id)} className="text-xs">
-            Topic: {lookup.topic.get(id)?.name}
           </Ref>
         ))}
       </div>

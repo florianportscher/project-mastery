@@ -100,20 +100,12 @@ const answer = (value: unknown) => ({
 /** The Course as the tree call sent it. */
 export type SentCourse = {
   language: string;
-  materials: Array<{
-    name: string;
-    outline: Array<{
-      id: string;
-      title: string;
-      depth: number;
-      kcs?: string[];
-    }>;
-  }>;
+  kcs: Array<{ id: string; name: string; material: string; heading: string }>;
   storedTopics: Array<{
     id: string;
     name: string;
     level: number;
-    chapters: string[];
+    kcs: string[];
   }>;
 };
 
@@ -121,33 +113,26 @@ export type SentCourse = {
 export type TreeTopicAnswer = {
   level: number;
   name: string;
-  chapterIds: string[];
+  kcIds: string[];
   centralQuestion: string;
   continues: string;
 };
 
 /**
- * The default tree answer: one top-level Topic per Chapter with KCs, named
- * by its title, continuing the stored Topic that held that Chapter.
+ * The default tree answer: one top-level Topic per heading, named by it,
+ * continuing the stored Topic that held its first KC.
  */
 export function flatTree(course: SentCourse): TreeTopicAnswer[] {
-  return course.materials.flatMap((material) =>
-    material.outline.flatMap((chapter) =>
-      chapter.kcs
-        ? [
-            {
-              level: 1,
-              name: chapter.title,
-              chapterIds: [chapter.id],
-              centralQuestion: `What is ${chapter.title}?`,
-              continues:
-                course.storedTopics.find((topic) =>
-                  topic.chapters.includes(chapter.id),
-                )?.id ?? "",
-            },
-          ]
-        : [],
-    ),
+  return [...Map.groupBy(course.kcs, (kc) => kc.heading)].map(
+    ([heading, kcs]) => ({
+      level: 1,
+      name: heading,
+      kcIds: kcs.map((kc) => kc.id),
+      centralQuestion: `What is ${heading}?`,
+      continues:
+        course.storedTopics.find((topic) => topic.kcs.includes(kcs[0]!.id))
+          ?.id ?? "",
+    }),
   );
 }
 

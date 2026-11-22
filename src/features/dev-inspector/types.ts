@@ -52,7 +52,6 @@ export type Snapshot = {
     position: number;
     name: string;
     centralQuestion: string | null;
-    chapterIds: string[];
     kcIds: string[];
   }>;
   build: {

@@ -9,12 +9,8 @@ import {
 } from "@/features/knowledge-map/domain/topic-tree";
 import { teachingOrder } from "@/features/knowledge-map/domain/topics";
 import type { CheckReport } from "@/features/knowledge-map/schemas";
-import {
-  loadKcVectors,
-  loadStoredTree,
-  treeKcs,
-  type TreeProposal,
-} from "@/features/knowledge-map/workflows/topic-steps";
+import { loadTopicTree } from "@/features/knowledge-map/server/stored-topics";
+import type { TreeProposal } from "@/features/knowledge-map/workflows/topic-steps";
 import {
   MIN_UNIT_COVERAGE,
   unitCoverage,
@@ -27,7 +23,7 @@ import {
   unitKey,
 } from "@/features/knowledge-map/workflows/build-steps";
 import {
-  courseOrder,
+  kcsInCourseOrder,
   loadMapInput,
   type MapInput,
 } from "@/features/knowledge-map/workflows/map-input";
@@ -61,16 +57,15 @@ export async function arrangeKnowledgeMap(
   if (!(await touchBuild(supabase, courseId))) return;
   await retireUnsourcedKcs(supabase, courseId);
 
-  const [input, stored, vectors] = await Promise.all([
+  const [input, stored] = await Promise.all([
     loadMapInput(supabase, courseId),
-    loadStoredTree(supabase, courseId),
-    loadKcVectors(supabase, courseId),
+    loadTopicTree(supabase, courseId),
   ]);
-  const kcs = courseOrder(input);
+  const ordered = kcsInCourseOrder(input);
+  const kcs = ordered.map((kc) => kc.id);
   const topics = planTopicTree({
     proposed: tree.topics ?? storedAsProposed(stored),
-    chapters: input.chapters,
-    kcs: treeKcs(input, vectors),
+    kcs: ordered,
     stored,
   }).map((topic) => ({
     ...topic,

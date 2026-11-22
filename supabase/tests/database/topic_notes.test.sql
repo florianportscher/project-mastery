@@ -14,10 +14,9 @@ values
 insert into public.courses (id, owner, name)
 values ('aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Jet engines');
 
-insert into public.topics (id, owner, course_id, chapter_ids, name, central_question, position)
+insert into public.topics (id, owner, course_id, name, central_question, position)
 values ('dddddddd-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111',
-  'aaaaaaaa-0000-0000-0000-000000000001', '{bbbbbbbb-0000-0000-0000-000000000001}',
-  'Thrust', 'How does an engine make thrust?', 0);
+  'aaaaaaaa-0000-0000-0000-000000000001', 'Thrust', 'How does an engine make thrust?', 0);
 
 insert into public.chats (id, owner, course_id)
 values ('cccccccc-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111',

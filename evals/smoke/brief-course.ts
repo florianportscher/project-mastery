@@ -114,17 +114,11 @@ export function smallCourseRows(
 
   // Two top-level Topics, each holding one Chapter's KC.
   const [vectors, matrices] = [newId(), newId()];
-  const topic = (
-    id: string,
-    topicName: string,
-    chapterId: string,
-    position: number,
-  ) => ({
+  const topic = (id: string, topicName: string, position: number) => ({
     ...owned,
     id,
     name: topicName,
     central_question: `What is ${topicName}?`,
-    chapter_ids: [chapterId],
     position,
   });
   const kc = (kcName: string, position: number) => ({
@@ -147,8 +141,8 @@ export function smallCourseRows(
       {
         table: "topics",
         rows: [
-          topic(vectors, "Chapter 1: Vectors", chapter1, 0),
-          topic(matrices, "Chapter 2: Matrices", chapter2, 1),
+          topic(vectors, "Chapter 1: Vectors", 0),
+          topic(matrices, "Chapter 2: Matrices", 1),
         ],
       },
       { table: "kcs", rows: kcs },

@@ -76,10 +76,8 @@ export function buildLookup(snapshot: Snapshot, units: readonly DevUnit[]) {
     push(exercisesOfKc, link.kcId, link.exerciseId);
   }
   const topicsOfKc = new Map<string, string[]>();
-  const topicsOfChapter = new Map<string, string[]>();
   for (const topic of snapshot.topics) {
     for (const id of topic.kcIds) push(topicsOfKc, id, topic.id);
-    for (const id of topic.chapterIds) push(topicsOfChapter, id, topic.id);
   }
   const topic = new Map(snapshot.topics.map((t) => [t.id, t]));
   const exerciseOfChunk = new Map(
@@ -103,7 +101,6 @@ export function buildLookup(snapshot: Snapshot, units: readonly DevUnit[]) {
     kcsOfExercise,
     exercisesOfKc,
     topicsOfKc,
-    topicsOfChapter,
     exerciseOfChunk,
   };
 }

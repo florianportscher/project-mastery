@@ -58,6 +58,7 @@ export function createBuildDb() {
       topic_kcs: [] as FakeRow[],
       ai_usage: [] as FakeRow[],
     },
+    foreignKeys: { topic_kcs: { topic_id: "topics" } },
     defaults: {
       ai_usage: () => ({ created_at: now() }),
       chapter_extractions: () => ({ id: crypto.randomUUID() }),
@@ -332,7 +333,6 @@ export function createBuildDb() {
           parent_id: topic.parent === null ? null : ids[topic.parent as number],
           name: topic.name,
           central_question: topic.centralQuestion,
-          chapter_ids: topic.chapterIds,
           position: index,
         }));
         tables.topic_kcs = planned.flatMap((topic, index) =>

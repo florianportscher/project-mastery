@@ -72,9 +72,9 @@ select is(
 
 -- Basis's chunk goes: it retires at once, though Rank builds on it.
 delete from public.kc_sources where kc_id = 'bbbbbbbb-0000-0000-0000-000000000001';
-insert into public.topics (owner, course_id, name, position, central_question, chapter_ids)
-select owner, course_id, 'Bases', 0, 'Why?', array[id] from public.chapters
-where course_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+insert into public.topics (owner, course_id, name, position, central_question)
+select owner, id, 'Bases', 0, 'Why?' from public.courses
+where id = 'aaaaaaaa-0000-0000-0000-000000000001';
 insert into public.topic_kcs (topic_id, kc_id, owner, position)
 select t.id, k.id, t.owner, k.position
 from public.topics as t join public.kcs as k on k.course_id = t.course_id

@@ -18,14 +18,14 @@ values
 
 -- Two Topics of the first Course, one with an old note, and one of the
 -- second Course.
-insert into public.topics (id, owner, course_id, chapter_ids, name, central_question, position)
+insert into public.topics (id, owner, course_id, name, central_question, position)
 values
   ('dddddddd-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111',
-    'aaaaaaaa-0000-0000-0000-000000000001', '{bbbbbbbb-0000-0000-0000-000000000001}', 'Thrust', 'Where does thrust come from?', 0),
+    'aaaaaaaa-0000-0000-0000-000000000001', 'Thrust', 'Where does thrust come from?', 0),
   ('dddddddd-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111',
-    'aaaaaaaa-0000-0000-0000-000000000001', '{bbbbbbbb-0000-0000-0000-000000000002}', 'Nozzles', 'How does a nozzle work?', 1),
+    'aaaaaaaa-0000-0000-0000-000000000001', 'Nozzles', 'How does a nozzle work?', 1),
   ('dddddddd-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111',
-    'aaaaaaaa-0000-0000-0000-000000000002', '{bbbbbbbb-0000-0000-0000-000000000003}', 'Staging', 'Why stage a rocket?', 0);
+    'aaaaaaaa-0000-0000-0000-000000000002', 'Staging', 'Why stage a rocket?', 0);
 insert into public.topic_notes (topic_id, owner, text)
 values ('dddddddd-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Old note.');
 

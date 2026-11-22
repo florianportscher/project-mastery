@@ -156,7 +156,6 @@ type StoredTopic = {
   parent_id: string | null;
   name: string;
   central_question: string | null;
-  chapter_ids: string[];
 };
 
 /**
@@ -179,7 +178,7 @@ async function checkMap(
         .single(),
       supabase
         .from("topics")
-        .select("id, parent_id, name, central_question, chapter_ids")
+        .select("id, parent_id, name, central_question")
         .eq("course_id", courseId)
         .order("position"),
       supabase
@@ -196,7 +195,7 @@ async function checkMap(
         .eq("course_id", courseId),
       supabase
         .from("kcs")
-        .select("name, description")
+        .select("id, name, description")
         .eq("course_id", courseId)
         .is("retired_at", null),
       supabase
@@ -282,30 +281,21 @@ async function checkMap(
     return !ENGLISH.test(prose) || NOT_ENGLISH.test(prose);
   });
 
-  // The lecture notes' Chapters in reading order, and each Topic's first.
-  const lectureChapters = new Map(
-    chapters
-      .data!.filter((c) => c.materials?.name === "Lecture notes")
-      .map((c) => [c.id, c]),
-  );
-  const childrenOf = (id: string | null) =>
-    topics.data!.filter((topic) => topic.parent_id === id);
-  const firstChapter = (topic: StoredTopic): number =>
-    Math.min(
-      ...topic.chapter_ids.flatMap((id) => {
-        const chapter = lectureChapters.get(id);
-        return chapter ? [chapter.position] : [];
-      }),
-      ...childrenOf(topic.id).map(firstChapter),
+  // The Topic tree: every live KC in one, at most two levels, and no Topic
+  // of a single KC unless the Course has fewer than three.
+  const topicKcs = await supabase
+    .from("topic_kcs")
+    .select("topic_id, kc_id")
+    .in(
+      "topic_id",
+      topics.data!.map((topic) => topic.id),
     );
-  const vectorSpaces = childrenOf(null).find((topic) =>
-    /vector spaces/i.test(topic.name),
-  );
-  const sections = vectorSpaces ? childrenOf(vectorSpaces.id) : [];
-  const starts = sections.map(firstChapter);
-  const inOrder =
-    sections.length >= 2 &&
-    starts.every((start, i) => i === 0 || start > starts[i - 1]!);
+  if (topicKcs.error) throw new Error(topicKcs.error.message);
+  const placed = new Set(topicKcs.data.map((row) => row.kc_id));
+  const unplaced = kcs.data!.filter((kc) => !placed.has(kc.id));
+  const kcsOf = (topic: StoredTopic) =>
+    topicKcs.data.filter((row) => row.topic_id === topic.id).length;
+  const single = topics.data!.filter((topic) => kcsOf(topic) === 1);
 
   const numberOf = new Map(
     chunks.data!.map((c) => [c.id, printedNumber(c.markdown)]),
@@ -357,13 +347,18 @@ async function checkMap(
       strays.join("; ") || undefined,
     ),
     result(
-      "a top-level Topic covers Vector Spaces with children in section order",
-      inOrder,
-      vectorSpaces
-        ? `${vectorSpaces.name}: ${sections.map((s) => s.name).join("; ") || "no children"}`
-        : `top-level: ${childrenOf(null)
-            .map((t) => t.name)
-            .join("; ")}`,
+      "every KC sits in a Topic",
+      unplaced.length === 0,
+      unplaced.map((kc) => kc.name).join("; ") || undefined,
+    ),
+    result(
+      "the Topic tree is at most two levels deep",
+      topics.data!.every((topic) => depthOf(topic) <= 1),
+    ),
+    result(
+      "no Topic holds a single KC",
+      kcs.data!.length < 3 || single.length === 0,
+      single.map((topic) => topic.name).join("; ") || undefined,
     ),
     result(
       // Exercise 10 asks for a basis and the dimension: its basis is a key too.

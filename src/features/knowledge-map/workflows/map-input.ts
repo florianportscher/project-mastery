@@ -12,7 +12,12 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  */
 export type MapInput = {
   /** In Course order: Materials by position, then chunks by position. */
-  chunks: Array<{ id: string; chapterId: string | null; label: string }>;
+  chunks: Array<{
+    id: string;
+    materialId: string;
+    chapterId: string | null;
+    label: string;
+  }>;
   /** In Course order: Materials by position, then their Outlines in order. */
   chapters: Array<{
     id: string;
@@ -75,6 +80,7 @@ export async function loadMapInput(
         .filter((chunk) => chunk.material_id === material.id)
         .map((chunk) => ({
           id: chunk.id,
+          materialId: chunk.material_id,
           chapterId: chunk.chapter_id,
           label: chunk.label,
         })),
@@ -119,20 +125,27 @@ export function firstSourcePlaces(map: MapInput): Map<string, number> {
 
 /**
  * The live KCs with a first source in Course order, each with the title of
- * that source's Chapter (empty for a chunk without one).
+ * that source's Chapter (empty for a chunk without one) and its Material's
+ * name.
  */
-export function kcsInCourseOrder(
-  map: MapInput,
-): Array<{ id: string; chapter: string; name: string; description: string }> {
+export function kcsInCourseOrder(map: MapInput): Array<{
+  id: string;
+  chapter: string;
+  material: string;
+  name: string;
+  description: string;
+}> {
   const places = firstSourcePlaces(map);
   const titleOf = new Map(map.chapters.map((c) => [c.id, c.title]));
+  const materialOf = new Map(map.materials.map((m) => [m.id, m.name]));
   const kcOf = new Map(map.kcs.map((kc) => [kc.id, kc]));
   return courseOrder(map).map((id) => {
     const kc = kcOf.get(id)!;
-    const { chapterId } = map.chunks[places.get(id)!]!;
+    const { chapterId, materialId } = map.chunks[places.get(id)!]!;
     return {
       id,
       chapter: (chapterId && titleOf.get(chapterId)) || "",
+      material: materialOf.get(materialId) ?? "",
       name: kc.name,
       description: kc.description,
     };

@@ -92,7 +92,6 @@ export type Snapshot = {
     parentId: string | null;
     position: number;
     name: string;
-    chapterIds: string[];
     kcIds: string[];
   }>;
   build: {
@@ -494,7 +493,7 @@ export function formatSection(
           .filter((t) => t.parentId === parentId)
           .toSorted((a, b) => a.position - b.position)) {
           lines.push(
-            `${"  ".repeat(depth)}${t.name} (${short(t.id)}) KCs: ${t.kcIds.map(name).join("; ") || "-"} · Chapters: ${t.chapterIds.map((id) => chapterTitle.get(id) ?? short(id)).join(", ") || "-"}`,
+            `${"  ".repeat(depth)}${t.name} (${short(t.id)}) KCs: ${t.kcIds.map(name).join("; ") || "-"}`,
           );
           render(t.id, depth + 1);
         }

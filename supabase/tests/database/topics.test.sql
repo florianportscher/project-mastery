@@ -1,10 +1,9 @@
--- Topics (#175, #229): a KC sits in at most one Topic; Topics nest, and only
--- one with KCs of its own has Chapters and a central question; owners read
--- their own and write none. Run with `pnpm db:test`.
+-- Topics (#175, #229, #351): a KC sits in at most one Topic; Topics nest;
+-- owners read their own and write none. Run with `pnpm db:test`.
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(10);
+select plan(9);
 
 insert into auth.users (id, email)
 values
@@ -21,16 +20,16 @@ select ('cccccccc-0000-0000-0000-00000000000' || n)::uuid, '11111111-1111-1111-1
 from generate_series(1, 3) as n;
 
 -- Propulsion holds only Thrust and Drag; Thrust holds KCs of its own.
-insert into public.topics (id, owner, course_id, parent_id, chapter_ids, name, central_question, position)
+insert into public.topics (id, owner, course_id, parent_id, name, central_question, position)
 values
   ('dddddddd-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111',
-    'aaaaaaaa-0000-0000-0000-000000000001', null, '{}', 'Propulsion', null, 0),
+    'aaaaaaaa-0000-0000-0000-000000000001', null, 'Propulsion', null, 0),
   ('dddddddd-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111',
     'aaaaaaaa-0000-0000-0000-000000000001', 'dddddddd-0000-0000-0000-000000000000',
-    '{bbbbbbbb-0000-0000-0000-000000000001}', 'Thrust', 'Where does thrust come from?', 1),
+    'Thrust', 'Where does thrust come from?', 1),
   ('dddddddd-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111',
     'aaaaaaaa-0000-0000-0000-000000000001', 'dddddddd-0000-0000-0000-000000000000',
-    '{bbbbbbbb-0000-0000-0000-000000000002}', 'Drag', 'What holds it back?', 2);
+    'Drag', 'What holds it back?', 2);
 
 insert into public.topic_kcs (topic_id, kc_id, owner, position)
 values
@@ -47,12 +46,6 @@ select throws_ok(
     values ('dddddddd-0000-0000-0000-000000000002', 'cccccccc-0000-0000-0000-000000000001',
       '11111111-1111-1111-1111-111111111111', 9)$$,
   '23505', null, 'a second Topic for one KC is refused');
-
-select throws_ok(
-  $$insert into public.topics (owner, course_id, chapter_ids, name, central_question, position)
-    values ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001',
-      '{}', 'Loose', 'Why?', 5)$$,
-  '23514', null, 'a central question needs Chapters of its own');
 
 -- Deleting a Topic deletes the Topics inside it.
 savepoint nested;
@@ -74,9 +67,9 @@ select throws_ok(
   $$delete from public.topic_kcs$$,
   '42501', null, 'a Student cannot change Topic KCs');
 select throws_ok(
-  $$insert into public.topics (owner, course_id, chapter_ids, name, central_question, position)
+  $$insert into public.topics (owner, course_id, name, central_question, position)
     values ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001',
-      '{bbbbbbbb-0000-0000-0000-000000000001}', 'Mine', 'Why?', 5)$$,
+      'Mine', 'Why?', 5)$$,
   '42501', null, 'a Student cannot add a Topic');
 reset role;
 
@@ -89,8 +82,8 @@ set local role service_role;
 select ok(public.arrange_knowledge_map(
   'aaaaaaaa-0000-0000-0000-000000000001',
   '["cccccccc-0000-0000-0000-000000000001", "cccccccc-0000-0000-0000-000000000002", "cccccccc-0000-0000-0000-000000000003"]',
-  '[{"id": "dddddddd-0000-0000-0000-000000000001", "parent": null, "name": "Thrust", "centralQuestion": "Why thrust?", "chapterIds": ["bbbbbbbb-0000-0000-0000-000000000001"], "kcs": ["cccccccc-0000-0000-0000-000000000001", "cccccccc-0000-0000-0000-000000000002"]},
-    {"id": null, "parent": 0, "name": "Nozzles", "centralQuestion": "How do nozzles help?", "chapterIds": ["bbbbbbbb-0000-0000-0000-000000000003"], "kcs": ["cccccccc-0000-0000-0000-000000000003"]}]',
+  '[{"id": "dddddddd-0000-0000-0000-000000000001", "parent": null, "name": "Thrust", "centralQuestion": "Why thrust?", "kcs": ["cccccccc-0000-0000-0000-000000000001", "cccccccc-0000-0000-0000-000000000002"]},
+    {"id": null, "parent": 0, "name": "Nozzles", "centralQuestion": "How do nozzles help?", "kcs": ["cccccccc-0000-0000-0000-000000000003"]}]',
   repeat('a', 64)), 'arrange stores the Topic tree');
 reset role;
 

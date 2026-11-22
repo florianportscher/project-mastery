@@ -57,9 +57,9 @@ values ('eeeeeeee-0000-0000-0000-000000000001', '11111111-1111-1111-1111-1111111
 insert into public.exercise_kcs (exercise_id, kc_id, owner, course_id)
 values ('eeeeeeee-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000002',
   '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001');
-insert into public.topics (id, owner, course_id, chapter_ids, name, central_question, position)
-select 'dddddddd-0000-0000-0000-000000000001', owner, course_id, array[id], 'Vectors', 'What is a vector?', 0
-from public.chapters where course_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+insert into public.topics (id, owner, course_id, name, central_question, position)
+select 'dddddddd-0000-0000-0000-000000000001', owner, id, 'Vectors', 'What is a vector?', 0
+from public.courses where id = 'aaaaaaaa-0000-0000-0000-000000000001';
 insert into public.topic_kcs (topic_id, kc_id, owner, position)
 values ('dddddddd-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000001',
   '11111111-1111-1111-1111-111111111111', 0);

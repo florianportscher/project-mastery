@@ -41,7 +41,6 @@ async function seedTree(owner: string, courseId: string): Promise<void> {
         parent_id: null,
         name: "Propulsion",
         central_question: "What moves a rocket?",
-        chapter_ids: [crypto.randomUUID()],
         position: 0,
       },
       {
@@ -50,7 +49,6 @@ async function seedTree(owner: string, courseId: string): Promise<void> {
         parent_id: parent,
         name: "Thrust",
         central_question: "Where does thrust come from?",
-        chapter_ids: [crypto.randomUUID()],
         position: 1,
       },
     ]),

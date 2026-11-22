@@ -4,203 +4,103 @@ import {
   storedAsProposed,
   topicLineage,
   type ProposedTopic,
-  type TreeKc,
 } from "./topic-tree";
-
-const chapters = ["spaces", "subspaces", "bases", "maps", "sheet"].map(
-  (id) => ({ id, title: `Title ${id}` }),
-);
 
 const proposed = (
   level: number,
   name: string,
-  chapterIds: string[],
+  kcIds: string[],
   continues: string | null = null,
 ): ProposedTopic => ({
   level,
   name,
-  chapterIds,
-  centralQuestion: chapterIds.length > 0 ? `Why ${name}?` : "",
+  kcIds,
+  centralQuestion: kcIds.length > 0 ? `Why ${name}?` : "",
   continues,
 });
 
-const kc = (
-  id: string,
-  chapterId: string | null,
-  tests?: string[],
-  vector?: number[],
-): TreeKc => ({
-  id,
-  chapterId,
-  ...(tests && { tests }),
-  ...(vector && { vector }),
-});
+const kcs = (...ids: string[]) =>
+  ids.map((id) => ({ id, material: id.startsWith("s") ? "Sheet" : "Script" }));
 
 const plan = (
   topics: ProposedTopic[],
-  kcs: TreeKc[],
-  stored: Array<string | { id: string; chapterIds: string[] }> = [],
-) =>
-  planTopicTree({
-    proposed: topics,
-    chapters,
-    kcs,
-    stored: stored.map((topic) =>
-      typeof topic === "string" ? { id: topic, chapterIds: [] } : topic,
-    ),
-  });
+  ids: string[],
+  stored: Array<{ id: string; kcs: string[] }> = [],
+) => planTopicTree({ proposed: topics, kcs: kcs(...ids), stored });
 
 describe("planTopicTree", () => {
-  test("nests Topics by level, a parent holding KCs of its own beside its children", () => {
+  test("nests Topics by level, deeper levels becoming level 2", () => {
     const tree = plan(
       [
-        proposed(1, "Spaces", ["spaces"]),
-        proposed(2, "Subspaces", ["subspaces"]),
-        proposed(2, "Bases", ["bases"]),
-        proposed(1, "Maps", ["maps"]),
+        proposed(1, "Spaces", []),
+        proposed(2, "Subspaces", ["k1"]),
+        proposed(3, "Bases", ["k2"]),
+        proposed(1, "Maps", ["k3"]),
       ],
-      [
-        kc("k1", "spaces"),
-        kc("k2", "subspaces"),
-        kc("k3", "bases"),
-        kc("k4", "maps"),
-      ],
+      ["k1", "k2", "k3"],
     );
-    expect(tree.map((t) => [t.name, t.parent, t.kcs])).toEqual([
-      ["Spaces", null, ["k1"]],
-      ["Subspaces", 0, ["k2"]],
-      ["Bases", 0, ["k3"]],
-      ["Maps", null, ["k4"]],
+    expect(
+      tree.map((t) => [t.name, t.parent, t.kcs, t.centralQuestion]),
+    ).toEqual([
+      ["Spaces", null, [], null],
+      ["Subspaces", 0, ["k1"], "Why Subspaces?"],
+      ["Bases", 0, ["k2"], "Why Bases?"],
+      ["Maps", null, ["k3"], "Why Maps?"],
     ]);
-    expect(tree[0]).toMatchObject({
-      centralQuestion: "Why Spaces?",
-      chapterIds: ["spaces"],
-    });
   });
 
-  test("gives a Chapter to the first Topic naming it; one left out becomes a top-level Topic by its title", () => {
+  test("gives a KC to the first Topic naming it, and one no Topic names to its neighbour's Topic", () => {
     const tree = plan(
-      [proposed(1, "A", ["spaces"]), proposed(1, "B", ["spaces", "bases"])],
-      [kc("k1", "spaces"), kc("k2", "bases"), kc("k3", "maps")],
+      [proposed(1, "A", ["k2"]), proposed(1, "B", ["k2", "k4", "gone"])],
+      // k1 comes first: it follows the KC after it; k3 and k5 the one before.
+      ["k1", "k2", "k3", "k4", "k5"],
     );
-    expect(tree.map((t) => [t.name, t.chapterIds, t.kcs])).toEqual([
-      ["A", ["spaces"], ["k1"]],
-      ["B", ["bases"], ["k2"]],
-      ["Title maps", ["maps"], ["k3"]],
+    expect(tree.map((t) => [t.name, t.kcs])).toEqual([
+      ["A", ["k1", "k2", "k3"]],
+      ["B", ["k4", "k5"]],
     ]);
-    expect(tree[2]!.centralQuestion).toBe("Title maps");
   });
 
-  test("drops Topics without KCs or children, from the leaves up, and keeps a parent without KCs of its own", () => {
+  test("drops Topics without KCs or children, from the leaves up", () => {
     const tree = plan(
       [
         proposed(1, "Empty parent", []),
-        proposed(2, "Empty child", ["maps"]),
+        proposed(2, "Empty child", ["gone"]),
         proposed(1, "Holder", []),
-        proposed(2, "Spaces", ["spaces"]),
+        proposed(2, "Spaces", ["k1"]),
       ],
-      [kc("k1", "spaces")],
+      ["k1"],
     );
-    expect(tree).toEqual([
-      {
-        id: null,
-        parent: null,
-        name: "Holder",
-        centralQuestion: null,
-        chapterIds: [],
-        kcs: [],
-      },
-      expect.objectContaining({ name: "Spaces", parent: 0, kcs: ["k1"] }),
+    expect(tree.map((t) => [t.name, t.parent])).toEqual([
+      ["Holder", null],
+      ["Spaces", 0],
     ]);
   });
 
-  test("puts a KC from the exercise call in the Topic holding most of the KCs it is tested with", () => {
-    const tree = plan(
-      [proposed(1, "Spaces", ["spaces"]), proposed(1, "Bases", ["bases"])],
-      [
-        kc("k1", "spaces"),
-        kc("k2", "bases"),
-        kc("k3", "bases"),
-        kc("x1", "sheet", ["k1", "k2", "k3"]),
-        // Tested only with another exercise KC: follows it once it is placed.
-        kc("x2", "sheet", ["x1"]),
-      ],
-    );
-    expect(tree.map((t) => [t.name, t.kcs])).toEqual([
-      ["Spaces", ["k1"]],
-      ["Bases", ["k2", "k3", "x1", "x2"]],
+  test("makes a Topic per Material when no Topic names a KC", () => {
+    const tree = plan([], ["k1", "s1", "k2"]);
+    expect(tree.map((t) => [t.name, t.kcs, t.centralQuestion])).toEqual([
+      ["Script", ["k1", "k2"], "Script"],
+      ["Sheet", ["s1"], "Sheet"],
     ]);
   });
 
-  test("places an exercise KC without a majority by its nearest placed KC, else in its own Chapter's Topic", () => {
-    const topics = [
-      proposed(1, "Spaces", ["spaces"]),
-      proposed(1, "Bases", ["bases"]),
-    ];
-    const tree = plan(topics, [
-      kc("k1", "spaces", undefined, [1, 0]),
-      kc("k2", "bases", undefined, [0, 1]),
-      // Tests nothing placed; its vector is nearest k2.
-      kc("x1", "sheet", [], [0.1, 0.9]),
-      // No vector: its own Chapter, which no Topic names.
-      kc("x2", "sheet", []),
-    ]);
-    expect(tree.map((t) => [t.name, t.kcs])).toEqual([
-      ["Spaces", ["k1"]],
-      ["Bases", ["k2", "x1"]],
-      ["Title sheet", ["x2"]],
-    ]);
-  });
-
-  test("a Chapter holding only exercise KCs is not placed by the tree: its KCs follow the KCs they test", () => {
-    const tree = plan(
-      [proposed(1, "Sheet", ["sheet"])],
-      [kc("k1", "spaces"), kc("x1", "sheet", ["k1"])],
-    );
-    expect(tree.map((t) => [t.name, t.kcs])).toEqual([
-      ["Title spaces", ["k1", "x1"]],
-    ]);
-  });
-
-  test("continues an unmatched stored Topic by the free Topic holding most of its Chapters", () => {
+  test("keeps a continued stored id once, then continues a stored Topic by the free Topic sharing most KCs", () => {
     const tree = plan(
       [
-        proposed(1, "Linear spaces", ["spaces", "subspaces"], "t1"),
-        proposed(1, "Everything about bases", ["bases", "maps"]),
-        proposed(1, "Other", ["sheet"]),
+        proposed(1, "A", ["k1"], "t1"),
+        proposed(1, "B", ["k2"], "t1"),
+        proposed(1, "C", ["k3", "k4"], "unknown"),
       ],
+      ["k1", "k2", "k3", "k4"],
       [
-        kc("k1", "spaces"),
-        kc("k2", "subspaces"),
-        kc("k3", "bases"),
-        kc("k4", "maps"),
-        kc("k5", "sheet"),
-      ],
-      [
-        { id: "t1", chapterIds: ["spaces"] },
-        { id: "t2", chapterIds: ["bases", "maps", "subspaces"] },
-        // Its Topic is taken; nothing else free shares a Chapter with it.
-        { id: "t3", chapterIds: ["maps"] },
+        { id: "t1", kcs: ["k1"] },
+        { id: "t2", kcs: ["k2", "k3"] },
+        { id: "t3", kcs: ["k3", "k4"] },
       ],
     );
-    expect(tree.map((t) => [t.name, t.id])).toEqual([
-      ["Linear spaces", "t1"],
-      ["Everything about bases", "t2"],
-      ["Other", null],
-    ]);
-  });
-
-  test("keeps a continued stored id once, and only a stored one", () => {
-    const tree = plan(
-      [
-        proposed(1, "A", ["spaces"], "t1"),
-        proposed(1, "B", ["bases"], "t1"),
-        proposed(1, "C", ["maps"], "unknown"),
-      ],
-      [kc("k1", "spaces"), kc("k2", "bases"), kc("k3", "maps")],
-      ["t1"],
-    );
-    expect(tree.map((t) => t.id)).toEqual(["t1", null, null]);
+    // B shares k2 with t2 and comes before C, which shares as many.
+    expect(tree.map((t) => t.id)).toEqual(["t1", "t2", "t3"]);
   });
 
   test("a stored tree proposed again plans the same Topics", () => {
@@ -210,21 +110,17 @@ describe("planTopicTree", () => {
         parentId: null,
         name: "Spaces",
         centralQuestion: null,
-        chapterIds: [],
+        kcs: [],
       },
       {
         id: "t2",
         parentId: "t1",
         name: "Bases",
         centralQuestion: "Why?",
-        chapterIds: ["bases"],
+        kcs: ["k1"],
       },
     ];
-    const tree = plan(
-      storedAsProposed(stored),
-      [kc("k1", "bases")],
-      ["t1", "t2"],
-    );
+    const tree = plan(storedAsProposed(stored), ["k1"], stored);
     expect(tree.map((t) => [t.id, t.parent, t.centralQuestion])).toEqual([
       ["t1", null, null],
       ["t2", 0, "Why?"],

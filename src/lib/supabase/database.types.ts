@@ -2075,7 +2075,6 @@ export type Database = {
       topics: {
         Row: {
           central_question: string | null;
-          chapter_ids: string[];
           course_id: string;
           created_at: string;
           id: string;
@@ -2087,7 +2086,6 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           central_question?: string | null;
-          chapter_ids?: string[];
           course_id: string;
           created_at?: string;
           id?: string;
@@ -2098,7 +2096,6 @@ export type Database = {
         };
         Update: {
           central_question?: string | null;
-          chapter_ids?: string[];
           course_id?: string;
           created_at?: string;
           id?: string;

@@ -430,18 +430,16 @@ describe("Update map", () => {
     await update();
 
     expect(trees).toHaveLength(1);
-    expect(trees[0]).toMatchObject({ language: "German", storedTopics: [] });
-    expect(trees[0]!.materials[0]!.outline).toEqual([
-      { id: "c1", title: "Material 0", depth: 0 },
-      {
-        id: "c2",
-        title: "Vector spaces",
-        depth: 1,
-        kcs: ["About Vector spaces."],
-      },
-      { id: "c3", title: "Subspaces", depth: 2, kcs: ["About Subspaces."] },
-      { id: "c4", title: "Bases", depth: 2, kcs: ["About Bases."] },
-    ]);
+    expect(trees[0]).toEqual({
+      language: "German",
+      kcs: ["Vector spaces", "Subspaces", "Bases"].map((heading, index) => ({
+        id: `k${index + 1}`,
+        name: `About ${heading}.`,
+        material: "Material 0",
+        heading,
+      })),
+      storedTopics: [],
+    });
     expect(reasoning.every((setting) => setting === "medium")).toBe(true);
     expect(topicTree(db)).toEqual([
       "Vector spaces: About Vector spaces.",
@@ -458,7 +456,7 @@ describe("Update map", () => {
     expect(topicTree(db)).toHaveLength(3);
   });
 
-  test("calls again when a Chapter's KCs change, and keeps the Topics it continues", async () => {
+  test("calls again when the KCs change, and keeps the Topics it continues", async () => {
     seedMaterial(db, { chapters: [{ title: "Vectors" }] });
     useBuildModels(kcPerChunk);
     await update();
@@ -470,7 +468,7 @@ describe("Update map", () => {
 
     expect(trees).toHaveLength(1);
     expect(trees[0]!.storedTopics).toEqual([
-      { id: "t1", name: "Vectors", level: 1, chapters: ["c2"] },
+      { id: "t1", name: "Vectors", level: 1, kcs: ["k1"] },
     ]);
     expect(topicTree(db)).toEqual([
       "Vectors: About Vectors.",
@@ -479,7 +477,7 @@ describe("Update map", () => {
     expect(db.tables.topics[0]!.id).toBe(vectors!.id);
   });
 
-  test("gives a Chapter the call leaves out a top-level Topic of its own", async () => {
+  test("puts a KC the call leaves out in the Topic of the KC before it", async () => {
     seedMaterial(db, { chapters: [{ title: "Vectors" }, { title: "Sums" }] });
     useBuildModels({
       ...kcPerChunk,
@@ -488,36 +486,38 @@ describe("Update map", () => {
 
     await update();
 
-    expect(topicTree(db)).toEqual([
-      "Vectors: About Vectors.",
-      "Sums: About Sums.",
-    ]);
-    expect(db.tables.topics[1]).toMatchObject({
-      central_question: "Sums",
-      parent_id: null,
-    });
+    expect(topicTree(db)).toEqual(["Vectors: About Vectors., About Sums."]);
   });
 
-  test("gives each Chapter a Topic of its own when the tree call fails twice, and calls again on the next update", async () => {
-    seedMaterial(db, { chapters: [{ title: "Vectors" }, { title: "Sums" }] });
+  test("keeps the stored tree when the tree call fails twice, and calls again on the next update", async () => {
+    seedMaterial(db, { chapters: [{ title: "Vectors" }] });
+    useBuildModels(kcPerChunk);
+    await update();
+
+    seedMaterial(db, { chapters: [{ title: "Sums" }] });
     const { trees } = useBuildModels({
       ...kcPerChunk,
       treeOf: () => undefined,
     });
-
     await update();
 
     expect(trees).toHaveLength(2);
     expect(build()?.status).toBe("built");
-    expect(topicTree(db)).toEqual([
-      "Vectors: About Vectors.",
-      "Sums: About Sums.",
-    ]);
+    expect(topicTree(db)).toEqual(["Vectors: About Vectors., About Sums."]);
 
     const again = useBuildModels(kcPerChunk);
     await update();
 
     expect(again.trees).toHaveLength(1);
+  });
+
+  test("makes a Topic per Material when the first tree call fails twice", async () => {
+    seedMaterial(db, { chapters: [{ title: "Vectors" }, { title: "Sums" }] });
+    useBuildModels({ ...kcPerChunk, treeOf: () => undefined });
+
+    await update();
+
+    expect(topicTree(db)).toEqual(["Material 0: About Vectors., About Sums."]);
   });
 
   test("reports the pages read without units", async () => {
