@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(15);
+select plan(18);
 
 insert into auth.users (id, email)
 values
@@ -49,6 +49,13 @@ values
     'aaaaaaaa-0000-0000-0000-000000000001', 'new', 'ready', null, 1,
     'Another engine.', 'Done.', null, null, null);
 
+insert into public.kcs (id, owner, course_id, name, description, origin, position)
+values ('bbbbbbbb-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111',
+  'aaaaaaaa-0000-0000-0000-000000000001', 'Thrust', '.', 'content', 0);
+insert into public.problem_kcs (problem_id, kc_id, owner, course_id)
+values ('ffffffff-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000001',
+  '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001');
+
 select throws_ok(
   $$insert into public.problems (owner, course_id, source, status, difficulty)
     values ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001',
@@ -72,8 +79,13 @@ grant select on ids to authenticated;
 set local role authenticated;
 set local request.jwt.claims = '{"sub": "22222222-2222-2222-2222-222222222222", "role": "authenticated"}';
 select is((select count(*)::int from public.problems), 0, 'another Student reads no Problems');
+select is((select count(*)::int from public.problem_kcs), 0, 'another Student reads no Problem KCs');
 set local request.jwt.claims = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
 select is((select count(*)::int from public.problems), 4, 'the owner reads their Problems');
+select is((select count(*)::int from public.problem_kcs), 1, 'the owner reads their Problem KCs');
+select throws_ok(
+  $$delete from public.problem_kcs$$,
+  '42501', null, 'a Student cannot change Problem KCs');
 select throws_ok(
   $$insert into public.problems (owner, course_id, source, difficulty)
     values ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001', 'new', 1)$$,

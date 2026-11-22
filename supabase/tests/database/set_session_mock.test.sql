@@ -62,7 +62,9 @@ select is(public.set_session_mock('cccccccc-0000-0000-0000-000000000001', 'ddddd
 reset role;
 
 select results_eq(
-  $$select chat_id, mock_id from public.study_sessions order by chat_id$$,
+  $$select chat_id, mock_id from public.study_sessions
+    where chat_id in ('cccccccc-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000002')
+    order by chat_id$$,
   $$values ('cccccccc-0000-0000-0000-000000000001'::uuid, 'dddddddd-0000-0000-0000-000000000001'::uuid),
     ('cccccccc-0000-0000-0000-000000000002'::uuid, null::uuid)$$,
   'only the session without a Question goes through the mock');

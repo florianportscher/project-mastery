@@ -95,7 +95,8 @@ select lives_ok(
     from public.questions$$,
   'the owner records an attempt on the question''s KC');
 select results_eq(
-  $$select owner, result, help, "check", created_at = now() from public.attempts$$,
+  $$select owner, result, help, "check", created_at = now() from public.attempts
+    where kc_id = 'bbbbbbbb-0000-0000-0000-000000000001'$$,
   $$values ('11111111-1111-1111-1111-111111111111'::uuid, 'partial', 'some', 'unchecked', true)$$,
   'the owner reads it, owned by them and timed by the database');
 select throws_ok(

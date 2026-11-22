@@ -129,6 +129,18 @@ const cases = {
       expected: ["boundaries/dependencies"],
     },
     {
+      name: "the Chat metrics may use the admin client",
+      file: "evals/metrics-cli.ts",
+      code: 'export { createAdminClient } from "@/lib/supabase/admin";',
+      expected: [],
+    },
+    {
+      name: "tools cannot use the admin client",
+      file: "tools/agent/example.ts",
+      code: 'export { createAdminClient } from "@/lib/supabase/admin";',
+      expected: ["boundaries/dependencies"],
+    },
+    {
       name: "the agent CLI uses packages",
       file: "tools/agent/example.ts",
       code: 'export { z } from "zod";',
@@ -185,6 +197,30 @@ const cases = {
       expected: ["boundaries/dependencies"],
     },
     {
+      name: "tracing packages stay in lib/tracing",
+      file: "src/features/chat/server/example.ts",
+      code: 'import "server-only";\nexport { observe } from "@langfuse/tracing";',
+      expected: ["boundaries/dependencies"],
+    },
+    {
+      name: "OpenTelemetry packages stay in lib/tracing too",
+      file: "src/lib/example.ts",
+      code: 'export { trace } from "@opentelemetry/api";',
+      expected: ["boundaries/dependencies"],
+    },
+    {
+      name: "lib/tracing and evals may use the tracing packages",
+      file: "src/lib/tracing/example.ts",
+      code: 'export { observe } from "@langfuse/tracing";',
+      expected: [],
+    },
+    {
+      name: "evals may use the tracing packages",
+      file: "evals/example.ts",
+      code: 'export { observe } from "@langfuse/tracing";',
+      expected: [],
+    },
+    {
       name: "the AI SDK React hooks are allowed in features",
       file: "src/features/chat/components/example.tsx",
       code: 'export { useChat } from "@ai-sdk/react";',
@@ -192,6 +228,18 @@ const cases = {
     },
   ],
   "file structure": [
+    {
+      name: "tools are TypeScript files in an allowed tools folder",
+      file: "tools/retro/example.ts",
+      code: "export const x = 1;",
+      expected: [],
+    },
+    {
+      name: "tools cannot sit in a new tools folder",
+      file: "tools/other/example.ts",
+      code: "export const x = 1;",
+      expected: ["project/file-structure"],
+    },
     {
       name: "routes contain only Next.js files",
       file: "src/app/(auth)/login/login-form.tsx",
@@ -358,6 +406,34 @@ const cases = {
     },
   ],
 };
+
+describe("max-lines", () => {
+  const lines = (count) => `${"export const x = 1;\n".repeat(count)}`;
+  const reported = async (filePath, code) => {
+    const [result] = await eslint.lintText(code, { filePath });
+    return result.messages.some((message) => message.ruleId === "max-lines");
+  };
+
+  test("warns on a source file over 500 lines", async () => {
+    expect(await reported("src/lib/long.ts", lines(501))).toBe(true);
+  });
+
+  test("allows 500 lines, and counts neither blank lines nor comments", async () => {
+    expect(await reported("src/lib/long.ts", lines(500))).toBe(false);
+    expect(
+      await reported("src/lib/long.ts", `${lines(500)}\n\n// a comment\n`),
+    ).toBe(false);
+  });
+
+  test("exempts generated code", async () => {
+    expect(
+      await reported("src/lib/supabase/database.types.ts", lines(501)),
+    ).toBe(false);
+    expect(await reported("src/components/ui/long.tsx", lines(501))).toBe(
+      false,
+    );
+  });
+});
 
 for (const [group, groupCases] of Object.entries(cases)) {
   describe(group, () => {

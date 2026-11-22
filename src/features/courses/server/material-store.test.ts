@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, test, vi } from "vitest";
+import { silenceLogs } from "@/lib/log-testing";
 import { fakeSupabase } from "@/lib/supabase/testing";
 import type { Supabase } from "@/lib/supabase/types";
 
@@ -53,6 +54,7 @@ describe("removeMaterialFiles", () => {
   test("reports a Storage failure", async () => {
     const db = seededStorage([LECTURE, `${LECTURE}/pages/1.png`]);
     db.files.fail("remove");
+    silenceLogs("error");
 
     expect(await removeMaterialFiles(db as unknown as Supabase, LECTURE)).toBe(
       false,

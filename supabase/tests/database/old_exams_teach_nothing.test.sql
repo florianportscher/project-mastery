@@ -48,16 +48,19 @@ select is(public.retire_unsourced_kcs('aaaaaaaa-0000-0000-0000-000000000001'), 1
 select results_eq(
   $$select k.name, count(s.chunk_id)::int from public.kcs as k
     left join public.kc_sources as s on s.kc_id = k.id
-    where k.retired_at is null group by k.name order by k.name$$,
+    where k.retired_at is null and k.course_id = 'aaaaaaaa-0000-0000-0000-000000000001'
+    group by k.name order by k.name$$,
   $$values ('Basis'::text, 1), ('Exercise KC'::text, 1)$$,
   'a KC taught elsewhere keeps its other sources');
 select is(
   (select count(*)::int from public.kc_sources as s
-    join public.chunks as c on c.id = s.chunk_id where c.markdown = 'Exam text.'),
+    join public.chunks as c on c.id = s.chunk_id
+    where c.markdown = 'Exam text.' and s.course_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
   0, 'the sources in the exam subtree''s content chunks are gone');
 select is(
   (select count(*)::int from public.kc_sources as s
-    join public.chunks as c on c.id = s.chunk_id where c.label = 'exercise'),
+    join public.chunks as c on c.id = s.chunk_id
+    where c.label = 'exercise' and s.course_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
   1, 'an exercise chunk of the exam keeps its source');
 
 select * from finish();
