@@ -24,7 +24,6 @@ const DIFFICULTY_SPLIT: Record<Difficulty, number> = {
 /** The most empty slots of one mock that get a generated Problem. */
 const MAX_GAPS = 6;
 
-/** A place in the blueprint for one item. */
 export type MockSlot = { topicId: string; difficulty: Difficulty };
 
 /**
@@ -77,7 +76,6 @@ const FILL_ORDER = ["old_exam", "exercise", "variant", "new"] as const;
 
 type FillSource = (typeof FILL_ORDER)[number];
 
-/** An Exercise or a ready generated Problem a slot may take. */
 export type MockCandidate = {
   id: string;
   kind: "exercise" | "problem";
@@ -130,7 +128,6 @@ export function fillMock<Candidate extends MockCandidate>(
   });
 }
 
-/** A Problem to generate for an empty slot. */
 export type GapProblem =
   | {
       source: "variant";

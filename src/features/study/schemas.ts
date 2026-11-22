@@ -10,7 +10,6 @@ export const endSessionSchema = z.object({ chatId: z.uuid() });
 /** The most characters of the note on a session's rating. */
 export const MAX_RATING_NOTE_LENGTH = 300;
 
-/** The input of the close card's rating Server Action. */
 export const rateSessionSchema = z.object({
   chatId: z.uuid(),
   rating: z.int().min(1).max(5),
@@ -24,7 +23,6 @@ export const rateSessionSchema = z.object({
     .optional(),
 });
 
-/** Why a message to an ended Study session is refused. */
 export const sessionEndedMessage =
   "This study session has ended, so it takes no more messages. Start a new session to keep studying.";
 
@@ -50,7 +48,6 @@ export const PROBLEM_FLAGS = [
   "off_topic",
 ] as const satisfies readonly ProblemFlag[];
 
-/** The input of a question card's Flag this problem. */
 export const flagProblemSchema = z.object({
   problemId: z.uuid(),
   flag: z.enum(PROBLEM_FLAGS),
@@ -67,10 +64,8 @@ export const examResultSchema = z.object({
     .nullable(),
 });
 
-/** The input of Mock exam and Assemble another. */
 export const queueMockExamSchema = z.object({ courseId: z.uuid() });
 
-/** The input of a Mock exam's Start and Submit. */
 export const mockExamSchema = z.object({ mockId: z.uuid() });
 
 /** The longest answer a mock task stores (`questions.answer_text`). */
@@ -85,7 +80,6 @@ export const saveMockAnswerSchema = z.object({
   confidence: z.number().int().min(1).max(4).nullable(),
 });
 
-/** The input of the Memory card's Server Action. */
 export const saveMemorySchema = z.object({
   courseId: z.uuid(),
   text: z

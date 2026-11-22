@@ -191,7 +191,6 @@ export async function queueMockExam(input: {
   return { ok: true, data: { mockId } };
 }
 
-/** Start on a ready Mock exam's page: its task sheet opens. */
 export async function startMockExam(input: {
   mockId: string;
 }): Promise<ActionResult> {

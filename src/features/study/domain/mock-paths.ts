@@ -1,9 +1,7 @@
-/** A Mock exam's page. */
 export function mockExamPath(courseId: string, mockId: string): string {
   return `/courses/${courseId}/mock/${mockId}`;
 }
 
-/** A Mock exam's status as its page shows it. */
 export type MockStatus =
   "assembling" | "ready" | "in_progress" | "submitted" | "graded" | "failed";
 

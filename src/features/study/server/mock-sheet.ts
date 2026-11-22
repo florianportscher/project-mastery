@@ -2,7 +2,6 @@ import "server-only";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
-/** What saving a mock task's answer did. */
 export type MockAnswerSaved = "saved" | "closed" | "unknown";
 
 /**

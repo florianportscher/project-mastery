@@ -21,7 +21,6 @@ export const chunkLink = (
     to: chunk.pageTo,
   });
 
-/** A chunk as `getTopic` and `searchMaterials` return it. */
 export const sourceView = (
   courseId: string,
   chunk: Awaited<ReturnType<typeof loadChunkSources>>[number],

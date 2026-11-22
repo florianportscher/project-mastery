@@ -19,7 +19,6 @@ export type Pace = { minutesPerKc: number; minutesPerReview: number };
 
 export const DEFAULT_PACE: Pace = { minutesPerKc: 30, minutesPerReview: 2 };
 
-/** A Student's choice on a Topic, which overrides the goal. */
 export type TopicChoice = {
   topicId: string;
   choice: "pinned" | "skipped";
@@ -27,10 +26,8 @@ export type TopicChoice = {
   createdAt: string;
 };
 
-/** Whether the plan holds a Topic. */
 type TopicPlanStatus = "in_plan" | "if_time_allows" | "skipped";
 
-/** A Topic's place in the plan scope. */
 export type TopicScope = {
   id: string;
   status: TopicPlanStatus;
@@ -104,7 +101,6 @@ export function goalTopics(
   return taken;
 }
 
-/** A Topic's badges in the plan, which the map and its Topic page show. */
 export function topicBadges(topic: TopicScope): string[] {
   return [
     ...(topic.pinnedAt !== null ? ["pinned"] : []),

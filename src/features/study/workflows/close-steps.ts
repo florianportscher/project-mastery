@@ -144,7 +144,6 @@ async function loadKcNames(
   return new Map(data.map(({ id, name }) => [id, name]));
 }
 
-/** The Topics of the KCs, in Course order, each with its note so far. */
 async function loadTouchedTopics(
   supabase: Supabase,
   kcIds: string[],

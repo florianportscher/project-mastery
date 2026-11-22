@@ -5,7 +5,6 @@ import type {
   ProgramValue,
 } from "@/features/study/server/math-runner";
 
-/** What `compute` takes: a mathjs program. */
 const computeInputSchema = z.object({
   program: z
     .string()
@@ -15,11 +14,9 @@ const computeInputSchema = z.object({
     ),
 });
 
-/** What `compute` returns: the values, or the error as data. */
 type ComputeOutput =
   { values: Record<string, ProgramValue> } | { error: string };
 
-/** The `compute` tool, running programs through `run`. */
 export function computeTool(run: (program: string) => Promise<ProgramRun>) {
   return tool({
     description:

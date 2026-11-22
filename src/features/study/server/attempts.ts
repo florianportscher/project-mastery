@@ -11,7 +11,6 @@ import { allRows } from "@/lib/supabase/all-rows";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
-/** A Course's attempt as the replay and the map page read it, oldest first. */
 export type CourseAttempt = ReplayAttempt & {
   /** The Exercise its question posed; null for the AI's own question. */
   exerciseId: string | null;

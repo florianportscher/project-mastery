@@ -10,7 +10,6 @@ import type { Supabase } from "@/lib/supabase/types";
  * generate workflow writes them, and the Student may flag a ready one once.
  */
 
-/** A ready generated Problem as `findProblems` ranks and shows it. */
 export type ReadyProblem = {
   id: string;
   source: "variant" | "new";

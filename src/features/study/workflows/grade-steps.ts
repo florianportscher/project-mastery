@@ -23,7 +23,6 @@ import type { Supabase } from "@/lib/supabase/types";
  * mock and items grading has not finished, so a rerun is safe.
  */
 
-/** The ids of the submitted mock's items grading has not finished. */
 export async function loadUngradedItems(mockId: string): Promise<string[]> {
   "use step";
   const supabase = createAdminClient();
@@ -224,7 +223,6 @@ async function saveMockAttempts(
   }
 }
 
-/** Marks an item grading failed for: done, without points or attempts. */
 export async function failMockItem(itemId: string): Promise<void> {
   "use step";
   const { error } = await createAdminClient()

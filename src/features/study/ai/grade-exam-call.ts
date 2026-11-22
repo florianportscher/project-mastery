@@ -11,7 +11,6 @@ import { aiTask } from "@/lib/ai/models";
  * the Student's final values, which code checks against the item's keys.
  */
 
-/** What an item is graded from. */
 export type GradeExamInput = {
   prompt: string;
   points: number;
@@ -45,7 +44,6 @@ const RESULTS = ["full", "partial", "wrong"] as const;
 /** The KC labels the call reads: K1, K2, … */
 const label = (index: number) => `K${index + 1}`;
 
-/** The call for one item and how to read its grading. */
 export function gradeExamCall(input: GradeExamInput) {
   const schema = z.object({
     steps: z

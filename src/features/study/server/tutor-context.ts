@@ -164,7 +164,6 @@ async function loadTopicNotes(
   return new Map(data.map((row) => [row.topic_id, row.text]));
 }
 
-/** A graded Mock exam's tasks, most points lost first. */
 async function loadMockTasks(
   supabase: Supabase,
   mockId: string,

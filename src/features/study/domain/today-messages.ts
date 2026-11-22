@@ -20,7 +20,6 @@ export const QUICK_REPLIES = [
 /** The session lengths the Today card offers, in minutes. */
 export const SESSION_LENGTHS = [15, 30, 45] as const;
 
-/** `value` as a session length, or undefined. */
 export function sessionLength(value: unknown): number | undefined {
   const minutes = Number(value);
   return SESSION_LENGTHS.find((length) => length === minutes);
@@ -29,7 +28,6 @@ export function sessionLength(value: unknown): number | undefined {
 /** The first message of a Chat opened to go through a graded Mock exam. */
 export const MOCK_REVIEW_MESSAGE = "Let's go through my mock exam.";
 
-/** Whether `text` is one of the Today card's first messages. */
 export function isTodayMessage(text: unknown): text is string {
   return Object.values(TODAY_MESSAGES).some((message) => message === text);
 }

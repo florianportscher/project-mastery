@@ -21,7 +21,6 @@ const TEACHING_SAMPLE = 5;
 /** Review attempts needed before minutes per review is measured. */
 const MIN_REVIEWS = 5;
 
-/** What the active time reads of a Chat message. */
 export type PaceMessage = {
   role: "user" | "assistant";
   /** An ISO timestamp. */

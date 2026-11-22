@@ -20,7 +20,6 @@ import { cn } from "@/lib/utils";
 /** How often the page refreshes while the mock assembles or is graded. */
 const POLL_MS = 2000;
 
-/** Start on a ready mock: the page then shows its task sheet. */
 function StartButton({ mockId }: { mockId: string }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);

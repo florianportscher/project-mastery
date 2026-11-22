@@ -20,7 +20,6 @@ const VARIANT_CHANGES = [
   "step_added_or_removed",
 ] as const;
 
-/** A KC as the call reads it. */
 type GenerateKc = { name: string; description: string };
 
 /** What a variant is written from: one Exercise of the Course. */
@@ -72,7 +71,6 @@ Rules for every problem:
 
 Numbers come from code, never from your own arithmetic. When the problem has numbers, write a mathjs program: one assignment per line, units inline, such as \`mass_flow = 40 kg/s\`, \`thrust = mass_flow * (600 m/s - 250 m/s)\`, \`thrust_kN = to(thrust, kN)\`. It assigns every given value and computes every intermediate and final result from them. Never name a variable like a unit (m, s, g, N, K, T, J, W, Pa, ...): use mass, time, mass_flow. Convert with to(value, unit); dividing by a unit drops it. Vectors, matrices and complex numbers are values too: \`v = [2, -3]\`, \`A = [[1, 2], [0, 1]]\`, \`z = 3 + 4i\`. In the statement and the solution, write every number, vector or matrix, given or computed, as a placeholder {{variable}} of the program, which code replaces with the value at 4 significant figures and its unit: write "the air leaves at {{exit_velocity}}", never the number or the unit yourself. Write no {{ for anything else. List each final answer as the program variable that holds it and the unit it is in, null for a plain number, a vector, a matrix or a complex number. A problem without numbers, such as a proof or a conceptual question, has program null and no final answers.`;
 
-/** The model's draft of one Problem. */
 const draftFields = {
   statement: z
     .string()
@@ -113,7 +111,6 @@ const variantSchema = z.object({
 
 const newProblemSchema = z.object(draftFields);
 
-/** A draft as the workflow checks it. */
 export type ProblemDraft = {
   statement: string;
   solution: string;
@@ -123,7 +120,6 @@ export type ProblemDraft = {
   change: (typeof VARIANT_CHANGES)[number] | null;
 };
 
-/** The call for one Problem and how to read its draft. */
 export function generateCall(input: GenerateInput) {
   const schema: z.ZodType<
     z.infer<typeof variantSchema> | z.infer<typeof newProblemSchema>

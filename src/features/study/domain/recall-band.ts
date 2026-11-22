@@ -5,13 +5,11 @@
  */
 import type { KcRecall } from "@/features/study/domain/replay";
 
-/** A KC's recall band. */
 export type RecallBand = "new" | "strong" | "fading" | "weak";
 
 /** Below this recall a taught KC is `weak`. */
 const FADING_RECALL = 0.7;
 
-/** A KC's band with its recall today and next review. */
 export type KcBand = {
   band: RecallBand;
   /** 0 to 1; null untaught. */
@@ -33,7 +31,6 @@ export function recallBand(
   return recall.recallToday >= FADING_RECALL ? "fading" : "weak";
 }
 
-/** A KC's band, recall today and next review (`recallBand`). */
 export function kcBand(
   recall: KcRecall | undefined,
   retention: number,

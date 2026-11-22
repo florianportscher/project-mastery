@@ -33,7 +33,6 @@ const SOURCES_PER_KC = 3;
 /** Exercises a new Problem gets as style anchors. */
 const STYLE_ANCHORS = 2;
 
-/** What became of a queued Problem. */
 export type GenerateOutcome = "ready" | "failed" | "limited" | "gone";
 
 type QueuedProblem = {
@@ -47,7 +46,6 @@ type QueuedProblem = {
   source: string;
 };
 
-/** One call's draft, checked: the Problem, or what failed it. */
 type Attempt =
   | { kind: "limited" }
   | { kind: "callFailed" }
@@ -258,7 +256,6 @@ async function generateInput(
   };
 }
 
-/** Stores a checked Problem as ready, while it is still queued. */
 async function store(
   supabase: Supabase,
   problemId: string,
@@ -279,7 +276,6 @@ async function store(
   return "ready";
 }
 
-/** Marks the queued Problem failed with the reason and its last program. */
 async function fail(
   supabase: Supabase,
   problemId: string,

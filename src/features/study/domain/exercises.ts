@@ -4,7 +4,6 @@
  * test any of them. Pure code; the tool feeds it the candidates.
  */
 
-/** What ranking reads of an Exercise or a generated Problem. */
 export type RankableExercise = {
   id: string;
   /** The KCs it tests, its first one first. */

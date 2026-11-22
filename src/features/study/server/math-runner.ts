@@ -21,14 +21,12 @@ const START_LIMIT_MS = 20_000;
 /** The runner process's heap, beyond which it dies and the run fails. */
 const MAX_HEAP_MB = 256;
 
-/** A final answer a program declares: its variable and the unit it is in. */
 type DeclaredAnswer = {
   variable: string;
   /** A mathjs unit such as "kN" or "m/s^2"; null for a plain number. */
   unit: string | null;
 };
 
-/** An assigned variable's value as the runner returns it. */
 export type ProgramValue = {
   /** The number in `unit`; null for a value that is no number or quantity. */
   value: number | null;
@@ -49,7 +47,6 @@ type AnswerValue = DeclaredAnswer & {
   text: string;
 };
 
-/** A run's outcome: the values, or the error that failed it. */
 export type ProgramRun =
   | {
       ok: true;
@@ -60,7 +57,6 @@ export type ProgramRun =
     }
   | { ok: false; error: string };
 
-/** Runs a program, checking its declared final answers. */
 export type MathRunner = {
   run: (program: string, answers?: DeclaredAnswer[]) => Promise<ProgramRun>;
 };
@@ -242,5 +238,4 @@ function runInProcess(
   });
 }
 
-/** The runner that evaluates programs in a Node process each. */
 export const mathRunner: MathRunner = { run: runInProcess };

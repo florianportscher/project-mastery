@@ -28,7 +28,6 @@ export type ExamProfile = {
   aids: string[];
 };
 
-/** A full mock's minutes and the aids the Brief allows. */
 export function examProfile(aids: ExamAids): ExamProfile {
   return {
     minutes: MOCK_MINUTES,

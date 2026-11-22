@@ -31,15 +31,12 @@ type KnowledgeMap = Awaited<ReturnType<typeof loadStoredMap>>;
 const ASK_AGAIN_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Never asked. */
 const isUnseen = (lastAsked: string | undefined) => lastAsked === undefined;
-/** Last asked before `cutoff`. */
 const isStale = (lastAsked: string | undefined, cutoff: Date) =>
   lastAsked !== undefined && Date.parse(lastAsked) < cutoff.getTime();
 type Exercise = KnowledgeMap["exercises"][number];
 type Chunk = Awaited<ReturnType<typeof loadChunkSources>>[number];
 
-/** A candidate as ranking reads it, with what its view needs. */
 type Candidate =
   | {
       kind: "exercise";

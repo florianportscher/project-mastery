@@ -34,7 +34,6 @@ import type { Supabase } from "@/lib/supabase/types";
  * is signed in, and so scopes every query to the Course itself.
  */
 
-/** A Course's generated Problem as planning reads it. */
 type StoredProblem = {
   id: string;
   status: string;
@@ -211,7 +210,6 @@ async function dueKcs(
   );
 }
 
-/** Inserts the planned Problems with their KCs. */
 export async function queueProblems(
   supabase: Supabase,
   owner: string,
@@ -249,7 +247,6 @@ export async function queueProblems(
   }
 }
 
-/** Marks the Course's running run done. */
 export async function finishRun(courseId: string): Promise<void> {
   "use step";
   const { error } = await createAdminClient()

@@ -19,7 +19,6 @@ const REVIEW_DAYS_AHEAD = 3;
 /** The most Problems one review stock run queues. */
 const REVIEW_STOCK_CAP = 6;
 
-/** An Exercise as a variant source. */
 type StockExercise = {
   id: string;
   kcs: string[];
@@ -29,7 +28,6 @@ type StockExercise = {
   hasVariant: boolean;
 };
 
-/** What a stock run plans on. */
 export type StockInput = {
   /** The Course's Exercises, in map order. */
   exercises: StockExercise[];
@@ -37,12 +35,10 @@ export type StockInput = {
   unseen: Array<{ kcs: string[] }>;
 };
 
-/** A Problem to queue. */
 export type PlannedProblem =
   | { source: "variant"; exerciseId: string; kcs: string[] }
   | { source: "new"; kcs: [string] };
 
-/** A planner that counts what it plans as stock. */
 function planner({ exercises, unseen }: StockInput) {
   const planned: PlannedProblem[] = [];
   const varied = new Set(

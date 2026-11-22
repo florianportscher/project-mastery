@@ -38,7 +38,6 @@ const MAX_BRIEF_NOTES = 4000;
 
 const MINUTE_MS = 60_000;
 
-/** What the tutor context is derived from. */
 export type TutorContextInput = {
   now: Date;
   exam: { examDate: string | null; goal: Goal };
@@ -98,7 +97,6 @@ export type TutorContextInput = {
   mock: ContextMockTask[] | null;
 };
 
-/** The tutor context of a reply at `input.now`. */
 export function tutorContext(input: TutorContextInput): TutorContext {
   const { now, exam, recall, topics } = input;
   const today = utcDay(now);
@@ -184,7 +182,6 @@ export function tutorContext(input: TutorContextInput): TutorContext {
   };
 }
 
-/** One entry per KC of today's Attempts, by its newest (`SessionFacts`). */
 function checkedToday(
   todays: TutorContextInput["attempts"],
   nameOf: (id: string) => string,
@@ -196,7 +193,6 @@ function checkedToday(
   return [...states].map(([id, state]) => ({ id, name: nameOf(id), state }));
 }
 
-/** The session's Topic (`SessionFacts`). */
 function sessionTopic(
   input: TutorContextInput,
   proposal: Proposal,
@@ -222,7 +218,6 @@ function sessionTopic(
   };
 }
 
-/** The head of the ranking (`Proposal`). */
 function propose(
   input: TutorContextInput,
   contextKc: (id: string) => ContextKc,

@@ -7,7 +7,6 @@ import type { AttemptResult } from "@/features/study/domain/replay";
  * score over the items grading did not fail.
  */
 
-/** One graded step of an item's answer. */
 export type GradedStep = { points: number; reason: string };
 
 /**
@@ -47,7 +46,6 @@ export type ScoredItem = {
   predictedSuccess: number;
 };
 
-/** A graded mock's item as its result page sums it. */
 export type ResultItem = ScoredItem & { topic: string | null };
 
 /**
