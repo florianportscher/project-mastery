@@ -189,7 +189,6 @@ export type StoredExtraction = z.infer<typeof storedExtractionSchema>;
  */
 export const kcAssumesSchema = z.array(z.object({ name, description }));
 
-/** The input of the Build button's Server Action. */
 export const startKnowledgeMapBuildSchema = z.object({ courseId: z.uuid() });
 
 export type KnowledgeMap = z.infer<typeof knowledgeMapSchema>;

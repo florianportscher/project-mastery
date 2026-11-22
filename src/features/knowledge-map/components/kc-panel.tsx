@@ -129,7 +129,6 @@ export function KcPanel({
   );
 }
 
-/** A KC's Priority, links, sources, Exercises and check flags. */
 function OtherStats({
   kc,
   map,

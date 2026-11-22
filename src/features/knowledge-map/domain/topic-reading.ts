@@ -10,7 +10,6 @@ import type { KnowledgeMap } from "@/features/knowledge-map/schemas";
 /** The most pages one Reading section spans. */
 const MAX_SECTION_PAGES = 3;
 
-/** A chunk's place: its Material and the pages it covers, and its label. */
 export type ChunkSpan = {
   id: string;
   materialId: string;
@@ -20,7 +19,6 @@ export type ChunkSpan = {
   label: string;
 };
 
-/** A part of a Topic's source pages, in one Material, as the cut gives it. */
 export type SectionCut = {
   materialId: string;
   materialName: string;
@@ -53,7 +51,6 @@ export function readingSectionId(
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-/** The Topic's Reading sections, cut with `readingSections`, with their ids. */
 export function topicReadingSections(
   topicId: string,
   sourceChunkIds: Iterable<string>,

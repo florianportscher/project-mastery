@@ -25,7 +25,6 @@ export type ProposedTopic = {
   continues: string | null;
 };
 
-/** A Topic as a build stores it, in tree order. */
 export type PlannedTopic = {
   /** The stored Topic it continues; null inserts one. */
   id: string | null;
@@ -38,14 +37,12 @@ export type PlannedTopic = {
   kcs: string[];
 };
 
-/** A live KC as the tree places it, in Course order. */
 export type TreeKc = {
   id: string;
   /** The name of its first source's Material. */
   material: string;
 };
 
-/** A stored Topic, as the tree reads it back. */
 export type StoredTreeTopic = {
   id: string;
   parentId: string | null;

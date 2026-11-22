@@ -17,7 +17,6 @@ const LEVELS: Record<
   excluded: { name: "Excluded", variant: "outline" },
 };
 
-/** A KC's recall band badge; a KC without attempts is new. */
 export function BandBadge({ learned }: { learned?: MapKcLearning[string] }) {
   const band = learned?.band ?? "new";
   return (
@@ -30,14 +29,12 @@ export function BandBadge({ learned }: { learned?: MapKcLearning[string] }) {
   );
 }
 
-/** A KC's Priority badge; nothing for a KC without one. */
 export function PriorityBadge({ priority }: { priority?: KcPriority }) {
   if (!priority) return null;
   const level = LEVELS[priority.level];
   return <Badge variant={level.variant}>{level.name}</Badge>;
 }
 
-/** Why a KC has its Priority, one line each. */
 export function PriorityReasons({ priority }: { priority?: KcPriority }) {
   if (!priority || priority.reasons.length === 0) return null;
   return (

@@ -38,7 +38,6 @@ import { failed } from "@/lib/supabase/failed";
  * only when what the tree is built from changed since the stored tree.
  */
 
-/** What the tree step gives the last step. */
 export type TreeProposal = {
   /** The hash of what the tree is built from; null when no call answered. */
   hash: string | null;

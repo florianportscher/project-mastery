@@ -18,7 +18,6 @@ import type { CourseUnit } from "./build-steps";
  * batches of the exercise extraction (`exerciseBatches`).
  */
 
-/** An Exercise of an exercise batch, with its texts. */
 export type BatchExercise = ExerciseGroup & {
   /** Its first question chunk, which keys the stored Exercise. */
   id: string;
@@ -31,7 +30,6 @@ export type BatchExercise = ExerciseGroup & {
 /** What the grouping step stored (`knowledge_map_builds.exercise_groups`). */
 export type StoredGroups = { exercises: ExerciseGroup[]; fallback: boolean };
 
-/** The Course's stored Exercise groups and the hash they were made from. */
 export async function loadStoredGroups(
   supabase: AdminSupabase,
   courseId: string,

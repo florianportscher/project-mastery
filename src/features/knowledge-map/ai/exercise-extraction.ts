@@ -4,7 +4,6 @@ import { z } from "zod";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { aiTask } from "@/lib/ai/models";
 
-/** What the exercise call gets of one exercise batch. */
 export type OfferedExerciseUnit = {
   material: string;
   /** The course language by name, such as English. */
@@ -113,7 +112,6 @@ export function exerciseExtractionSettings(part: OfferedExerciseUnit) {
   };
 }
 
-/** The user message of an exercise call: the unit, as JSON. */
 export function exerciseExtractionMessages(part: OfferedExerciseUnit) {
   return [
     {

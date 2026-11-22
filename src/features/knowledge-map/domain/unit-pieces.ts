@@ -47,7 +47,6 @@ function halve(sizes: readonly number[], piece: UnitPiece): UnitPiece[] {
   ];
 }
 
-/** The pieces of the attempt after `failures` failed attempts. */
 export function unitPieces(
   sizes: readonly number[],
   failures: number,

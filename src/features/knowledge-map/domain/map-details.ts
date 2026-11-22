@@ -2,7 +2,6 @@ import type { MapAttempt, MapKcLearning } from "@/features/knowledge-map/types";
 
 /** What the map page's panels count and list about Exercises. */
 
-/** The ids of the Exercises the Student has attempted. */
 export function attemptedExercises(learning: MapKcLearning): Set<string> {
   return new Set(
     Object.values(learning).flatMap((entry) =>

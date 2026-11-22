@@ -129,7 +129,6 @@ export type NodeLayout = {
   parentId: string | null;
 };
 
-/** Each laid-out node's place and size by id, from ELK's result. */
 export function nodeLayouts(laidOut: ElkNode): Map<string, NodeLayout> {
   const layouts = new Map<string, NodeLayout>();
   const visit = (node: ElkNode) => {

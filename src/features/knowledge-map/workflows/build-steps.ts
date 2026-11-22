@@ -113,7 +113,6 @@ export async function runCalls<Item>(
   );
 }
 
-/** A unit of the Course, as the build reads it: a batch of one Material. */
 export type CourseUnit = {
   materialId: string;
   kind: "content" | "exercise";
@@ -193,14 +192,12 @@ export async function loadCourseUnits(
   });
 }
 
-/** A unit's key among the stored extractions. */
 export const unitKey = (unit: {
   materialId: string;
   kind: string;
   batch: number;
 }) => `${unit.materialId}/${unit.kind}/${unit.batch}`;
 
-/** A stored unit extraction, keyed as `unitKey`. */
 export type StoredUnit = {
   id: string;
   key: string;
@@ -338,7 +335,6 @@ function asRepeats(
   };
 }
 
-/** One unit's attempt in an extraction step. */
 export type UnitAttempt = {
   unit: CourseUnit;
   failures: number;
@@ -517,7 +513,6 @@ export async function prepareBuild(
   return "ready";
 }
 
-/** Retires the Course's live KCs whose sources are all gone. */
 export async function retireUnsourcedKcs(
   supabase: AdminSupabase,
   courseId: string,
@@ -528,7 +523,6 @@ export async function retireUnsourcedKcs(
   if (error) failed("Retiring the KCs without sources", error);
 }
 
-/** Marks the running build failed with a reason for the Student. */
 export async function failBuild(
   courseId: string,
   reason: string,

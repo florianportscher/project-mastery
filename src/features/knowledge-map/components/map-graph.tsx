@@ -134,7 +134,6 @@ function KcNodeView({ data }: NodeProps<KcNode>) {
   );
 }
 
-/** An Exercise: its label and difficulty. */
 function ExerciseNodeView({ data }: NodeProps<ExerciseNode>) {
   const { exercise, selected, related } = data;
   return (

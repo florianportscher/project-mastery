@@ -4,7 +4,6 @@ import { z } from "zod";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { aiTask } from "@/lib/ai/models";
 
-/** An exercise or solution chunk as the grouping call sees it. */
 export type GroupingItem = {
   /** Short and only for the call, such as e1 or s1. */
   id: string;
@@ -15,7 +14,6 @@ export type GroupingItem = {
   text: string;
 };
 
-/** An exam found by an earlier grouping, as the grouping call sees it. */
 export type GroupingExam = {
   /** Short and only for the call, such as x1. */
   id: string;
@@ -113,7 +111,6 @@ export function groupingCallSettings(
   };
 }
 
-/** The user message of a grouping call: the lists, as JSON. */
 export function groupingMessages(
   exercises: readonly GroupingItem[],
   solutions: readonly GroupingItem[],

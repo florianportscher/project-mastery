@@ -7,7 +7,6 @@ import { createHash } from "node:crypto";
  * the exercise extraction.
  */
 
-/** An exercise or solution chunk of a Course, as the grouping sees it. */
 export type GroupingChunk = { id: string; label: "exercise" | "solution" };
 
 /** One Exercise: its question and solution chunks, each in Course order. */
@@ -18,13 +17,11 @@ export type ExerciseGroup = {
   examId?: string | null;
 };
 
-/** An Exercise of one grouping call, with the name of its exam. */
 export type CheckedGroup = Omit<ExerciseGroup, "examId"> & {
   /** One of the call's exams, by name; null for none. */
   exam: string | null;
 };
 
-/** An exam a grouping call found, with the stored exam it continues. */
 export type FoundExam = { name: string; storedId: string | null };
 
 /** The most exercise and solution chunks one grouping call sees. */
@@ -64,7 +61,6 @@ export function offeredIds<Chunk extends GroupingChunk>(
   return offered;
 }
 
-/** An Exercise as the call answers it, by offered ids. */
 export type AnsweredExercise = {
   questionIds: string[];
   solutionIds: string[];
@@ -133,7 +129,6 @@ export function ownGroups(chunks: readonly GroupingChunk[]): CheckedGroup[] {
     }));
 }
 
-/** An exam as the call answers it: its printed name, the stored id it continues. */
 export type AnsweredExam = { name: string; continues?: string | null };
 
 /**

@@ -14,7 +14,6 @@ import { MAX_ANSWER_LENGTH } from "@/features/knowledge-map/schemas";
  */
 export type AnswerKey = { label: string; value: string; anyOrder: boolean };
 
-/** How a value compared with its key. */
 export type AnswerCheck = "match" | "mismatch" | "unchecked";
 
 /** A value given for a key; with one key, the label may be left out. */
@@ -77,7 +76,6 @@ function normalize(text: string): string {
     .replaceAll("°C", "degC");
 }
 
-/** A parsed key or value: its node and the symbols that are not mathjs's. */
 type Reading = { node: MathNode; symbols: string[] };
 
 /** The text parsed, an assignment `x = 5` read as its value; null when unreadable. */
@@ -102,12 +100,10 @@ function read(text: string): Reading | null {
   return { node, symbols: [...symbols].sort() };
 }
 
-/** Whether mathjs can read a key's or a value's text. */
 export function isReadableAnswer(text: string): boolean {
   return read(text) !== null;
 }
 
-/** Whether a value holds no infinite or NaN number. */
 function finite(value: unknown): boolean {
   if (typeof value === "number") return Number.isFinite(value);
   if (math.isComplex(value)) {
@@ -274,7 +270,6 @@ export function checkAnswer(key: AnswerKey, value: string): AnswerCheck {
   return all ? "match" : "mismatch";
 }
 
-/** A check of one value against its key, as `checkAnswer` is. */
 type CheckOne = (key: AnswerKey, value: string) => AnswerCheck;
 
 const labelKey = (label: string) => label.trim().toLowerCase();

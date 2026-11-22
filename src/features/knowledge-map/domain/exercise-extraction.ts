@@ -18,7 +18,6 @@ const MAX_EXERCISE_KCS = 6;
 /** The most final answers one Exercise keeps. */
 const MAX_FINAL_ANSWERS = 10;
 
-/** What the call answers for one Exercise, with the call's ids. */
 export type ExerciseAnswer = {
   id: string;
   notAnExercise: boolean;
@@ -27,7 +26,6 @@ export type ExerciseAnswer = {
   finalAnswers: AnswerKey[];
 };
 
-/** An Exercise the call was offered, with its stored chunks. */
 export type OfferedExercise = {
   /** The call's id, such as x1. */
   id: string;
@@ -107,7 +105,6 @@ export function checkExerciseAnswer(
   return { kcs, exercises };
 }
 
-/** The answer keys with a label and a value mathjs can parse. */
 function checkFinalAnswers(
   answers: ExerciseAnswer["finalAnswers"],
 ): AnswerKey[] {

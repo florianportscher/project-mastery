@@ -53,7 +53,6 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * (`exercise_groups`) for the exercise extraction.
  */
 
-/** An exercise or solution chunk with what the grouping call reads of it. */
 type CourseChunk = GroupingChunk & Omit<GroupingItem, "id">;
 
 /**
@@ -197,13 +196,10 @@ async function groupRun(
   };
 }
 
-/** What one grouping call gave, checked. */
 type RunAnswer = { groups: CheckedGroup[]; exams: FoundExam[] };
 
-/** A stored exam of the Course. */
 type StoredExam = { id: string; name: string };
 
-/** The Course's stored exams in order. */
 async function loadExams(
   supabase: AdminSupabase,
   courseId: string,

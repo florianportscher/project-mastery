@@ -12,7 +12,6 @@ import { createHash } from "node:crypto";
  */
 export const UNIT_CHARS = 12_000;
 
-/** A chunk of one Material, in reading order, with its Markdown's length. */
 export type BatchChunk = { id: string; heading: string | null; chars: number };
 
 /**

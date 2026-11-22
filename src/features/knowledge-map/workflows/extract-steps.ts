@@ -149,7 +149,6 @@ export async function extractTeachingBatches(
   return { ok: true, left: attempts.length - done, failed: failedKeys };
 }
 
-/** The live KCs stored so far in Course order, with ids for the call. */
 export async function loadKnownKcs(
   supabase: AdminSupabase,
   courseId: string,

@@ -19,7 +19,6 @@ import {
   type LegendEntry,
 } from "@/features/knowledge-map/domain/encodings";
 
-/** The "Colour by" and "Size by Priority" choices, in a menu. */
 export function EncodingControls({
   colorBy,
   sizeByPriority,
@@ -64,7 +63,6 @@ export function EncodingControls({
   );
 }
 
-/** What each colour on the graph means. */
 export function Legend({ entries }: { entries: LegendEntry[] }) {
   return (
     <ul
