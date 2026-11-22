@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { parseEnv } from "@/lib/env";
 
-/** Reads the `role` claim of a legacy JWT API key, if the value is one. */
 function jwtRole(key: string): string | undefined {
   const payload = key.split(".")[1];
   if (!key.startsWith("eyJ") || !payload) return undefined;
@@ -47,7 +46,6 @@ export const supabaseSecretEnvSchema = z.object({
 export type SupabasePublicEnv = z.infer<typeof supabasePublicEnvSchema>;
 export type SupabaseSecretEnv = z.infer<typeof supabaseSecretEnvSchema>;
 
-/** Whether the public Supabase variables are set at all (not validated). */
 export function isSupabaseConfigured(): boolean {
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&

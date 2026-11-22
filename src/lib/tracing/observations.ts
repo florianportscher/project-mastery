@@ -27,7 +27,6 @@ export type TracedCall = {
   metadata: Record<string, string>;
 };
 
-/** A traced call with what it sent and answered. */
 export type TracedCallDetail = TracedCall & { input: unknown; output: unknown };
 
 /** A list of traced calls; `truncated` when older calls were left out. */

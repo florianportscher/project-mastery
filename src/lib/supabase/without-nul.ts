@@ -12,12 +12,10 @@
  */
 const NUL_ESCAPE = /(?<!\\)((?:\\\\)*)\\u0000/g;
 
-/** The JSON text without its `\u0000` escapes. */
 export function withoutNul(json: string): string {
   return json.includes("\\u0000") ? json.replace(NUL_ESCAPE, "$1") : json;
 }
 
-/** `fetch` that removes NUL characters from JSON string bodies. */
 export const fetchWithoutNul: typeof fetch = (input, init) => {
   if (
     typeof init?.body === "string" &&

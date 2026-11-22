@@ -78,7 +78,6 @@ export function fakeStorage(userId: string | undefined) {
         make(bytes, contentType ?? "application/octet-stream"),
       );
     },
-    /** What is stored at `path`, whoever owns it. */
     read(bucket: string, path: string) {
       const object = buckets.get(bucket)?.get(path);
       return (
@@ -90,7 +89,6 @@ export function fakeStorage(userId: string | undefined) {
         }
       );
     },
-    /** Every stored path in a bucket, whoever owns it. */
     paths(bucket: string) {
       return [...(buckets.get(bucket)?.keys() ?? [])];
     },

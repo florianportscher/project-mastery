@@ -55,7 +55,6 @@ export function mockTextModel(text: string) {
   });
 }
 
-/** A tool call a mock model makes. */
 export type MockToolCall = { toolName: string; input: unknown };
 
 /**

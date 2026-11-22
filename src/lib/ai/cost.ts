@@ -11,7 +11,6 @@ export type TokenUsage = {
   outputTokens: number;
 };
 
-/** Token counts from the usage an AI SDK call reports. */
 export function tokenUsage(
   usage: Pick<
     LanguageModelUsage,
@@ -25,7 +24,6 @@ export function tokenUsage(
   };
 }
 
-/** Cost of one AI call in US dollars, from the static price table. */
 export function costUsd(modelId: string, usage: TokenUsage): number {
   const price = MODEL_PRICES[modelId];
   if (!price) {
@@ -42,7 +40,6 @@ export function costUsd(modelId: string, usage: TokenUsage): number {
   );
 }
 
-/** Cost in US dollars of transcribing `seconds` of audio. */
 export function audioCostUsd(modelId: string, seconds: number): number {
   const perHour = AUDIO_PRICES[modelId];
   if (perHour === undefined) {

@@ -4,7 +4,6 @@
  * starts no call, first or retry, that could run past STEP_LIMIT_MS.
  */
 
-/** The time limit of a model call a workflow step makes by default. */
 export const CALL_TIMEOUT_MS = 170_000;
 
 /**
@@ -17,7 +16,6 @@ export const BUILD_CALL_TIMEOUT_MS = 260_000;
 /** How long a step may run, with a margin under Vercel's 300 seconds. */
 const STEP_LIMIT_MS = 290_000;
 
-/** The shortest time a retry made with what is left of a step gets. */
 const MIN_RETRY_MS = 60_000;
 
 /**
@@ -47,7 +45,6 @@ export function retryTimeoutMs(
   return left >= MIN_RETRY_MS ? left : null;
 }
 
-/** The error of a model call that ran into its time limit. */
 export class CallTimeoutError extends Error {
   constructor(traceName: string) {
     super(`The ${traceName} call timed out.`);

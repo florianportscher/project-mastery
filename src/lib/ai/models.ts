@@ -159,7 +159,6 @@ function overrideFor(task: AiTask): string | undefined {
   return override;
 }
 
-/** Resolves the gateway model id for a task, honoring env overrides. */
 export function modelIdFor(task: AiTask): string {
   return overrideFor(task) ?? taskConfig(task).model;
 }

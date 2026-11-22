@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-/** Tracks an element's content width, so pages fit their container. */
 export function useElementWidth(ref: React.RefObject<HTMLElement | null>) {
   const [width, setWidth] = useState<number>();
 

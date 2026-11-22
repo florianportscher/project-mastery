@@ -1,6 +1,5 @@
 import { RetryError } from "ai";
 
-/** The wait when the Gateway's message names none, in milliseconds. */
 const DEFAULT_WAIT_MS = 60_000;
 
 /**

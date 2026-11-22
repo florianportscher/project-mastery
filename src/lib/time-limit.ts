@@ -1,7 +1,6 @@
 import "server-only";
 import vm from "node:vm";
 
-/** Thrown by `withinTime` when the code ran over its limit. */
 export class TimeLimitError extends Error {
   override name = "TimeLimitError";
 }

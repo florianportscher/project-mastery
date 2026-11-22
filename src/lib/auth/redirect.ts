@@ -1,7 +1,5 @@
-/** The route that email links lead to. */
 export const CONFIRM_PATH = "/auth/confirm";
 
-/** Where signing in leads when there is no `next` path to return to. */
 export const SIGNED_IN_PATH = "/courses";
 
 /**

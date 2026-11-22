@@ -1,6 +1,5 @@
 import { createClient } from "./client";
 
-/** How an upload ended. */
 export type UploadOutcome = "uploaded" | "cancelled" | "failed";
 
 type UploadOptions = {

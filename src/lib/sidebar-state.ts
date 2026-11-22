@@ -1,4 +1,3 @@
-/** The cookie in which the Sidebar (`ui/sidebar`) stores whether it is open. */
 export const SIDEBAR_COOKIE_NAME = "sidebar_state";
 
 /**

@@ -1,7 +1,6 @@
 import "server-only";
 import { getAiEnv } from "@/lib/ai/env";
 
-/** When the next paced call may start, from `Date.now()`. */
 let nextStartAt = 0;
 
 /**

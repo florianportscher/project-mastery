@@ -10,7 +10,6 @@ import {
  * a message and the error the Student sees when a reply fails.
  */
 
-/** The text of a message's parts, joined, without any non-text parts. */
 export function messageText(
   parts: readonly { type: string; text?: unknown }[],
 ): string {

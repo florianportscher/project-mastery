@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   title: "Materials",
 };
 
-/** A Course's Materials: upload, open, rename and delete them. */
 export default async function MaterialsPage({
   params,
 }: PageProps<"/courses/[courseId]/materials">) {
