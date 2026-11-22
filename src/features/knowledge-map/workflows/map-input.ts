@@ -129,7 +129,7 @@ export function kcsInCourseOrder(map: MapInput): Array<{
 }
 
 /** The live KCs with a first source, in Course order. */
-export function courseOrder(map: MapInput): string[] {
+function courseOrder(map: MapInput): string[] {
   const places = firstSourcePlaces(map);
   return map.kcs
     .map((kc) => kc.id)
