@@ -1,5 +1,4 @@
 import "server-only";
-import { dailyLimitReason } from "@/features/knowledge-map/domain/build-failure";
 import { REVIVE_SIMILARITY } from "@/features/knowledge-map/domain/kc-clusters";
 import { exerciseDifficulty } from "@/features/knowledge-map/domain/exercise-extraction";
 import { acyclicLinks } from "@/features/knowledge-map/domain/prerequisite-cycles";
@@ -16,6 +15,7 @@ import {
   type StoredUnit,
 } from "@/features/knowledge-map/workflows/build-steps";
 import {
+  dailyLimitReason,
   meteredEmbed,
   RATE_LIMITED_STEP_RETRIES,
 } from "@/features/usage/server";
@@ -165,7 +165,7 @@ type Match = { id: string; similarity: number };
  * The Course's `count` live KCs, or with `retired` its retired ones,
  * nearest to `embedding` (a vector, or its text form), most alike first.
  */
-export async function matchKcs(
+async function matchKcs(
   supabase: AdminSupabase,
   courseId: string,
   embedding: number[] | string,

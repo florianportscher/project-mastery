@@ -75,6 +75,74 @@ export async function loadExamChunkIds(
 }
 
 /**
+ * The rows of a Course's map: its live KCs in order, their sources, the
+ * Prerequisite links (also those of retired KCs), the Exercises, the KCs
+ * each tests and their chunks. One read for the stored map, the map queries
+ * and the build.
+ */
+export async function loadMapRows(supabase: Supabase, courseId: string) {
+  const [kcs, sources, links, exercises, exerciseKcs, exerciseChunks] =
+    await Promise.all([
+      allRows("Loading the KCs", (from, to) =>
+        supabase
+          .from("kcs")
+          .select("id, name, description, origin")
+          .eq("course_id", courseId)
+          .is("retired_at", null)
+          .order("position")
+          .order("id")
+          .range(from, to),
+      ),
+      allRows("Loading the KC sources", (from, to) =>
+        supabase
+          .from("kc_sources")
+          .select("kc_id, chunk_id")
+          .eq("course_id", courseId)
+          .order("kc_id")
+          .order("chunk_id")
+          .range(from, to),
+      ),
+      allRows("Loading the prerequisites", (from, to) =>
+        supabase
+          .from("prerequisite_links")
+          .select("from_kc, to_kc")
+          .eq("course_id", courseId)
+          .order("from_kc")
+          .order("to_kc")
+          .range(from, to),
+      ),
+      allRows("Loading the exercises", (from, to) =>
+        supabase
+          .from("exercises")
+          .select("id, question_chunk_id, difficulty, final_answers, exam_id")
+          .eq("course_id", courseId)
+          .order("position")
+          .order("id")
+          .range(from, to),
+      ),
+      allRows("Loading the exercise KCs", (from, to) =>
+        supabase
+          .from("exercise_kcs")
+          .select("exercise_id, kc_id")
+          .eq("course_id", courseId)
+          .order("exercise_id")
+          .order("kc_id")
+          .range(from, to),
+      ),
+      allRows("Loading the exercise chunks", (from, to) =>
+        supabase
+          .from("exercise_chunks")
+          .select("exercise_id, chunk_id, role, position")
+          .eq("course_id", courseId)
+          .order("exercise_id")
+          .order("chunk_id")
+          .range(from, to),
+      ),
+    ]);
+  return { kcs, sources, links, exercises, exerciseKcs, exerciseChunks };
+}
+
+/**
  * The Course's stored map, with its rows' ids; empty before the first. Reads
  * on the admin client or a Student's session client, where Row Level
  * Security leaves another Student's Course empty.
@@ -83,67 +151,8 @@ export async function loadStoredMap(
   supabase: Supabase,
   courseId: string,
 ): Promise<KnowledgeMap> {
-  const [
-    kcs,
-    sources,
-    prerequisites,
-    exercises,
-    exerciseKcs,
-    exerciseChunks,
-    confirmedExams,
-  ] = await Promise.all([
-    allRows("Loading the KCs", (from, to) =>
-      supabase
-        .from("kcs")
-        .select("id, name, description, origin")
-        .eq("course_id", courseId)
-        .is("retired_at", null)
-        .order("position")
-        .range(from, to),
-    ),
-    allRows("Loading the KC sources", (from, to) =>
-      supabase
-        .from("kc_sources")
-        .select("kc_id, chunk_id")
-        .eq("course_id", courseId)
-        .order("kc_id")
-        .order("chunk_id")
-        .range(from, to),
-    ),
-    allRows("Loading the prerequisites", (from, to) =>
-      supabase
-        .from("prerequisite_links")
-        .select("from_kc, to_kc")
-        .eq("course_id", courseId)
-        .order("id")
-        .range(from, to),
-    ),
-    allRows("Loading the exercises", (from, to) =>
-      supabase
-        .from("exercises")
-        .select("id, question_chunk_id, difficulty, final_answers, exam_id")
-        .eq("course_id", courseId)
-        .order("position")
-        .range(from, to),
-    ),
-    allRows("Loading the exercise KCs", (from, to) =>
-      supabase
-        .from("exercise_kcs")
-        .select("exercise_id, kc_id")
-        .eq("course_id", courseId)
-        .order("exercise_id")
-        .order("kc_id")
-        .range(from, to),
-    ),
-    allRows("Loading the exercise chunks", (from, to) =>
-      supabase
-        .from("exercise_chunks")
-        .select("exercise_id, chunk_id, role, position")
-        .eq("course_id", courseId)
-        .order("exercise_id")
-        .order("chunk_id")
-        .range(from, to),
-    ),
+  const [rows, confirmedExams] = await Promise.all([
+    loadMapRows(supabase, courseId),
     allRows("Loading the old exams", (from, to) =>
       supabase
         .from("exams")
@@ -154,6 +163,14 @@ export async function loadStoredMap(
         .range(from, to),
     ),
   ]);
+  const {
+    kcs,
+    sources,
+    links: prerequisites,
+    exercises,
+    exerciseKcs,
+    exerciseChunks,
+  } = rows;
   const oldExams = new Set(confirmedExams.map(({ id }) => id));
 
   const chunksOf = (exerciseId: string, role: "question" | "solution") =>

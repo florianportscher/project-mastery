@@ -26,7 +26,7 @@ type PriorityKc = {
 };
 
 /** A Student-confirmed statement about one Topic and its subtree. */
-export type ExamScope = {
+type ExamScope = {
   topicId: string;
   scope: "excluded" | "emphasized";
   words: string;
@@ -46,7 +46,7 @@ export type PriorityInput = {
   examScopes: ExamScope[];
 };
 
-export type PriorityLevel = "high" | "medium" | "low" | "excluded";
+type PriorityLevel = "high" | "medium" | "low" | "excluded";
 
 /** A KC's Priority with the map page's level and reasons. */
 export type KcPriority = {

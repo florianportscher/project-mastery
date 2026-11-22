@@ -71,7 +71,7 @@ export const daysBetween = (from: string, to: string) =>
   Math.round((Date.parse(to) - Date.parse(from)) / DAY_MS);
 
 /** The day `days` after a YYYY-MM-DD day, before it when negative. */
-export const addDays = (day: string, days: number) =>
+const addDays = (day: string, days: number) =>
   utcDay(new Date(Date.parse(day) + days * DAY_MS));
 
 /** The desired retention for the Brief's goal. */

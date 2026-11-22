@@ -29,9 +29,7 @@ export async function getMaterialChunks(
     .select("id, course_id, name, parse_status")
     .eq("id", materialId)
     .maybeSingle();
-  if (material.error) {
-    throw new Error(`Loading the Material failed: ${material.error.message}`);
-  }
+  if (material.error) failed("Loading the Material", material.error);
   if (!material.data) return null;
 
   const chunks = await allRows("Loading the chunks", (from, to) =>

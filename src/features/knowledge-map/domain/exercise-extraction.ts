@@ -13,7 +13,7 @@ import type { ExtractedExercise } from "@/features/knowledge-map/schemas";
  */
 
 /** The most KCs one Exercise tests. */
-export const MAX_EXERCISE_KCS = 6;
+const MAX_EXERCISE_KCS = 6;
 
 /** The most final answers one Exercise keeps. */
 const MAX_FINAL_ANSWERS = 10;
@@ -40,7 +40,7 @@ export type OfferedExercise = {
 };
 
 /** The non-blank lines of a printed solution; null without one. */
-export function solutionLines(solution: string | null): number | null {
+function solutionLines(solution: string | null): number | null {
   if (solution === null) return null;
   return solution.split("\n").filter((line) => line.trim()).length;
 }

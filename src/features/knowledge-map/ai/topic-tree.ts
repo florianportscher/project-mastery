@@ -6,7 +6,7 @@ import { MAX_TOPIC_NAME } from "@/features/knowledge-map/domain/topic-tree";
 import { aiTask } from "@/lib/ai/models";
 
 /** A Chapter of a Material's Outline as the tree call gets it. */
-export type OfferedChapter = {
+type OfferedChapter = {
   /** Short and only for the call, such as c1. */
   id: string;
   title: string;
@@ -17,7 +17,7 @@ export type OfferedChapter = {
 };
 
 /** A stored Topic as the tree call gets it. */
-export type OfferedStoredTopic = {
+type OfferedStoredTopic = {
   /** Short and only for the call, such as t1. */
   id: string;
   name: string;

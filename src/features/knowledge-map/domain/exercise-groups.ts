@@ -28,7 +28,7 @@ export type CheckedGroup = Omit<ExerciseGroup, "examId"> & {
 export type FoundExam = { name: string; storedId: string | null };
 
 /** The most exercise and solution chunks one grouping call sees. */
-export const MAX_GROUPING_CHUNKS = 400;
+const MAX_GROUPING_CHUNKS = 400;
 
 /**
  * The chunks of each grouping call: the Course's exercise and solution

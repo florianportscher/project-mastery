@@ -12,7 +12,7 @@ import { aiTask } from "@/lib/ai/models";
  */
 
 /** The plan's five changes a variant makes, one per variant. */
-export const VARIANT_CHANGES = [
+const VARIANT_CHANGES = [
   "new_values",
   "different_unknown",
   "reversed",
@@ -24,7 +24,7 @@ export const VARIANT_CHANGES = [
 type GenerateKc = { name: string; description: string };
 
 /** What a variant is written from: one Exercise of the Course. */
-export type VariantInput = {
+type VariantInput = {
   kind: "variant";
   exercise: {
     question: string;
@@ -42,7 +42,7 @@ export type VariantInput = {
 };
 
 /** What a new Problem is written from. */
-export type NewProblemInput = {
+type NewProblemInput = {
   kind: "new";
   /** Each KC with up to 3 of its source chunks' Markdown. */
   kcs: Array<GenerateKc & { sources: string[] }>;

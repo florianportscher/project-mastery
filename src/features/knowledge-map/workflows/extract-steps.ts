@@ -7,7 +7,6 @@ import {
   type OfferedChunk,
   type OfferedUnit,
 } from "@/features/knowledge-map/ai/chapter-extraction";
-import { dailyLimitReason } from "@/features/knowledge-map/domain/build-failure";
 import {
   checkExtraction,
   type UnitExtraction,
@@ -18,7 +17,7 @@ import {
 } from "@/features/knowledge-map/domain/unit-coverage";
 import {
   extractAttempts,
-  loadCourseLanguage,
+  loadCourseLanguageName,
   loadCourseUnits,
   loadStoredUnits,
   planAttempts,
@@ -37,7 +36,10 @@ import {
   kcsInCourseOrder,
   loadMapInput,
 } from "@/features/knowledge-map/workflows/map-input";
-import { RATE_LIMITED_STEP_RETRIES } from "@/features/usage/server";
+import {
+  dailyLimitReason,
+  RATE_LIMITED_STEP_RETRIES,
+} from "@/features/usage/server";
 import {
   BUILD_CALL_TIMEOUT_MS,
   callFits,
@@ -105,7 +107,7 @@ export async function extractChapters(
   const attempts = planAttempts(todo, stored, failed, deferred);
   if (attempts.length === 0) return { ok: true, left: 0 };
 
-  const language = await loadCourseLanguage(supabase, courseId);
+  const language = await loadCourseLanguageName(supabase, courseId);
   let done = 0;
   const failedKeys: string[] = [];
   for (const attempt of attempts.slice(0, UNITS_PER_STEP)) {

@@ -5,8 +5,7 @@ import "server-only";
 // Also in `index.ts`: `index.ts` loads React components, which fail outside
 // Next.js, so server code that smoke checks load imports it from here.
 export { exerciseLabel } from "./domain/exercise-label";
-export { courseMapPath, topicPath } from "./domain/map-paths";
-export { restrictMapToTopic } from "./domain/topic-map";
+export { courseMapPath } from "./domain/map-paths";
 export { buildTopicGraph } from "./domain/topic-graph";
 export { topicAnchors } from "./domain/topic-reading";
 export {
@@ -25,7 +24,6 @@ export {
   findReadingSection,
   loadCourseTopics,
   loadReadingSections,
-  type CourseTopic,
 } from "./server/course-topics";
 export { getKnowledgeMap } from "./server/queries";
 export { getTopicNames } from "./server/topic-names";
@@ -34,11 +32,7 @@ export {
   loadKcAssumes,
   loadStoredMap,
 } from "./server/stored-map";
-export {
-  loadStoredTopics,
-  loadTopicTree,
-  type TreeTopic,
-} from "./server/stored-topics";
+export { loadStoredTopics, loadTopicTree } from "./server/stored-topics";
 export { topicLineage } from "./domain/topic-tree";
 export { buildKnowledgeMap } from "./workflows/build-knowledge-map";
 // The map smoke check reads the units a KC may cite from.

@@ -72,7 +72,7 @@ export const addNoteInputSchema = z.object({
  * What `setExamScope` takes: one Topic, whether the exam leaves it out or
  * stresses it (null removes the scope), and the Student's words.
  */
-export const setExamScopeInputSchema = z.object({
+const setExamScopeInputSchema = z.object({
   topicId: z
     .string()
     .describe(

@@ -8,7 +8,6 @@ import {
   loadExerciseBatches,
   type BatchExercise,
 } from "@/features/knowledge-map/workflows/exercise-batches";
-import { keptFailingReason } from "@/features/knowledge-map/domain/build-failure";
 import type { UnitExtraction } from "@/features/knowledge-map/domain/chapter-extraction";
 import { loadCourseLanguage as loadLanguage } from "@/features/ingestion/server";
 import {
@@ -69,39 +68,6 @@ export type BuildStep = (
   failed: readonly string[],
   deferred: readonly string[],
 ) => Promise<StepOutcome>;
-
-/**
- * The outcome of a step that left `left` units, of which those keyed in
- * `failedKeys` because their call failed. A unit that failed once before
- * stops the build with a reason naming its Chapter, without a throw, so
- * the workflow does not retry the step. Nothing is stored for the unit, so
- * Update map tries it again.
- */
-export async function stepOutcome(
-  supabase: AdminSupabase,
-  {
-    left,
-    failedKeys,
-    failedOnce,
-    waitMs,
-  }: {
-    left: number;
-    failedKeys: Iterable<string>;
-    failedOnce: readonly string[];
-    waitMs?: number;
-  },
-): Promise<StepOutcome> {
-  const keys = [...new Set(failedKeys)];
-  const again = keys.find((key) => failedOnce.includes(key));
-  if (again === undefined) return { ok: true, left, failed: keys, waitMs };
-  const { data, error } = await supabase
-    .from("chapters")
-    .select("title")
-    .eq("id", again.split("/")[0]!)
-    .maybeSingle();
-  if (error) failed("Loading the Chapter", error);
-  return { ok: false, reason: keptFailingReason(data?.title ?? "a Chapter") };
-}
 
 /**
  * Sets the running build's heartbeat, so `queue_knowledge_map_build` sees
@@ -296,7 +262,7 @@ export async function loadStoredUnits(
  * and not matched yet; with `partial`, as the pieces answered so far
  * (`partialHash`).
  */
-export async function storeExtraction(
+async function storeExtraction(
   supabase: AdminSupabase,
   {
     owner,
@@ -533,7 +499,7 @@ export async function loadCurrentExtractions(
  * Brief, else the most common language of its Materials; English when none
  * has one.
  */
-export async function loadCourseLanguage(
+export async function loadCourseLanguageName(
   supabase: AdminSupabase,
   courseId: string,
 ): Promise<string> {

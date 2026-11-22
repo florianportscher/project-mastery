@@ -11,7 +11,7 @@ export type MockStatus =
 const ASSEMBLY_MS = 60 * 60 * 1000;
 
 /** Why a mock that assembled too long failed, as the database says it. */
-export const STALE_ASSEMBLY = "Assembling took longer than an hour.";
+const STALE_ASSEMBLY = "Assembling took longer than an hour.";
 
 /**
  * When a started mock's time is up. The database takes answers for one

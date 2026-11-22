@@ -10,7 +10,7 @@ import { queryStagingSql } from "./staging";
 
 type Env = Record<string, string | undefined>;
 
-export const SECTIONS = [
+const SECTIONS = [
   "materials",
   "outline",
   "units",
@@ -123,7 +123,7 @@ export type Call = {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Reads the Course's snapshot through the read-only staging role. */
-export async function fetchSnapshot(
+async function fetchSnapshot(
   courseId: string,
   env: Env = process.env,
 ): Promise<Snapshot> {
@@ -235,7 +235,7 @@ function toCall(o: Raw): Call {
  * `embedMany` wrapper span); null when `.env.local` has no Langfuse keys.
  * At most 10 000, the newest; `truncated` when older ones were left out.
  */
-export async function fetchCalls(
+async function fetchCalls(
   courseId: string,
   env: Env = process.env,
 ): Promise<{ calls: Call[]; truncated: boolean } | null> {
@@ -281,7 +281,7 @@ export async function fetchCalls(
 }
 
 /** One call's input and output as text. */
-export async function fetchCallDetail(
+async function fetchCallDetail(
   id: string,
   env: Env = process.env,
 ): Promise<string> {

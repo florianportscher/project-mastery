@@ -3,9 +3,6 @@
  * Materials page. Short and plain: what went wrong, not how.
  */
 
-/** The Student's Daily limit, or the provider's daily quota, is used up. */
-export const dailyLimitReason = "Daily limit reached";
-
 /** The file could not be downloaded or opened as a PDF. */
 export const fileUnreadableReason = "The file could not be opened";
 

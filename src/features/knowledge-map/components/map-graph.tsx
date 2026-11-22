@@ -1,20 +1,14 @@
 "use client";
 
-import "@xyflow/react/dist/style.css";
 import {
-  Background,
   type Edge,
-  Handle,
   MarkerType,
   type Node,
   type NodeProps,
-  Position,
-  ReactFlow,
 } from "@xyflow/react";
 import { CopyIcon, type LucideIcon, PencilLineIcon } from "lucide-react";
 import { useMemo } from "react";
 import { Markdown } from "@/components/markdown";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   type ColorBy,
   kcColor,
@@ -51,7 +45,7 @@ import type {
   MapRecallBand,
 } from "@/features/knowledge-map/types";
 import { cn } from "@/lib/utils";
-import { ZoomControls } from "./zoom-controls";
+import { FlowCanvas, Handles } from "./flow-canvas";
 
 const BADGE_ICONS: Record<CheckBadgeKind, LucideIcon> = {
   duplicate: CopyIcon,
@@ -85,28 +79,6 @@ type ExerciseNodeData = {
 };
 type KcNode = Node<KcNodeData, "kc">;
 type ExerciseNode = Node<ExerciseNodeData, "exercise">;
-
-/** The invisible ends edges attach to. */
-function Handles({ source = true }: { source?: boolean }) {
-  return (
-    <>
-      <Handle
-        type="target"
-        position={Position.Left}
-        isConnectable={false}
-        className="opacity-0"
-      />
-      {source && (
-        <Handle
-          type="source"
-          position={Position.Right}
-          isConnectable={false}
-          className="opacity-0"
-        />
-      )}
-    </>
-  );
-}
 
 /** A KC: its name and recall band marker. */
 function KcNodeView({ data }: NodeProps<KcNode>) {
@@ -347,42 +319,18 @@ export function MapGraph({
     depth,
   ]);
 
-  if (failed) {
-    return (
-      <p
-        role="alert"
-        className="flex size-full min-h-96 items-center justify-center rounded-xl border p-4 text-center text-sm text-muted-foreground"
-      >
-        The map could not be laid out. Reload the page to try again.
-      </p>
-    );
-  }
-  if (!laidOut) {
-    return (
-      <Skeleton
-        aria-label="Laying out the map"
-        className="size-full min-h-96 rounded-xl"
-      />
-    );
-  }
   return (
-    <ReactFlow
-      aria-label="Knowledge map graph"
+    <FlowCanvas
+      label="Knowledge map graph"
+      laidOut={laidOut !== null}
+      failed={failed}
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
-      onNodeClick={(_, node) => onSelect(node.id)}
-      onPaneClick={onClear}
-      nodesDraggable={false}
-      nodesConnectable={false}
-      elementsSelectable={false}
-      fitView
-      minZoom={0.1}
-      proOptions={{ hideAttribution: true }}
-      className="rounded-xl border"
-    >
-      <Background />
-      <ZoomControls />
-    </ReactFlow>
+      flow={{
+        onNodeClick: (_, node) => onSelect(node.id),
+        onPaneClick: onClear,
+      }}
+    />
   );
 }

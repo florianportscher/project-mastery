@@ -7,6 +7,7 @@ import {
   withBuildLease,
 } from "@/features/knowledge-map/domain/build-state";
 import { exerciseLabel } from "@/features/knowledge-map/domain/exercise-label";
+import { loadMapRows } from "@/features/knowledge-map/server/stored-map";
 import { checkReportSchema } from "@/features/knowledge-map/schemas";
 import type {
   KcSourceView,
@@ -15,7 +16,6 @@ import type {
   MapBuild,
 } from "@/features/knowledge-map/types";
 import { getUser } from "@/lib/auth/user";
-import { allRows } from "@/lib/supabase/all-rows";
 import { failed } from "@/lib/supabase/failed";
 import { createClient } from "@/lib/supabase/server";
 
@@ -44,16 +44,7 @@ export async function getKnowledgeMap(
   }
   const supabase = await createClient();
 
-  const [
-    build,
-    kcs,
-    sources,
-    prerequisites,
-    materials,
-    exercises,
-    exerciseKcs,
-    exerciseChunks,
-  ] = await Promise.all([
+  const [build, rows, materials] = await Promise.all([
     supabase
       .from("knowledge_map_builds")
       .select(
@@ -61,62 +52,17 @@ export async function getKnowledgeMap(
       )
       .eq("course_id", courseId)
       .maybeSingle(),
-    allRows("Loading the KCs", (from, to) =>
-      supabase
-        .from("kcs")
-        .select("id, name, description, origin")
-        .eq("course_id", courseId)
-        .is("retired_at", null)
-        .order("position")
-        .order("id")
-        .range(from, to),
-    ),
-    allRows("Loading the KC sources", (from, to) =>
-      supabase
-        .from("kc_sources")
-        .select("kc_id, chunk_id")
-        .eq("course_id", courseId)
-        .order("kc_id")
-        .order("chunk_id")
-        .range(from, to),
-    ),
-    allRows("Loading the prerequisites", (from, to) =>
-      supabase
-        .from("prerequisite_links")
-        .select("from_kc, to_kc")
-        .eq("course_id", courseId)
-        .order("id")
-        .range(from, to),
-    ),
+    loadMapRows(supabase, courseId),
     getMaterialList(courseId),
-    allRows("Loading the exercises", (from, to) =>
-      supabase
-        .from("exercises")
-        .select("id, difficulty, question_chunk_id")
-        .eq("course_id", courseId)
-        .order("position")
-        .order("id")
-        .range(from, to),
-    ),
-    allRows("Loading the exercise KCs", (from, to) =>
-      supabase
-        .from("exercise_kcs")
-        .select("exercise_id, kc_id")
-        .eq("course_id", courseId)
-        .order("exercise_id")
-        .order("kc_id")
-        .range(from, to),
-    ),
-    allRows("Loading the exercise chunks", (from, to) =>
-      supabase
-        .from("exercise_chunks")
-        .select("exercise_id, chunk_id, role, position")
-        .eq("course_id", courseId)
-        .order("exercise_id")
-        .order("chunk_id")
-        .range(from, to),
-    ),
   ]);
+  const {
+    kcs,
+    sources,
+    links: prerequisites,
+    exercises,
+    exerciseKcs,
+    exerciseChunks,
+  } = rows;
   if (build.error) failed("Loading the build", build.error);
 
   const report = checkReportSchema

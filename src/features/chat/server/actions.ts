@@ -15,7 +15,6 @@ import {
 } from "@/features/chat/schemas";
 import type { ChatSource, SourceRequest } from "@/features/chat/types";
 import { findMaterialPages } from "@/features/courses/server";
-import { findChunkSpan } from "@/features/ingestion/server";
 import { findReadingSection } from "@/features/knowledge-map/server";
 import {
   countChatsAttaching,
@@ -25,9 +24,12 @@ import {
 } from "@/features/chat/server/chat-store";
 import { getUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
-import { parseActionInput, type ActionResult } from "@/lib/validation/action";
+import {
+  parseActionInput,
+  signedOut,
+  type ActionResult,
+} from "@/lib/validation/action";
 
-const signedOut = { ok: false, message: "Sign in again to continue." } as const;
 const chatNotFound = {
   ok: false,
   message: chatNotFoundMessage,
@@ -130,29 +132,15 @@ export async function openSource(
       },
     };
   }
-  const { kind, id } = request;
-  if (kind === "section") {
-    const section = await findReadingSection(supabase, courseId, id);
-    if (!section) return sourceNotFound;
-    return {
-      ok: true,
-      data: {
-        materialId: section.materialId,
-        materialName: section.materialName,
-        pageFrom: section.pageFrom,
-        pageTo: section.pageTo,
-      },
-    };
-  }
-  const chunk = await findChunkSpan(supabase, courseId, id);
-  if (!chunk) return sourceNotFound;
+  const section = await findReadingSection(supabase, courseId, request.id);
+  if (!section) return sourceNotFound;
   return {
     ok: true,
     data: {
-      materialId: chunk.materialId,
-      materialName: chunk.materialName,
-      pageFrom: chunk.pageFrom,
-      pageTo: chunk.pageTo,
+      materialId: section.materialId,
+      materialName: section.materialName,
+      pageFrom: section.pageFrom,
+      pageTo: section.pageTo,
     },
   };
 }

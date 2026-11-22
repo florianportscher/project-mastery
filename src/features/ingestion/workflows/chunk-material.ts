@@ -14,7 +14,6 @@ import {
   headingIds,
   outlineChapters,
 } from "@/features/ingestion/domain/outline";
-import { dailyLimitReason } from "@/features/ingestion/domain/parse-failure";
 import { openMaterialPdf } from "@/features/ingestion/workflows/page-images";
 import {
   hasChunks,
@@ -22,6 +21,7 @@ import {
   loadUnits,
 } from "@/features/ingestion/workflows/parse-steps";
 import {
+  dailyLimitReason,
   meteredStream,
   RATE_LIMITED_STEP_RETRIES,
 } from "@/features/usage/server";

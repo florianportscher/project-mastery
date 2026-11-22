@@ -3,7 +3,6 @@
 // Memory card and the study plan), which pages pass into the Brief's panel
 // and the map as slots. Server-only exports live in `server.ts`.
 export { renderTutorContext } from "./ai/context";
-export { TUTOR_INSTRUCTIONS } from "./ai/instructions";
 export { CloseCard } from "./components/close-card";
 export { EndSessionButton } from "./components/end-session-button";
 export { ExamResultCard } from "./components/exam-result-card";
@@ -27,10 +26,8 @@ export { sessionEndedMessage } from "./schemas";
 export type {
   AskedProblem,
   GradedKc,
-  MockExamView,
   ProblemFlag,
   ProblemView,
-  StudyState,
   TopicView,
   TutorContext,
 } from "./types";

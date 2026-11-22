@@ -3,22 +3,8 @@
 // through the ingestion and courses features, which never import it.
 export { CourseMap } from "./components/course-map";
 export { CourseMapLink } from "./components/course-map-link";
-export { KnowledgeMap } from "./components/knowledge-map";
 export { TopicDetail } from "./components/topic-detail";
 export { TopicTitle } from "./components/topic-title";
 export { courseMapPath, topicPath } from "./domain/map-paths";
-export {
-  worstCheck,
-  type AnswerCheck,
-  type AnswerKey,
-  type GivenValue,
-} from "./domain/answer-keys";
-export type {
-  KnowledgeMapView,
-  MapKcLearning,
-  MapPriorities,
-  MapTopic,
-  MapTopicDetail,
-  MapTopicStudies,
-  MapTopicStudy,
-} from "./types";
+export type { AnswerCheck } from "./domain/answer-keys";
+export type { MapKcLearning, MapPriorities } from "./types";

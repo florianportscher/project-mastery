@@ -43,7 +43,7 @@ export const SNAPSHOT_TABLES: { table: string; parent?: Parent }[] = [
 
 const rowSchema = z.record(z.string(), z.unknown());
 
-export const snapshotSchema = z.object({
+const snapshotSchema = z.object({
   version: z.literal(1),
   /** The Course's name; a seed replaces a Course of the same name. */
   courseName: z.string(),

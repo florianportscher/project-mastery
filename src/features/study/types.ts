@@ -5,17 +5,10 @@ import type {
 import type { MockStatus } from "@/features/study/domain/mock-paths";
 import type { Pace, Progress, TopicScope } from "@/features/study/domain/plan";
 import type { ProblemSource } from "@/features/study/domain/exercises";
-import type { KcBand, RecallBand } from "@/features/study/domain/recall-band";
+import type { RecallBand } from "@/features/study/domain/recall-band";
 import type { TopicFacts } from "@/features/study/domain/topic-facts";
 
-export type {
-  AttemptHelp,
-  AttemptResult,
-  KcBand,
-  ProblemSource,
-  RecallBand,
-  TopicScope,
-};
+export type { AttemptHelp, AttemptResult };
 
 /** Why a Student flags a generated Problem. */
 export type ProblemFlag = "unclear" | "wrong" | "too_easy" | "off_topic";
@@ -56,7 +49,7 @@ export type ContextKc = {
 };
 
 /** What this Study session has done so far. */
-export type SessionFacts = {
+type SessionFacts = {
   minutes: number;
   /** When the session started, as an ISO time. */
   startedAt: string;
@@ -131,7 +124,7 @@ export type ProposedTopic = {
 };
 
 /** A Topic as one line of the tutor context. */
-export type ContextTopic = {
+type ContextTopic = {
   id: string;
   name: string;
   status: TopicScope["status"];
@@ -140,7 +133,7 @@ export type ContextTopic = {
 };
 
 /** The notes the AI reads on every reply. */
-export type ContextNotes = {
+type ContextNotes = {
   /** Of the proposed Topic and the Topics touched today. */
   topics: Array<{ topic: string; text: string }>;
   /** What the AI noted about the Student in this Course; "" without notes. */
@@ -196,7 +189,7 @@ export type NextItem = {
 };
 
 /** Where the Student stands on a Topic with KCs of its own. */
-export type TopicStudy = {
+type TopicStudy = {
   /** Its KCs that are learned, of all of them. */
   learned: number;
   total: number;
@@ -427,7 +420,7 @@ export type MockTask = {
 };
 
 /** A Course's Readiness (see `readiness`). */
-export type CourseReadiness = {
+type CourseReadiness = {
   /** Over every KC with a Priority, 0 to 1; null without Priorities. */
   course: number | null;
   /** Whether it is projected to an exam date still ahead. */

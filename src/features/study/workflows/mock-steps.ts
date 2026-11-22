@@ -37,7 +37,7 @@ import type { Supabase } from "@/lib/supabase/types";
  */
 
 /** An item of the planned mock, in position order. */
-export type PlannedItem = {
+type PlannedItem = {
   exerciseId: string | null;
   /** A ready Problem, or the queued one a gap generates. */
   problemId: string | null;

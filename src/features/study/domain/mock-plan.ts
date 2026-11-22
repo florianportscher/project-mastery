@@ -10,19 +10,19 @@ import {
  * reserved exam itself.
  */
 
-export type Difficulty = 1 | 2 | 3;
+type Difficulty = 1 | 2 | 3;
 
 const DIFFICULTIES: Difficulty[] = [1, 2, 3];
 
 /** The share of a mock's points at each difficulty. */
-export const DIFFICULTY_SPLIT: Record<Difficulty, number> = {
+const DIFFICULTY_SPLIT: Record<Difficulty, number> = {
   1: 0.3,
   2: 0.5,
   3: 0.2,
 };
 
 /** The most empty slots of one mock that get a generated Problem. */
-export const MAX_GAPS = 6;
+const MAX_GAPS = 6;
 
 /** A place in the blueprint for one item. */
 export type MockSlot = { topicId: string; difficulty: Difficulty };
@@ -73,9 +73,9 @@ export function planMock(
 }
 
 /** Where a candidate comes from, in the order a slot takes them. */
-export const FILL_ORDER = ["old_exam", "exercise", "variant", "new"] as const;
+const FILL_ORDER = ["old_exam", "exercise", "variant", "new"] as const;
 
-export type FillSource = (typeof FILL_ORDER)[number];
+type FillSource = (typeof FILL_ORDER)[number];
 
 /** An Exercise or a ready generated Problem a slot may take. */
 export type MockCandidate = {

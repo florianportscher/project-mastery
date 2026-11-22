@@ -19,18 +19,9 @@ export type RankableExercise = {
  * an old exam, another Exercise, a generated variant of an Exercise, a
  * generated new Problem.
  */
-export const PROBLEM_SOURCES = [
-  "old_exam",
-  "exercise",
-  "variant",
-  "new",
-] as const;
+const PROBLEM_SOURCES = ["old_exam", "exercise", "variant", "new"] as const;
 
 export type ProblemSource = (typeof PROBLEM_SOURCES)[number];
-
-/** Whether the Problem was generated, not taken from the Materials. */
-export const isGenerated = (source: ProblemSource) =>
-  source === "variant" || source === "new";
 
 /** The most Problems `findProblems` returns. */
 export const MAX_PROBLEMS = 3;

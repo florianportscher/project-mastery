@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { goalLabel } from "./tutor-context";
+import { goalLabel } from "./goal-label";
 
 test.each([
   ["pass", "Pass"],

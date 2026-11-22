@@ -7,7 +7,6 @@ import {
   type GroupingExam,
   type GroupingItem,
 } from "@/features/knowledge-map/ai/exercise-grouping";
-import { dailyLimitReason } from "@/features/knowledge-map/domain/build-failure";
 import {
   chapterPath,
   checkedExams,
@@ -35,7 +34,10 @@ import {
   loadStoredGroups,
   type StoredGroups,
 } from "@/features/knowledge-map/workflows/exercise-batches";
-import { RATE_LIMITED_STEP_RETRIES } from "@/features/usage/server";
+import {
+  dailyLimitReason,
+  RATE_LIMITED_STEP_RETRIES,
+} from "@/features/usage/server";
 import { BUILD_CALL_TIMEOUT_MS, callFits } from "@/lib/ai/call-timeout";
 import { allRows } from "@/lib/supabase/all-rows";
 import { createAdminClient } from "@/lib/supabase/admin";

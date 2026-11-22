@@ -1,17 +1,13 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
-import type { AdminSupabase, Supabase } from "@/lib/supabase/types";
+import type { Supabase } from "@/lib/supabase/types";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth/user", () => ({ getUser: async () => ({ id: "me" }) }));
 
-const {
-  loadCourseChunks,
-  loadChunkSources,
-  getChunkPlaces,
-  loadChunkMaterials,
-} = await import("./course-chunks");
+const { loadChunkSources, loadChunkMaterials } =
+  await import("./course-chunks");
 
 const COURSE = "course-1";
 
@@ -118,33 +114,6 @@ beforeEach(() => {
   };
 });
 
-describe("loadCourseChunks", () => {
-  test("reads every chunk of the parsed Materials, in reading order", async () => {
-    const { client } = withRowLimit(tables);
-
-    const chunks = await loadCourseChunks(
-      client as unknown as AdminSupabase,
-      COURSE,
-    );
-
-    expect(chunks.map((chunk) => chunk.id)).toEqual([
-      ...chunksOf("a", 1500)
-        .reverse()
-        .map((chunk) => chunk.id),
-      "b-0000",
-      "b-0001",
-    ]);
-    expect(chunks[0]).toEqual({
-      id: "a-0000",
-      materialId: "a",
-      materialName: "Material a",
-      pageFrom: 1,
-      label: "content",
-      markdown: "text 0",
-    });
-  });
-});
-
 describe("loadChunkMaterials", () => {
   test("reads every chunk of the Course with its Material", async () => {
     tables.chunks = tables.chunks.map((chunk) => ({
@@ -164,7 +133,7 @@ describe("loadChunkMaterials", () => {
   });
 });
 
-describe("loadChunkSources and getChunkPlaces", () => {
+describe("loadChunkSources", () => {
   const ids = [
     "b-0001",
     "missing",
@@ -186,7 +155,6 @@ describe("loadChunkSources and getChunkPlaces", () => {
     const { client, inLengths } = withRowLimit(tables);
 
     const sources = await loadChunkSources(client as unknown as Supabase, ids);
-    const places = await getChunkPlaces(ids, client as unknown as Supabase);
 
     expect(sources.map((source) => source.id)).toEqual([
       ...Array.from(
@@ -207,10 +175,6 @@ describe("loadChunkSources and getChunkPlaces", () => {
     expect(sources.slice(3).map((source) => source.chapterTitle)).toEqual(
       sources.slice(3).map(() => null),
     );
-    expect(places).toHaveLength(152);
-    expect(new Set(places.map((place) => place.id))).toEqual(
-      new Set(sources.map((source) => source.id)),
-    );
     expect(Math.max(...inLengths)).toBeLessThanOrEqual(100);
   });
 
@@ -219,9 +183,6 @@ describe("loadChunkSources and getChunkPlaces", () => {
 
     await expect(
       loadChunkSources(client as unknown as Supabase, ["missing"]),
-    ).resolves.toEqual([]);
-    await expect(
-      getChunkPlaces([], client as unknown as Supabase),
     ).resolves.toEqual([]);
   });
 });
