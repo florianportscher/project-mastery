@@ -1,5 +1,6 @@
 ---
 name: showcase
+disable-model-invocation: true
 description: "Bring the repository's public face up to date after larger changes: README, screenshots, demo, repo description. Run by the user, from time to time."
 ---
 
