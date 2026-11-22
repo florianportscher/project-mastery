@@ -151,7 +151,6 @@ function shownReading(part: ToolPart): ShownReading | null {
   };
 }
 
-/** One tool call as its card shows it. */
 function replyStep(part: ToolPart, inProgress = true): ReplyStep {
   const name = getToolName(part);
   const base = { id: part.toolCallId, name };
