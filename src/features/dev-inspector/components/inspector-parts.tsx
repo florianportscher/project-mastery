@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { anchor, type Lookup } from "@/features/dev-inspector/domain/lookup";
 import { cn } from "@/lib/utils";
 
-/** One section of the developer page, with its anchor. */
 export function Section({
   id,
   title,
@@ -20,7 +19,6 @@ export function Section({
   );
 }
 
-/** A suspect spot, in red. */
 export function Flag({ children }: { children: ReactNode }) {
   return (
     <span className="rounded bg-red-100 px-1 text-xs font-medium text-red-800 dark:bg-red-950 dark:text-red-200">
@@ -29,7 +27,6 @@ export function Flag({ children }: { children: ReactNode }) {
   );
 }
 
-/** A link to another part of the page. */
 export function Ref({
   to,
   children,
@@ -73,7 +70,6 @@ export function KcRefs({ ids, lookup }: { ids: string[]; lookup: Lookup }) {
   );
 }
 
-/** Links to chunks by label and pages. */
 export function ChunkRefs({ ids, lookup }: { ids: string[]; lookup: Lookup }) {
   if (ids.length === 0) return <span className="text-muted-foreground">–</span>;
   return (
@@ -107,7 +103,6 @@ export function unitName(unit: {
   return `${unit.title} · ${unit.kind} ${unit.batch}`;
 }
 
-/** A key–value row of a detail list. */
 export function Row({
   label,
   children,
@@ -123,7 +118,6 @@ export function Row({
   );
 }
 
-/** Raw JSON, collapsed. */
 export function Json({
   label,
   value,

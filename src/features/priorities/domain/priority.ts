@@ -13,14 +13,12 @@
 type PriorityKc = {
   id: string;
   name: string;
-  /** The ids of the KCs it builds on, its Prerequisites. */
   prerequisites: string[];
   /**
    * The Topic that holds it, then that Topic's ancestors up to the top;
    * empty when no Topic holds it.
    */
   topics: string[];
-  /** The chunks that teach it. */
   sources: string[];
 };
 
@@ -35,11 +33,8 @@ export type PriorityInput = {
   kcs: PriorityKc[];
   /** `oldExam`: in an exam the Student confirmed as an old exam. */
   exercises: Array<{ kcs: string[]; oldExam?: boolean }>;
-  /** Each chunk's Material by chunk id. */
   chunkMaterials: Record<string, string>;
-  /** The Course's Materials by id. */
   materials: Record<string, { name: string }>;
-  /** The Materials the Brief excludes. */
   excludedMaterialIds: string[];
   examScopes: ExamScope[];
 };
@@ -56,7 +51,6 @@ export type KcPriority = {
 const plural = (count: number, one: string, many: string) =>
   `${count} ${count === 1 ? one : many}`;
 
-/** How many Exercises, and old-exam Exercises, test each KC. */
 function exerciseCounts(input: PriorityInput) {
   const counts = new Map(
     input.kcs.map((kc) => [kc.id, { exercises: 0, oldExam: 0 }]),

@@ -12,7 +12,6 @@ import type { CallFlags } from "@/features/dev-inspector/domain/calls";
 import { anchor, type Lookup } from "@/features/dev-inspector/domain/lookup";
 import type { DevCalls, Snapshot } from "@/features/dev-inspector/types";
 
-/** Each Exercise with its question, solution, KCs and final answers. */
 export function ExercisesSection({
   snapshot,
   lookup,
@@ -85,7 +84,6 @@ export function ExercisesSection({
   );
 }
 
-/** The Topic tree with each Topic's KCs. */
 export function TopicsSection({
   snapshot,
   lookup,
@@ -119,7 +117,6 @@ export function TopicsSection({
   );
 }
 
-/** The build's state, its stored check report and every traced call. */
 export function BuildSection({
   snapshot,
   calls,

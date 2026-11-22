@@ -22,7 +22,6 @@ const MAX_DICTATION_BYTES = 4 * 1024 * 1024;
 /** The longest recording, priced when the model reports no duration. */
 const MAX_DICTATION_SECONDS = 120;
 
-/** What the Student sees when the model fails. */
 const transcriptionFailedMessage = "Couldn't transcribe that. Try again.";
 
 const NO_TOKENS = { inputTokens: 0, cachedInputTokens: 0, outputTokens: 0 };

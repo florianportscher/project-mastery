@@ -33,7 +33,6 @@ const COLORS: Record<string, string> = {
   continued: "bg-sky-100 dark:bg-sky-900",
 };
 
-/** Each Material with its pages as a grid, coloured by units or skip reason. */
 export function MaterialsSection({
   snapshot,
   flags,
@@ -118,7 +117,6 @@ export function MaterialsSection({
   );
 }
 
-/** Each Material's chunks in reading order, under the headings they follow. */
 export function ChunksSection({
   snapshot,
   lookup,

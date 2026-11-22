@@ -8,7 +8,6 @@ import { FieldError } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import type { AuthFormState } from "@/features/auth/types";
 
-/** The validation errors for one field of a failed submission. */
 export function fieldErrors(state: AuthFormState | null, field: string) {
   if (!state || state.ok) return undefined;
   return state.fieldErrors?.[field];
