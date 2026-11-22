@@ -303,7 +303,6 @@ export async function findMaterialPages(
   return data && { name: data.name, pagesTotal: data.pages_total ?? null };
 }
 
-/** The Course's Materials in Course order. */
 export async function listMaterials(
   supabase: Supabase,
   courseId: string,

@@ -364,7 +364,6 @@ function ParseButton({
   );
 }
 
-/** How often the page refreshes while a parse runs. */
 const PARSE_POLL_MS = 2000;
 
 /**
