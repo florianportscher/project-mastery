@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 
 const MINUTE_MS = 60_000;
 
-/** Whole minutes from `startedAt` to now. */
 const minutesSince = (startedAt: string) =>
   Math.max(0, Math.floor((Date.now() - Date.parse(startedAt)) / MINUTE_MS));
 

@@ -2,7 +2,6 @@ import { createContext, useContext } from "react";
 import type { ChatListItem } from "@/features/chat/types";
 
 export type ChatListContextValue = {
-  /** The Course whose Chats these are. */
   courseId: string;
   /** The Student's Chats in the Course, newest message first. */
   chats: ChatListItem[];

@@ -26,7 +26,6 @@ export function useMessageAttachments({
   /** The signed-in Student, whose Storage folder uploads go to. */
   ownerId: string;
   courseId: string;
-  /** The Course's Materials. */
   courseMaterials: MaterialListItem[];
   /** Whether the Daily limit is reached, which refuses pasted and dropped files. */
   limitReached: boolean;
@@ -70,7 +69,6 @@ export function useMessageAttachments({
     },
   });
 
-  /** Uploads picked, pasted or dropped files, within the message's limit. */
   function uploadFiles(files: Iterable<File>) {
     const picked = [...files];
     const room = Math.max(
@@ -147,9 +145,7 @@ export function useMessageAttachments({
   }
 
   return {
-    /** The Materials attached to the message. */
     attached,
-    /** Clears the attachments, once the message is sent. */
     clearAttached: () => setAttached([]),
     toggleAttached,
     detach,

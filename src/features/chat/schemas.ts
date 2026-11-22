@@ -7,7 +7,6 @@ export const MAX_MESSAGE_LENGTH = 10_000;
 
 export const messageTooLongMessage = `Your message is too long. Keep it under ${MAX_MESSAGE_LENGTH.toLocaleString("en-US")} characters.`;
 
-/** What a Student sees for a Chat that is missing or not theirs. */
 export const chatNotFoundMessage = "This chat does not exist.";
 
 /**
@@ -37,12 +36,10 @@ export const chatMessageMetadataSchema = z
   })
   .optional();
 
-/** The most Materials a Student can attach to one message. */
 export const MAX_ATTACHED_MATERIALS = 5;
 
 export const tooManyMaterialsMessage = `Attach up to ${MAX_ATTACHED_MATERIALS} materials to a message.`;
 
-/** The data part that attaches a Material to a Student's message. */
 const materialPartSchema = z.object({
   type: z.literal("data-material"),
   data: materialReferenceSchema,

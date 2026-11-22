@@ -12,10 +12,8 @@ const TOOL_ACTIVITY: Record<string, string> = {
   compute: "Checking the numbers…",
 };
 
-/** What the AI is doing when it has not said a word yet. */
 export const THINKING = "Thinking…";
 
-/** What a reply shows while it waits for the provider's limit to pass. */
 export const BUSY = "One moment, the AI is busy.";
 
 /**

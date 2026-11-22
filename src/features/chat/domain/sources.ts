@@ -29,5 +29,4 @@ export function citedSource(
   return { kind: "pages", materialId: pages[1]!, pageFrom, pageTo };
 }
 
-/** The note when a cited page is not in the Material. */
 export const pageNotFoundMessage = "The cited page wasn't found.";

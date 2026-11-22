@@ -105,7 +105,6 @@ type ChatProps = {
   mockId?: string;
   /** A new Chat's session length chosen on the Today card; none is Open. */
   minutes?: number;
-  /** The Student's Daily limit status when the page loaded. */
   dailyLimit: DailyLimitStatus;
   /**
    * Whether replies show their step cards and Context sheet: outside

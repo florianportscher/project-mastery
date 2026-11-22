@@ -26,7 +26,6 @@ export function ReplyParts({
   problemFlags,
 }: {
   parts: ChatUIMessage["parts"];
-  /** Whether the reply is still streaming in. */
   streaming: boolean;
   /** Whether the reply is still being made, so its open calls are running. */
   inProgress: boolean;

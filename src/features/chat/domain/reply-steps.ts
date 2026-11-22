@@ -24,10 +24,8 @@ export type StepDetail =
 
 export type ReplyStep = {
   id: string;
-  /** The tool's name, such as `getTopic`. */
   name: string;
   state: StepState;
-  /** The card's one line. */
   summary: string;
   /** Null until the call has returned. */
   detail: StepDetail | null;
