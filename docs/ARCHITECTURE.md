@@ -211,7 +211,7 @@ A comment in `src/` holds a why the code cannot show: an external constraint, an
 - commented-out code: git keeps history;
 - divider lines (`// -----`).
 
-Lint fails on commented-out code and divider lines (`project/no-dead-comments`); the reviewer flags the rest. `src/components/ui` and `ai-elements` are vendored and exempt.
+Lint fails on divider lines and on commented-out statements that end in `;` or `}` (`project/no-dead-comments`). It does not catch commented-out JSX or code without such an ending; the reviewer flags those and the rest. `src/components/ui` and `ai-elements` are vendored and exempt.
 
 ## Open questions
 

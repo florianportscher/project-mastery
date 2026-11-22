@@ -40,6 +40,11 @@ describe("project/no-dead-comments", () => {
       "// if (x) {\n//   run();\n// }\nexport const a = 1;",
       "code",
     ],
+    [
+      "commented-out code in a block comment",
+      "/* foo(); */\nexport const a = 1;",
+      "code",
+    ],
   ])("flags %s", async (_name, code, messageId) => {
     expect(await flagged(code)).toEqual([messageId]);
   });
@@ -57,8 +62,25 @@ describe("project/no-dead-comments", () => {
       "a tool directive",
       "// @ts-expect-error vendor types\nexport const a = 1;",
     ],
+    [
+      "a prose comment ending in a semicolon",
+      "// First this happens;\nexport const a = 1;",
+    ],
+    [
+      "a prose comment ending in a brace",
+      "// The shape is like {a, b}\n// and ends here }\nexport const a = 1;",
+    ],
+    ["a run split by a blank line", "// foo(\n\n// 1);\nexport const a = 1;"],
   ])("allows %s", async (_name, code) => {
     expect(await flagged(code)).toEqual([]);
+  });
+
+  test("flags only the divider next to a why-comment", async () => {
+    expect(
+      await flagged(
+        "// Keep the key for 3 days.\n// ------\nexport const a = 1;",
+      ),
+    ).toEqual(["divider"]);
   });
 
   test("ignores the vendored folders", async () => {

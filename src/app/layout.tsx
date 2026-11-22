@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+// Loaded once for the whole app: math rendering and streaming animation.
 import "katex/dist/katex.min.css";
 import "streamdown/styles.css";
 import "./globals.css";
