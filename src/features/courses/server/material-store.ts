@@ -252,7 +252,6 @@ export async function moveMaterialPosition(
   return data;
 }
 
-/** Deletes one of the Student's Materials, without its file. */
 export async function removeMaterial(
   supabase: Supabase,
   materialId: string,

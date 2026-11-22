@@ -27,7 +27,6 @@ type MaterialChipProps = {
   onRetry?: () => void;
 };
 
-/** A Material attached to a Chat message, shown as a small chip. */
 export function MaterialChip({
   name,
   mediaType,

@@ -192,7 +192,6 @@ export function Materials({
   );
 }
 
-/** A file while it uploads, or why it did not. */
 function UploadEntry({
   upload,
   onRetry,
@@ -270,7 +269,6 @@ function MaterialIcon({ mediaType }: { mediaType: string }) {
   );
 }
 
-/** A Material's parse state, linking to its chunks once parsed. */
 function ParseStateLine({
   courseId,
   material,

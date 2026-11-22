@@ -45,7 +45,6 @@ export async function findCourse(
   return data;
 }
 
-/** Creates a Course owned by the signed-in Student and returns its id. */
 export async function insertCourse(
   supabase: Supabase,
   name: string,

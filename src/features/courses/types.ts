@@ -1,12 +1,10 @@
 import type { ParseState } from "@/features/ingestion";
 
-/** A Course as the Course list shows it. */
 export type CourseListItem = {
   id: string;
   name: string;
 };
 
-/** A Material as the Materials page lists it. */
 export type MaterialListItem = {
   id: string;
   name: string;
@@ -18,7 +16,6 @@ export type MaterialListItem = {
   parse: ParseState;
 };
 
-/** A Material with where its file is, for reading the file on the server. */
 export type StoredMaterial = {
   id: string;
   courseId: string;

@@ -14,7 +14,6 @@ import {
 import { registerMaterial } from "@/features/courses/server/actions";
 import { removeUploadedFile, uploadFile } from "@/lib/supabase/upload";
 
-/** One file the Student added, while it uploads or when it did not work. */
 export type MaterialUpload = {
   key: string;
   filename: string;
