@@ -5,10 +5,8 @@ import { KC_DEFINITION } from "@/features/knowledge-map/ai/kc-definition";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { aiTask } from "@/lib/ai/models";
 
-/** What the exercise call gets of one exercise batch. */
 export type OfferedExerciseUnit = {
   material: string;
-  /** The course language by name, such as English. */
   language: string;
   exercises: ReadonlyArray<{
     /** Short and only for the call, such as x1. */
@@ -115,7 +113,6 @@ export function exerciseExtractionSettings(part: OfferedExerciseUnit) {
   };
 }
 
-/** The user message of an exercise call: the unit, as JSON. */
 export function exerciseExtractionMessages(part: OfferedExerciseUnit) {
   return [
     {

@@ -6,7 +6,6 @@ import type { MockResult, MockTask } from "@/features/study/types";
 const pointsText = (points: number) =>
   `${points} ${points === 1 ? "point" : "points"}`;
 
-/** A task's answer, its points out of its points and its step reasons. */
 function GradedTask({ task, number }: { task: MockTask; number: number }) {
   const { grade } = task;
   return (
@@ -67,7 +66,6 @@ export function MockResultView({
 }: {
   result: MockResult;
   tasks: MockTask[];
-  /** A new Chat whose Study session goes through the mock. */
   tutorHref: string;
 }) {
   return (

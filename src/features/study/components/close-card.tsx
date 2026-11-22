@@ -23,7 +23,6 @@ import type {
   SessionSummary,
 } from "@/features/study/types";
 
-/** A KC's latest Attempt in the session in the Student's words. */
 function outcome(result: AttemptResult, help: AttemptHelp) {
   if (result === "wrong" || help === "solution_shown") {
     return { text: "Not yet", variant: "destructive" } as const;

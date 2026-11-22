@@ -17,7 +17,6 @@ export function ProgressLine({
   state: Pick<StudyState, "progress" | "examDate">;
   /** The Brief, linked to when the Course has no exam date. */
   briefHref?: string;
-  /** Shown instead of the line without in-plan KCs. */
   empty?: string;
 }) {
   const { learned, total, daysIn, daysLeft } = state.progress;

@@ -60,7 +60,6 @@ export function fakeStorage(userId: string | undefined) {
 
   /** Test handle: seed, inspect and break storage. */
   const files = {
-    /** Stores an object without any policy check, for any owner. */
     seed(bucket: string, path: string, { body, contentType }: SeedOptions) {
       // Seeding is synchronous, so convert the common bodies right away.
       const bytes =
@@ -78,7 +77,6 @@ export function fakeStorage(userId: string | undefined) {
         make(bytes, contentType ?? "application/octet-stream"),
       );
     },
-    /** What is stored at `path`, whoever owns it. */
     read(bucket: string, path: string) {
       const object = buckets.get(bucket)?.get(path);
       return (
@@ -90,7 +88,6 @@ export function fakeStorage(userId: string | undefined) {
         }
       );
     },
-    /** Every stored path in a bucket, whoever owns it. */
     paths(bucket: string) {
       return [...(buckets.get(bucket)?.keys() ?? [])];
     },

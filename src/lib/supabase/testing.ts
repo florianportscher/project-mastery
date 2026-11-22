@@ -115,7 +115,6 @@ function jsonContains(stored: unknown, value: unknown): boolean {
   return stored === value;
 }
 
-/** Rows in the given column order, as `order` calls request it. */
 function sorted(
   rows: FakeRow[],
   orders: Array<{ column: string; ascending: boolean }>,

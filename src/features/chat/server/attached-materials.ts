@@ -27,7 +27,6 @@ const materialNotFoundMessage = "An attached material does not exist.";
 const materialInOtherCourseMessage =
   "An attached material belongs to another course.";
 
-/** A Material whose file was read for the model. */
 export type LoadedMaterial = {
   name: string;
   mediaType: string;
@@ -50,7 +49,6 @@ function materialParts(messages: ChatUIMessage[]): MaterialPart[] {
   );
 }
 
-/** The Materials of the history's newest Student message, sent as files. */
 function sentParts(history: ChatUIMessage[]): MaterialPart[] {
   const newest = history.findLast(({ role }) => role === "user");
   return newest ? materialParts([newest]) : [];

@@ -270,7 +270,6 @@ async function streamReply({
   });
 }
 
-/** What the Student sees when a step ran past its time limit. */
 const replyTimeoutMessage = "The AI took too long to reply. Please try again.";
 
 /**

@@ -3,7 +3,6 @@
  * Materials page. Short and plain: what went wrong, not how.
  */
 
-/** The file could not be downloaded or opened as a PDF. */
 export const fileUnreadableReason = "The file could not be opened";
 
 /**
@@ -16,7 +15,6 @@ export const parseStoppedReason = "The parse stopped. Parse again.";
 /** How long a parse may go without a heartbeat before it counts as stopped. */
 export const PARSE_LEASE_MINUTES = 30;
 
-/** Any other step failed for good, such as a Database or Storage failure. */
 const parseFailedReason = "The material could not be parsed. Please try again.";
 
 const REASON_PREFIX = "Parse failure: ";

@@ -37,7 +37,6 @@ import type { Supabase } from "@/lib/supabase/types";
 
 type KnowledgeMap = Awaited<ReturnType<typeof loadStoredMap>>;
 
-/** The most source chunks `getTopic` gives per KC. */
 const SOURCES_PER_KC = 3;
 
 /**

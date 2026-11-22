@@ -34,7 +34,6 @@ type SettingsDialogProps = {
   email: string | undefined;
 };
 
-/** The Student's settings, in sections: account, appearance and usage. */
 export function SettingsDialog({
   open,
   onOpenChange,

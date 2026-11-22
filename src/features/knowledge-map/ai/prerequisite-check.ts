@@ -4,7 +4,6 @@ import { z } from "zod";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { aiTask } from "@/lib/ai/models";
 
-/** A KC the check is offered: one an update stored. */
 export type OfferedKc = {
   /** Short and only for the call, such as k1. */
   id: string;
@@ -70,7 +69,6 @@ export function prerequisiteCheckSettings(input: CheckInput) {
   };
 }
 
-/** The user message of a Prerequisite check: names and KCs, as JSON. */
 export function prerequisiteCheckMessages(input: CheckInput) {
   return [
     {

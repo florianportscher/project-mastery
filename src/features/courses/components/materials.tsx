@@ -64,7 +64,6 @@ type MaterialsProps = {
   /** The signed-in Student, whose Storage folder uploads go to. */
   ownerId: string;
   courseId: string;
-  /** The Course's Materials in Course order. */
   materials: MaterialListItem[];
   /** In how many Chats a Material is attached, for its delete warning. */
   countMaterialChats: CountMaterialChats;
@@ -192,7 +191,6 @@ export function Materials({
   );
 }
 
-/** A file while it uploads, or why it did not. */
 function UploadEntry({
   upload,
   onRetry,
@@ -270,7 +268,6 @@ function MaterialIcon({ mediaType }: { mediaType: string }) {
   );
 }
 
-/** A Material's parse state, linking to its chunks once parsed. */
 function ParseStateLine({
   courseId,
   material,
@@ -364,7 +361,6 @@ function ParseButton({
   );
 }
 
-/** How often the page refreshes while a parse runs. */
 const PARSE_POLL_MS = 2000;
 
 /**

@@ -17,7 +17,6 @@ export function MaterialViewer({
   material,
   onClose,
 }: {
-  /** The Material to show, or null when the viewer is closed. */
   material: MaterialListItem | null;
   onClose: () => void;
 }) {

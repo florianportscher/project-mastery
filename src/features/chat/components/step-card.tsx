@@ -152,7 +152,6 @@ function Items({ children }: { children: ReactNode }) {
   return <ul className="flex flex-col gap-3">{children}</ul>;
 }
 
-/** A collapsed block inside an expanded card, such as a source's Markdown. */
 function Fold({
   label,
   link,

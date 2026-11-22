@@ -5,7 +5,6 @@ import { MaximizeIcon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 
-/** The graph's zoom in, zoom out and fit-to-view buttons, bottom left. */
 export function ZoomControls() {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   return (

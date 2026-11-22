@@ -18,7 +18,6 @@ export function useOpenSettings() {
 
 type SettingsProviderProps = {
   email: string | undefined;
-  /** The Student's name, or null while none is set. */
   displayName: string | null;
   children: ReactNode;
 };

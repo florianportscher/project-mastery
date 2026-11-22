@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-/** Validation messages per top-level input field, for rendering next to it. */
 type FieldErrors = Partial<Record<string, string[]>>;
 
 /**
@@ -14,7 +13,6 @@ export type ActionResult<T = void> =
 
 export type ActionFailure = Extract<ActionResult<never>, { ok: false }>;
 
-/** What an action returns when no Student is signed in. */
 export const signedOut = {
   ok: false,
   message: "Sign in again to continue.",

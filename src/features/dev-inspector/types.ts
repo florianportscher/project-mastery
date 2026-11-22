@@ -73,7 +73,6 @@ export type SnapshotChunk = {
   label: string;
   pageFrom: number;
   pageTo: number;
-  /** The length of its Markdown. */
   chars: number;
 };
 
@@ -145,7 +144,6 @@ export type DevCalls =
   | { status: "untraced" }
   | { status: "error"; message: string };
 
-/** One call with what it sent and answered. */
 export type DevCallDetail = DevCall & { input: unknown; output: unknown };
 
 /** The suspect spots of a build, by the ids the page marks. */

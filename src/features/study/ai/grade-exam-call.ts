@@ -11,7 +11,6 @@ import { aiTask } from "@/lib/ai/models";
  * the Student's final values, which code checks against the item's keys.
  */
 
-/** What an item is graded from. */
 export type GradeExamInput = {
   prompt: string;
   points: number;
@@ -23,7 +22,6 @@ export type GradeExamInput = {
   finalResults: string[];
 };
 
-/** The grading of an item, with each result on its KC's id. */
 export type ExamGrading = {
   steps: GradedStep[];
   results: Array<{ kcId: string; result: AttemptResult }>;
@@ -42,10 +40,8 @@ const INSTRUCTIONS = `You grade one task of a Student's mock exam for a universi
 
 const RESULTS = ["full", "partial", "wrong"] as const;
 
-/** The KC labels the call reads: K1, K2, … */
 const label = (index: number) => `K${index + 1}`;
 
-/** The call for one item and how to read its grading. */
 export function gradeExamCall(input: GradeExamInput) {
   const schema = z.object({
     steps: z
@@ -104,7 +100,6 @@ export function gradeExamCall(input: GradeExamInput) {
         },
       ] as ModelMessage[],
     },
-    /** The model's output as a grading; throws when it is no valid one. */
     grading(output: unknown): ExamGrading {
       const parsed = schema.parse(output);
       const results = parsed.results as Record<string, AttemptResult>;

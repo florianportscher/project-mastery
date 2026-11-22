@@ -10,7 +10,6 @@ import type { ReadableSpan } from "@opentelemetry/sdk-trace-node";
  */
 const WRAPPER_OPERATIONS = ["invoke_agent", "agent_step"];
 
-/** Whether the Langfuse span processor should export `otelSpan`. */
 export function shouldExportSpan({
   otelSpan,
 }: {

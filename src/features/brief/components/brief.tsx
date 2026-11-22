@@ -38,9 +38,7 @@ import {
 } from "@/features/usage";
 
 type BriefProps = {
-  /** The stored Brief conversation (`getBrief`). */
   brief: BriefWithMessages;
-  /** The Student's Daily limit status when the page loaded. */
   dailyLimit: DailyLimitStatus;
 };
 

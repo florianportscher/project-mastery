@@ -32,7 +32,6 @@ const dateFormat = new Intl.DateTimeFormat("en", {
   timeStyle: "short",
 });
 
-/** How often the page refreshes while a build runs. */
 const BUILD_POLL_MS = 2000;
 
 /**
@@ -182,7 +181,6 @@ function FormattedTime({ iso }: { iso: string }) {
   );
 }
 
-/** The last build's state: running, failed with its reason, or done. */
 function BuildStatus({ build }: { build: MapBuild }) {
   const lastBuilt = build?.finishedAt && (
     <>
@@ -330,7 +328,6 @@ function BuildButton({
   );
 }
 
-/** Refreshes the page's data while a build or a priority run runs. */
 function useBuildPolling(building: boolean) {
   const router = useRouter();
   useEffect(() => {

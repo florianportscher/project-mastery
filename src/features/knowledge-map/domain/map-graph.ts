@@ -14,7 +14,6 @@ const KC_NODE_SIZE = { width: 224, height: 72 } as const;
 /** An Exercise node's size; the node clamps longer names. */
 const EXERCISE_NODE_SIZE = { width: 200, height: 64 } as const;
 
-/** What the graph shows; each toggle switches a layer on or off. */
 export type MapLayers = {
   exercises: boolean;
   prerequisites: boolean;
@@ -129,7 +128,6 @@ export type NodeLayout = {
   parentId: string | null;
 };
 
-/** Each laid-out node's place and size by id, from ELK's result. */
 export function nodeLayouts(laidOut: ElkNode): Map<string, NodeLayout> {
   const layouts = new Map<string, NodeLayout>();
   const visit = (node: ElkNode) => {

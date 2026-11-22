@@ -47,7 +47,6 @@ const uploadIncomplete = {
   message: "The upload did not finish. Please try again.",
 } as const;
 
-/** Creates a Course with the given name. Names need not be unique. */
 export async function createCourse(input: {
   name: string;
 }): Promise<ActionResult<{ id: string }>> {
@@ -60,7 +59,6 @@ export async function createCourse(input: {
   return { ok: true, data: { id } };
 }
 
-/** Renames one of the Student's Courses. Duplicate names are fine. */
 export async function renameCourse(input: {
   courseId: string;
   name: string;
@@ -160,7 +158,6 @@ const materialNotFound = {
   message: "This material does not exist.",
 } as const;
 
-/** Renames one of the Student's Materials. Duplicate names are fine. */
 export async function renameMaterial(input: {
   materialId: string;
   name: string;

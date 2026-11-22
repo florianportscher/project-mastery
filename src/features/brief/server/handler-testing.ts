@@ -53,10 +53,8 @@ export function adminChunk(page: number, markdown: string) {
 }
 
 let signedIn: string | null = STUDENT;
-/** The local tables of the current test. */
 export let db = createDb();
 
-/** Signs in as another user, or signs out with `null`. */
 export function signInAs(user: string | null) {
   signedIn = user;
 }
@@ -255,7 +253,6 @@ export function userMessage(text: string, id: string = randomUUID()) {
   return { id, role: "user", parts: [{ type: "text", text }] };
 }
 
-/** Posts a request to the Brief handler, which `signal` can abort. */
 export async function post(body: unknown, signal?: AbortSignal) {
   const { handleBriefRequest } = await import("./handler");
   return handleBriefRequest(
@@ -293,7 +290,6 @@ export async function send(body: unknown): Promise<{
   return { status: response.status, text, ...(error && { error }) };
 }
 
-/** The stored messages of a Course's Brief as role and text, in order. */
 export function stored(courseId = COURSE) {
   return db.tables.brief_messages
     .filter((message) => message.course_id === courseId)

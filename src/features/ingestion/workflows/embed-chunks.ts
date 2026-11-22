@@ -20,7 +20,6 @@ import { failed } from "@/lib/supabase/failed";
  */
 const BATCH_SIZE = 20;
 
-/** The wait before a retry when the provider names none. */
 const DEFAULT_RETRY_MS = 60_000;
 
 /**

@@ -8,7 +8,6 @@ import {
 import type { DailyLimitStatus, DailyUsage } from "@/features/usage/types";
 import { requireUser } from "@/lib/auth/user";
 
-/** The signed-in Student's spend today with amounts, for Settings. */
 export async function loadDailyUsage(): Promise<DailyUsage> {
   await requireUser();
   return getDailyUsage();

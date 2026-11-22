@@ -5,7 +5,6 @@
  * still below it.
  */
 
-/** The share of a unit's characters its KCs must cite. */
 export const MIN_UNIT_COVERAGE = 0.5;
 
 /**

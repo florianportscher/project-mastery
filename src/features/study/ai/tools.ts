@@ -20,7 +20,6 @@ import type {
   TopicView,
 } from "@/features/study/types";
 
-/** What `findProblems` takes: KC ids of the Course. */
 const kcIdsInputSchema = z.object({
   kcIds: z
     .array(z.string())
@@ -53,7 +52,6 @@ const getTopicInputSchema = z.object({
     ),
 });
 
-/** What `ask` takes: one graded question, shown in the Chat. */
 const askInputSchema = z.object({
   prompt: z
     .string()
@@ -129,10 +127,8 @@ const gradeInputSchema = z.object({
 
 type GradeInput = z.infer<typeof gradeInputSchema>;
 
-/** The session's newest Question as `ask` and `grade` check it. */
 export type QuestionToGrade = {
   id: string;
-  /** The live KCs it tests. */
   kcIds: string[];
   /** The KCs it tested that were retired since, whose results are dropped. */
   retiredKcIds: string[];
@@ -147,7 +143,6 @@ export type QuestionToGrade = {
 /** The worst check of the final values: null when the question has no keys. */
 export type FinalValueCheck = AnswerCheck | null;
 
-/** What `remember` takes: one line for the Memory. */
 const rememberInputSchema = z.object({
   text: z
     .string()
@@ -157,14 +152,12 @@ const rememberInputSchema = z.object({
     .describe("One line of at most 300 characters, without line breaks."),
 });
 
-/** What `searchMaterials` takes: one line to search the Course by meaning. */
 const searchMaterialsInputSchema = z.object({
   query: rememberInputSchema.shape.text.describe(
     "What to look for, in one line of at most 300 characters, as a question or a phrase from the Materials.",
   ),
 });
 
-/** What `showReading` takes: a Reading section and why the Student reads it. */
 const showReadingInputSchema = z.object({
   sectionId: z.string().describe("The id of a Reading section of a Topic."),
   purpose: rememberInputSchema.shape.text.describe(
@@ -198,7 +191,6 @@ export type TutorToolActions = {
   ) => Promise<{ problems: ProblemView[]; note?: string }>;
   /** A Reading section of the Course; null for any other id. */
   findReading: (sectionId: string) => Promise<ReadingView | null>;
-  /** Appends one line to the Course's Memory. */
   remember: (text: string) => Promise<void>;
   /**
    * Stores a question in the Chat's Study session; returns its id, and the
@@ -227,16 +219,13 @@ export type TutorToolActions = {
    * in the meantime.
    */
   closeQuestion: (questionId: string) => Promise<boolean>;
-  /** Runs a mathjs program through the math runner. */
   compute: (program: string) => Promise<ProgramRun>;
 };
 
-/** A refused tool call: its message tells the model what to fix. */
 export class TutorToolError extends Error {
   override name = "TutorToolError";
 }
 
-/** The tools the AI tutors with in a Chat. */
 export function tutorTools(actions: TutorToolActions) {
   return {
     getTopic: tool({
@@ -336,7 +325,6 @@ export function tutorTools(actions: TutorToolActions) {
   };
 }
 
-/** The `showReading` call: a Reading section of the Course. */
 async function showReading(
   actions: TutorToolActions,
   sectionId: string,
@@ -353,7 +341,6 @@ async function showReading(
 const alreadyGraded =
   "This question is already graded: its grade is recorded, so don't grade or close it again. Write your reply to the Student from that grade.";
 
-/** The session's open Question, which `grade` and `closeQuestion` act on. */
 async function openQuestion(
   actions: TutorToolActions,
 ): Promise<QuestionToGrade> {

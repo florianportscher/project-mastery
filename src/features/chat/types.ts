@@ -39,10 +39,8 @@ type ChatDataParts = {
   busy: Record<string, never>;
 };
 
-/** A message of a Chat, as `useChat` shows it and the database stores it. */
 export type ChatUIMessage = UIMessage<ChatMessageMetadata, ChatDataParts>;
 
-/** A stored Chat with its messages, for the Chat page. */
 export type ChatWithMessages = {
   id: string;
   /** The Course the Chat belongs to. */
@@ -63,7 +61,6 @@ export type SourceRequest =
   | { kind: "section"; id: string }
   | { kind: "pages"; materialId: string; pageFrom: number; pageTo: number };
 
-/** A source as the source pane shows it (`openSource`). */
 export type ChatSource = {
   materialId: string;
   materialName: string;
@@ -74,7 +71,6 @@ export type ChatSource = {
   pageNotFound?: boolean;
 };
 
-/** A Chat as the sidebar lists it. */
 export type ChatListItem = {
   id: string;
   /** The title, or the first message shortened (`chatLabel`). */

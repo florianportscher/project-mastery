@@ -31,10 +31,6 @@ export const metadata: Metadata = {
   title: "Course map",
 };
 
-/**
- * A Course's home, the Course map: build the Knowledge map and see its
- * nested Topics.
- */
 export default async function CourseMapPage({
   params,
 }: PageProps<"/courses/[courseId]/map">) {

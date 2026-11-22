@@ -1,6 +1,7 @@
 // Project-specific lint rules for the structure in docs/ARCHITECTURE.md that
 // no published plugin covers.
 import fileStructure from "./rules/file-structure.mjs";
+import noDeadComments from "./rules/no-dead-comments.mjs";
 import noServerImportInClient from "./rules/no-server-import-in-client.mjs";
 import requireServerOnly from "./rules/require-server-only.mjs";
 import serverActionAuth from "./rules/server-action-auth.mjs";
@@ -11,6 +12,7 @@ const plugin = {
   meta: { name: "project" },
   rules: {
     "file-structure": fileStructure,
+    "no-dead-comments": noDeadComments,
     "no-server-import-in-client": noServerImportInClient,
     "require-server-only": requireServerOnly,
     "server-action-auth": serverActionAuth,

@@ -17,7 +17,6 @@ type LoginFormsProps = {
   next: string;
 };
 
-/** Sign in with a password or an email link, or create an account. */
 export function LoginForms({ next }: LoginFormsProps) {
   const [tab, setTab] = useState("sign-in");
   // Bumping the key remounts the forms, which clears their action state.

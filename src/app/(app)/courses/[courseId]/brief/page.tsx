@@ -11,10 +11,6 @@ export const metadata: Metadata = {
   title: "Brief",
 };
 
-/**
- * A Course's Brief: the conversation in which the AI asks about the exam,
- * beside a panel with the data it holds.
- */
 export default async function BriefPage({
   params,
 }: PageProps<"/courses/[courseId]/brief">) {

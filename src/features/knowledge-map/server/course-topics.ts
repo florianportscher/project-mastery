@@ -12,10 +12,8 @@ import { getUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 import type { Supabase } from "@/lib/supabase/types";
 
-/** A KC as a Topic lists it. */
 type TopicKc = { id: string; name: string };
 
-/** A stored Topic with what a Student reads around it. */
 export type CourseTopic = {
   id: string;
   /** The Topic it sits in; null at the top. */

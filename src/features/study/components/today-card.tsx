@@ -12,7 +12,6 @@ import { MockExamButton } from "@/features/study/components/mock-exam-button";
 import { TODAY_MESSAGES } from "@/features/study/domain/today-messages";
 import type { NextItem, StudyState } from "@/features/study/types";
 
-/** Items the card lists in the final stretch. */
 const FINAL_STRETCH_ITEMS = 5;
 
 const KIND_NAMES: Record<NextItem["kind"], string> = {
@@ -54,9 +53,7 @@ export function TodayCard({
     | "lastMinutes"
   >;
   mapHref: string;
-  /** A Topic's page. */
   topicHref: (topicId: string) => string;
-  /** A new Chat. */
   chatHref: string;
   /** The Course, and its open mock's page or null. */
   mock?: { courseId: string; openHref: string | null };

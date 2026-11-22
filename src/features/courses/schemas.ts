@@ -19,13 +19,10 @@ const courseNameSchema = z
     `Keep the name to ${MAX_COURSE_NAME_LENGTH} characters or fewer.`,
   );
 
-/** Creating a Course from the Course list. */
 export const createCourseSchema = z.object({ name: courseNameSchema });
 
-/** A Course addressed by id. */
 export const courseIdSchema = z.object({ courseId: z.uuid() });
 
-/** Renaming a Course from its menu. */
 export const renameCourseSchema = courseIdSchema.extend({
   name: courseNameSchema,
 });
@@ -33,7 +30,6 @@ export const renameCourseSchema = courseIdSchema.extend({
 /** The largest Material a Student can upload: 20 MB. */
 const MAX_MATERIAL_SIZE_BYTES = 20 * 1024 * 1024;
 
-/** The file types a Material can have. */
 export const MATERIAL_MEDIA_TYPES = [
   "application/pdf",
   "image/png",
@@ -72,13 +68,11 @@ export const uploadIdsSchema = z.object({
   courseId: z.uuid(),
 });
 
-/** Registering an uploaded Material in its Course. */
 export const registerMaterialSchema = uploadIdsSchema.extend({
   ...materialFileSchema.shape,
   name: materialNameSchema,
 });
 
-/** A Material addressed by id. */
 export const materialIdSchema = z.object({ materialId: z.uuid() });
 
 /**
@@ -93,12 +87,10 @@ export const materialReferenceSchema = z.object({
 
 export type MaterialReference = z.infer<typeof materialReferenceSchema>;
 
-/** Renaming a Material from its menu. */
 export const renameMaterialSchema = materialIdSchema.extend({
   name: materialNameSchema,
 });
 
-/** Moves a Material one place earlier (up) or later (down) in Course order. */
 export const moveMaterialSchema = materialIdSchema.extend({
   direction: z.enum(["up", "down"]),
 });

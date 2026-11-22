@@ -22,7 +22,6 @@ export function AnswerField({
 }: {
   text: string;
   onTextChange: (text: string) => void;
-  /** When the Student leaves the box. */
   onBlur?: () => void;
   confidence: number | undefined;
   onConfidenceChange: (confidence: number | undefined) => void;

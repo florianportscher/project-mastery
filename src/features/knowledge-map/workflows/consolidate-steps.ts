@@ -32,10 +32,8 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * extraction also stores its Exercises, in place by their question chunks.
  */
 
-/** Parallel `match_kcs` calls. */
 const MATCHES_AT_ONCE = 10;
 
-/** A unit extraction not stored as KCs yet. */
 type Pending = { extractionId: string; extraction: StoredExtraction };
 
 /** A new KC of the step, by key: `<unit index>:<kc index>`. */
@@ -183,7 +181,6 @@ async function matchKcs(
   return data;
 }
 
-/** The retired KC each new KC revives, by key. */
 async function reviveRetired(
   supabase: AdminSupabase,
   courseId: string,
@@ -209,7 +206,6 @@ async function reviveRetired(
   return revived;
 }
 
-/** A KC row of `store_unit_kcs`. */
 type StoredKcRow = {
   id: string;
   new: boolean;

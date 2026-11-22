@@ -10,7 +10,6 @@ import type { TopicFacts } from "@/features/study/domain/topic-facts";
 
 export type { AttemptHelp, AttemptResult };
 
-/** Why a Student flags a generated Problem. */
 export type ProblemFlag = "unclear" | "wrong" | "too_easy" | "off_topic";
 
 /**
@@ -39,7 +38,6 @@ export type TutorContext = {
   mock: ContextMockTask[] | null;
 };
 
-/** A KC as the tutor context names it. */
 export type ContextKc = {
   id: string;
   name: string;
@@ -48,7 +46,6 @@ export type ContextKc = {
   recallToday: number | null;
 };
 
-/** What this Study session has done so far. */
 type SessionFacts = {
   minutes: number;
   /** When the session started, as an ISO time. */
@@ -107,7 +104,6 @@ export type Proposal =
       }>;
     };
 
-/** The Topic the ranking proposes to teach next. */
 export type ProposedTopic = {
   id: string;
   name: string;
@@ -123,7 +119,6 @@ export type ProposedTopic = {
   facts: TopicFacts;
 };
 
-/** A Topic as one line of the tutor context. */
 type ContextTopic = {
   id: string;
   name: string;
@@ -132,7 +127,6 @@ type ContextTopic = {
   total: number;
 };
 
-/** The notes the AI reads on every reply. */
 type ContextNotes = {
   /** Of the proposed Topic and the Topics touched today. */
   topics: Array<{ topic: string; text: string }>;
@@ -156,7 +150,6 @@ type ContextNotes = {
   } | null;
 };
 
-/** A task of the graded Mock exam a session goes through. */
 export type ContextMockTask = {
   prompt: string;
   answer: string | null;
@@ -168,9 +161,7 @@ export type ContextMockTask = {
   problemId: string | null;
 };
 
-/** A Material's notation and conventions as the AI is told of them. */
 export type MaterialNoteEntry = {
-  /** The Material's name. */
   material: string;
   text: string;
 };
@@ -219,7 +210,6 @@ export type StudyState = {
   readiness: CourseReadiness;
   /** The latest graded Mock exam's score, 0 to 100; null without one. */
   lastMockPercent: number | null;
-  /** Whether any KC is taught. */
   taught: boolean;
   pace: Pace;
   /**
@@ -229,7 +219,6 @@ export type StudyState = {
   lastMinutes: number | null;
 };
 
-/** A source chunk as `getTopic` and `searchMaterials` return it. */
 export type SourceChunkView = {
   chunkId: string;
   material: string;
@@ -253,9 +242,7 @@ export type AskedProblem = {
   generatedProblemId: string | null;
 };
 
-/** A Problem as `findProblems` returns it. */
 export type ProblemView = {
-  /** The Problem's id, which a question on it names. */
   id: string;
   /**
    * An Exercise of an old exam or another one, or a generated variant of an
@@ -265,13 +252,11 @@ export type ProblemView = {
   name: string;
   /** 1 to 3. */
   difficulty: number;
-  /** The question's Markdown. */
   question: string;
   /**
    * The question's Material at its pages; null for a generated Problem.
    */
   link: string | null;
-  /** The KCs it tests, by id and name. */
   kcs: Array<{ id: string; name: string }>;
   solution: {
     /** Where it comes from and how far it is checked. */
@@ -290,14 +275,12 @@ export type GradedKc = {
   result: AttemptResult;
 };
 
-/** A Reading section as the AI is told of it. */
 export type ReadingSectionView = {
   id: string;
   /** Its Material and pages, such as "Lecture 3, pp. 12–14". */
   label: string;
 };
 
-/** A Reading section as `showReading` returns it. */
 export type ReadingView = {
   label: string;
   /** Its chunks' Markdown, in reading order. */
@@ -317,7 +300,6 @@ export type SessionSummary = {
     id: string;
     name: string;
     result: AttemptResult;
-    /** The help of that Attempt. */
     help: AttemptHelp;
     /** As YYYY-MM-DD; null without a card. */
     nextReview: string | null;
@@ -360,7 +342,6 @@ export type TopicView = {
   readingSections: ReadingSectionView[] | null;
 };
 
-/** A Mock exam as its page shows it (#185). */
 export type MockExamView = {
   id: string;
   courseId: string;
@@ -372,7 +353,6 @@ export type MockExamView = {
   /** The sum of its items' minutes; null until ready. */
   durationMinutes: number | null;
   itemCount: number;
-  /** The aids the Brief allows. */
   aids: string[];
   /** Whether it is the reserved exam itself. */
   final: boolean;
@@ -382,7 +362,6 @@ export type MockExamView = {
   serverNow: string;
   /** Its tasks in order, once started; empty before. */
   tasks: MockTask[];
-  /** How many tasks grading has finished, of all. */
   grading: { done: number; total: number };
   /** Once graded: the score against the prediction; null before. */
   result: MockResult | null;
@@ -403,7 +382,6 @@ export type MockResult = {
   sure: { right: number; total: number } | null;
 };
 
-/** A task of a started Mock exam, with the Student's answer so far. */
 export type MockTask = {
   questionId: string;
   prompt: string;
@@ -419,7 +397,6 @@ export type MockTask = {
   grade: MockTaskGrade | null;
 };
 
-/** A Course's Readiness (see `readiness`). */
 type CourseReadiness = {
   /** Over every KC with a Priority, 0 to 1; null without Priorities. */
   course: number | null;
@@ -427,7 +404,6 @@ type CourseReadiness = {
   onTheDay: boolean;
 };
 
-/** How a Mock exam's task was graded. */
 export type MockTaskGrade =
   | { status: "failed" }
   | {

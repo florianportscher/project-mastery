@@ -13,16 +13,13 @@ import {
   type Grade,
 } from "ts-fsrs";
 
-/** How much the AI helped on an attempt. */
 export type AttemptHelp = "none" | "some" | "solution_shown";
 
-/** How the AI graded the Student's answer on a KC. */
 export type AttemptResult = "full" | "partial" | "wrong";
 
 /** The Brief's goal, which sets the desired retention. */
 export type Goal = "pass" | "good_grade" | "master_everything" | null;
 
-/** What the replay and pace read of an Attempt. */
 export type ReplayAttempt = {
   kcId: string;
   sessionId: string;
@@ -34,9 +31,7 @@ export type ReplayAttempt = {
   seconds: number | null;
 };
 
-/** What the replay gives of a KC. */
 export type KcRecall = {
-  /** It has a card: it has an Attempt. */
   taught: boolean;
   /** It has at least one `full` Attempt without help. */
   learned: boolean;
@@ -44,13 +39,11 @@ export type KcRecall = {
   recallToday: number;
   /** FSRS recall on the exam day; `recallToday` without an exam ahead. */
   recallOnExamDay: number;
-  /** Its card's due day is today or earlier. */
   due: boolean;
   /** Its card's due day, as YYYY-MM-DD; null untaught. */
   nextReview: string | null;
 };
 
-/** A KC without Attempts. */
 export const UNTAUGHT: KcRecall = {
   taught: false,
   learned: false,
@@ -62,7 +55,6 @@ export const UNTAUGHT: KcRecall = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** The UTC day of an ISO timestamp, as YYYY-MM-DD. */
 export const utcDay = (timestamp: string | Date) =>
   new Date(timestamp).toISOString().slice(0, 10);
 
@@ -70,11 +62,9 @@ export const utcDay = (timestamp: string | Date) =>
 export const daysBetween = (from: string, to: string) =>
   Math.round((Date.parse(to) - Date.parse(from)) / DAY_MS);
 
-/** The day `days` after a YYYY-MM-DD day, before it when negative. */
 const addDays = (day: string, days: number) =>
   utcDay(new Date(Date.parse(day) + days * DAY_MS));
 
-/** The desired retention for the Brief's goal. */
 export function desiredRetention(goal: Goal): number {
   switch (goal) {
     case "pass":

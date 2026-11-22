@@ -8,7 +8,6 @@ import { FieldError } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import type { AuthFormState } from "@/features/auth/types";
 
-/** The validation errors for one field of a failed submission. */
 export function fieldErrors(state: AuthFormState | null, field: string) {
   if (!state || state.ok) return undefined;
   return state.fieldErrors?.[field];
@@ -46,7 +45,6 @@ type SubmitButtonProps = React.ComponentProps<typeof Button> & {
   intent?: string;
 };
 
-/** A submit button that is disabled while its form submits. */
 export function SubmitButton({
   intent,
   children,
@@ -68,7 +66,6 @@ export function SubmitButton({
   );
 }
 
-/** Shown in place of a form once an email with a link is on its way. */
 export function CheckEmail({
   email,
   onBack,

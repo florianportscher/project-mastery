@@ -1,4 +1,3 @@
-/** How long a session may sit without a message before it counts as ended. */
 const IDLE_MS = 2 * 60 * 60 * 1000;
 
 /**

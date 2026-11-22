@@ -10,7 +10,6 @@ type DeleteCourseDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-/** What the confirmation says goes with the Course. */
 function deletedWith({
   name,
   chatCount,
@@ -29,7 +28,6 @@ function counted(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
-/** Asks before deleting a Course for good, with its Chats and Materials. */
 export function DeleteCourseDialog({
   course,
   open,

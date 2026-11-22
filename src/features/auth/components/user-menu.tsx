@@ -23,7 +23,6 @@ import { signOut } from "@/features/auth/server/actions";
 
 type UserMenuProps = {
   email: string | undefined;
-  /** The Student's name, or null while none is set. */
   displayName: string | null;
 };
 

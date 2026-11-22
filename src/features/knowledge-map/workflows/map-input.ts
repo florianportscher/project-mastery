@@ -20,7 +20,6 @@ export type MapInput = {
     pageFrom: number;
     pageTo: number;
   }>;
-  /** The Course's Materials by position. */
   materials: Array<{ id: string; name: string }>;
   kcs: Array<{
     id: string;
@@ -30,7 +29,6 @@ export type MapInput = {
     sources: string[];
   }>;
   prerequisites: Link[];
-  /** Each Exercise's live KCs. */
   exercises: string[][];
 };
 
@@ -143,7 +141,6 @@ export function kcsInCourseOrder(map: MapInput): Array<{
   });
 }
 
-/** The live KCs with a first source, in Course order. */
 function courseOrder(map: MapInput): string[] {
   const places = firstSourcePlaces(map);
   return map.kcs

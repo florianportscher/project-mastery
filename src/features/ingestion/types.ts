@@ -1,4 +1,3 @@
-/** The kinds of chunk a parse labels, one per chunk. */
 export const CHUNK_LABELS = [
   "content",
   "exercise",
@@ -13,7 +12,6 @@ export const UNIT_LABELS = [...CHUNK_LABELS, "heading"] as const;
 
 export type UnitLabel = (typeof UNIT_LABELS)[number];
 
-/** How a heading is set on the page. */
 export const HEADING_STYLES = ["title", "large", "bold"] as const;
 
 /** Why a parse stored a page without reading it (`material_pages.skipped`). */
@@ -23,11 +21,9 @@ export type PageSkip =
 /** The reasons a page batch answer gives for a page without units. */
 export const PAGE_SKIP_REASONS = ["nothing_to_learn"] as const;
 
-/** Where a Material's parse stands. */
 export type ParseStatus =
   "not_parsed" | "queued" | "parsing" | "parsed" | "failed";
 
-/** A chunk as the chunk view shows it. */
 export type ChunkView = {
   id: string;
   position: number;
@@ -49,7 +45,6 @@ export type ExerciseSolution =
     }
   | { status: "no_solution" };
 
-/** A parsed Material with its chunks, for the chunk view. */
 export type MaterialChunks = {
   materialId: string;
   courseId: string;

@@ -25,7 +25,6 @@ const usage = {
   outputTokens: { total: 20, text: 20, reasoning: undefined },
 };
 
-/** A language model that answers every call with `text`, streamed word by word. */
 export function mockTextModel(text: string) {
   return new MockLanguageModelV4({
     doGenerate: async () => ({
@@ -55,7 +54,6 @@ export function mockTextModel(text: string) {
   });
 }
 
-/** A tool call a mock model makes. */
 export type MockToolCall = { toolName: string; input: unknown };
 
 /**

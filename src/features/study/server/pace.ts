@@ -11,7 +11,6 @@ import { allRows } from "@/lib/supabase/all-rows";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
-/** The newest teaching sessions whose active time is read. */
 const SAMPLE = 5;
 
 /**

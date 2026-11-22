@@ -37,9 +37,7 @@ import { failed } from "@/lib/supabase/failed";
  * that KC comes earlier in the Course.
  */
 
-/** The most names one check call is asked about. */
 const NAMES_PER_CALL = 50;
-/** The most names one step asks about. */
 const NAMES_PER_STEP = 100;
 
 const nameKey = (name: string) => name.trim().toLowerCase();

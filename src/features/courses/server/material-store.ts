@@ -252,7 +252,6 @@ export async function moveMaterialPosition(
   return data;
 }
 
-/** Deletes one of the Student's Materials, without its file. */
 export async function removeMaterial(
   supabase: Supabase,
   materialId: string,
@@ -303,7 +302,6 @@ export async function findMaterialPages(
   return data && { name: data.name, pagesTotal: data.pages_total ?? null };
 }
 
-/** The Course's Materials in Course order. */
 export async function listMaterials(
   supabase: Supabase,
   courseId: string,

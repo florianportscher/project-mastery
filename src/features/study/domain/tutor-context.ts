@@ -27,18 +27,14 @@ import type {
   TutorContext,
 } from "@/features/study/types";
 
-/** The due Reviews the proposal names. */
 const PROPOSED_REVIEWS = 10;
-/** The ranking's first items the proposal names in the final stretch. */
 const FINAL_STRETCH_ITEMS = 10;
-/** The refreshes the context names as practice candidates. */
 const PRACTICE_CANDIDATES = 8;
 /** The longest Brief's notes the context gives, from their end. */
 const MAX_BRIEF_NOTES = 4000;
 
 const MINUTE_MS = 60_000;
 
-/** What the tutor context is derived from. */
 export type TutorContextInput = {
   now: Date;
   exam: { examDate: string | null; goal: Goal };
@@ -60,7 +56,6 @@ export type TutorContextInput = {
   scope: TopicScope[];
   ranked: RankedItem[];
   recall: Map<string, KcRecall>;
-  /** The Course's Attempts, oldest first. */
   attempts: Array<{
     kcId: string;
     sessionId: string;
@@ -82,11 +77,8 @@ export type TutorContextInput = {
     }>;
     readings: ReadingSectionView[];
   };
-  /** Each Topic's Reading sections, by Topic id. */
   readings: Map<string, ReadingSectionView[]>;
-  /** The KCs of each unseen Problem of the Course. */
   unseenProblems: Array<{ kcs: string[] }>;
-  /** Each Topic's facts (`topicFacts`), by Topic id. */
   topicFacts: Map<string, TopicFacts>;
   notes: {
     /** By Topic id. */
@@ -98,7 +90,6 @@ export type TutorContextInput = {
   mock: ContextMockTask[] | null;
 };
 
-/** The tutor context of a reply at `input.now`. */
 export function tutorContext(input: TutorContextInput): TutorContext {
   const { now, exam, recall, topics } = input;
   const today = utcDay(now);
@@ -184,7 +175,6 @@ export function tutorContext(input: TutorContextInput): TutorContext {
   };
 }
 
-/** One entry per KC of today's Attempts, by its newest (`SessionFacts`). */
 function checkedToday(
   todays: TutorContextInput["attempts"],
   nameOf: (id: string) => string,
@@ -196,7 +186,6 @@ function checkedToday(
   return [...states].map(([id, state]) => ({ id, name: nameOf(id), state }));
 }
 
-/** The session's Topic (`SessionFacts`). */
 function sessionTopic(
   input: TutorContextInput,
   proposal: Proposal,
@@ -222,7 +211,6 @@ function sessionTopic(
   };
 }
 
-/** The head of the ranking (`Proposal`). */
 function propose(
   input: TutorContextInput,
   contextKc: (id: string) => ContextKc,

@@ -18,7 +18,6 @@ export type ExtractedKc = {
   assumes: Assumption[];
 };
 
-/** What the extraction call answers; ids are the call's own. */
 export type AnsweredExtraction = {
   repeats: Array<{ kcId: string; chunkIds: string[] }>;
   kcs: Array<{

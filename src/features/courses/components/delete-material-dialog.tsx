@@ -52,7 +52,6 @@ function AttachedInChats({
   );
 }
 
-/** Asks before deleting a Material and its file for good. */
 export function DeleteMaterialDialog({
   material,
   countMaterialChats,

@@ -6,7 +6,6 @@ import type { Supabase, SessionSupabase } from "@/lib/supabase/types";
 import { failed } from "@/lib/supabase/failed";
 import { recordAiUsage } from "./usage-store";
 
-/** What one reply's model call used, as its `ai_usage` row records it. */
 export type StoredReplyUsage = {
   /** All input tokens, cached ones included. */
   inputTokens: number;
@@ -73,11 +72,8 @@ export async function recordReplyUsage(
     modelId: string;
     /** What the provider reported, undefined for a stopped or failed call. */
     reported: LanguageModelUsage | undefined;
-    /** The text sent: the instructions and the history. */
     input: string;
-    /** The reply's text. */
     output: string;
-    /** The files sent with the history. */
     files?: SentFile[];
     chatId?: string;
     replyId?: string;

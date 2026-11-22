@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { topicPath } from "@/features/knowledge-map/domain/map-paths";
 
-/** The open Topic's name, for the top bar's breadcrumb. */
 export function TopicTitle({
   courseId,
   topics,

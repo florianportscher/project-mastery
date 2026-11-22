@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 
-/** Centers the sign-in pages below the product's logo. */
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-8 bg-muted/40 px-4 py-16">

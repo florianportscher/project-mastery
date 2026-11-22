@@ -15,7 +15,6 @@ type Part = ChatUIMessage["parts"][number];
  */
 type StepState = "running" | "done" | "error" | "stopped";
 
-/** What a step card shows when it is expanded, by tool. */
 export type StepDetail =
   | { tool: "getTopic"; topic: TopicView }
   | { tool: "findProblems"; problems: ProblemView[]; note?: string }
@@ -23,19 +22,15 @@ export type StepDetail =
   | { tool: "grade"; kcs: GradedKc[] }
   | { tool: "other"; input: unknown; output: unknown };
 
-/** One tool call of an AI reply, as its step card shows it. */
 export type ReplyStep = {
   id: string;
-  /** The tool's name, such as `getTopic`. */
   name: string;
   state: StepState;
-  /** The card's one line. */
   summary: string;
   /** Null until the call has returned. */
   detail: StepDetail | null;
 };
 
-/** A question the AI asked, as the Chat shows it. */
 type AskedQuestion = {
   id: string;
   /** Markdown with LaTeX. */
@@ -44,7 +39,6 @@ type AskedQuestion = {
   problem: AskedProblem | null;
 };
 
-/** A Reading section the AI opened, as its reading card shows it. */
 export type ShownReading = {
   /** The `showReading` call's id, which tells the cards apart. */
   id: string;
@@ -151,7 +145,6 @@ function shownReading(part: ToolPart): ShownReading | null {
   };
 }
 
-/** One tool call as its card shows it. */
 function replyStep(part: ToolPart, inProgress = true): ReplyStep {
   const name = getToolName(part);
   const base = { id: part.toolCallId, name };

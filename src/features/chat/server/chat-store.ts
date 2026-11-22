@@ -269,7 +269,6 @@ export async function countChatsAttaching(
   return new Set(data.map((row) => row.chat_id)).size;
 }
 
-/** Whether the Chat has a message with this id. */
 export async function hasMessage(
   supabase: Supabase,
   chatId: string,

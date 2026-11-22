@@ -151,7 +151,6 @@ function reservationAnswer(
     : "Not answered yet. With only one old exam, suggest keeping none, so that the Student can practise with it.";
 }
 
-/** The AI's instructions in a Brief, with what is stored so far. */
 function briefInstructions(context: BriefContext, mapPath: string): string {
   return [
     ROLE,

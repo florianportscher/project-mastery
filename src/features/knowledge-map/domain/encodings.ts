@@ -17,7 +17,6 @@ export const COLOR_BY_NAMES: Record<ColorBy, string> = {
   priority: "Priority",
 };
 
-/** What the Student can change in the graph and the page remembers. */
 export type MapSettings = {
   layers: MapLayers;
   colorBy: ColorBy;
@@ -78,7 +77,6 @@ export function sizeScale(fraction: number | undefined): number {
   return MIN_SIZE_SCALE + (1 - MIN_SIZE_SCALE) * (fraction ?? 0);
 }
 
-/** The ramp colour for a fraction from `priorityFractions`. */
 function rampColor(fraction: number): string {
   const step = Math.min(
     PRIORITY_RAMP.length - 1,
@@ -87,7 +85,6 @@ function rampColor(fraction: number): string {
   return PRIORITY_RAMP[step]!;
 }
 
-/** What `kcColor` needs to colour one KC. */
 export type ColorContext = {
   band: MapRecallBand;
   /** From `priorityFractions`; undefined without a Priority. */
@@ -105,7 +102,6 @@ export function kcColor(colorBy: ColorBy, kc: ColorContext): string {
 
 export type LegendEntry = { label: string; color: string };
 
-/** The legend for `colorBy`: one entry per colour the graph can show. */
 export function legendEntries(
   colorBy: ColorBy,
   bandNames: Record<MapRecallBand, string>,

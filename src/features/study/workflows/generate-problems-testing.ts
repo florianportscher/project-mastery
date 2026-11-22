@@ -43,7 +43,6 @@ export function memoizeMathRunner(real: MathRunnerModule): MathRunnerModule {
   };
 }
 
-/** A `generate` model answering in turn, the last answer from then on. */
 export function useGenerateModel(...answers: Array<object | Error>) {
   let call = 0;
   const model = new MockLanguageModelV4({

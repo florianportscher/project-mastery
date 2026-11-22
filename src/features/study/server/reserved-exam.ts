@@ -20,7 +20,6 @@ export async function loadReservedChunks(
   );
 }
 
-/** The map with the Exercises whose question is a reserved chunk left out. */
 export function withoutReserved<Map extends { exercises: Exercise[] }>(
   map: Map,
   reserved: Set<string>,

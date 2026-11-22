@@ -14,7 +14,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ZoomControls } from "./zoom-controls";
 
-/** The invisible ends edges attach to. */
 export function Handles({ source = true }: { source?: boolean }) {
   return (
     <>

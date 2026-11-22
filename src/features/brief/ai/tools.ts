@@ -5,7 +5,6 @@ import { MAX_BRIEF_NOTES_LENGTH } from "@/features/brief/domain/intake";
 // The models may send null for a field they leave out, so null means "not
 // given" as undefined does. An answer is changed, never cleared.
 
-/** What `saveBrief` takes: the fields the Student answered, all optional. */
 export const saveBriefInputSchema = z.object({
   examDate: z.iso.date().nullish().describe("The exam's date as YYYY-MM-DD."),
   goal: z
@@ -118,7 +117,6 @@ async function run(action: () => Promise<string>): Promise<string> {
   }
 }
 
-/** The tools the AI stores the Student's answers with during a Brief. */
 export function briefTools(actions: BriefToolActions) {
   return {
     saveBrief: tool({

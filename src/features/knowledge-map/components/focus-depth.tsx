@@ -22,7 +22,6 @@ const DEPTH_NAMES: Record<FocusDepth, string> = {
   both: "Before and after",
 };
 
-/** How far focusing a node reaches, picked from a menu. */
 export function FocusDepthMenu({
   depth,
   onChange,

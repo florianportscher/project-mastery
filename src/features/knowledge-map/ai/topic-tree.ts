@@ -5,7 +5,6 @@ import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { MAX_TOPIC_NAME } from "@/features/knowledge-map/domain/topic-tree";
 import { aiTask } from "@/lib/ai/models";
 
-/** A live KC as the tree call gets it, in Course order. */
 type OfferedKc = {
   /** Short and only for the call, such as k1. */
   id: string;
@@ -16,20 +15,16 @@ type OfferedKc = {
   heading: string;
 };
 
-/** A stored Topic as the tree call gets it. */
 type OfferedStoredTopic = {
   /** Short and only for the call, such as t1. */
   id: string;
   name: string;
   /** 1 at the top. */
   level: number;
-  /** The ids of the KCs it holds itself. */
   kcs: string[];
 };
 
-/** What the tree call gets: the Course's KCs and its stored tree. */
 export type OfferedCourse = {
-  /** The Course language by name, such as English. */
   language: string;
   /** Every live KC, in Course order. */
   kcs: OfferedKc[];
@@ -112,7 +107,6 @@ export function topicTreeSettings(course: OfferedCourse) {
   };
 }
 
-/** The user message of a tree call: the Course, as JSON. */
 export function topicTreeMessages(course: OfferedCourse) {
   return [
     {

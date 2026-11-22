@@ -49,10 +49,8 @@ const FOREIGN_KEY_VIOLATION = "23503";
 /** Postgres error code of a row that is there already. */
 const UNIQUE_VIOLATION = "23505";
 
-/** The most pages one read step reads: four batches. */
 export const PAGES_PER_STEP = 4 * PAGES_PER_BATCH;
 
-/** Why a parse stopped, for the Student. */
 export type ParseOutcome = { ok: true } | { ok: false; reason: string };
 
 /**
@@ -113,7 +111,6 @@ async function download(supabase: AdminSupabase, path: string) {
   return new Uint8Array(await data.arrayBuffer());
 }
 
-/** The page numbers of the Material's stored page results. */
 async function storedPageNumbers(
   supabase: AdminSupabase,
   materialId: string,
@@ -217,9 +214,7 @@ export async function preparePages(
 /** A page call that failed for good, after the AI SDK's retries. */
 class PageCallFailed extends Error {}
 
-/** Where a read step gets its pages' images and text from. */
 type PageSource = {
-  /** The page's image, or null when it is blank. */
   image(pageNumber: number): Promise<{
     bytes: Uint8Array;
     mediaType: string;
@@ -539,7 +534,6 @@ async function lastUnitBefore(
   return null;
 }
 
-/** Sets the Material's progress to the count of its stored page results. */
 async function recordProgress(
   supabase: AdminSupabase,
   materialId: string,
@@ -555,7 +549,6 @@ async function recordProgress(
   if (progress.error) failed("Recording the progress", progress.error);
 }
 
-/** Marks the Material parsed: the last step of a parse. */
 export async function markParsed(materialId: string): Promise<void> {
   "use step";
   const { error } = await createAdminClient()
@@ -569,7 +562,6 @@ export async function markParsed(materialId: string): Promise<void> {
   if (error) failed("Finishing the parse", error);
 }
 
-/** Marks the parse failed with a reason for the Student. */
 export async function failParse(
   materialId: string,
   reason: string,

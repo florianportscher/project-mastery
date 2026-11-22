@@ -9,9 +9,7 @@ import {
 import type { ChatListItem } from "@/features/chat/types";
 
 type ChatListProviderProps = {
-  /** The Course whose Chats are listed. */
   courseId: string;
-  /** The Course's stored Chats from `getChatList`. */
   chats: ChatListItem[];
   children: ReactNode;
 };

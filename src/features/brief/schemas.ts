@@ -7,12 +7,10 @@ export const briefMessageTooLongMessage = `Your message is too long. Keep it und
 
 export const briefNotFoundMessage = "This Brief does not exist.";
 
-/** Metadata the server attaches to AI messages (see `BriefMessageMetadata`). */
 export const briefMessageMetadataSchema = z
   .object({ modelId: z.string().optional() })
   .optional();
 
-/** A Student's message: text only, no attachments. */
 const studentMessageSchema = z.object({
   id: z.uuid(),
   role: z.literal("user"),

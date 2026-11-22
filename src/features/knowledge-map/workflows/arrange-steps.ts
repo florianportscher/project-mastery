@@ -39,7 +39,6 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * and check report.
  */
 
-/** The most duplicate pairs the check report lists. */
 const MAX_DUPLICATES = 100;
 
 /**
@@ -182,7 +181,6 @@ async function loadUnreadPages(
   });
 }
 
-/** The labels of the Course's Exercises that test no KC, in Course order. */
 async function exercisesWithoutKcs(
   supabase: AdminSupabase,
   courseId: string,

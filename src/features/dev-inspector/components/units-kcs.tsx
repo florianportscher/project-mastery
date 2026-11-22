@@ -22,7 +22,6 @@ import { cn } from "@/lib/utils";
 
 const percent = (share: number) => `${Math.round(share * 100)}%`;
 
-/** Each teaching and exercise batch with its chunks, coverage and KCs. */
 export function UnitsSection({
   snapshot,
   units,
@@ -115,7 +114,6 @@ export function UnitsSection({
   );
 }
 
-/** Every KC with its sources, Prerequisites both ways, `assumes` and origin. */
 export function KcsSection({
   snapshot,
   lookup,

@@ -1,13 +1,10 @@
-/** A Mock exam's page. */
 export function mockExamPath(courseId: string, mockId: string): string {
   return `/courses/${courseId}/mock/${mockId}`;
 }
 
-/** A Mock exam's status as its page shows it. */
 export type MockStatus =
   "assembling" | "ready" | "in_progress" | "submitted" | "graded" | "failed";
 
-/** How long a mock may assemble before it counts as failed. */
 const ASSEMBLY_MS = 60 * 60 * 1000;
 
 /** Why a mock that assembled too long failed, as the database says it. */
@@ -21,7 +18,6 @@ export function mockDeadline(startedAt: string, durationMinutes: number): Date {
   return new Date(Date.parse(startedAt) + durationMinutes * 60_000);
 }
 
-/** How long grading may run before the page starts it again. */
 const GRADING_MS = 60 * 60 * 1000;
 
 /**

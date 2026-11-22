@@ -5,7 +5,6 @@ import { SidebarLink } from "@/components/sidebar-link";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { briefPath } from "@/features/brief/domain/brief-paths";
 
-/** The sidebar's link to the Course's Brief page. */
 export function BriefLink({ courseId }: { courseId: string }) {
   return (
     <SidebarMenu>

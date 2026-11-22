@@ -18,7 +18,6 @@ import type { Supabase } from "@/lib/supabase/types";
  * the Chat, and the attempts their grading stores (ADR 0018).
  */
 
-/** A Chat's Study session as the tutor reads it. */
 export type TutorSession = {
   id: string;
   startedAt: string;
@@ -28,7 +27,6 @@ export type TutorSession = {
   plannedMinutes: number | null;
 };
 
-/** The Chat's Study session, or null without one. */
 export async function loadTutorSession(
   supabase: Supabase,
   chatId: string,
@@ -49,7 +47,6 @@ export async function loadTutorSession(
   );
 }
 
-/** The session's Questions, oldest first, as the tutor context reads them. */
 export async function loadSessionQuestions(
   supabase: Supabase,
   sessionId: string,
@@ -76,14 +73,12 @@ export async function loadSessionQuestions(
   }));
 }
 
-/** Stores a question with its KCs in a session; returns its id. */
 export async function insertQuestion(
   supabase: Supabase,
   question: {
     sessionId: string;
     prompt: string;
     kcIds: string[];
-    /** The Exercise it poses, or null. */
     exerciseId: string | null;
     /** The generated Problem it poses, or null; never with an Exercise. */
     problemId: string | null;

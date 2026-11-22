@@ -1,7 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import type { MapTopicStudy } from "@/features/knowledge-map/types";
 
-/** A Topic's study plan badges, such as "pinned"; nothing without. */
 export function PlanBadges({ badges = [] }: { badges?: string[] }) {
   if (badges.length === 0) return null;
   return (

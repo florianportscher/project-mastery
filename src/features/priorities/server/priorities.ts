@@ -62,7 +62,6 @@ async function computePriorities(
   });
 }
 
-/** Each KC's Priority of a Course by KC id, read with `supabase`. */
 export async function loadKcPriorities(
   supabase: Supabase,
   courseId: string,

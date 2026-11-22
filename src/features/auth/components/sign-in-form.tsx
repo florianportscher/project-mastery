@@ -24,7 +24,6 @@ type SignInFormProps = {
   onReset: () => void;
 };
 
-/** Sign in with a password, or have a sign-in link emailed. */
 export function SignInForm({ next, onReset }: SignInFormProps) {
   const [state, formAction] = useActionState(signIn, null);
   if (state?.ok) return <CheckEmail email={state.email} onBack={onReset} />;

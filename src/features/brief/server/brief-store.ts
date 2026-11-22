@@ -168,7 +168,6 @@ export async function saveMessage(
 
 type BriefUpdate = Database["public"]["Tables"]["briefs"]["Update"];
 
-/** The Course's Brief fields, or null when it has no Brief yet. */
 export async function loadFields(
   supabase: Supabase,
   courseId: string,
@@ -201,7 +200,6 @@ async function loadBrief(supabase: Supabase, courseId: string) {
   return { fields, notes: data.notes, reservedExam };
 }
 
-/** The Course's Materials, oldest upload first. */
 async function loadMaterials(supabase: Supabase, courseId: string) {
   const { data, error } = await supabase
     .from("materials")
@@ -212,7 +210,6 @@ async function loadMaterials(supabase: Supabase, courseId: string) {
   return data;
 }
 
-/** The exams the build found in the Course, in Course order. */
 async function loadFoundExams(
   supabase: Supabase,
   courseId: string,
@@ -318,7 +315,6 @@ async function loadExcludedIds(supabase: Supabase, courseId: string) {
   return new Set(data.map((row) => row.material_id));
 }
 
-/** The fixed fields `saveBrief` can change, by column. */
 export type BriefFieldsUpdate = Pick<
   BriefUpdate,
   | "exam_date"

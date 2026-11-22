@@ -5,7 +5,6 @@ import { KC_DEFINITION } from "@/features/knowledge-map/ai/kc-definition";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { aiTask } from "@/lib/ai/models";
 
-/** A chunk the extraction call is offered. */
 export type OfferedChunk = {
   /** Short and only for the call, such as c1. */
   id: string;
@@ -24,10 +23,8 @@ export type KnownKc = {
   description: string;
 };
 
-/** What the extraction call gets of one teaching batch. */
 export type OfferedUnit = {
   material: string;
-  /** The course language by name, such as English. */
   language: string;
   chunks: readonly [OfferedChunk, ...OfferedChunk[]];
   /** Every live KC stored so far, in Course order. */
@@ -124,7 +121,6 @@ export function chapterExtractionSettings(unit: OfferedUnit) {
   };
 }
 
-/** The user message of an extraction call: the unit, as JSON. */
 export function chapterExtractionMessages(unit: OfferedUnit) {
   return [
     {

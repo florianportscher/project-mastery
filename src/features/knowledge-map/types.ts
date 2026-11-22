@@ -8,18 +8,15 @@ export type MapBuild = {
   finishedAt: string | null;
 } | null;
 
-/** A chunk that teaches a KC, as the map page shows it. */
 export type KcSourceView = {
   chunkId: string;
   material: string;
   /** Such as "p. 3" or "pp. 3–4". */
   pages: string;
-  /** The chunk on its Material's page. */
   link: string;
   markdown: string;
 };
 
-/** A KC as the map page shows it. */
 export type KcView = {
   id: string;
   name: string;
@@ -39,10 +36,8 @@ type PrerequisiteView = {
   to: string;
 };
 
-/** The last build's check report. */
 export type CheckReportView = CheckReport;
 
-/** An Exercise as the map page shows it. */
 export type ExerciseView = {
   id: string;
   /**
@@ -74,7 +69,6 @@ export type MapPriorities = {
   >;
 };
 
-/** A KC's attempt as the map page shows it. */
 export type MapAttempt = {
   /** An ISO timestamp. */
   createdAt: string;
@@ -140,7 +134,6 @@ export type MapTopicStudies = Record<string, MapTopicStudy>;
  */
 export type MapTopicBadges = Record<string, string[]>;
 
-/** A Topic as its page shows it, with what a Student reads around it. */
 export type MapTopicDetail = MapTopic & {
   /** Prerequisites from outside the Topic. */
   anchors: Array<{ id: string; name: string }>;
@@ -148,7 +141,6 @@ export type MapTopicDetail = MapTopic & {
   readingSections: Array<{ label: string; href: string }>;
 };
 
-/** Everything the map page shows of a Course. */
 export type KnowledgeMapView = {
   courseId: string;
   build: MapBuild;

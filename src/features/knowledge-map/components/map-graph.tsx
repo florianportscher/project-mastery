@@ -66,7 +66,6 @@ type KcNodeData = {
   band: MapRecallBand;
   selected: boolean;
   related: boolean;
-  /** The colour-by encoding's colour. */
   color: string;
   /** The factor the visual shrinks by; the layout box stays fixed. */
   scale: number;
@@ -80,7 +79,6 @@ type ExerciseNodeData = {
 type KcNode = Node<KcNodeData, "kc">;
 type ExerciseNode = Node<ExerciseNodeData, "exercise">;
 
-/** A KC: its name and recall band marker. */
 function KcNodeView({ data }: NodeProps<KcNode>) {
   const { kc, band, selected, related, color, scale, badges } = data;
   return (
@@ -135,7 +133,6 @@ function KcNodeView({ data }: NodeProps<KcNode>) {
   );
 }
 
-/** An Exercise: its label and difficulty. */
 function ExerciseNodeView({ data }: NodeProps<ExerciseNode>) {
   const { exercise, selected, related } = data;
   return (

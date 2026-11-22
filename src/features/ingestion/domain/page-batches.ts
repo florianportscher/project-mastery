@@ -1,6 +1,5 @@
 import type { HEADING_STYLES, UnitLabel } from "@/features/ingestion/types";
 
-/** A unit of a page batch, as code places and joins it. */
 export type BatchUnit = {
   markdown: string;
   label: UnitLabel;
@@ -11,7 +10,6 @@ export type BatchUnit = {
   continuesOnNextBatch: boolean;
 };
 
-/** The most pages one batch call reads. */
 export const PAGES_PER_BATCH = 5;
 
 /** Pages that need a call, in order, cut into batches of PAGES_PER_BATCH. */

@@ -161,10 +161,8 @@ const MOCK_QUIZ_REQUEST = "Quiz me";
  */
 const MOCK_READING_REQUEST = "Read with me";
 
-/** The purpose question of the tutor mock's reading. */
 const MOCK_READING_PURPOSE = "Mock purpose: what makes thrust?";
 
-/** The question the tutor mock asks. */
 const MOCK_QUESTION = "Mock question: what is $2 + 2$?";
 
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
@@ -423,7 +421,6 @@ function unsupported(kind: string) {
   };
 }
 
-/** Routes every model id to the mock models, once per process. */
 export function routeToMockModels() {
   globalThis.AI_SDK_DEFAULT_PROVIDER ??= {
     specificationVersion: "v4",

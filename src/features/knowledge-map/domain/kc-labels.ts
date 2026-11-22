@@ -57,7 +57,6 @@ export function checkBadges(
     }));
 }
 
-/** The labels of a KC's check badges. */
 export function checkFlags(
   report: CheckReportView | null,
   kcName: string,

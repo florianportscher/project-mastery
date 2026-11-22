@@ -9,7 +9,6 @@ export const metadata: Metadata = {
   title: "Chunks",
 };
 
-/** A parsed Material's chunks, read-only. */
 export default async function MaterialChunksPage({
   params,
 }: PageProps<"/courses/[courseId]/materials/[materialId]">) {

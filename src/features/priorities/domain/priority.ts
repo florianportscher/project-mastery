@@ -10,18 +10,15 @@
  * Pure code; `server/priorities.ts` feeds it the stored map and Brief.
  */
 
-/** A KC as Priority reads it. */
 type PriorityKc = {
   id: string;
   name: string;
-  /** The ids of the KCs it builds on, its Prerequisites. */
   prerequisites: string[];
   /**
    * The Topic that holds it, then that Topic's ancestors up to the top;
    * empty when no Topic holds it.
    */
   topics: string[];
-  /** The chunks that teach it. */
   sources: string[];
 };
 
@@ -32,23 +29,18 @@ type ExamScope = {
   words: string;
 };
 
-/** What Priority is computed from. */
 export type PriorityInput = {
   kcs: PriorityKc[];
   /** `oldExam`: in an exam the Student confirmed as an old exam. */
   exercises: Array<{ kcs: string[]; oldExam?: boolean }>;
-  /** Each chunk's Material by chunk id. */
   chunkMaterials: Record<string, string>;
-  /** The Course's Materials by id. */
   materials: Record<string, { name: string }>;
-  /** The Materials the Brief excludes. */
   excludedMaterialIds: string[];
   examScopes: ExamScope[];
 };
 
 type PriorityLevel = "high" | "medium" | "low" | "excluded";
 
-/** A KC's Priority with the map page's level and reasons. */
 export type KcPriority = {
   kcId: string;
   priority: number;
@@ -59,7 +51,6 @@ export type KcPriority = {
 const plural = (count: number, one: string, many: string) =>
   `${count} ${count === 1 ? one : many}`;
 
-/** How many Exercises, and old-exam Exercises, test each KC. */
 function exerciseCounts(input: PriorityInput) {
   const counts = new Map(
     input.kcs.map((kc) => [kc.id, { exercises: 0, oldExam: 0 }]),
@@ -119,7 +110,6 @@ function levelsOf(values: Array<{ kcId: string; priority: number }>) {
   );
 }
 
-/** Every KC's Priority, level and reasons, in the order of `input.kcs`. */
 export function kcPriorities(input: PriorityInput): KcPriority[] {
   const counts = exerciseCounts(input);
   const maxOldExam = Math.max(0, ...[...counts.values()].map((c) => c.oldExam));

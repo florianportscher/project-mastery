@@ -37,7 +37,6 @@ export function WithSourcePane({
   children,
 }: {
   courseId: string;
-  /** The Chat. */
   children: ReactNode;
 }) {
   // What the pane shows; one source at a time.

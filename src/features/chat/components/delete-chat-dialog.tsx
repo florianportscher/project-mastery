@@ -16,7 +16,6 @@ type DeleteChatDialogProps = {
   onLeave?: () => void;
 };
 
-/** Asks before deleting a Chat with its messages for good. */
 export function DeleteChatDialog({
   chat,
   open,

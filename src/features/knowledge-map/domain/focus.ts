@@ -63,7 +63,6 @@ export function focusOn(
   return focus;
 }
 
-/** Walks `edges` from `seeds`, from each edge's `from` end to its `to` end. */
 function follow(
   seeds: string[],
   edges: MapGraphEdge[],

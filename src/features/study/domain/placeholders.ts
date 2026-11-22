@@ -15,7 +15,6 @@ export type PlaceholderValue = {
   text?: string;
 };
 
-/** The longest vector, matrix or complex text filled in. */
 const MAX_TEXT = 2_000;
 
 /**
@@ -36,7 +35,6 @@ function formatText(text: string): string | null {
 
 const PLACEHOLDER = /\{\{\s*([^{}]*?)\s*\}\}/g;
 
-/** Significant figures of a filled-in number. */
 const SIGNIFICANT_FIGURES = 4;
 
 /** A number at 4 significant figures, trailing zeros dropped, with its unit. */

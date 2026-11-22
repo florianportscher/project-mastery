@@ -19,7 +19,6 @@ const TOPIC_NODE_SIZE = { width: 256, height: 148 } as const;
 /** Room around a box's Topics, with its name on top. */
 const BOX_PADDING = "[top=44,left=16,bottom=16,right=16]";
 
-/** The id of the box of a Topic with child Topics. */
 export const boxId = (topicId: string) => `box:${topicId}`;
 
 type TopicGraphNode =
@@ -130,7 +129,6 @@ function reducedArrows(
   return edges;
 }
 
-/** The ids reachable from `start` over at least one edge. */
 function reachable(
   start: string,
   successors: Map<string, Set<string>>,

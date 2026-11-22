@@ -40,7 +40,6 @@ export function TopicDetail({
 }: {
   courseId: string;
   topic: MapTopicDetail;
-  /** How many of its KCs are learned, and its Readiness. */
   study?: MapTopicStudy;
   /** Whether the KC panel shows its other stats and Attempts. */
   details?: boolean;

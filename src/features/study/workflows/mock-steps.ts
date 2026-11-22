@@ -36,12 +36,10 @@ import type { Supabase } from "@/lib/supabase/types";
  * while it is still assembling.
  */
 
-/** An item of the planned mock, in position order. */
 type PlannedItem = {
   exerciseId: string | null;
   /** A ready Problem, or the queued one a gap generates. */
   problemId: string | null;
-  /** Whether it waits for its Problem to be generated. */
   gap: boolean;
   topicId: string | null;
   /** The statement; null for a gap until its Problem is written. */
@@ -317,7 +315,6 @@ async function setGapsTotal(
   if (error) failed("Recording the mock exam's gaps", error);
 }
 
-/** Records how many of the mock's gaps assembly has finished. */
 export async function setGapsDone(mockId: string, done: number): Promise<void> {
   "use step";
   const { error } = await createAdminClient()
@@ -392,7 +389,6 @@ export async function finishMockExam(
   }
 }
 
-/** The statements of the ready Problems among `ids`. */
 async function loadStatements(
   supabase: Supabase,
   ids: string[],
@@ -424,7 +420,6 @@ async function fail(
   if (error) failed("Failing the mock exam", error);
 }
 
-/** Fails the assembling mock with the reason. */
 export async function failMockExam(
   mockId: string,
   reason: string,

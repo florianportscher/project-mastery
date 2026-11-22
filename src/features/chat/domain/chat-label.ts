@@ -1,10 +1,8 @@
 import { messageText } from "@/lib/ai/reply";
 import type { ChatUIMessage } from "@/features/chat/types";
 
-/** The longest label shown for an untitled Chat, before the ellipsis. */
 const MAX_LABEL_LENGTH = 40;
 
-/** The longest generated title, before the ellipsis. */
 const MAX_GENERATED_TITLE_LENGTH = 60;
 
 /** `text` on one line, cut at a word to at most `max` characters plus "…". */
@@ -37,7 +35,6 @@ export function chatLabel({
   firstMessage,
 }: {
   title: string | null;
-  /** The parts of the Chat's first message. */
   firstMessage: ChatUIMessage["parts"] | null;
 }): string {
   if (title?.trim()) return title.trim();

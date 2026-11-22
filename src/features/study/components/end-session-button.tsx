@@ -5,7 +5,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { endStudySession } from "@/features/study/server/actions";
 
-/** Ends a Chat's Study session now, for the Chat's header. */
 export function EndSessionButton({
   chatId,
   disabled,

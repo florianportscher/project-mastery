@@ -37,7 +37,6 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * heartbeat, and does nothing once the build no longer runs.
  */
 
-/** The most units one step extracts or consolidates. */
 export const UNITS_PER_STEP = 8;
 
 /**
@@ -113,7 +112,6 @@ export async function runCalls<Item>(
   );
 }
 
-/** A unit of the Course, as the build reads it: a batch of one Material. */
 export type CourseUnit = {
   materialId: string;
   kind: "content" | "exercise";
@@ -129,7 +127,6 @@ export type CourseUnit = {
    * solutions as Markdown.
    */
   chunks: Array<{ id: string; heading: string | null; markdown: string }>;
-  /** An exercise batch's Exercises, in the order of `chunks`. */
   exercises?: BatchExercise[];
 };
 
@@ -193,14 +190,12 @@ export async function loadCourseUnits(
   });
 }
 
-/** A unit's key among the stored extractions. */
 export const unitKey = (unit: {
   materialId: string;
   kind: string;
   batch: number;
 }) => `${unit.materialId}/${unit.kind}/${unit.batch}`;
 
-/** A stored unit extraction, keyed as `unitKey`. */
 export type StoredUnit = {
   id: string;
   key: string;
@@ -210,7 +205,6 @@ export type StoredUnit = {
   assumesMatched: boolean;
 };
 
-/** The Course's stored unit extractions. */
 export async function loadStoredUnits(
   supabase: AdminSupabase,
   courseId: string,
@@ -321,7 +315,6 @@ export function planAttempts(
     .toSorted((a, b) => a.failures - b.failures || a.later - b.later);
 }
 
-/** A stored extraction whose KCs are stored, as repeats of those KCs. */
 function asRepeats(
   extraction: StoredExtraction,
   kcIds: readonly string[],
@@ -339,7 +332,6 @@ function asRepeats(
   };
 }
 
-/** One unit's attempt in an extraction step. */
 export type UnitAttempt = {
   unit: CourseUnit;
   failures: number;
@@ -518,7 +510,6 @@ export async function prepareBuild(
   return "ready";
 }
 
-/** Retires the Course's live KCs whose sources are all gone. */
 export async function retireUnsourcedKcs(
   supabase: AdminSupabase,
   courseId: string,
@@ -529,7 +520,6 @@ export async function retireUnsourcedKcs(
   if (error) failed("Retiring the KCs without sources", error);
 }
 
-/** Marks the running build failed with a reason for the Student. */
 export async function failBuild(
   courseId: string,
   reason: string,

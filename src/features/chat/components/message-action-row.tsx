@@ -23,15 +23,11 @@ export function MessageActionRow({
   children,
 }: {
   from: "user" | "assistant";
-  /** The message's text, which Copy copies. */
   text: string;
-  /** Whether the reply was stopped before it ended. */
   stopped?: boolean;
   /** Keeps the row's space but shows nothing and takes no clicks. */
   hidden?: boolean;
-  /** Offers Regenerate, for the last reply. */
   onRegenerate?: () => void;
-  /** More actions, after Copy and Regenerate. */
   children?: ReactNode;
 }) {
   return (

@@ -40,7 +40,6 @@ const schema = z.object({
   condensedLines: z.array(z.string().trim().min(1).max(300)).max(60).nullable(),
 });
 
-/** The call for one session and how to read its notes. */
 export function closeCall(input: CloseInput) {
   return {
     call: {

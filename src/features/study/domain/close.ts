@@ -6,10 +6,8 @@
 /** A Memory longer than this is condensed by the close call. */
 const CONDENSE_MEMORY_FROM = 3_000;
 
-/** The most characters of a Topic note. */
 export const MAX_TOPIC_NOTE_LENGTH = 1_500;
 
-/** A Topic the session's Attempts touched, with its note so far. */
 export type TouchedTopic = {
   id: string;
   name: string;
@@ -17,21 +15,17 @@ export type TouchedTopic = {
   note: string | null;
 };
 
-/** What a session's close is built from, as stored. */
 export type CloseSource = {
-  /** The Chat's messages, oldest first, with their stored parts. */
   messages: Array<{ role: string; parts: unknown }>;
   questions: Array<{
     prompt: string;
     answer: string | null;
     attempts: Array<{ kcName: string; result: string; help: string }>;
   }>;
-  /** The Topics of the KCs of the session's Attempts. */
   topics: TouchedTopic[];
   memory: string;
 };
 
-/** What the close call reads. */
 export type CloseInput = {
   /** The messages' text, tool calls and other parts left out. */
   transcript: Array<{ role: "student" | "tutor"; text: string }>;
@@ -39,7 +33,6 @@ export type CloseInput = {
   /** The Topics to write a note for; none without Attempts. */
   topics: TouchedTopic[];
   memory: string;
-  /** Whether the call condenses the Memory, once it is long. */
   condensesMemory: boolean;
 };
 
@@ -51,7 +44,6 @@ export type CloseNotes = {
   condensedMemory: string | null;
 };
 
-/** The text parts of a message's stored parts, joined. */
 function messageText(parts: unknown): string {
   if (!Array.isArray(parts)) return "";
   return parts

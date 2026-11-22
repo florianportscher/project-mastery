@@ -41,7 +41,6 @@ function close() {
   for (const listener of listeners) listener();
 }
 
-/** A section of the app, named in the welcome: a link when it has one. */
 function Section({ href, children }: { href?: string; children: string }) {
   if (!href) return <span className="text-foreground">{children}</span>;
   return (

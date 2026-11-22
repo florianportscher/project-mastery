@@ -4,7 +4,6 @@ import {
 } from "@/features/ingestion/domain/parse-failure";
 import type { ParseStatus } from "@/features/ingestion/types";
 
-/** A Material's parse state, as the Materials page reads it. */
 export type ParseState = {
   status: ParseStatus;
   pagesDone: number;

@@ -16,7 +16,6 @@ import {
  */
 const FINAL_STRETCH_DAYS = 7;
 
-/** Whether `now` falls in the final stretch before `examDate`. */
 export function inFinalStretch(examDate: string | null, now: Date): boolean {
   if (examDate === null) return false;
   const days = daysBetween(utcDay(now), examDate);
@@ -74,7 +73,6 @@ export function rankNext(input: {
   prerequisites: Array<{ from: string; to: string }>;
   /** Priority by KC id; a missing one counts as 0. */
   priorities: Record<string, number>;
-  /** The replayed recall of each taught KC. */
   recall: Map<string, KcRecall>;
   pace: Pace;
   scope: TopicScope[];
@@ -200,7 +198,6 @@ function afterAnchors(
   return ordered;
 }
 
-/** The Topics each Topic reaches over one or more Topic arrows, by id. */
 function topicReach(
   topics: PlanTopic[],
   prerequisites: Array<{ from: string; to: string }>,

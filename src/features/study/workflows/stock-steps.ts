@@ -34,7 +34,6 @@ import type { Supabase } from "@/lib/supabase/types";
  * is signed in, and so scopes every query to the Course itself.
  */
 
-/** A Course's generated Problem as planning reads it. */
 type StoredProblem = {
   id: string;
   status: string;
@@ -69,7 +68,6 @@ async function loadCourseProblems(
   }));
 }
 
-/** What a run generates: the Student's queued Problems, oldest first. */
 export type RunPlan = { studentId: string; problemIds: string[] };
 
 /**
@@ -193,7 +191,6 @@ export async function planProblems(
   return { studentId: owner, problemIds: queued };
 }
 
-/** The Course's KCs due within the review window at `now`, soonest first. */
 async function dueKcs(
   supabase: Supabase,
   courseId: string,
@@ -211,7 +208,6 @@ async function dueKcs(
   );
 }
 
-/** Inserts the planned Problems with their KCs. */
 export async function queueProblems(
   supabase: Supabase,
   owner: string,
@@ -249,7 +245,6 @@ export async function queueProblems(
   }
 }
 
-/** Marks the Course's running run done. */
 export async function finishRun(courseId: string): Promise<void> {
   "use step";
   const { error } = await createAdminClient()
