@@ -6,7 +6,6 @@ import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { newChatPath } from "@/features/chat/domain/chat-paths";
 import { useChatList } from "@/features/chat/hooks/use-chat-list";
 
-/** The sidebar's New chat link, opening an empty Chat in the Course. */
 export function NewChatLink() {
   const { courseId } = useChatList();
 
