@@ -249,3 +249,72 @@ export async function queryStagingSql(
     await sql.end();
   }
 }
+
+/**
+ * The tables one map build fills, in the order they are emptied. Their rows
+ * take the rows that hang off them: Topics take `topic_kcs`, notes and choices;
+ * Exercises take `exercise_kcs` and `exercise_chunks`; KCs take `kc_sources`,
+ * `prerequisite_links`, `attempts`, `question_kcs`, `problem_kcs` and
+ * `kc_priorities`. Materials, `material_pages` and `chunks` (the parse) stay.
+ */
+export const MAP_BUILD_TABLES = [
+  "topics",
+  "exercises",
+  "exams",
+  "unit_extractions",
+  "kcs",
+  "knowledge_map_builds",
+] as const;
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Deletes a Course's whole map build on staging and keeps its Materials and
+ * their parse, so the next Build starts from the chunks. Uses `writeStaging`,
+ * so it is bound by ADR 0029: one filtered DELETE per table, no undo. Refuses
+ * an unknown Course and a build that is running.
+ */
+export async function resetStagingMap(
+  courseId: string,
+  env: Env = process.env,
+  fetchFn: typeof fetch = fetch,
+): Promise<string> {
+  if (!UUID.test(courseId)) {
+    throw new AgentError(`"${courseId}" is not a Course id (a UUID).`);
+  }
+  const course = JSON.parse(
+    await queryStaging(`courses?id=eq.${courseId}&select=id`, env, fetchFn),
+  ) as unknown[];
+  if (course.length === 0) {
+    throw new AgentError(`No Course ${courseId} on staging.`);
+  }
+  const builds = JSON.parse(
+    await queryStaging(
+      `knowledge_map_builds?course_id=eq.${courseId}&select=status`,
+      env,
+      fetchFn,
+    ),
+  ) as { status: string }[];
+  if (builds[0]?.status === "building") {
+    throw new AgentError(
+      "This Course's build is running. Wait for it to end, then reset.",
+    );
+  }
+  const lines: string[] = [];
+  for (const table of MAP_BUILD_TABLES) {
+    // `course_id` is the one column every table here has (the builds table has no `id`).
+    const rows = JSON.parse(
+      await writeStaging(
+        `DELETE ${table}?course_id=eq.${courseId}&select=course_id`,
+        undefined,
+        env,
+        fetchFn,
+      ),
+    ) as unknown[];
+    lines.push(`${table.padEnd(22)}${rows.length} deleted`);
+  }
+  lines.push(
+    "Materials and chunks kept. Deleted with the KCs: Students' attempts, Priorities and Topic choices and notes for this Course.",
+  );
+  return lines.join("\n");
+}

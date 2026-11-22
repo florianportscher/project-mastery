@@ -66,39 +66,7 @@ pnpm -s agent check           # compile issues, runtime and server errors
 
 ## Scripts
 
-| Command                        | Description                                                                        |
-| ------------------------------ | ---------------------------------------------------------------------------------- |
-| `pnpm dev`                     | Start the dev server                                                               |
-| `pnpm build`                   | Production build                                                                   |
-| `pnpm start`                   | Serve the production build                                                         |
-| `pnpm lint`                    | ESLint (zero warnings allowed)                                                     |
-| `pnpm lint:fix`                | ESLint with autofix                                                                |
-| `pnpm typecheck`               | Generate route types and run `tsc`                                                 |
-| `pnpm format`                  | Format with Prettier                                                               |
-| `pnpm test`                    | Unit tests in watch mode                                                           |
-| `pnpm test:run`                | Unit tests once                                                                    |
-| `pnpm test:coverage`           | Unit tests with coverage report                                                    |
-| `pnpm test:e2e`                | Playwright E2E tests (run `pnpm db:start` first; rebuilds when the build is stale) |
-| `pnpm check`                   | Lint + typecheck + format check + unit tests                                       |
-| `pnpm smoke <name>`            | Run one feature path once against a real model and check it (not in CI)            |
-| `pnpm gold <command>`          | Pull, seed or list gold course snapshots (`evals/gold/`)                           |
-| `pnpm tutor-eval <command>`    | Run a tutoring scenario against the local database (`evals/tutor/scenarios/`)      |
-| `pnpm brief-eval <command>`    | Run a Brief scenario against the local database (`evals/brief/scenarios/`)         |
-| `pnpm -s metrics`              | Score Chats in Langfuse (local operator script)                                    |
-| `pnpm langfuse:models`         | Push the model prices in `src/lib/ai/prices.ts` to Langfuse                        |
-| `pnpm sitting`                 | Start a Claude Code `/sitting` session (maintainer)                                |
-| `pnpm shift <issue>`           | Start a Claude Code `/build` shift on an issue (maintainer)                        |
-| `pnpm -s agent`                | Drive the running app from the terminal                                            |
-| `pnpm nit "<title>"`           | File a one-line inbox issue                                                        |
-| `pnpm -s retro`                | Digest recent Claude Code runs of this repo for a retro                            |
-| `pnpm db:start`                | Start local Supabase (Docker)                                                      |
-| `pnpm db:stop`                 | Stop local Supabase                                                                |
-| `pnpm db:status`               | Show local Supabase URLs and API keys                                              |
-| `pnpm db:reset`                | Recreate the local database from migrations                                        |
-| `pnpm db:migration:new <name>` | Create a new SQL migration file                                                    |
-| `pnpm db:types`                | Generate TypeScript types from the local DB                                        |
-| `pnpm db:lint`                 | Lint the local database schema                                                     |
-| `pnpm db:test`                 | Run pgTAP database tests (RLS policies)                                            |
+Every `pnpm` script, the `pnpm -s agent` commands and the Claude Code slash skills are listed in [docs/agents/commands.md](docs/agents/commands.md). A test keeps that list complete.
 
 ## Where code goes
 

@@ -4,6 +4,7 @@ import {
   DEFAULT_LIMIT,
   MAX_LIMIT,
   queryStaging,
+  resetStagingMap,
   stagingEnv,
   stagingRequestUrl,
   stagingWriteRequest,
@@ -180,5 +181,64 @@ describe("writeStaging", () => {
     );
     expect(error.message).toContain("409");
     expect(error.message).not.toContain("sb_secret_test");
+  });
+});
+
+describe("resetStagingMap", () => {
+  const COURSE = "11111111-2222-4333-8444-555555555555";
+
+  /** A staging that knows the Course, reports `status` for its build and records each request. */
+  function staging(status?: string, known = true) {
+    return vi.fn(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = new URL(input.toString());
+      if (init?.method === "DELETE") {
+        return new Response('[{"course_id":"x"},{"course_id":"x"}]');
+      }
+      if (url.pathname.endsWith("/courses")) {
+        return new Response(known ? '[{"id":"x"}]' : "[]");
+      }
+      return new Response(status ? `[{"status":"${status}"}]` : "[]");
+    });
+  }
+
+  it("deletes the map tables for the Course and leaves Materials and chunks", async () => {
+    const fetchFn = staging("built");
+    const output = await resetStagingMap(COURSE, ENV, fetchFn);
+
+    const deletes = fetchFn.mock.calls
+      .filter(([, init]) => init?.method === "DELETE")
+      .map(([url]) => new URL(url.toString()));
+    expect(deletes.map((url) => url.pathname.split("/").pop())).toEqual([
+      "topics",
+      "exercises",
+      "exams",
+      "unit_extractions",
+      "kcs",
+      "knowledge_map_builds",
+    ]);
+    for (const url of deletes) {
+      expect(url.searchParams.get("course_id")).toBe(`eq.${COURSE}`);
+    }
+    expect(output).toContain("kcs                   2 deleted");
+    expect(output).toContain("Materials and chunks kept");
+  });
+
+  it("refuses a running build and deletes nothing", async () => {
+    const fetchFn = staging("building");
+    await expect(resetStagingMap(COURSE, ENV, fetchFn)).rejects.toThrow(
+      /running/,
+    );
+    expect(
+      fetchFn.mock.calls.some(([, init]) => init?.method === "DELETE"),
+    ).toBe(false);
+  });
+
+  it("refuses an unknown Course and an id that is not a UUID", async () => {
+    await expect(
+      resetStagingMap(COURSE, ENV, staging(undefined, false)),
+    ).rejects.toThrow(/No Course/);
+    await expect(resetStagingMap("7", ENV, staging())).rejects.toThrow(
+      /not a Course id/,
+    );
   });
 });

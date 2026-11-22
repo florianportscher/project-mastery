@@ -149,7 +149,7 @@ The harness follows a few rules: fix a failure in the environment (a lint rule, 
 
 ## Run it locally
 
-The live demo needs no setup. To run the app yourself or change it, see [CONTRIBUTING.md](CONTRIBUTING.md): local Supabase in Docker, AI keys, scripts and the agent CLI.
+The live demo needs no setup. To run the app yourself or change it, see [CONTRIBUTING.md](CONTRIBUTING.md): local Supabase in Docker, AI keys, scripts and the agent CLI. [All commands and slash skills](docs/agents/commands.md) are listed in one place.
 
 ## License
 
