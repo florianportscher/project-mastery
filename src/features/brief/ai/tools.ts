@@ -129,13 +129,13 @@ export function briefTools(actions: BriefToolActions) {
     }),
     addNote: tool({
       description:
-        "Store one new fact the Student said about the exam that the Brief does not hold yet, such as a teacher's hint, what changed this year, what they know or where they struggle. The date, goal, format, excluded Materials and old exams belong in saveBrief, and what the exam leaves out or stresses in setExamScope, not in a note. Pass a neutral third-person paraphrase that keeps every concrete fact, in the Student's language.",
+        "Store one new fact the Student said about the exam that the Brief does not hold yet, such as a teacher's hint, what changed this year, what they know or where they struggle. The date, goal, format, excluded Materials and old exams belong in saveBrief, and what the exam leaves out or stresses in setExamScope, not in a note. Pass the fact itself as a neutral paraphrase that keeps every concrete fact, in the Student's language, not a report of who said it. Never a note for what the Student doesn't know or skipped.",
       inputSchema: addNoteInputSchema,
       execute: ({ text }) => run(() => actions.addNote(text)),
     }),
     setExamScope: tool({
       description:
-        "Store that the exam leaves out or stresses one Topic, once the Student has confirmed it in their own words. Pass their words verbatim. scope null removes it.",
+        "Store that the exam leaves out or stresses one Topic, once the Student has confirmed it in their own words. Only call it in the reply to their yes to a Topic you named: a Topic they bring up themselves is proposed by its name first, and stored after they confirm. Pass their words verbatim. scope null removes it.",
       inputSchema: setExamScopeInputSchema,
       execute: (input) => run(() => actions.setExamScope(input)),
     }),
