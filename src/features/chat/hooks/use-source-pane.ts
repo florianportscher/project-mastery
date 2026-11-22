@@ -15,7 +15,6 @@ export const SourcePaneContext = createContext<SourcePaneContextValue | null>(
   null,
 );
 
-/** The Chat's source pane; null outside a Chat. */
 export function useSourcePane() {
   return useContext(SourcePaneContext);
 }

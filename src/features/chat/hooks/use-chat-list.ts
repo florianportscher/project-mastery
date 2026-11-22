@@ -22,7 +22,6 @@ export const ChatListContext = createContext<ChatListContextValue>({
   relabelChat: () => {},
 });
 
-/** The sidebar's Chat list, from the nearest `ChatListProvider`. */
 export function useChatList() {
   return useContext(ChatListContext);
 }

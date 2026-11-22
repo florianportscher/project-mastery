@@ -452,7 +452,6 @@ async function streamReply({
   });
 }
 
-/** The Reading sections the history's `showReading` calls opened, in order. */
 function openedSections(history: ChatUIMessage[]): string[] {
   return history.flatMap(({ parts }) =>
     parts.flatMap((part) => {

@@ -4,7 +4,6 @@ import { CheckIcon, CopyIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MessageAction } from "@/components/ai-elements/message";
 
-/** Copies a message's text, confirming it briefly with a check mark. */
 export function CopyAction({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   useEffect(() => {

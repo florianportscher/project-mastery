@@ -1,7 +1,6 @@
 import { costUsd, type TokenUsage } from "@/lib/ai/cost";
 import type { ReplyUsage } from "@/features/chat/types";
 
-/** A reply's usage as the Chat shows it, priced with the model that answered. */
 export function replyUsage(
   modelId: string,
   usage: TokenUsage,

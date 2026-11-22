@@ -4,7 +4,6 @@ import type { ChatUIMessage } from "@/features/chat/types";
 /** How far a KC got today. */
 type DotState = "new" | "practised" | "shown";
 
-/** What the strip above a Chat's messages shows. */
 export type SessionStrip = {
   /** The session's Topic; null without one. */
   topic: string | null;

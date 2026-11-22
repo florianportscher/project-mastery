@@ -51,7 +51,6 @@ export function ChatList() {
   );
 }
 
-/** One Chat in the list, with its "…" menu to rename or delete it. */
 function ChatListEntry({
   chat,
   href,
