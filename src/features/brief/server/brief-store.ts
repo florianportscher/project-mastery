@@ -200,7 +200,6 @@ async function loadBrief(supabase: Supabase, courseId: string) {
   return { fields, notes: data.notes, reservedExam };
 }
 
-/** The Course's Materials, oldest upload first. */
 async function loadMaterials(supabase: Supabase, courseId: string) {
   const { data, error } = await supabase
     .from("materials")
@@ -211,7 +210,6 @@ async function loadMaterials(supabase: Supabase, courseId: string) {
   return data;
 }
 
-/** The exams the build found in the Course, in Course order. */
 async function loadFoundExams(
   supabase: Supabase,
   courseId: string,

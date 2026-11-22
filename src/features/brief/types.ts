@@ -2,7 +2,6 @@ import type { UIMessage } from "ai";
 import type { BriefFields } from "@/features/brief/domain/intake";
 
 type BriefMessageMetadata = {
-  /** The model that wrote the reply. */
   modelId?: string;
 };
 
@@ -14,7 +13,6 @@ export type ExamFacts = Pick<BriefFields, "examDate" | "goal">;
 export type BriefWithMessages = {
   courseId: string;
   messages: BriefUIMessage[];
-  /** The exam facts, each null until answered. */
   fields: BriefFields;
   /** Markdown the AI keeps about the exam; null when empty. */
   notes: string | null;

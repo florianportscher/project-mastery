@@ -28,7 +28,6 @@ export type BriefExam = {
   name: string;
   /** The Student's answer: an old exam or not; null before they answered. */
   confirmed: boolean | null;
-  /** Whether the Brief has asked about it. */
   asked: boolean;
 };
 
@@ -36,9 +35,7 @@ export type BriefExam = {
 export type OldExam = { id: string; name: string };
 
 export type ReservedExam = {
-  /** Whether the Student answered, with an exam or with none. */
   answered: boolean;
-  /** The reserved old exam; null for none. */
   examId: string | null;
 };
 
@@ -57,7 +54,6 @@ type CourseLanguage = {
 export type BriefExamScope = {
   topicId: string;
   scope: "excluded" | "emphasized";
-  /** The Student's words. */
   words: string;
 };
 
