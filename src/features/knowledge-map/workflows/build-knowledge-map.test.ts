@@ -12,7 +12,6 @@ import {
   flatTree,
   liveKcs,
   type SentCourse,
-  type SentUnit,
   topicTree,
   queueBuild,
   seedMaterial,
@@ -405,39 +404,6 @@ describe("Update map", () => {
       chaptersWithoutKcs: ["Sums"],
       exercisesWithoutKcs: [],
     });
-  });
-
-  test("forms no teaching unit from an old exam, and drops what an earlier build took from it", async () => {
-    seedMaterial(db, {
-      chapters: [
-        { title: "Vectors" },
-        { title: "Final exam", children: [{ title: "Task 1" }] },
-      ],
-    });
-    useBuildModels(kcPerChunk);
-    await update();
-    expect(liveKcs(db)).toEqual([
-      "About Vectors.",
-      "About Final exam.",
-      "About Task 1.",
-    ]);
-
-    // The Student confirms the exam; its subtree no longer teaches. The
-    // unit, packed anew, names what it taught before as repeats.
-    db.tables.chapters.find((c) => c.title === "Final exam")!.is_exam = true;
-    const known = (unit: SentUnit) => unit.knownKcs.map((kc) => kc.name);
-    useBuildModels({
-      ...kcPerChunk,
-      kcsOf: (unit) =>
-        kcPerChunk.kcsOf(unit).filter((kc) => !known(unit).includes(kc)),
-      repeatsOf: (unit) =>
-        kcPerChunk.kcsOf(unit).filter((kc) => known(unit).includes(kc)),
-    });
-    await update();
-
-    expect(liveKcs(db)).toEqual(["About Vectors."]);
-    expect(db.tables.chapter_extractions).toHaveLength(1);
-    expect(build()?.check_report).toMatchObject({ chaptersWithoutKcs: [] });
   });
 
   test("makes the Topic tree call once, then keeps the tree and its ids without a call", async () => {

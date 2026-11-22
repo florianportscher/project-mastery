@@ -32,7 +32,6 @@ function input(overrides: Partial<PriorityInput> = {}): PriorityInput {
       sheet: { name: "Sheet" },
       exam: { name: "Exam 2024" },
     },
-    examChunkIds: ["q1"],
     excludedMaterialIds: [],
     examScopes: [],
     ...overrides,
@@ -57,9 +56,9 @@ describe("kcPriorities", () => {
       kcPriorities(
         input({
           exercises: [
-            { questionChunk: "q1", kcs: ["a", "a"] },
-            { questionChunk: "q2", kcs: ["a", "b"] },
-            { questionChunk: "q3", kcs: ["b"] },
+            { kcs: ["a", "a"], oldExam: true },
+            { kcs: ["a", "b"] },
+            { kcs: ["b"] },
           ],
         }),
       ),
@@ -136,7 +135,7 @@ describe("kcPriorities", () => {
           { ...kc("b"), prerequisites: ["a"] },
           { ...kc("c"), prerequisites: ["b"] },
         ],
-        exercises: [{ questionChunk: "q1", kcs: ["c"] }],
+        exercises: [{ kcs: ["c"], oldExam: true }],
       }),
     );
     expect(result.map((value) => value.priority)).toEqual([1, 1, 1]);

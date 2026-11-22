@@ -74,10 +74,10 @@ export const briefSmoke: SmokeCheck = {
         .select("material_id")
         .eq("course_id", courseId),
       supabase
-        .from("chapters")
+        .from("exams")
         .select("id")
         .eq("course_id", courseId)
-        .eq("is_exam", true),
+        .eq("confirmed", true),
       supabase
         .from("exam_scopes")
         .select("topic_id, scope, words")
@@ -111,7 +111,7 @@ export const briefSmoke: SmokeCheck = {
       client,
       studentId,
       courseId,
-      seeded.examChapterId,
+      seeded.examId,
       asked,
     );
     return [
@@ -128,8 +128,8 @@ export const briefSmoke: SmokeCheck = {
         `${excludedIds.length} excluded`,
       ),
       result(
-        `the lecture notes' Chapter ${EXAM_TITLE} is the only old exam`,
-        examIds.length === 1 && examIds[0] === seeded.examChapterId,
+        `the found exam ${EXAM_TITLE} is the only old exam`,
+        examIds.length === 1 && examIds[0] === seeded.examId,
         `${examIds.length} old exams`,
       ),
       result(
@@ -192,7 +192,7 @@ async function answerReservation(
 
   const stored = await supabase
     .from("briefs")
-    .select("reserved_exam_chapter_id, reserved_exam_answered")
+    .select("reserved_exam_id, reserved_exam_answered")
     .eq("course_id", courseId)
     .single();
   if (stored.error) throw new Error(stored.error.message);
@@ -205,7 +205,7 @@ async function answerReservation(
     result(
       "the reserved exam is stored",
       stored.data.reserved_exam_answered &&
-        stored.data.reserved_exam_chapter_id === examId,
+        stored.data.reserved_exam_id === examId,
       JSON.stringify(stored.data),
     ),
   ];

@@ -6,7 +6,7 @@ import type { ExtractedKc } from "@/features/knowledge-map/domain/chapter-extrac
 import type { ExtractedExercise } from "@/features/knowledge-map/schemas";
 
 /**
- * The extraction of one exercise unit (task `exercise`): per subtask, the
+ * The extraction of one exercise batch (task `exercise`): per Exercise, the
  * candidate KCs it tests, new KCs only when none fits, and its final
  * answers as printed. Checked in code against the ids the call was offered;
  * the difficulty follows in code once the KCs are stored.
@@ -18,8 +18,8 @@ const MAX_EXERCISE_KCS = 6;
 /** The most final answers one Exercise keeps. */
 const MAX_FINAL_ANSWERS = 10;
 
-/** What the call answers for one subtask, with the call's ids. */
-export type AnsweredSubtask = {
+/** What the call answers for one Exercise, with the call's ids. */
+export type ExerciseAnswer = {
   id: string;
   notAnExercise: boolean;
   kcIds: string[];
@@ -27,13 +27,15 @@ export type AnsweredSubtask = {
   finalAnswers: AnswerKey[];
 };
 
-/** A subtask the call was offered, with its stored chunks. */
-export type OfferedSubtask = {
-  /** The call's id, such as s1. */
+/** An Exercise the call was offered, with its stored chunks. */
+export type OfferedExercise = {
+  /** The call's id, such as x1. */
   id: string;
+  /** Its first question chunk. */
   chunkId: string;
-  solutionChunkId: string | null;
-  /** The printed solution's Markdown; null without one. */
+  questionChunkIds: string[];
+  solutionChunkIds: string[];
+  /** The printed solutions' Markdown; null without one. */
   solution: string | null;
 };
 
@@ -46,21 +48,21 @@ function solutionLines(solution: string | null): number | null {
 const nameKey = (name: string) => name.trim().toLowerCase();
 
 /**
- * Checks the call's answer for an exercise unit: an unknown candidate id is
- * dropped, a new KC named by an offered id is that candidate, a new KC
- * whose name the unit already proposed is the same KC, and
- * an Exercise tests at most MAX_EXERCISE_KCS KCs, candidates first. A
- * subtask the call left out is an Exercise without KCs or final answers.
+ * Checks the call's answer for an exercise batch: an unknown candidate id
+ * is dropped, a new KC named by an offered id is that candidate, a new KC
+ * whose name the batch already proposed is the same KC, and an Exercise
+ * tests at most MAX_EXERCISE_KCS KCs, candidates first. An Exercise the
+ * call left out has no KCs or final answers.
  */
 export function checkExerciseAnswer(
-  answer: { subtasks: AnsweredSubtask[] },
-  subtasks: readonly OfferedSubtask[],
+  answer: { exercises: ExerciseAnswer[] },
+  offered: readonly OfferedExercise[],
   kcIdOf: ReadonlyMap<string, string>,
 ): { kcs: ExtractedKc[]; exercises: ExtractedExercise[] } {
   const kcs: ExtractedKc[] = [];
   const indexOf = new Map<string, number>();
-  const exercises = subtasks.map((subtask): ExtractedExercise => {
-    const answered = answer.subtasks.find((given) => given.id === subtask.id);
+  const exercises = offered.map((subtask): ExtractedExercise => {
+    const answered = answer.exercises.find((given) => given.id === subtask.id);
     // A new KC named by an offered id, such as k5, is that offered KC.
     const named = [
       ...(answered?.kcIds ?? []),
@@ -93,7 +95,8 @@ export function checkExerciseAnswer(
     }
     return {
       chunkId: subtask.chunkId,
-      solutionChunkId: subtask.solutionChunkId,
+      questionChunkIds: subtask.questionChunkIds,
+      solutionChunkIds: subtask.solutionChunkIds,
       notAnExercise: answered?.notAnExercise ?? false,
       kcIds,
       newKcs,
@@ -106,7 +109,7 @@ export function checkExerciseAnswer(
 
 /** The answer keys with a label and a value mathjs can parse. */
 function checkFinalAnswers(
-  answers: AnsweredSubtask["finalAnswers"],
+  answers: ExerciseAnswer["finalAnswers"],
 ): AnswerKey[] {
   return answers
     .flatMap((answer) => {
@@ -131,29 +134,4 @@ export function exerciseDifficulty(
   if (kcCount >= 3 || (lines ?? 0) >= 12) return 3;
   if (kcCount <= 1 && (lines ?? 0) <= 4) return 1;
   return 2;
-}
-
-/**
- * Whether an exercise unit needs its extraction call: it has none for its
- * content, or an exercise chunk's paired solution is no longer the one it
- * was extracted with.
- */
-export function needsExerciseExtraction(
-  stored: { contentHash: string; exercises?: ExtractedExercise[] } | undefined,
-  part: { contentHash: string; exerciseChunkIds: readonly string[] },
-  solutionOf: (chunkId: string) => string | null,
-): boolean {
-  if (!stored?.exercises || stored.contentHash !== part.contentHash) {
-    return true;
-  }
-  const extracted = new Map(
-    stored.exercises.map((exercise) => [
-      exercise.chunkId,
-      exercise.solutionChunkId,
-    ]),
-  );
-  return part.exerciseChunkIds.some(
-    (chunkId) =>
-      !extracted.has(chunkId) || extracted.get(chunkId) !== solutionOf(chunkId),
-  );
 }

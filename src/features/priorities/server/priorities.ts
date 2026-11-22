@@ -55,10 +55,7 @@ async function computePriorities(
         sources: kc.sources,
       };
     }),
-    exercises: map.exercises.map(({ questionChunk, kcs }) => ({
-      questionChunk,
-      kcs,
-    })),
+    exercises: map.exercises.map(({ kcs, oldExam }) => ({ kcs, oldExam })),
     ...chunks,
     excludedMaterialIds,
     examScopes,

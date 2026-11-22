@@ -12,7 +12,6 @@ const chapter = (
   id: string,
   title: string,
   parentId: string | null = "root",
-  isExam = false,
 ): SnapshotChapter => ({
   id,
   materialId: "m",
@@ -21,8 +20,6 @@ const chapter = (
   position: 0,
   title,
   pageFrom: 1,
-  isExam,
-  examProposed: false,
 });
 const chunk = (
   id: string,
@@ -75,28 +72,25 @@ const snapshot = (parts: Partial<Snapshot>): Snapshot => ({
   kcs: [],
   prerequisites: [],
   exercises: [],
+  exams: [],
   exerciseKcs: [],
-  exerciseSolutions: [],
   topics: [],
   build: null,
   ...parts,
 });
 
 describe("buildFlags", () => {
-  test("marks Chapters whose content no live KC cites, outside old exams", () => {
+  test("marks Chapters whose content no live KC cites", () => {
     const flags = buildFlags(
       snapshot({
         chapters: [
           chapter("root", "Script", null),
           chapter("a", "Groups"),
           chapter("b", "Rings"),
-          chapter("exam", "Exam 2023", "root", true),
-          chapter("q", "Task 1", "exam"),
         ],
         chunks: [
           chunk("a1", "a"),
           chunk("b1", "b"),
-          chunk("e1", "q"),
           chunk("x1", "root", 10, "exercise"),
         ],
         kcs: [kc("k1", ["a1"]), kc("k2", ["b1"], "Ring", "2026-01-01")],

@@ -179,8 +179,6 @@ function ChapterNode({
         <span className="font-medium">{chapter.title}</span>
         <span className="text-xs text-muted-foreground">
           p. {chapter.pageFrom}
-          {chapter.isExam && " · old exam"}
-          {chapter.examProposed && !chapter.isExam && " · exam proposed"}
         </span>
         {flags.chaptersWithoutKcs.has(chapter.id) && (
           <Flag>content, no KC</Flag>

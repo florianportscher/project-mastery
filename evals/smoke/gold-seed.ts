@@ -48,7 +48,6 @@ export async function seedSnapshot(
     .insert({
       owner: studentId,
       name: snapshot.courseName,
-      pairing_requested: snapshot.pairingRequested,
     })
     .select("id")
     .single();

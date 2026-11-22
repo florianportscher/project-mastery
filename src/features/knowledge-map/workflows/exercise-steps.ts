@@ -7,8 +7,7 @@ import {
 } from "@/features/knowledge-map/ai/exercise-extraction";
 import {
   checkExerciseAnswer,
-  needsExerciseExtraction,
-  type OfferedSubtask,
+  type OfferedExercise,
 } from "@/features/knowledge-map/domain/exercise-extraction";
 import {
   storedExtractionSchema,
@@ -37,19 +36,17 @@ import {
   RATE_LIMITED_STEP_RETRIES,
 } from "@/features/usage/server";
 import { BUILD_CALL_TIMEOUT_MS, callFits } from "@/lib/ai/call-timeout";
-import { allRows } from "@/lib/supabase/all-rows";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { failed } from "@/lib/supabase/failed";
 import type { AdminSupabase } from "@/lib/supabase/types";
 
 /**
  * The exercise steps of a build: one call (task `exercise`) per exercise
- * unit, with its subtasks, their paired solutions and every live KC of the
- * Course. Units run one after another in Course order, and each extraction
- * is stored in `chapter_extractions` and then as KCs and Exercises before
- * the next unit's call, so the KCs one proposed are listed for the next. A
- * unit is called again when its content changed or a subtask's paired
- * solution is no longer the one it was extracted with.
+ * batch (`exercise-batches.ts`), with its Exercises' whole statements and
+ * solutions and every live KC of the Course. Batches run one after another
+ * in Course order, and each extraction is stored in `chapter_extractions`
+ * and then as KCs and Exercises before the next batch's call, so the KCs
+ * one proposed are listed for the next. A batch is called again when its
+ * Exercises' chunks changed.
  */
 
 /**
@@ -72,41 +69,18 @@ export async function extractExercises(
   const owner = await touchBuild(supabase, courseId);
   if (!owner) return { ok: true, left: null };
 
-  const [units, stored, pairs] = await Promise.all([
+  const [units, stored] = await Promise.all([
     loadCourseUnits(supabase, courseId, "exercise"),
     loadStoredUnits(supabase, courseId),
-    allRows("Loading the exercise pairs", (from, to) =>
-      supabase
-        .from("exercise_solutions")
-        .select("exercise_chunk_id, solution_chunk_id")
-        .eq("course_id", courseId)
-        .order("exercise_chunk_id")
-        .range(from, to),
-    ),
   ]);
-  const extractionOf = new Map(
-    stored.map((row) => [
-      row.key,
-      {
-        contentHash: row.contentHash,
-        exercises: storedExtractionSchema.parse(row.output).exercises,
-      },
-    ]),
+  // A batch's hash covers its Exercises' question and solution chunks.
+  const current = new Set(
+    stored
+      .filter((row) => storedExtractionSchema.parse(row.output).exercises)
+      .map((row) => `${row.key} ${row.contentHash}`),
   );
-  const pairOf = new Map(
-    pairs.map((pair) => [pair.exercise_chunk_id, pair.solution_chunk_id]),
-  );
-  const solutionOf = (chunkId: string) => pairOf.get(chunkId) ?? null;
-
-  const todo = units.filter((unit) =>
-    needsExerciseExtraction(
-      extractionOf.get(unitKey(unit)),
-      {
-        contentHash: unit.contentHash,
-        exerciseChunkIds: unit.chunks.map((chunk) => chunk.id),
-      },
-      solutionOf,
-    ),
+  const todo = units.filter(
+    (unit) => !current.has(`${unitKey(unit)} ${unit.contentHash}`),
   );
   const attempts = planAttempts(todo, stored, failed, deferred);
   if (attempts.length === 0) return { ok: true, left: 0 };
@@ -129,10 +103,6 @@ export async function extractExercises(
   for (const attempt of attempts.slice(0, UNITS_PER_STEP)) {
     if (!callFits(startedAt, BUILD_CALL_TIMEOUT_MS)) break;
     const known = await loadKnownKcs(supabase, courseId);
-    const solutions = await loadMarkdowns(
-      supabase,
-      attempt.unit.chunks.flatMap((chunk) => solutionOf(chunk.id) ?? []),
-    );
     const outcome = await extractAttempts(
       supabase,
       { owner, courseId },
@@ -140,10 +110,9 @@ export async function extractExercises(
       (unit, chunks) =>
         extractUnit(supabase, owner, {
           courseId,
-          unit: { ...unit, chunks },
+          unit,
+          exerciseIds: chunks.map((chunk) => chunk.id),
           language,
-          solutions,
-          solutionOf,
           known,
         }),
       startedAt,
@@ -171,62 +140,45 @@ export async function extractExercises(
 
 extractExercises.maxRetries = RATE_LIMITED_STEP_RETRIES;
 
-/** The Markdown of these chunks by id; deleted ones are missing. */
-async function loadMarkdowns(
-  supabase: AdminSupabase,
-  chunkIds: string[],
-): Promise<Map<string, string>> {
-  const markdowns = new Map<string, string>();
-  const ids = [...new Set(chunkIds)];
-  // Ids go in the query string, so long lists are read in slices.
-  for (let start = 0; start < ids.length; start += 100) {
-    const { data, error } = await supabase
-      .from("chunks")
-      .select("id, markdown")
-      .in("id", ids.slice(start, start + 100));
-    if (error) failed("Loading the solution texts", error);
-    for (const chunk of data) markdowns.set(chunk.id, chunk.markdown);
-  }
-  return markdowns;
-}
-
-/** One exercise unit's call, checked; "limit" when the Daily limit is reached. */
+/**
+ * The call over these Exercises of an exercise batch (all of them, or a
+ * piece), checked; "limit" when the Daily limit is reached.
+ */
 async function extractUnit(
   supabase: AdminSupabase,
   owner: string,
   {
     courseId,
     unit,
+    exerciseIds,
     language,
-    solutions,
-    solutionOf,
     known,
   }: {
     courseId: string;
     unit: CourseUnit;
+    exerciseIds: readonly string[];
     language: string;
-    solutions: ReadonlyMap<string, string>;
-    solutionOf: (chunkId: string) => string | null;
     known: Awaited<ReturnType<typeof loadKnownKcs>>;
   },
 ): Promise<StoredExtraction | "limit" | "failed" | RateLimited> {
-  const subtasks = unit.chunks.map((chunk, index): OfferedSubtask => {
-    const solutionChunkId = solutionOf(chunk.id);
-    return {
-      id: `s${index + 1}`,
-      chunkId: chunk.id,
-      solutionChunkId,
-      solution: (solutionChunkId && solutions.get(solutionChunkId)) ?? null,
-    };
-  });
+  const batch = (unit.exercises ?? []).filter((exercise) =>
+    exerciseIds.includes(exercise.id),
+  );
+  const exercises = batch.map((exercise, index): OfferedExercise => ({
+    id: `x${index + 1}`,
+    chunkId: exercise.id,
+    questionChunkIds: exercise.questionChunkIds,
+    solutionChunkIds: exercise.solutionChunkIds,
+    solution: exercise.solution,
+  }));
   const offered: OfferedExerciseUnit = {
     material: unit.materialName,
     outline: unit.outline,
     language,
-    subtasks: subtasks.map((subtask, index) => ({
-      id: subtask.id,
-      statement: unit.chunks[index]!.markdown,
-      solution: subtask.solution,
+    exercises: exercises.map((exercise, index) => ({
+      id: exercise.id,
+      statement: batch[index]!.statement,
+      solution: exercise.solution,
     })),
     kcs: known.offered,
   };
@@ -247,10 +199,6 @@ async function extractUnit(
   if (typeof answer === "string" || answer instanceof RateLimited) {
     return answer;
   }
-  const { kcs, exercises } = checkExerciseAnswer(
-    answer,
-    subtasks,
-    known.storedId,
-  );
-  return { kcs, prerequisites: [], exercises };
+  const checked = checkExerciseAnswer(answer, exercises, known.storedId);
+  return { kcs: checked.kcs, prerequisites: [], exercises: checked.exercises };
 }

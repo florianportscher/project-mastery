@@ -1,7 +1,7 @@
 import {
   suggestedReservation,
   type BriefContext,
-  type ExamChapter,
+  type OldExam,
 } from "@/features/brief/domain/intake";
 import { aiTask } from "@/lib/ai/models";
 
@@ -12,7 +12,7 @@ const flow = (
 ) => `The Brief is a short conversation. Ask in these batches, in this order, each batch as one message, leaving out what is already stored:
 1. the exam date and the goal: pass, a good grade, or master everything. The conversation's first message already asked this.
 2. the format: open book or closed book, and whether a formula sheet and a calculator are allowed
-3. the scope: which of the Course's Materials the exam does not cover; which Materials, or which Chapters inside them, are old exams, proposing the Chapters marked as likely old exams by name ("<Material> › <Chapter>"); and whether the exam leaves out or stresses a Topic, but only when an admin text or the Student says so
+3. the scope: which of the Course's Materials the exam does not cover; which of the exams the build found are old exams of this course, naming each not yet answered by its name; and whether the exam leaves out or stresses a Topic, but only when an admin text or the Student says so
 4. the reserved exam, in the message after the old exams are stored, never together with the question which ones are old exams, and only when at least one old exam is stored
 5. one open question: hints from the teacher, what changed this year, what they already know and where they struggle
 
@@ -23,7 +23,7 @@ Don't repeat back what the Student just told you: a few words show you got it. O
 Once the Student has answered or declined the open question, close the Brief in a short message, and ask nothing more: the Brief is done, they start learning in a new Chat, linked from the Course map with its Today card (link to it as [Course map](${mapPath})), and they can come back here any time with new information. When they asked about the subject during the Brief, the close also says the Chat is where those questions go. Don't list the answers again in the close. The Brief stays closed once everything is answered: when the Student comes back and tells you something new, store it, confirm it in one line, and ask no question, not even about a batch; when their message says they are done ("that's all"), the line ends with a short goodbye.
 
 Store each answer with a tool as soon as the Student gives it, and only once.
-- saveBrief for the fixed answers, in one call per reply that holds everything the Student just answered or changed. For the excluded Materials, send excludedMaterialIds with every excluded Material's id (an empty list when the exam covers all of them). For the old exams, send examChapterIds with the id of every Chapter that is an old exam, including those already marked (an empty list when none is): a Material's top Chapter when the whole Material is one, else the Chapter that holds the exam. Once you have asked the scope questions, send scopeConfirmed: true, also when the Student answered that they don't know. When the Student asks for their Knowledge map in another language than the Course language, send courseLanguage.
+- saveBrief for the fixed answers, in one call per reply that holds everything the Student just answered or changed. For the excluded Materials, send excludedMaterialIds with every excluded Material's id (an empty list when the exam covers all of them). For the old exams, send examIds with the id of every found exam the Student confirmed as an old exam, including those already confirmed (an empty list when none is). Once you have asked the scope questions, send scopeConfirmed: true, also when the Student answered that they don't know. When the Student asks for their Knowledge map in another language than the Course language, send courseLanguage.
 - setExamScope when the exam leaves out or stresses one Topic; pick the highest Topic that covers what the exam leaves out or stresses. Propose it only when an admin text or the Student says so: name the Topic as it is listed below and ask them to confirm, also when they told you themselves, and store it only after they have confirmed it in a later message: words quotes that confirmation verbatim. Each Topic they name gets its own proposal and its own call, whether the exam leaves it out or stresses it. Send scope null to remove one the Student takes back.
 - addNote for anything else the Student says about the exam: one note per new fact. Check the stored notes below first: a fact they or saveBrief's fields already hold needs no note. Write each note as the fact itself, a neutral paraphrase in their language that keeps every concrete fact (names, chapters, numbers), not as a report of who said it: "Each exam problem starts with a short definition question." rather than "The lecturer said that each problem …". Never copy their words, and never note what they don't know or skipped.
 
@@ -69,21 +69,28 @@ function answeredBatches({ fields, exams, reservedExam }: BriefContext) {
 function describeMaterials({ materials }: BriefContext): string {
   if (materials.length === 0) return "The Course has no Materials yet.";
   return materials
-    .map(({ id, name, excluded, chapters }) => {
-      const material = `- ${JSON.stringify(name)} (id ${id})${excluded ? ": excluded" : ""}`;
-      const outline = chapters.map((chapter) => {
-        const mark =
-          chapter.exam === true
-            ? "old exam"
-            : chapter.exam === false
-              ? "not an old exam"
-              : chapter.proposed && "likely an old exam";
-        const title =
-          chapter.depth === 0 ? "(top Chapter)" : JSON.stringify(chapter.title);
-        return `${"  ".repeat(chapter.depth + 1)}- ${title} (chapter id ${chapter.id})${mark ? `: ${mark}` : ""}`;
-      });
-      return [material, ...outline].join("\n");
-    })
+    .map(
+      ({ id, name, excluded }) =>
+        `- ${JSON.stringify(name)} (id ${id})${excluded ? ": excluded" : ""}`,
+    )
+    .join("\n");
+}
+
+function describeFoundExams({ foundExams }: BriefContext): string {
+  if (foundExams.length === 0) {
+    return "The build found no exams in the Materials, so there is no old exam to ask about.";
+  }
+  const answer = (confirmed: boolean | null) =>
+    confirmed === true
+      ? "old exam"
+      : confirmed === false
+        ? "not an old exam"
+        : "not answered";
+  return foundExams
+    .map(
+      (exam) =>
+        `- ${JSON.stringify(exam.name)} (id ${exam.id}): ${answer(exam.confirmed)}`,
+    )
     .join("\n");
 }
 
@@ -117,7 +124,7 @@ function describeAdminTexts({ adminTexts }: BriefContext): string | null {
   return `Organizational remarks in the Materials (admin texts), such as what the exam covers:\n${list}`;
 }
 
-const RESERVATION = `The reserved exam: the Student can keep one of the Course's old exams unseen, so that their final Mock exam is that real exam. You and the practice leave it out until then. Right after the old exams are stored, before the open question, ask once whether they want to keep one aside and which, listing each old exam by its name and saying which you suggest, with the reason in a few words, for example "… or none? I'd suggest keeping none, so you can practise with it." Store the answer with saveBrief: reservedExamChapterId with the exam's id, or the word none when they keep none. The reserved exam is one of the old exams, so when the same call sends examChapterIds, include it there.`;
+const RESERVATION = `The reserved exam: the Student can keep one of the Course's old exams unseen, so that their final Mock exam is that real exam. You and the practice leave it out until then. Right after the old exams are stored, before the open question, ask once whether they want to keep one aside and which, listing each old exam by its name and saying which you suggest, with the reason in a few words, for example "… or none? I'd suggest keeping none, so you can practise with it." Store the answer with saveBrief: reservedExamId with the exam's id, or the word none when they keep none. The reserved exam is one of the old exams, so when the same call sends examIds, include it there.`;
 
 function describeReservation(context: BriefContext): string {
   const { exams, reservedExam } = context;
@@ -131,11 +138,11 @@ function describeReservation(context: BriefContext): string {
 }
 
 function reservationAnswer(
-  exams: ExamChapter[],
-  { answered, chapterId }: BriefContext["reservedExam"],
+  exams: OldExam[],
+  { answered, examId }: BriefContext["reservedExam"],
 ): string {
   if (answered) {
-    const kept = exams.find(({ id }) => id === chapterId);
+    const kept = exams.find(({ id }) => id === examId);
     return `Answered: keep ${kept ? JSON.stringify(kept.name) : "none"}. When the Student changes their mind, store the new answer.`;
   }
   const suggested = suggestedReservation(exams);
@@ -150,7 +157,8 @@ function briefInstructions(context: BriefContext, mapPath: string): string {
     ROLE,
     flow(mapPath),
     `What the Student has told you so far:\n${describeAnswers(context)}`,
-    `The Course's Materials, each with its Chapters:\n${describeMaterials(context)}`,
+    `The Course's Materials:\n${describeMaterials(context)}`,
+    `The exams the build found in the Materials, by their printed names, with the Student's answer:\n${describeFoundExams(context)}`,
     describeLanguage(context),
     `The Course's Topics, nested, with any stored exam scope (a Topic's scope covers the Topics inside it):\n${describeTopics(context)}`,
     describeAdminTexts(context),

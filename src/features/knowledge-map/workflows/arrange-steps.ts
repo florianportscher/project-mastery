@@ -31,6 +31,7 @@ import {
   loadMapInput,
   type MapInput,
 } from "@/features/knowledge-map/workflows/map-input";
+import { loadStoredGroups } from "@/features/knowledge-map/workflows/exercise-batches";
 import { allRows } from "@/lib/supabase/all-rows";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { failed } from "@/lib/supabase/failed";
@@ -98,7 +99,7 @@ async function checkReport(
   courseId: string,
   input: MapInput,
 ): Promise<CheckReport> {
-  const [exercises, alike, units, exerciseUnits, stored, unreadPages] =
+  const [exercises, alike, units, exerciseUnits, stored, unreadPages, groups] =
     await Promise.all([
       exercisesWithoutKcs(supabase, courseId),
       supabase.rpc("alike_kcs", {
@@ -110,6 +111,7 @@ async function checkReport(
       loadCourseUnits(supabase, courseId, "exercise"),
       loadStoredUnits(supabase, courseId),
       loadUnreadPages(supabase, courseId),
+      loadStoredGroups(supabase, courseId),
     ]);
   if (alike.error) failed("Finding alike KCs", alike.error);
   // A unit without an extraction of its content was given up on.
@@ -143,10 +145,7 @@ async function checkReport(
   const name = new Map(input.kcs.map((kc) => [kc.id, kc.name]));
   return {
     chaptersWithoutKcs: input.chapters
-      .filter(
-        (chapter) =>
-          !chapter.inExam && teaching.has(chapter.id) && !cited.has(chapter.id),
-      )
+      .filter((chapter) => teaching.has(chapter.id) && !cited.has(chapter.id))
       .map((chapter) => chapter.title),
     exercisesWithoutKcs: exercises,
     duplicates: alike.data.flatMap(({ a, b, similarity }) =>
@@ -157,6 +156,7 @@ async function checkReport(
     unitsBelowCoverage,
     unreadPages,
     unitsNotExtracted,
+    exercisesNotGrouped: groups.groups?.fallback ?? false,
   };
 }
 

@@ -13,6 +13,10 @@ import {
 import { consolidateKcs } from "@/features/knowledge-map/workflows/consolidate-steps";
 import { extractExercises } from "@/features/knowledge-map/workflows/exercise-steps";
 import { extractChapters } from "@/features/knowledge-map/workflows/extract-steps";
+import {
+  assignExams,
+  groupExercises,
+} from "@/features/knowledge-map/workflows/group-steps";
 import { recheckAssumes } from "@/features/knowledge-map/workflows/prerequisite-steps";
 import { proposeTopicTree } from "@/features/knowledge-map/workflows/topic-steps";
 
@@ -22,8 +26,10 @@ import { proposeTopicTree } from "@/features/knowledge-map/workflows/topic-steps
  * and stores its results before it ends. It retires KCs whose sources are
  * gone and extracts the teaching units without a current extraction one
  * after another in Course order, each offered the KCs stored so far and
- * stored as KCs before the next. It then extracts the exercise units and
- * stores their Exercises and new KCs. When the build stored new KCs, what
+ * stored as KCs before the next. It then groups the exercise and solution
+ * chunks into whole Exercises and finds the old exams (one call, only when
+ * they changed), extracts the Exercises in batches, stores them with their
+ * new KCs and gives each its exam. When the build stored new KCs, what
  * KCs of earlier builds assume as text is asked once against them. It
  * groups the Chapters into a Topic tree (one call, only when the Outlines
  * or KCs changed) and puts the map in Course order. A unit whose call fails
@@ -56,7 +62,9 @@ export async function buildKnowledgeMap(courseId: string): Promise<void> {
     const steps: BuildStep[] = [
       extractChapters,
       consolidateKcs,
+      groupExercises,
       extractExercises,
+      assignExams,
       consolidateKcs,
       recheck,
     ];

@@ -22,18 +22,17 @@ const plain = (text: string) => text.toLowerCase().replace(/\s+/g, " ").trim();
 
 /**
  * What the Brief's tools do, as the signed-in Student, to the Course's
- * Brief. `context` holds the Course's Materials, Chapters and Topics when
- * the reply started, `studentTexts` the Student's messages so far and
- * `askedChapterIds` the Chapters the Student was asked about as old
- * exams. Each tool writes in one transaction, so a failed call changes
- * nothing.
+ * Brief. `context` holds the Course's Materials, found exams and Topics
+ * when the reply started, `studentTexts` the Student's messages so far and
+ * `askedExamIds` the found exams the Student was asked about. Each tool
+ * writes in one transaction, so a failed call changes nothing.
  */
 export function briefToolActions(
   supabase: Supabase,
   courseId: string,
   context: BriefContext,
   studentTexts: string[],
-  askedChapterIds: string[],
+  askedExamIds: string[],
 ): BriefToolActions {
   const known = (ids: Iterable<string>) => {
     const set = new Set(ids);
@@ -43,9 +42,7 @@ export function briefToolActions(
     });
   };
   const ofMaterials = known(context.materials.map(({ id }) => id));
-  const ofChapters = known(
-    context.materials.flatMap(({ chapters }) => chapters.map(({ id }) => id)),
-  );
+  const ofExams = known(context.foundExams.map(({ id }) => id));
 
   return {
     async saveBrief(input: SaveBriefInput) {
@@ -60,39 +57,39 @@ export function briefToolActions(
         }).filter(([, value]) => value !== undefined),
       );
 
-      // Only the Course's own Materials and the Chapters the context lists
-      // count; other ids are dropped.
+      // Only the Course's own Materials and found exams count; other ids
+      // are dropped.
       const excluded = ofMaterials(given(input.excludedMaterialIds));
-      const exams = ofChapters(given(input.examChapterIds));
+      const exams = ofExams(given(input.examIds));
 
       // Only an old exam of the Course can be reserved; another id is
       // dropped. Once a submitted mock used the reservation, it stays as it is.
       const examIds = new Set(exams.kept ?? context.exams.map(({ id }) => id));
-      const reserved = given(input.reservedExamChapterId);
+      const reserved = given(input.reservedExamId);
       const reservable = reserved === "none" || examIds.has(reserved ?? "");
       const used =
         reserved !== undefined &&
-        context.reservedExam.chapterId !== null &&
+        context.reservedExam.examId !== null &&
         (await getReservedExam(supabase, courseId)) === null;
       if (reserved !== undefined && reservable && !used) {
-        fields.reserved_exam_chapter_id = reserved === "none" ? null : reserved;
+        fields.reserved_exam_id = reserved === "none" ? null : reserved;
         fields.reserved_exam_answered = true;
       }
 
       await saveBrief(supabase, courseId, fields, {
         excludedMaterialIds: excluded.kept,
-        examChapterIds: exams.kept,
-        askedChapterIds,
+        examIds: exams.kept,
+        askedExamIds,
         language: given(input.courseLanguage)?.trim() || null,
       });
       const ignored = [
         excluded.unknown.length > 0 &&
           `These are no Material ids of the Course and were ignored: ${excluded.unknown.join(", ")}. Send excludedMaterialIds again with ids from the Course's Materials.`,
         exams.unknown.length > 0 &&
-          `These are no Chapter ids of the Course and were ignored: ${exams.unknown.join(", ")}. Send examChapterIds again with chapter ids from the Course's Materials.`,
+          `These are no ids of the exams found in the Course and were ignored: ${exams.unknown.join(", ")}. Send examIds again with ids from the found exams.`,
         reserved !== undefined &&
           !reservable &&
-          `The reserved exam ${reserved} was ignored: it is not among the old exams. If the Student said it is one, send it again together with examChapterIds that list every old exam, this one included; if they keep none, send reservedExamChapterId none.`,
+          `The reserved exam ${reserved} was ignored: it is not among the old exams. If the Student said it is one, send it again together with examIds that list every old exam, this one included; if they keep none, send reservedExamId none.`,
         used &&
           "The reserved exam was ignored: the Student has taken it as their final mock exam, so it can no longer change.",
       ].filter(Boolean);

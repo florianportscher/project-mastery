@@ -9,6 +9,7 @@ test("check flags match a KC by its exact name", () => {
     unitsBelowCoverage: [],
     unreadPages: [],
     unitsNotExtracted: [],
+    exercisesNotGrouped: false,
   };
   expect(checkFlags(report, "Thrust")).toEqual(["Possible duplicate of Lift"]);
   expect(checkFlags(report, "thrust")).toEqual([]);

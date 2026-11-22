@@ -27,11 +27,11 @@ export const saveBriefInputSchema = z.object({
     .describe(
       "The ids of every Material the exam does not cover. Replaces the stored set; [] includes all.",
     ),
-  examChapterIds: z
+  examIds: z
     .array(z.string())
     .nullish()
     .describe(
-      "The ids of every Chapter that is an old exam, as the Student said; a Material's top Chapter stands for the whole Material, and a Chapter covers the Chapters inside it. Replaces the stored set; [] when none is.",
+      "The ids of every found exam that is an old exam, as the Student said. Replaces the stored set; [] when none is.",
     ),
   scopeConfirmed: z
     .boolean()
@@ -39,7 +39,7 @@ export const saveBriefInputSchema = z.object({
     .describe(
       "True once the Student has answered the scope step: which Materials the exam covers, which are old exams, and whether the exam leaves out or stresses a Topic.",
     ),
-  reservedExamChapterId: z
+  reservedExamId: z
     .string()
     .nullish()
     .describe(

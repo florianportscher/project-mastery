@@ -119,10 +119,12 @@ export function createDb() {
         {
           id: EXERCISE,
           question_chunk_id: C3,
-          solution_chunk_id: null,
           difficulty: 2,
           position: 0,
         },
+      ]),
+      exercise_chunks: ofCourse([
+        { exercise_id: EXERCISE, chunk_id: C3, role: "question", position: 0 },
       ]),
       exercise_kcs: ofCourse([
         { exercise_id: EXERCISE, kc_id: K2 },

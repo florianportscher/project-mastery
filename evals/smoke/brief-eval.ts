@@ -124,35 +124,23 @@ async function setUpBrief(
   courseId: string,
   setup: ReturnType<typeof parseScenario>,
 ) {
-  const candidates = must(
+  const found = must(
     await supabase
-      .from("chapters")
+      .from("exams")
       .select("id")
       .eq("course_id", courseId)
-      .or("is_exam.eq.true,exam_proposed.eq.true")
       .order("position"),
   );
   const plan = briefSetup(
-    { courseId, studentId, examChapterIds: candidates.map((c) => c.id) },
+    { courseId, studentId, examIds: found.map((e) => e.id) },
     setup,
     new Date(),
   );
   must(
     await supabase
-      .from("chapters")
-      .update({ is_exam: null, exam_asked: false })
+      .from("exams")
+      .update({ confirmed: plan.exams.confirmed, asked: plan.exams.asked })
       .eq("course_id", courseId)
-      .select("id"),
-  );
-  must(
-    await supabase
-      .from("chapters")
-      .update({
-        exam_proposed: true,
-        is_exam: plan.examChapters.isExam,
-        exam_asked: plan.examChapters.asked,
-      })
-      .in("id", plan.examChapters.ids)
       .select("id"),
   );
   for (const table of [
@@ -199,7 +187,7 @@ async function printBrief(supabase: AdminSupabase, courseId: string) {
     supabase
       .from("briefs")
       .select(
-        "exam_date, goal, open_book, formula_sheet, calculator, scope_confirmed, notes, reserved_exam_answered, reserved_exam_chapter_id",
+        "exam_date, goal, open_book, formula_sheet, calculator, scope_confirmed, notes, reserved_exam_answered, reserved_exam_id",
       )
       .eq("course_id", courseId)
       .single(),
@@ -209,10 +197,10 @@ async function printBrief(supabase: AdminSupabase, courseId: string) {
       .select("materials(name)")
       .eq("course_id", courseId),
     supabase
-      .from("chapters")
-      .select("id, title, is_exam, materials(name)")
+      .from("exams")
+      .select("id, name, confirmed")
       .eq("course_id", courseId)
-      .not("is_exam", "is", null)
+      .not("confirmed", "is", null)
       .order("position"),
     supabase
       .from("exam_scopes")
@@ -221,9 +209,8 @@ async function printBrief(supabase: AdminSupabase, courseId: string) {
   ]);
   const b = must(brief);
   const marked = must(exams);
-  const name = (chapter: (typeof marked)[number]) =>
-    `${chapter.materials.name} › ${chapter.title}`;
-  const reserved = marked.find((c) => c.id === b.reserved_exam_chapter_id);
+  const name = (exam: (typeof marked)[number]) => exam.name;
+  const reserved = marked.find((e) => e.id === b.reserved_exam_id);
   const list = (items: string[]) => (items.length ? items.join("; ") : "none");
   console.info("Stored Brief:");
   console.info(
@@ -232,8 +219,8 @@ async function printBrief(supabase: AdminSupabase, courseId: string) {
       `  open book: ${b.open_book}, formula sheet: ${b.formula_sheet}, calculator: ${b.calculator}`,
       `  scope confirmed: ${b.scope_confirmed}, course language: ${must(course).language}`,
       `  excluded Materials: ${list(must(excluded).map((row) => row.materials.name))}`,
-      `  old exams: ${list(marked.filter((c) => c.is_exam).map(name))}`,
-      `  not old exams: ${list(marked.filter((c) => !c.is_exam).map(name))}`,
+      `  old exams: ${list(marked.filter((e) => e.confirmed).map(name))}`,
+      `  not old exams: ${list(marked.filter((e) => !e.confirmed).map(name))}`,
       `  reserved exam: ${b.reserved_exam_answered ? (reserved ? name(reserved) : "none") : "not answered"}`,
       `  exam scopes: ${list(must(scopes).map((s) => `${s.topics.name} ${s.scope} ("${s.words}")`))}`,
       `  notes: ${b.notes ?? "none"}`,

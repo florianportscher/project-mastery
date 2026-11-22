@@ -1,9 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-  checkExerciseAnswer,
-  exerciseDifficulty,
-  needsExerciseExtraction,
-} from "./exercise-extraction";
+import { checkExerciseAnswer, exerciseDifficulty } from "./exercise-extraction";
 
 describe("exerciseDifficulty", () => {
   test.each([
@@ -19,10 +15,14 @@ describe("exerciseDifficulty", () => {
 });
 
 describe("checkExerciseAnswer", () => {
-  const subtasks = [
-    { id: "s1", chunkId: "c1", solutionChunkId: "c9", solution: "a\n\nb" },
-    { id: "s2", chunkId: "c2", solutionChunkId: null, solution: null },
-  ];
+  const exercise = (id: string, chunkId: string, solution: string | null) => ({
+    id,
+    chunkId,
+    questionChunkIds: [chunkId, `${chunkId}b`],
+    solutionChunkIds: solution ? ["c9"] : [],
+    solution,
+  });
+  const subtasks = [exercise("x1", "c1", "a\n\nb"), exercise("x2", "c2", null)];
   const kcIdOf = new Map([
     ["k1", "kc-1"],
     ["k2", "kc-2"],
@@ -35,9 +35,9 @@ describe("checkExerciseAnswer", () => {
     };
     const checked = checkExerciseAnswer(
       {
-        subtasks: [
+        exercises: [
           {
-            id: "s1",
+            id: "x1",
             notAnExercise: false,
             kcIds: ["k2", "k7", "k2"],
             newKcs: [rank, { ...rank, name: " rank" }],
@@ -48,12 +48,13 @@ describe("checkExerciseAnswer", () => {
           },
         ],
       },
-      [...subtasks, { ...subtasks[1]!, id: "s3", chunkId: "c3" }],
+      [...subtasks, exercise("x3", "c3", null)],
       kcIdOf,
     );
     expect(checked.exercises[0]).toEqual({
       chunkId: "c1",
-      solutionChunkId: "c9",
+      questionChunkIds: ["c1", "c1b"],
+      solutionChunkIds: ["c9"],
       notAnExercise: false,
       kcIds: ["kc-2"],
       newKcs: [0],
@@ -69,9 +70,9 @@ describe("checkExerciseAnswer", () => {
   test("counts a new KC named by an offered id as that KC", () => {
     const checked = checkExerciseAnswer(
       {
-        subtasks: [
+        exercises: [
           {
-            id: "s1",
+            id: "x1",
             notAnExercise: false,
             kcIds: ["k2"],
             newKcs: [
@@ -90,32 +91,5 @@ describe("checkExerciseAnswer", () => {
       newKcs: [],
     });
     expect(checked.kcs).toEqual([]);
-  });
-});
-
-describe("needsExerciseExtraction", () => {
-  const exercise = {
-    chunkId: "c1",
-    solutionChunkId: null,
-    notAnExercise: false,
-    kcIds: [],
-    newKcs: [],
-    finalAnswers: [],
-    solutionLines: null,
-  };
-  const part = { contentHash: "h", exerciseChunkIds: ["c1"] };
-  const stored = { contentHash: "h", exercises: [exercise] };
-
-  test("calls again only for new content or a changed pair", () => {
-    expect(needsExerciseExtraction(stored, part, () => null)).toBe(false);
-    expect(needsExerciseExtraction(undefined, part, () => null)).toBe(true);
-    expect(
-      needsExerciseExtraction(
-        { ...stored, contentHash: "g" },
-        part,
-        () => null,
-      ),
-    ).toBe(true);
-    expect(needsExerciseExtraction(stored, part, () => "c9")).toBe(true);
   });
 });

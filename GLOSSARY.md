@@ -25,11 +25,11 @@ One node of a Material's Outline, such as a part, a chapter or a section, with i
 _Avoid_: Section (a Reading section is something else), Part, heading
 
 **Old exam**:
-A Chapter the Student confirmed in the Brief as a past exam, together with the Chapters inside it: a whole Material through its root Chapter, or an exam inside a script. Its Exercises count for Priority, and Mock exams are assembled from it.
+A past exam the build found in the Materials and the Student confirmed in the Brief: a set of Exercises, named as printed, wherever it is printed (a separate file, one of several in a file, the end of a script). Its Exercises count for Priority, and Mock exams are assembled from it. A rejected one is no old exam, and its Exercises are ordinary.
 _Avoid_: Past paper, Altklausur, exam Material
 
 **Brief**:
-What a Student told the AI about a Course's exam: its date, their goal, format, excluded Materials, which Chapters are old exams, the exam scope, the Course language and notes, which the AI writes as short paraphrases and the tutor reads as hints. They tell it in a short conversation on the Course's Brief page, which isn't a Chat: the AI asks each question once, accepts "don't know", and ends by sending the Student to the Course map; they can come back with new information any time. The AI proposes the Chapters the parse took for old exams, or whose Material's name looks like one, and asks once about each such Chapter parsed after intake.
+What a Student told the AI about a Course's exam: its date, their goal, format, excluded Materials, which found exams are old exams, the exam scope, the Course language and notes, which the AI writes as short paraphrases and the tutor reads as hints. They tell it in a short conversation on the Course's Brief page, which isn't a Chat: the AI asks each question once, accepts "don't know", and ends by sending the Student to the Course map; they can come back with new information any time. After a build, the AI asks once about each old exam the build found, by its printed name.
 _Avoid_: Preferences, intake form, onboarding
 
 **Exam scope**:
@@ -61,7 +61,7 @@ A link saying one KC must be learned before another. The Prerequisites of a Know
 _Avoid_: Dependency, requirement
 
 **Exercise**:
-One printed exercise of a Course's Materials with all its subtasks, such as "Ex. 7.2", as a Knowledge map build analyses it: the KCs it tests, a difficulty, its final answers as printed, each an answer key a code check can use (a mathjs expression with a label), and the solution printed in the Materials, if any; without one, the AI solves it with the Student. Its label, such as "Linear maps · Sheet 2 p. 3" (its Chapter, Material and page), is built when read. Its statement is a chunk labelled `exercise`; the subtasks stay in it, so they share the Exercise's KCs and final answers.
+One whole task of a Course's Materials, such as "Ex. 7.2": its statement with any stem shared by its subtasks, all its subtasks and every printed solution chunk, wherever they are printed (other pages, another Material). A Knowledge map build analyses it: the KCs it tests, a difficulty, its final answers as printed, each an answer key a code check can use (a mathjs expression with a label); without a printed solution, the AI solves it with the Student. Its label, such as "Linear maps · Sheet 2 p. 3" (its Chapter, Material and page), is built when read. Its chunks are labelled `exercise` and `solution`, grouped by the build; the subtasks share the Exercise's KCs and final answers. It belongs to at most one old exam.
 _Avoid_: Task, assignment
 
 **Problem**:
@@ -141,7 +141,7 @@ A timed Study session without help, assembled from old exams or from Problems in
 _Avoid_: Practice exam, test, simulation
 
 **Reserved exam**:
-An old exam the Student chose in the Brief to keep unseen for their final Mock exam. Until a submitted Mock exam has used it, the AI, Problem generation and the other Mock exams leave its Chapter's Exercises and chunks out; afterwards it counts as an ordinary old exam.
+An old exam the Student chose in the Brief to keep unseen for their final Mock exam. Until a submitted Mock exam has used it, the AI, Problem generation and the other Mock exams leave its Exercises and their chunks out; afterwards it counts as an ordinary old exam.
 _Avoid_: Held-back exam, hidden exam, final exam
 
 **Memory**:

@@ -95,44 +95,47 @@ select is(
   'add_brief_note refuses notes past the limit'
 );
 
--- The reserved exam: the old exam's root Chapter, the Lecture's root and
--- Bob's Notes' root.
+-- The reserved exam: an exam the Student confirmed, one not yet answered,
+-- and Bob's confirmed exam.
 reset role;
-insert into public.chapters (id, owner, course_id, material_id, position, depth, title, page_from, is_exam)
+insert into public.exams (id, owner, course_id, name, position, confirmed)
 values
-  ('aaaaaaaa-0c00-0000-0000-0000000000f1', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-0000000000f1', 0, 0, 'Old exam', 1, true),
-  ('aaaaaaaa-0c00-0000-0000-0000000000f2', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-0000000000f2', 0, 0, 'Lecture', 1, null),
-  ('bbbbbbbb-0c00-0000-0000-0000000000f1', '22222222-2222-2222-2222-222222222222', 'bbbbbbbb-c000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-0000000000f1', 0, 0, 'Notes', 1, true);
+  ('aaaaaaaa-0e00-0000-0000-0000000000f1', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', 'Old exam', 0, true),
+  ('aaaaaaaa-0e00-0000-0000-0000000000f2', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', 'Klausur 2023', 1, null),
+  ('bbbbbbbb-0e00-0000-0000-0000000000f1', '22222222-2222-2222-2222-222222222222', 'bbbbbbbb-c000-0000-0000-000000000001', 'Notes', 0, true);
 set local role authenticated;
 
 select ok(
   public.save_brief(
     'aaaaaaaa-c000-0000-0000-000000000001',
-    '{"reserved_exam_chapter_id": "aaaaaaaa-0c00-0000-0000-0000000000f1", "reserved_exam_answered": true}'
+    '{"reserved_exam_id": "aaaaaaaa-0e00-0000-0000-0000000000f1", "reserved_exam_answered": true}'
   ),
-  'save_brief reserves an old exam of the Course'
+  'save_brief reserves a confirmed old exam of the Course'
 );
 
 select throws_ok(
-  $$select public.save_brief('aaaaaaaa-c000-0000-0000-000000000001', '{"reserved_exam_chapter_id": "aaaaaaaa-0c00-0000-0000-0000000000f2"}')$$,
+  $$select public.save_brief('aaaaaaaa-c000-0000-0000-000000000001', '{"reserved_exam_id": "aaaaaaaa-0e00-0000-0000-0000000000f2"}')$$,
   '23514',
   null,
-  'a Chapter that is no old exam cannot be reserved'
+  'an exam the Student did not confirm cannot be reserved'
 );
 
 select throws_ok(
-  $$update public.briefs set reserved_exam_chapter_id = 'bbbbbbbb-0c00-0000-0000-0000000000f1' where course_id = 'aaaaaaaa-c000-0000-0000-000000000001'$$,
+  $$update public.briefs set reserved_exam_id = 'bbbbbbbb-0e00-0000-0000-0000000000f1' where course_id = 'aaaaaaaa-c000-0000-0000-000000000001'$$,
   '23514',
   null,
-  'another Student''s Chapter cannot be reserved'
+  'another Student''s exam cannot be reserved'
 );
 
-delete from public.materials where id = 'aaaaaaaa-0000-0000-0000-0000000000f1';
+-- A build no longer finds the exam.
+reset role;
+delete from public.exams where id = 'aaaaaaaa-0e00-0000-0000-0000000000f1';
+set local role authenticated;
 
 select results_eq(
-  $$select reserved_exam_chapter_id, reserved_exam_answered from public.briefs where course_id = 'aaaaaaaa-c000-0000-0000-000000000001'$$,
+  $$select reserved_exam_id, reserved_exam_answered from public.briefs where course_id = 'aaaaaaaa-c000-0000-0000-000000000001'$$,
   $$values (null::uuid, true)$$,
-  'deleting the reserved exam''s Material clears the reservation'
+  'deleting the reserved exam clears the reservation'
 );
 
 select ok(

@@ -41,18 +41,24 @@ export const answerKeySchema = z.object({
 });
 
 /**
- * An Exercise: one subtask whose question is the `questionChunk`, with its
- * printed solution's chunk (null without one), the KCs it tests, a
+ * An Exercise: a whole task whose statement is its `questionChunks` (a stem
+ * and all subtasks, the first being `questionChunk`, which keys it), with
+ * its printed solutions' chunks (empty without any), the KCs it tests, a
  * difficulty from 1 (easy) to 3 (hard) and its answer keys as printed (null
  * without any).
  */
 const exerciseSchema = z.object({
   id,
   questionChunk: id,
-  solutionChunk: id.nullable(),
+  questionChunks: z.array(id).min(1),
+  solutionChunks: z.array(id),
   difficulty: z.int().min(1).max(3),
   kcs: z.array(id),
   finalAnswers: z.array(answerKeySchema).min(1).nullish(),
+  /** The exam the build found it in; null or missing for none. */
+  examId: id.nullish(),
+  /** Whether that exam is an old exam the Student confirmed. */
+  oldExam: z.boolean().optional(),
 });
 
 /**
@@ -110,17 +116,24 @@ export const checkReportSchema = z.object({
    * Chapters' titles: only the pieces that were answered are in the map.
    */
   unitsNotExtracted: z.array(z.string()).default([]),
+  /**
+   * True when a grouping call kept failing, so its exercise chunks became
+   * Exercises of their own, without solutions.
+   */
+  exercisesNotGrouped: z.boolean().default(false),
 });
 
 /**
- * One subtask of an exercise unit's extraction: its question chunk, the
- * solution chunk paired with it when it was extracted, the candidate KCs it
- * tests by id and its new KCs by index into the extraction's `kcs`, its
- * final answers as printed and its printed solution's line count.
+ * One Exercise of an exercise batch's extraction: its question and solution
+ * chunks, the candidate KCs it tests by id and its new KCs by index into
+ * the extraction's `kcs`, its final answers as printed and its printed
+ * solution's line count.
  */
 const extractedExerciseSchema = z.object({
+  /** Its first question chunk, which keys the stored Exercise. */
   chunkId: z.string(),
-  solutionChunkId: z.string().nullable(),
+  questionChunkIds: z.array(z.string()),
+  solutionChunkIds: z.array(z.string()),
   notAnExercise: z.boolean(),
   kcIds: z.array(z.string()),
   newKcs: z.array(z.int()),

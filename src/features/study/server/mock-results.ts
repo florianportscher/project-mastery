@@ -67,20 +67,34 @@ export async function loadItemSource(
     };
   }
   if (item.exercise_id === null) return { reference: null, keys: null };
-  const { data, error } = await supabase
-    .from("exercises")
-    .select("solution_chunk_id, final_answers")
-    .eq("id", item.exercise_id)
-    .maybeSingle();
-  if (error) failed("Loading the item's Exercise", error);
-  if (!data) return { reference: null, keys: null };
-  // The printed solution, when the Materials have one.
-  let reference: string | null = null;
-  if (data.solution_chunk_id) {
-    const [chunk] = await loadChunkSources(supabase, [data.solution_chunk_id]);
-    reference = chunk?.markdown ?? null;
+  const [exercise, solutions] = await Promise.all([
+    supabase
+      .from("exercises")
+      .select("final_answers")
+      .eq("id", item.exercise_id)
+      .maybeSingle(),
+    supabase
+      .from("exercise_chunks")
+      .select("chunk_id")
+      .eq("exercise_id", item.exercise_id)
+      .eq("role", "solution")
+      .order("position"),
+  ]);
+  if (exercise.error) failed("Loading the item's Exercise", exercise.error);
+  if (solutions.error) {
+    failed("Loading the item's Exercise's solutions", solutions.error);
   }
-  return { reference, keys: keysOf(data.final_answers) };
+  if (!exercise.data) return { reference: null, keys: null };
+  // The printed solutions, when the Materials have any.
+  const ids = solutions.data.map((row) => row.chunk_id);
+  const chunks = await loadChunkSources(supabase, ids);
+  const texts = ids.flatMap(
+    (id) => chunks.find((chunk) => chunk.id === id)?.markdown ?? [],
+  );
+  return {
+    reference: texts.length > 0 ? texts.join("\n\n") : null,
+    keys: keysOf(exercise.data.final_answers),
+  };
 }
 
 /**

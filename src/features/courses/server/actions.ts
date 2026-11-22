@@ -32,7 +32,7 @@ import {
   signFileUrl,
   updateMaterialName,
 } from "@/features/courses/server/material-store";
-import { startPairing, startParse } from "@/features/ingestion/server";
+import { startParse } from "@/features/ingestion/server";
 import { getUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -230,8 +230,6 @@ export async function deleteMaterial(input: {
   // removals. Anything it stores later, it removes itself, as it finds the
   // Material gone. A failure here is logged; the Material is gone.
   await removeMaterialFiles(supabase, material.storagePath);
-  // Its exercises and solutions left their pairs; pair the rest again.
-  await startPairing(material.courseId);
 
   revalidatePath("/", "layout");
   return { ok: true, data: undefined };

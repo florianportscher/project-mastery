@@ -192,7 +192,6 @@ export async function chunkMaterial(
       depth: chapter.depth,
       title: chapter.title,
       page_from: chapter.pageFrom,
-      exam_proposed: chapter.examProposed,
     })),
     p_chunks: chunks.map((chunk, position) => ({
       position,

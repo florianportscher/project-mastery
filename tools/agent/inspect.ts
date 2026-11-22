@@ -45,7 +45,6 @@ export type Snapshot = {
     position: number;
     title: string;
     pageFrom: number;
-    isExam: boolean | null;
   }>;
   chunks: Array<{
     id: string;
@@ -75,8 +74,17 @@ export type Snapshot = {
     id: string;
     position: number;
     difficulty: number;
-    solutionChunkId: string | null;
+    questionChunkIds: string[];
+    solutionChunkIds: string[];
+    examId: string | null;
     finalAnswers: unknown;
+  }>;
+  exams: Array<{
+    id: string;
+    name: string;
+    position: number;
+    confirmed: boolean | null;
+    asked: boolean;
   }>;
   exerciseKcs: Array<{ exerciseId: string; kcId: string }>;
   topics: Array<{
@@ -349,12 +357,6 @@ function readReport(value: unknown): Report {
 export function flagLines(s: Snapshot, calls: Call[] | null): string[] {
   const live = s.kcs.filter((kc) => !kc.retiredAt);
   const cited = new Set(live.flatMap((kc) => kc.sources));
-  const parent = new Map(s.chapters.map((c) => [c.id, c.parentId]));
-  const exam = new Map(s.chapters.map((c) => [c.id, c.isExam === true]));
-  const inExam = (id: string | null, n = 0): boolean =>
-    id !== null &&
-    n < s.chapters.length &&
-    (exam.get(id) === true || inExam(parent.get(id) ?? null, n + 1));
   const teaching = new Set(
     s.chunks
       .filter((c) => c.label === "content" && c.chapterId)
@@ -368,7 +370,7 @@ export function flagLines(s: Snapshot, calls: Call[] | null): string[] {
   const title = new Map(s.chapters.map((c) => [c.id, c.title]));
   const lines: string[] = [];
   for (const id of teaching) {
-    if (!citedChapters.has(id) && !inExam(id))
+    if (!citedChapters.has(id))
       lines.push(`chapter without KCs: ${title.get(id)} (${short(id)})`);
   }
   for (const kc of live.filter((k) => k.sources.length === 0))
@@ -413,6 +415,9 @@ export function formatSection(
   const kcName = new Map(s.kcs.map((kc) => [kc.id, kc.name]));
   const chapterTitle = new Map(s.chapters.map((c) => [c.id, c.title]));
   const name = (id: string) => `${kcName.get(id) ?? "?"} (${short(id)})`;
+  const examName = new Map(s.exams.map((x) => [x.id, x.name]));
+  const examLabel = (id: string | null) =>
+    id ? ` exam "${examName.get(id) ?? short(id)}"` : "";
   const lines: string[] = [];
   switch (section) {
     case "materials":
@@ -437,7 +442,7 @@ export function formatSection(
           .filter((c) => c.materialId === m.id)
           .toSorted((a, b) => a.position - b.position)) {
           lines.push(
-            `${"  ".repeat(c.depth)}${c.title} (${short(c.id)}) p${c.pageFrom}${c.isExam ? " exam" : ""}`,
+            `${"  ".repeat(c.depth)}${c.title} (${short(c.id)}) p${c.pageFrom}`,
           );
           const chunks = s.chunks
             .filter((k) => k.chapterId === c.id)
@@ -468,9 +473,13 @@ export function formatSection(
       }
       break;
     case "exercises":
+      for (const x of s.exams)
+        lines.push(
+          `exam ${short(x.id)} "${x.name}" ${x.confirmed === null ? "unanswered" : x.confirmed ? "confirmed" : "rejected"}${x.asked ? ", asked" : ""}`,
+        );
       for (const e of s.exercises) {
         lines.push(
-          `#${e.position} ${short(e.id)} difficulty ${e.difficulty} solution ${e.solutionChunkId ? short(e.solutionChunkId) : "none"} KCs ${
+          `#${e.position} ${short(e.id)} difficulty ${e.difficulty}${examLabel(e.examId)} question ${e.questionChunkIds.map(short).join(",")} solution ${e.solutionChunkIds.length > 0 ? e.solutionChunkIds.map(short).join(",") : "none"} KCs ${
             s.exerciseKcs
               .filter((x) => x.exerciseId === e.id)
               .map((x) => name(x.kcId))

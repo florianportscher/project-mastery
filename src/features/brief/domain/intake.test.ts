@@ -3,7 +3,7 @@ import {
   isIntakeDone,
   suggestedReservation,
   type BriefFields,
-  type ExamChapter,
+  type OldExam,
 } from "./intake";
 
 const complete: BriefFields = {
@@ -42,7 +42,7 @@ describe("isIntakeDone", () => {
   });
 });
 
-const exam = (id: string): ExamChapter => ({ id, name: `Exam ${id}` });
+const exam = (id: string): OldExam => ({ id, name: `Exam ${id}` });
 
 describe("suggestedReservation", () => {
   test("suggests none with only one old exam", () => {

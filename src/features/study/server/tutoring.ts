@@ -125,13 +125,15 @@ function tutorToolActions(
   ): Promise<AskedProblem | null> => {
     const exercise = map.exercises.find(({ id }) => id === problemId);
     if (exercise) {
-      const [chunk] = await loadChunkSources(supabase, [
-        exercise.questionChunk,
-      ]);
+      const chunks = await loadChunkSources(supabase, exercise.questionChunks);
+      const parts = exercise.questionChunks.flatMap(
+        (id) => chunks.find((chunk) => chunk.id === id) ?? [],
+      );
+      const [chunk] = parts;
       if (!chunk) return null;
       const source = sourceOf(chunk);
       return {
-        statement: chunk.markdown,
+        statement: parts.map((part) => part.markdown).join("\n\n"),
         page: {
           label: `${source.material}, ${source.pages}`,
           link: source.link,

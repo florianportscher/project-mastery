@@ -8,12 +8,12 @@ import {
   INTEGRALS,
   TOPIC,
   COURSE,
-  LECTURE_EXAM,
-  LECTURE_ROOT,
-  OLD_EXAM_ROOT,
+  EXAM_2024,
+  KLAUSUR_2023,
   STUDENT,
   adminChunk,
   db,
+  exam,
   send,
   stored,
   userMessage,
@@ -49,77 +49,41 @@ describe("the old-exam question", () => {
     expect(stored()).toHaveLength(1);
   });
 
-  test("asks once about the Chapters that look like old exams, by Material and Chapter", async () => {
+  test("asks once about the exams the build found, by their printed names", async () => {
     seedBrief({ done: true });
 
     await open();
     await open();
 
-    // The old exam by its Material's name, and the one the parse found
-    // inside Lecture 1.
     expect(stored().slice(1)).toEqual([
       {
         role: "assistant",
-        text: "These look like old exams. Which of them are?\n- Old exam 2024\n- Lecture 1 › Klausur 2023",
+        text: "These look like old exams. Which of them are?\n- Old exam 2024\n- Klausur 2023",
       },
     ]);
   });
 
-  test("the answer marks the listed ones asked, and a Chapter parsed meanwhile is asked alone", async () => {
+  test("the answer marks the listed ones asked, and an exam a later build found is asked alone", async () => {
     seedBrief({ done: true });
     await open();
-    const sheet = "aaaaaaaa-0000-4000-8000-000000000003";
-    db.tables.materials.push({
-      id: sheet,
-      owner: STUDENT,
-      course_id: COURSE,
-      name: "Probeklausur 3",
-      created_at: "2026-10-03T00:00:00Z",
-      parse_status: "parsed",
-    });
-    // Its root Chapter: an old exam by the Material's name.
-    db.tables.chapters.push({
-      id: "aaaaaaaa-0c40-4000-8000-000000000003",
-      owner: STUDENT,
-      course_id: COURSE,
-      material_id: sheet,
-      parent_id: null,
-      position: 0,
-      depth: 0,
-      title: "Probeklausur 3",
-      exam_proposed: false,
-      is_exam: null,
-      exam_asked: false,
-    });
+    const later = "aaaaaaaa-0e40-4000-8000-000000000003";
+    db.tables.exams.push(exam(later, "Probeklausur 3", 2));
     useMockModels({
       brief: mockToolModel(
-        [
-          [
-            {
-              toolName: "saveBrief",
-              input: { examChapterIds: [LECTURE_EXAM] },
-            },
-          ],
-        ],
+        [[{ toolName: "saveBrief", input: { examIds: [KLAUSUR_2023] } }]],
         "Noted.",
       ),
     });
     await send({ courseId: COURSE, message: userMessage("The second one.") });
 
     const state = (id: string) => {
-      const { is_exam, exam_asked } = db.tables.chapters.find(
-        (chapter) => chapter.id === id,
-      )!;
-      return [is_exam, exam_asked];
+      const { confirmed, asked } = db.tables.exams.find((e) => e.id === id)!;
+      return [confirmed, asked];
     };
-    expect(state(OLD_EXAM_ROOT)).toEqual([false, true]);
-    expect(state(LECTURE_EXAM)).toEqual([true, true]);
+    expect(state(EXAM_2024)).toEqual([false, true]);
+    expect(state(KLAUSUR_2023)).toEqual([true, true]);
     // Never asked: still unanswered.
-    expect(state(LECTURE_ROOT)).toEqual([null, false]);
-    expect(state("aaaaaaaa-0c40-4000-8000-000000000003")).toEqual([
-      null,
-      false,
-    ]);
+    expect(state(later)).toEqual([null, false]);
     await open();
 
     expect(stored().at(-1)?.text).toBe(

@@ -58,7 +58,8 @@ test("joinExtractions shifts Prerequisites and new KCs to the joined KCs", () =>
   });
   const exercise = (chunkId: string, newKcs: number[]) => ({
     chunkId,
-    solutionChunkId: null,
+    questionChunkIds: [chunkId],
+    solutionChunkIds: [],
     notAnExercise: false,
     kcIds: [],
     newKcs,

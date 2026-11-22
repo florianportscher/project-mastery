@@ -32,16 +32,20 @@ export type Snapshot = {
     id: string;
     position: number;
     questionChunkId: string;
-    solutionChunkId: string | null;
+    questionChunkIds: string[];
+    solutionChunkIds: string[];
+    examId: string | null;
     difficulty: number;
     finalAnswers: unknown;
   }>;
-  exerciseKcs: Array<{ exerciseId: string; kcId: string }>;
-  exerciseSolutions: Array<{
-    exerciseChunkId: string;
-    solutionChunkId: string | null;
-    status: string;
+  exams: Array<{
+    id: string;
+    name: string;
+    position: number;
+    confirmed: boolean | null;
+    asked: boolean;
   }>;
+  exerciseKcs: Array<{ exerciseId: string; kcId: string }>;
   topics: Array<{
     id: string;
     parentId: string | null;
@@ -70,8 +74,6 @@ export type SnapshotChapter = {
   position: number;
   title: string;
   pageFrom: number;
-  isExam: boolean | null;
-  examProposed: boolean;
 };
 
 export type SnapshotChunk = {

@@ -14,8 +14,6 @@ export type ProposedChapter = {
   heading: string | null;
   /** The page it starts on, when it starts at no heading. */
   page: number | null;
-  /** An old exam, a class test or its solutions. */
-  exam: boolean;
 };
 
 /** A Chapter of the stored Outline. */
@@ -27,7 +25,6 @@ export type OutlineChapter = {
   depth: number;
   title: string;
   pageFrom: number;
-  examProposed: boolean;
   /** The index of the unit it starts at. */
   startUnit: number;
   /** Whether that unit is its heading. */
@@ -75,7 +72,6 @@ export function outlineChapters(
     depth: 0,
     title: materialName.slice(0, MAX_TITLE_CHARS),
     pageFrom: 1,
-    examProposed: false,
     startUnit: 0,
     startsAtHeading: false,
   };
@@ -139,7 +135,6 @@ export function outlineChapters(
       depth: kept[parent]!.depth + 1,
       title,
       pageFrom: pageFrom ?? units[startUnit]!.pageFrom,
-      examProposed: chapter.exam,
       startUnit,
       startsAtHeading,
     });
@@ -160,6 +155,5 @@ export function chaptersFromPdfOutline(
     level: entry.level,
     heading: null,
     page: entry.page,
-    exam: false,
   }));
 }

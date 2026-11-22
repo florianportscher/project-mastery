@@ -38,16 +38,30 @@ export function unitTitle(unit: { outline: string[] }): string {
   return marked!.replace("<- this unit", "").trim();
 }
 
-/** An exercise unit as its call sent it. */
+/** An exercise batch as its call sent it. */
 export type SentExerciseUnit = {
   material: string;
   outline: string[];
   language: string;
-  subtasks: Array<{ id: string; statement: string; solution: string | null }>;
+  exercises: Array<{ id: string; statement: string; solution: string | null }>;
   kcs: Array<{ id: string; name: string }>;
 };
 
-/** What the exercise mock answers for a subtask: KCs by name. */
+/** A grouping call's input: exercise and solution chunks and stored exams by short id. */
+export type SentGrouping = {
+  exams: Array<{ id: string; name: string }>;
+  exercises: Array<{ id: string; text: string }>;
+  solutions: Array<{ id: string; text: string }>;
+};
+
+/** An Exercise the grouping mock answers, by its chunks' texts and its exam's name. */
+export type GroupAnswer = {
+  question: string[];
+  solution?: string[];
+  exam?: string;
+};
+
+/** What the exercise mock answers for an Exercise: KCs by name. */
 export type SubtaskAnswer = {
   kcs?: string[];
   newKcs?: string[];
@@ -162,8 +176,11 @@ export type SentCheck = {
  * nothing. The Prerequisite check picks the KC named `meaningOf` the name
  * (by default the name itself). Every KC text gets a one-hot vector of its
  * own, so equal texts are alike and others are not. `afterCall` runs after
- * each extraction call. The `exercise` task answers each subtask with what
- * `subtaskOf` says (by default nothing), naming offered KCs by name.
+ * each extraction call. The `exercise` task answers each Exercise with what
+ * `subtaskOf` says (by default nothing), naming offered KCs by name. The
+ * `ingest` task's grouping call answers the Exercises `groupsOf` names by
+ * their chunks' texts (by default none, so each exercise chunk is one), its
+ * first `groupingFails` calls with nothing valid.
  */
 export function useBuildModels({
   kcsOf = (unit) => [unitTitle(unit)],
@@ -173,6 +190,8 @@ export function useBuildModels({
   chunkIdOf = (_kc, unit) => unit.chunks[0]!.id,
   meaningOf = (name) => name.name,
   subtaskOf = () => ({}),
+  groupsOf = () => [],
+  groupingFails = 0,
   blankCalls = 0,
   timeoutCalls = 0,
   rateLimitedCalls = [],
@@ -187,7 +206,11 @@ export function useBuildModels({
   repeatsOf?: (unit: SentUnit) => string[];
   chunkIdOf?: (kc: string, unit: SentUnit) => string;
   meaningOf?: (name: SentCheck["names"][number]) => string | null;
-  subtaskOf?: (subtask: SentExerciseUnit["subtasks"][number]) => SubtaskAnswer;
+  subtaskOf?: (
+    exercise: SentExerciseUnit["exercises"][number],
+  ) => SubtaskAnswer;
+  groupsOf?: (sent: SentGrouping) => GroupAnswer[];
+  groupingFails?: number;
   blankCalls?: number;
   /** Extraction calls that run into their time limit first. */
   timeoutCalls?: number;
@@ -293,10 +316,10 @@ export function useBuildModels({
       const unit = userJson(prompt) as SentExerciseUnit;
       exercises.push(unit);
       return answer({
-        subtasks: unit.subtasks.map((subtask) => {
-          const said = subtaskOf(subtask);
+        exercises: unit.exercises.map((exercise) => {
+          const said = subtaskOf(exercise);
           return {
-            id: subtask.id,
+            id: exercise.id,
             notAnExercise: said.notAnExercise ?? false,
             kcIds: (said.kcs ?? []).flatMap(
               (name) => unit.kcs.find((kc) => kc.name === name)?.id ?? [],
@@ -311,7 +334,43 @@ export function useBuildModels({
       });
     },
   });
-  useMockModels({ map, embed, exercise, topic });
+  const groupings: SentGrouping[] = [];
+  const ingest = new MockLanguageModelV4({
+    doStream: async ({ prompt }) => {
+      const sent = userJson(prompt) as SentGrouping;
+      groupings.push(sent);
+      if (groupings.length <= groupingFails) return answer(undefined);
+      const idOf = (items: SentGrouping["exercises"], text: string) =>
+        items.find((item) => item.text === text)?.id ?? text;
+      const groups = groupsOf(sent);
+      const examNames = [
+        ...new Set(groups.flatMap((group) => group.exam ?? [])),
+      ];
+      return answer({
+        // An exam continues the stored one of the same name.
+        exams: examNames.map((name) => ({
+          name,
+          continues: sent.exams.find((e) => e.name === name)?.id ?? null,
+        })),
+        exercises: groups.map((group) => ({
+          questionIds: group.question.map((t) => idOf(sent.exercises, t)),
+          solutionIds: (group.solution ?? []).map((t) =>
+            idOf(sent.solutions, t),
+          ),
+          exam: group.exam ?? null,
+        })),
+      });
+    },
+  });
+  useMockModels({ map, embed, exercise, topic, ingest });
   vi.stubEnv("AI_CONCURRENCY", "1");
-  return { extractions, checks, embedded, exercises, reasoning, trees };
+  return {
+    extractions,
+    checks,
+    embedded,
+    exercises,
+    groupings,
+    reasoning,
+    trees,
+  };
 }

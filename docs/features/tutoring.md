@@ -64,7 +64,7 @@ There are four kinds of notes:
 | Topic notes    | What clicked and what kept going wrong, per Topic                      | The close call                                                        |
 | Material notes | Each Material's notation                                               | The parse                                                             |
 
-From the Knowledge map side, the tutoring reads KCs (with the `assumes` texts), Prerequisites, Exercises, Topics and chunks. From the Brief it reads the exam date, goal, excluded Materials, exam scopes, old exams (`chapters.is_exam`) and the Reserved exam.
+From the Knowledge map side, the tutoring reads KCs (with the `assumes` texts), Prerequisites, Exercises, Topics and chunks. From the Brief it reads the exam date, goal, excluded Materials, exam scopes, old exams (`exams`, `exercises.exam_id`) and the Reserved exam.
 
 ## Everything derived on every read
 

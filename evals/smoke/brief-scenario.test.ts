@@ -7,12 +7,12 @@ import { briefSetup, parseScenario, setupSchema } from "./brief-scenario";
 const course = {
   courseId: "course",
   studentId: "student",
-  examChapterIds: ["final", "resit"],
+  examIds: ["final", "resit"],
 };
 const now = new Date("2026-11-13T10:00:00Z");
 
 describe("briefSetup", () => {
-  it("without a setup stores a new Brief whose old exams are proposed, not asked", () => {
+  it("without a setup stores a new Brief whose found exams are not asked", () => {
     const plan = briefSetup(course, setupSchema.parse({}), now);
     expect(plan.brief).toMatchObject({
       course_id: "course",
@@ -22,9 +22,9 @@ describe("briefSetup", () => {
       scope_confirmed: false,
       reserved_exam_answered: false,
     });
-    expect(plan.examChapters).toEqual({
+    expect(plan.exams).toEqual({
       ids: ["final", "resit"],
-      isExam: null,
+      confirmed: null,
       asked: false,
     });
   });
@@ -53,14 +53,14 @@ describe("briefSetup", () => {
       scope_confirmed: true,
       notes: "New to proofs.",
       reserved_exam_answered: true,
-      reserved_exam_chapter_id: null,
+      reserved_exam_id: null,
     });
-    expect(plan.examChapters).toMatchObject({ isExam: true, asked: true });
+    expect(plan.exams).toMatchObject({ confirmed: true, asked: true });
   });
 });
 
 describe("smallCourseRows", () => {
-  it("inserts parents first, with Klausur 2025 proposed and the admin text on Chapter 2", () => {
+  it("inserts parents first, with Klausur 2025 found and the admin text on Chapter 2", () => {
     let n = 0;
     const { inserts, course: seeded } = smallCourseRows(
       "student",
@@ -76,6 +76,9 @@ describe("smallCourseRows", () => {
       "kcs",
       "topic_kcs",
       "kc_sources",
+      "exams",
+      "exercises",
+      "exercise_chunks",
     ]);
     const rows = (table: string) =>
       inserts.find((i) => i.table === table)!.rows;
@@ -86,8 +89,8 @@ describe("smallCourseRows", () => {
       "Lab manual",
       "Lecture notes",
     ]);
-    expect(rows("chapters").filter((c) => c.exam_proposed)).toEqual([
-      expect.objectContaining({ id: seeded.examChapterId, title: EXAM_TITLE }),
+    expect(rows("exams")).toEqual([
+      expect.objectContaining({ id: seeded.examId, name: EXAM_TITLE }),
     ]);
     expect(rows("chunks")).toContainEqual(
       expect.objectContaining({
