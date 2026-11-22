@@ -25,16 +25,10 @@ export function checkReportLine(report: CheckReport | null): string | null {
     ]),
   ];
   if (partly.length > 0) {
-    const more = partly.length - MAX_NAMED_UNITS;
-    parts.push(
-      `covered ${partly.slice(0, MAX_NAMED_UNITS).join(", ")}${more > 0 ? ` and ${more} more` : ""} only in part`,
-    );
+    parts.push(`covered ${partly.join(", ")} only in part`);
   }
   return parts.length === 0 ? null : `The AI ${parts.join(" and ")}`;
 }
-
-/** How many partly covered places the line names before "and N more". */
-const MAX_NAMED_UNITS = 2;
 
 /**
  * The pages with teaching content that no cited chunk covers, per Material

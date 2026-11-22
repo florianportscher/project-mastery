@@ -92,7 +92,7 @@ export async function loadMaterial(
 /**
  * Whether the Material has chunks. They are written in one transaction
  * after every page is read, so existing ones are complete: a parse started
- * again after a failed embed keeps them, their Outline and their vectors.
+ * again after a failed embed keeps them and their vectors.
  */
 export async function hasChunks(
   supabase: AdminSupabase,

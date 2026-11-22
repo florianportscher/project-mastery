@@ -14,9 +14,6 @@ export type DraftChunk = {
 /** The longest a chunk gets, in characters, unless one paragraph is longer. */
 export const MAX_CHUNK_CHARS = 6000;
 
-/** The longest a chunk's heading gets (`chunks.heading`). */
-const MAX_HEADING_CHARS = 500;
-
 /** A paragraph of a chunk, with the pages of the unit it came from. */
 type Paragraph = { text: string; pageFrom: number; pageTo: number };
 
@@ -68,7 +65,7 @@ export function chunksFromUnits(units: readonly BatchUnit[]): DraftChunk[] {
       const text = headingText(unit.markdown);
       if (text) {
         headings.push(...paragraphs(unit, `**${text}**`));
-        heading = text.slice(0, MAX_HEADING_CHARS);
+        heading = text;
       }
       previous = null;
       continue;

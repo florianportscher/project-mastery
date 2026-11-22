@@ -15,7 +15,7 @@ comment on column public.material_pages.notes is 'The unusual notation its page 
 -- Chunks ---------------------------------------------------------------------
 
 alter table public.chunks
-  add column heading text check (char_length(heading) <= 500);
+  add column heading text;
 
 comment on column public.chunks.heading is 'The heading it follows: the last heading unit at or before it in its Material; null before the first.';
 

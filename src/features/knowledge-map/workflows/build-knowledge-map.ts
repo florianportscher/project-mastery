@@ -12,7 +12,7 @@ import {
 } from "@/features/knowledge-map/workflows/build-steps";
 import { consolidateKcs } from "@/features/knowledge-map/workflows/consolidate-steps";
 import { extractExercises } from "@/features/knowledge-map/workflows/exercise-steps";
-import { extractChapters } from "@/features/knowledge-map/workflows/extract-steps";
+import { extractTeachingBatches } from "@/features/knowledge-map/workflows/extract-steps";
 import {
   assignExams,
   groupExercises,
@@ -21,7 +21,7 @@ import { recheckAssumes } from "@/features/knowledge-map/workflows/prerequisite-
 import { proposeTopicTree } from "@/features/knowledge-map/workflows/topic-steps";
 
 /**
- * Updates a Course's Knowledge map from its Chapters (#229, #315). The
+ * Updates a Course's Knowledge map from its Materials' chunks (#229, #315). The
  * workflow passes only the Course's id; each step reads and writes tables
  * and stores its results before it ends. It retires KCs whose sources are
  * gone and extracts the teaching units without a current extraction one
@@ -31,8 +31,8 @@ import { proposeTopicTree } from "@/features/knowledge-map/workflows/topic-steps
  * they changed), extracts the Exercises in batches, stores them with their
  * new KCs and gives each its exam. When the build stored new KCs, what
  * KCs of earlier builds assume as text is asked once against them. It
- * groups the Chapters into a Topic tree (one call, only when the Outlines
- * or KCs changed) and puts the map in Course order. A unit whose call fails
+ * groups the KCs into a Topic tree (one call, only when the KCs
+ * changed) and puts the map in Course order. A unit whose call fails
  * (a timeout, or no valid answer) is left to the next step. An extraction
  * unit is then split into pieces until it is given up, and the check report
  * lists it. A call the Gateway's rate limit turns away is no failure: its
@@ -60,7 +60,7 @@ export async function buildKnowledgeMap(courseId: string): Promise<void> {
     // Exercises are matched to the KCs the teaching units gave, a unit
     // given up on included, and their new KCs are stored like those.
     const steps: BuildStep[] = [
-      extractChapters,
+      extractTeachingBatches,
       consolidateKcs,
       groupExercises,
       extractExercises,

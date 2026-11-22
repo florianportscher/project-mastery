@@ -45,7 +45,7 @@ import type { AdminSupabase } from "@/lib/supabase/types";
 /**
  * The grouping step of a build: which exercise and solution chunks form
  * each Exercise. One call (task `ingest`) sees every exercise and solution
- * chunk of the Course in Course order, with its Material, Chapter path and
+ * chunk of the Course in Course order, with its Material, heading and
  * first characters, and answers the Exercises; a Course of more than 400
  * such chunks goes in calls of at most 400. It runs only when the Course's
  * exercise and solution chunks changed since the last grouping

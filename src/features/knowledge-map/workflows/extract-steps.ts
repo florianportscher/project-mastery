@@ -71,7 +71,7 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * (`domain/unit-pieces.ts`). So a failing unit never fails the build. A
  * reached Daily limit stops the build; what is stored stays.
  */
-export async function extractChapters(
+export async function extractTeachingBatches(
   courseId: string,
   failed: readonly string[] = [],
   deferred: readonly string[] = [],
@@ -167,7 +167,7 @@ export async function loadKnownKcs(
   };
 }
 
-extractChapters.maxRetries = RATE_LIMITED_STEP_RETRIES;
+extractTeachingBatches.maxRetries = RATE_LIMITED_STEP_RETRIES;
 
 /**
  * The extraction of a unit's chunks, all or a piece, checked: asked once

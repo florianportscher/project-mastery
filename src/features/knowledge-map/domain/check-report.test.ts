@@ -31,7 +31,7 @@ test("names unread pages and the places covered in part, in one line", () => {
       }),
     ),
   ).toBe(
-    "The AI couldn't read pp. 10, 36–38 and covered Notes p. 1–4, Notes p. 5–9 and 1 more only in part",
+    "The AI couldn't read pp. 10, 36–38 and covered Notes p. 1–4, Notes p. 5–9, Sheet 1 p. 1 only in part",
   );
   expect(
     checkReportLine(
