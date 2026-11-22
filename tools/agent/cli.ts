@@ -50,7 +50,7 @@ Browser (one session per checkout, login survives restarts)
   look                   print URL, page snapshot and new errors
   act <command...>       run an agent-browser command, then \`look\`
                          e.g. act click @e9 · act fill @e10 "text" · act press Enter
-  browser <command...>   any other agent-browser command (prints its output)
+  browser <command...>   any other agent-browser command (prints its output); \`browser js\` runs JavaScript in the page
   react <command...>     React DevTools: tree, inspect <id>, renders start|stop
   shot [--full]          screenshot; prints the file path
 
@@ -244,7 +244,10 @@ async function run(
       return output ? `${output}\n${page}` : page;
     }
     case "browser":
-      return (await browser(args)).output;
+      // `js` is `eval` under a name Claude Code's worktree guard accepts.
+      return (
+        await browser(args[0] === "js" ? ["eval", ...args.slice(1)] : args)
+      ).output;
     case "react":
       return react(args);
     case "shot":

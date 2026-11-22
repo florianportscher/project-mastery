@@ -8,7 +8,7 @@ How this repo equips coding agents: what to change when a run goes wrong, and wh
 - **Cheap runs.** Cost is turns × context. Few agents, small contexts, compact tool output (a clean check prints one line), and the cheapest model that does the role well.
 - **Lean.** Every always-loaded line costs on every turn. Each fact has one home and is reached by pointer; deleting a line nobody needs beats adding one. The `writing-for-agents` skill covers how to write them.
 - **Simple.** The smallest change that removes the failure. No framework for a single case.
-- **Parked until launch:** `/retro`, except one run around 2026-12-02 that compares the two-shift workflow (`/sitting`, then `/build` on a queue) with the report of 2026-11-09. `/sweep` and its auditors are deleted and live on under the tag `sweep-v1`.
+- **Parked until launch:** `/retro`. The cleanup audit of 2026-11-20 (`docs/retros/2026-11-20.md`) replaced the `/retro` planned for 2026-12-02. Transcripts are kept for 90 days: `cleanupPeriodDays: 90` was set in the maintainer's user settings on 2026-11-20. `/sweep` and its auditors are deleted and live on under the tag `sweep-v1`.
 
 ## Where things live
 
@@ -23,4 +23,5 @@ How this repo equips coding agents: what to change when a run goes wrong, and wh
 | `.claude/agents/`        | Roles that skills start (`builder`, `reviewer`)                                                                                                                                                                                         |
 | `.claude/hooks/`         | Guardrails: Bash guard, lint on edit, `pnpm check` on stop                                                                                                                                                                              |
 | `tools/`, `package.json` | CLIs agents run (`pnpm -s agent`, `pnpm smoke`, `pnpm nit`, `pnpm -s retro`, `tools/sitting/waiting.sh`)                                                                                                                                |
+| `tools/build/`           | `/build`'s scripts (`setup.sh`, `ready.sh <pr> <body-file>`, `cleanup.sh`)                                                                                                                                                              |
 | ESLint rules, tests      | Rules a machine can check                                                                                                                                                                                                               |

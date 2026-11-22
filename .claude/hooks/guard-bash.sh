@@ -34,13 +34,18 @@ guard ALLOW_DB_RESET \
   "Parallel agents share the local Supabase database, so a reset wipes their data too. Apply new migrations with 'pnpm exec supabase migration up --local --include-all'."
 
 guard ALLOW_LIVE_AI \
-  'pnpm\s+(-s\s+)?(run\s+)?smoke(:\S+)?\b|pnpm\s+(-s\s+)?(run\s+)?tutor-eval\s+(start|say)\b|(pnpm\s+exec\s+)?tsx\s+.*evals/smoke\S*\.ts|curl\s+.*(generativelanguage\.googleapis\.com|ai-gateway\.vercel\.sh)' \
+  'pnpm\s+(-s\s+)?(run\s+)?smoke(:\S+)?\b|pnpm\s+(-s\s+)?(run\s+)?(tutor|brief)-eval\s+say\b|(pnpm\s+exec\s+)?tsx\s+.*evals/smoke\S*\.ts|curl\s+.*(generativelanguage\.googleapis\.com|ai-gateway\.vercel\.sh)' \
   "Smoke checks and direct model calls spend the user's AI Gateway credit. Test with AI_PROVIDER=mock; what live calls are allowed is in docs/agents/live-ai.md."
 
 # Agent worktrees only: files written from the shell skip the lint hook, and
 # patch scripts get around Claude Code's worktree guard. An -i option counts
 # only within the sed or perl command, so `sed -n 1p f; grep -i x f` reads.
 if [[ "$cwd" == */.claude/worktrees/* ]]; then
+  # A write whose every target is under /tmp/ skips nothing that matters: drop
+  # those targets from the checked text. Paths with .. are not exempt.
+  if ! grep -qF '..' <<<"$cmd"; then
+    cmd=$(sed -E 's#>>?\s*/tmp/[^[:space:];&|]*##g; s#tee\s+(-[a-zA-Z]+\s+)*(/tmp/[^[:space:];&|]*\s*)+([;&|]|$)#\3#g' <<<"$cmd")
+  fi
   arg='[^;&|[:space:]]+\s+'
   guard ALLOW_SHELL_WRITE \
     "cat\s+([^|;&]*\s)?>>?\s*[^&[:space:]]|tee\s|sed\s+($arg)*-[a-zA-Z]*i|perl\s+($arg)*-[a-zA-Z]*i|python3?\s+(-\s*)?<<|python3?\s+\S+\.py\b" \
