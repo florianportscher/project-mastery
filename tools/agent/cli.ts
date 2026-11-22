@@ -25,7 +25,12 @@ import { inspect } from "./inspect";
 import { formatMail, latestMail } from "./mail";
 import { callNextTool } from "./next-mcp";
 import { PERSONA_PASSWORD, PERSONAS, persona } from "./personas";
-import { queryStaging, queryStagingSql, writeStaging } from "./staging";
+import {
+  queryStaging,
+  queryStagingSql,
+  resetStagingMap,
+  writeStaging,
+} from "./staging";
 import { formatSqlResult } from "./sql-format";
 import {
   ensurePersonas,
@@ -74,6 +79,10 @@ Staging (real data; reads, and REST writes for testing; from .env.local, ADR 002
                          e.g. staging-write "PATCH materials?id=eq.7" '{"title":"x"}'
   staging-sql "<query>"  one read-only SQL statement; at most 200 rows printed
                          e.g. staging-sql "select count(*) from materials"
+  staging-reset-map <courseId>
+                         delete a Course's whole map build (Topics, KCs, Exercises, exams,
+                         extractions, build state); Materials and chunks stay, so Build
+                         starts again from the parse. Refuses a running build. No undo
   inspect <courseId> [materials|chunks|units|kcs|exercises|topics|build|calls]
                          a Course's stored map build and its model calls as text, suspect
                          spots first; the first stop when diagnosing a map
@@ -280,6 +289,10 @@ async function run(
     case "staging-sql":
       if (!args[0]) throw new AgentError('Usage: agent staging-sql "<query>"');
       return queryStagingSql(args[0]);
+    case "staging-reset-map":
+      if (!args[0])
+        throw new AgentError("Usage: agent staging-reset-map <courseId>");
+      return resetStagingMap(args[0]);
     case "inspect":
       return inspect(args);
     case "users":
