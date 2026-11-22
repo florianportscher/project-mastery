@@ -1,6 +1,7 @@
 import "server-only";
 import { Output } from "ai";
 import { z } from "zod";
+import { KC_DEFINITION } from "@/features/knowledge-map/ai/kc-definition";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { aiTask } from "@/lib/ai/models";
 
@@ -91,10 +92,9 @@ export const chapterExtractionSchema = (
 
 const EXTRACTION_INSTRUCTIONS = `You get one unit of a university course's materials as JSON: the material's name, the course language, the unit's chunks in reading order, each with an id, the heading it follows and its Markdown, and the knowledge components (KCs) the course's materials taught so far (knownKcs, in course order, each with an id and the heading it was taught under). List the KCs this unit teaches.
 
-- A KC is one thing the unit teaches: a statement to know, an idea to understand, a method to carry out or when to use which method. Size it as one exam task: something a single task could test and a Student could learn in one sitting. A slide, a page or a section is not the unit of size; the same KC may span several of them, and one of them may hold several KCs or none.
-- Together, the unit's KCs cover what it teaches. Do not split one thing into several KCs or merge several into one.
-- Headings, overviews, summaries, the organisation of the course, lists of notation or conventions, repeated material and asides the course does not ask for (history, cost, outlooks beyond the course) are no KCs.
-- An overview, aside, example, counterexample, caution or remark belongs to the KC it serves. Give it a KC of its own only when an exam task could test it alone. A description states the KC itself, without examples or their numbers.
+${KC_DEFINITION}
+- Headings, summaries, the organisation of the course, lists of notation or conventions, repeated material and asides the course does not ask for (history, cost, outlooks beyond the course) are no KCs.
+- An example, counterexample, caution or remark belongs to the KC it serves. A description states the KC itself, without examples or their numbers.
 - The headings only show where a chunk sits: take KCs only from the chunks' text. A chunk that is only a heading teaches nothing.
 - When the unit teaches again what one of knownKcs already teaches, do not write that KC anew: give its id under repeats, with the ids of the chunks that teach it here.
 - Give each new KC an id (n1, n2, …), a short name, a one-line description and the ids of the chunks that teach it.
