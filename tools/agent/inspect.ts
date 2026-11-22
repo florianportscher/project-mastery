@@ -12,7 +12,7 @@ type Env = Record<string, string | undefined>;
 
 const SECTIONS = [
   "materials",
-  "outline",
+  "chunks",
   "units",
   "kcs",
   "exercises",
@@ -37,18 +37,10 @@ export type Snapshot = {
     pageNumber: number;
     skipped: string | null;
   }>;
-  chapters: Array<{
-    id: string;
-    materialId: string;
-    parentId: string | null;
-    depth: number;
-    position: number;
-    title: string;
-    pageFrom: number;
-  }>;
   chunks: Array<{
     id: string;
-    chapterId: string | null;
+    materialId: string;
+    heading: string | null;
     position: number;
     label: string;
     pageFrom: number;
@@ -56,9 +48,9 @@ export type Snapshot = {
     chars: number;
   }>;
   extractions: Array<{
-    chapterId: string;
+    materialId: string;
     kind: string;
-    unit: number;
+    batch: number;
     kcIds: string[] | null;
   }>;
   kcs: Array<{
@@ -92,7 +84,6 @@ export type Snapshot = {
     parentId: string | null;
     position: number;
     name: string;
-    chapterIds: string[];
     kcIds: string[];
   }>;
   build: {
@@ -327,7 +318,7 @@ function describeCall(call: Call): string {
 }
 
 type Report = {
-  chaptersWithoutKcs: string[];
+  uncitedPages: unknown[];
   unitsBelowCoverage: unknown[];
   unitsNotExtracted: string[];
   duplicates: Array<{ a: string; b: string }>;
@@ -338,9 +329,7 @@ function readReport(value: unknown): Report {
   const list = (key: string): unknown[] =>
     Array.isArray(r[key]) ? (r[key] as unknown[]) : [];
   return {
-    chaptersWithoutKcs: list("chaptersWithoutKcs").filter(
-      (x): x is string => typeof x === "string",
-    ),
+    uncitedPages: list("uncitedPages"),
     unitsBelowCoverage: list("unitsBelowCoverage"),
     unitsNotExtracted: list("unitsNotExtracted").filter(
       (x): x is string => typeof x === "string",
@@ -357,29 +346,20 @@ function readReport(value: unknown): Report {
 export function flagLines(s: Snapshot, calls: Call[] | null): string[] {
   const live = s.kcs.filter((kc) => !kc.retiredAt);
   const cited = new Set(live.flatMap((kc) => kc.sources));
-  const teaching = new Set(
-    s.chunks
-      .filter((c) => c.label === "content" && c.chapterId)
-      .map((c) => c.chapterId!),
-  );
-  const citedChapters = new Set(
-    s.chunks
-      .filter((c) => cited.has(c.id) && c.chapterId)
-      .map((c) => c.chapterId!),
-  );
-  const title = new Map(s.chapters.map((c) => [c.id, c.title]));
   const lines: string[] = [];
-  for (const id of teaching) {
-    if (!citedChapters.has(id))
-      lines.push(`chapter without KCs: ${title.get(id)} (${short(id)})`);
+  for (const c of s.chunks) {
+    if (c.label === "content" && !cited.has(c.id))
+      lines.push(
+        `content chunk without KCs: ${c.heading ?? "no heading"} p${c.pageFrom}-${c.pageTo} (${short(c.id)})`,
+      );
   }
   for (const kc of live.filter((k) => k.sources.length === 0))
     lines.push(`KC without sources: ${kc.name} (${short(kc.id)})`);
   const report = readReport(s.build?.checkReport);
   for (const d of report.duplicates)
     lines.push(`near-duplicate KCs: ${d.a} / ${d.b}`);
-  for (const t of report.chaptersWithoutKcs)
-    lines.push(`report: chapter without KCs: ${t}`);
+  for (const p of report.uncitedPages)
+    lines.push(`report: pages without KCs: ${JSON.stringify(p)}`);
   for (const u of report.unitsBelowCoverage)
     lines.push(`report: unit below coverage: ${JSON.stringify(u)}`);
   for (const u of report.unitsNotExtracted)
@@ -413,7 +393,7 @@ export function formatSection(
   calls: Call[] | null,
 ): string {
   const kcName = new Map(s.kcs.map((kc) => [kc.id, kc.name]));
-  const chapterTitle = new Map(s.chapters.map((c) => [c.id, c.title]));
+  const materialName = new Map(s.materials.map((m) => [m.id, m.name]));
   const name = (id: string) => `${kcName.get(id) ?? "?"} (${short(id)})`;
   const examName = new Map(s.exams.map((x) => [x.id, x.name]));
   const examLabel = (id: string | null) =>
@@ -435,31 +415,27 @@ export function formatSection(
         );
       }
       break;
-    case "outline":
+    case "chunks":
       for (const m of s.materials) {
         lines.push(`# ${m.name}`);
-        for (const c of s.chapters
-          .filter((c) => c.materialId === m.id)
+        let heading: string | null | undefined;
+        for (const k of s.chunks
+          .filter((k) => k.materialId === m.id)
           .toSorted((a, b) => a.position - b.position)) {
+          if (k.heading !== heading) lines.push(k.heading ?? "(no heading)");
+          heading = k.heading;
           lines.push(
-            `${"  ".repeat(c.depth)}${c.title} (${short(c.id)}) p${c.pageFrom}`,
+            `  - ${k.label} p${k.pageFrom}-${k.pageTo} ${k.chars} chars (${short(k.id)})`,
           );
-          const chunks = s.chunks
-            .filter((k) => k.chapterId === c.id)
-            .toSorted((a, b) => a.position - b.position);
-          for (const k of chunks)
-            lines.push(
-              `${"  ".repeat(c.depth + 1)}- ${k.label} p${k.pageFrom}-${k.pageTo} ${k.chars} chars (${short(k.id)})`,
-            );
         }
       }
       break;
     case "units":
       for (const e of s.extractions) {
-        const key = `${e.chapterId}/${e.kind}/${e.unit}`;
+        const key = `${e.materialId}/${e.kind}/${e.batch}`;
         const own = (calls ?? []).filter((c) => c.metadata.unitKey === key);
         lines.push(
-          `${key} ${chapterTitle.get(e.chapterId) ?? "?"} ${e.kind}: ${(e.kcIds ?? []).map(name).join("; ") || "no KCs"}${own.length ? ` · calls ${own.map((c) => short(c.id)).join(" ")}` : ""}`,
+          `${key} ${materialName.get(e.materialId) ?? "?"} ${e.kind} ${e.batch}: ${(e.kcIds ?? []).map(name).join("; ") || "no KCs"}${own.length ? ` · calls ${own.map((c) => short(c.id)).join(" ")}` : ""}`,
         );
       }
       break;
@@ -494,7 +470,7 @@ export function formatSection(
           .filter((t) => t.parentId === parentId)
           .toSorted((a, b) => a.position - b.position)) {
           lines.push(
-            `${"  ".repeat(depth)}${t.name} (${short(t.id)}) KCs: ${t.kcIds.map(name).join("; ") || "-"} · Chapters: ${t.chapterIds.map((id) => chapterTitle.get(id) ?? short(id)).join(", ") || "-"}`,
+            `${"  ".repeat(depth)}${t.name} (${short(t.id)}) KCs: ${t.kcIds.map(name).join("; ") || "-"}`,
           );
           render(t.id, depth + 1);
         }

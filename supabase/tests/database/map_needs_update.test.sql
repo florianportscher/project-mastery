@@ -22,9 +22,7 @@ values
     '11111111-1111-1111-1111-111111111111/aaaaaaaa-0000-0000-0000-000000000001/aaaaaaaa-1111-0000-0000-000000000002',
     'parsing');
 select public.replace_material_chunks('aaaaaaaa-1111-0000-0000-000000000001',
-  '[{"position": 0, "parent_position": null, "depth": 0, "title": "Script", "page_from": 1},
-    {"position": 1, "parent_position": 0, "depth": 1, "title": "Final exam", "page_from": 2}]',
-  '[{"position": 0, "page_from": 2, "page_to": 2, "label": "exercise", "markdown": "Find a basis.", "chapter_position": 1}]');
+  '[{"position": 0, "page_from": 2, "page_to": 2, "label": "exercise", "markdown": "Find a basis.", "heading": "Final exam"}]');
 
 create function pg_temp.needs_update() returns boolean language sql as $$
   select needs_update from public.knowledge_map_builds

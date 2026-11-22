@@ -13,7 +13,10 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { checkReportLine } from "@/features/knowledge-map/domain/check-report";
+import {
+  checkReportLine,
+  pagesText,
+} from "@/features/knowledge-map/domain/check-report";
 import { startKnowledgeMapBuild } from "@/features/knowledge-map/server/actions";
 import type {
   KnowledgeMapView,
@@ -209,7 +212,7 @@ function BuildStatus({ build }: { build: MapBuild }) {
 
 /**
  * What the last build's check report says of a weak map: one line when it
- * left pages unread or Chapters covered only in part, with Update map, and
+ * left pages unread or parts covered only in part, with Update map, and
  * with `details` (outside production) its full lists.
  */
 function MapCheck({
@@ -224,12 +227,17 @@ function MapCheck({
   if (!report) return null;
   const line = checkReportLine(report);
   const lists = [
-    { title: "Chapters without KCs", items: report.chaptersWithoutKcs },
+    {
+      title: "Pages without KCs",
+      items: report.uncitedPages.map(
+        (entry) => `${entry.material} ${pagesText(entry.pages)}`,
+      ),
+    },
     { title: "Exercises without KCs", items: report.exercisesWithoutKcs },
     {
       title: "Units below the coverage bar",
       items: report.unitsBelowCoverage.map(
-        (unit) => `${unit.chapter}: ${Math.round(unit.coverage * 100)}%`,
+        (unit) => `${unit.unit}: ${Math.round(unit.coverage * 100)}%`,
       ),
     },
     { title: "Units the AI gave up on", items: report.unitsNotExtracted },
@@ -255,8 +263,9 @@ function MapCheck({
               <div key={list.title}>
                 <p className="font-medium text-foreground">{list.title}</p>
                 <ul className="list-inside list-disc">
-                  {list.items.map((item) => (
-                    <li key={item}>{item}</li>
+                  {list.items.map((item, index) => (
+                    // Two Exercises on one page share a label.
+                    <li key={`${index}:${item}`}>{item}</li>
                   ))}
                 </ul>
               </div>

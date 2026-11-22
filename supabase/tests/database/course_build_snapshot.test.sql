@@ -16,7 +16,7 @@ insert into public.courses (id, owner, name)
 values ('aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Algebra');
 insert into public.knowledge_map_builds (course_id, owner, status, check_report)
 values ('aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'built',
-  '{"chaptersWithoutKcs": ["Groups"]}');
+  '{"uncitedPages": [{"material": "Lecture 1", "pages": [2]}]}');
 insert into public.materials (id, owner, course_id, name, media_type, size_bytes, storage_path, parse_status)
 values ('aaaaaaaa-1111-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111',
   'aaaaaaaa-0000-0000-0000-000000000001', 'Lecture 1', 'application/pdf', 1000,
@@ -27,18 +27,18 @@ values
   ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-1111-0000-0000-000000000001', 1,
     '[{"label": "content", "markdown": "A vector."}, {"label": "exercise", "markdown": "Add."}]', null),
   ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-1111-0000-0000-000000000001', 2, '[]', 'unreadable');
-select public.replace_material_chunks('aaaaaaaa-1111-0000-0000-000000000001',
-  '[{"position": 0, "parent_position": null, "depth": 0, "title": "Lecture 1", "page_from": 1}]', '[]');
-insert into public.chunks (id, owner, course_id, material_id, chapter_id, position, page_from, page_to, label, markdown)
-select 'cccccccc-0000-0000-0000-000000000001', owner, course_id, material_id, id, 0, 1, 1, 'content', 'A vector.'
-from public.chapters where course_id = 'aaaaaaaa-0000-0000-0000-000000000001';
-insert into public.chunks (id, owner, course_id, material_id, position, page_from, page_to, label, markdown)
-values ('cccccccc-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111',
-  'aaaaaaaa-0000-0000-0000-000000000001', 'aaaaaaaa-1111-0000-0000-000000000001', 1, 1, 1, 'exercise', 'Add.');
-insert into public.chapter_extractions (chapter_id, owner, course_id, kind, unit, content_hash, output, kc_ids)
-select id, owner, course_id, 'content', 0, repeat('a', 64), '{"kcs": [], "prerequisites": []}',
-  '{bbbbbbbb-0000-0000-0000-000000000001}'
-from public.chapters where course_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+insert into public.chunks (id, owner, course_id, material_id, heading, position, page_from, page_to, label, markdown)
+values
+  ('cccccccc-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111',
+    'aaaaaaaa-0000-0000-0000-000000000001', 'aaaaaaaa-1111-0000-0000-000000000001', 'Vectors',
+    0, 1, 1, 'content', 'A vector.'),
+  ('cccccccc-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111',
+    'aaaaaaaa-0000-0000-0000-000000000001', 'aaaaaaaa-1111-0000-0000-000000000001', null,
+    1, 1, 1, 'exercise', 'Add.');
+insert into public.unit_extractions (material_id, owner, course_id, kind, batch, content_hash, output, kc_ids)
+values ('aaaaaaaa-1111-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111',
+  'aaaaaaaa-0000-0000-0000-000000000001', 'content', 0, repeat('a', 64), '{"kcs": [], "prerequisites": []}',
+  '{bbbbbbbb-0000-0000-0000-000000000001}');
 insert into public.kcs (id, owner, course_id, name, description, origin, position)
 values
   ('bbbbbbbb-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111',
@@ -57,9 +57,9 @@ values ('eeeeeeee-0000-0000-0000-000000000001', '11111111-1111-1111-1111-1111111
 insert into public.exercise_kcs (exercise_id, kc_id, owner, course_id)
 values ('eeeeeeee-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000002',
   '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001');
-insert into public.topics (id, owner, course_id, chapter_ids, name, central_question, position)
-select 'dddddddd-0000-0000-0000-000000000001', owner, course_id, array[id], 'Vectors', 'What is a vector?', 0
-from public.chapters where course_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+insert into public.topics (id, owner, course_id, name, central_question, position)
+select 'dddddddd-0000-0000-0000-000000000001', owner, id, 'Vectors', 'What is a vector?', 0
+from public.courses where id = 'aaaaaaaa-0000-0000-0000-000000000001';
 insert into public.topic_kcs (topic_id, kc_id, owner, position)
 values ('dddddddd-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000001',
   '11111111-1111-1111-1111-111111111111', 0);
@@ -82,9 +82,10 @@ select is(
   (select jsonb_build_array(
     jsonb_array_length(s -> 'extractions'), jsonb_array_length(s -> 'prerequisites'),
     jsonb_array_length(s -> 'exercises'), s -> 'exerciseKcs' -> 0 ->> 'kcId',
-    s -> 'topics' -> 0 -> 'kcIds' -> 0, s -> 'build' -> 'checkReport' -> 'chaptersWithoutKcs')
+    s -> 'topics' -> 0 -> 'kcIds' -> 0, s -> 'build' -> 'checkReport' -> 'uncitedPages' -> 0 -> 'pages',
+    s -> 'chunks' -> 0 ->> 'heading', s -> 'extractions' -> 0 -> 'batch')
    from snap),
-  '[1, 1, 1, "bbbbbbbb-0000-0000-0000-000000000002", "bbbbbbbb-0000-0000-0000-000000000001", ["Groups"]]'::jsonb,
+  '[1, 1, 1, "bbbbbbbb-0000-0000-0000-000000000002", "bbbbbbbb-0000-0000-0000-000000000001", [2], "Vectors", 0]'::jsonb,
   'extractions, Prerequisites, Exercises with their KCs, Topics with theirs and the build come along');
 select is((select count(*)::int from public.developers), 1, 'a developer reads their own row');
 select throws_ok(

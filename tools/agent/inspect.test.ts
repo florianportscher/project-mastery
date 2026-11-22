@@ -14,30 +14,11 @@ const snapshot: Snapshot = {
     },
   ],
   pages: [{ materialId: "m1", pageNumber: 3, skipped: "unreadable" }],
-  chapters: [
-    {
-      id: "ch1",
-      materialId: "m1",
-      parentId: null,
-      depth: 0,
-      position: 0,
-      title: "Limits",
-      pageFrom: 1,
-    },
-    {
-      id: "ch2",
-      materialId: "m1",
-      parentId: null,
-      depth: 0,
-      position: 1,
-      title: "Series",
-      pageFrom: 2,
-    },
-  ],
   chunks: [
     {
       id: "k1",
-      chapterId: "ch1",
+      materialId: "m1",
+      heading: "Limits",
       position: 0,
       label: "content",
       pageFrom: 1,
@@ -46,15 +27,18 @@ const snapshot: Snapshot = {
     },
     {
       id: "k2",
-      chapterId: "ch2",
-      position: 0,
+      materialId: "m1",
+      heading: "Series",
+      position: 1,
       label: "content",
       pageFrom: 2,
       pageTo: 2,
       chars: 10,
     },
   ],
-  extractions: [{ chapterId: "ch1", kind: "content", unit: 0, kcIds: ["kc1"] }],
+  extractions: [
+    { materialId: "m1", kind: "content", batch: 0, kcIds: ["kc1"] },
+  ],
   kcs: [
     {
       id: "kc1",
@@ -98,7 +82,7 @@ describe("agent inspect", () => {
         metadata: {},
       },
     ]);
-    expect(lines.join("\n")).toMatch(/chapter without KCs: Series/);
+    expect(lines.join("\n")).toMatch(/content chunk without KCs: Series p2-2/);
     expect(lines.join("\n")).toMatch(/KC without sources: Orphan/);
     expect(lines.join("\n")).toMatch(/unread pages: m1:3/);
     expect(lines.join("\n")).toMatch(/failed call: a/);
@@ -106,7 +90,13 @@ describe("agent inspect", () => {
 
   it("prints a unit with its KCs", () => {
     expect(formatSection("units", snapshot, null)).toContain(
-      "Limits content: Limit",
+      "m1/content/0 Notes content 0: Limit",
+    );
+  });
+
+  it("prints each Material's chunks under their headings", () => {
+    expect(formatSection("chunks", snapshot, null)).toBe(
+      "# Notes\nLimits\n  - content p1-1 10 chars (k1)\nSeries\n  - content p2-2 10 chars (k2)",
     );
   });
 

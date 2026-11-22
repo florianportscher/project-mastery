@@ -11,7 +11,6 @@ import {
   GOLD,
   parseSeeded,
   recordedCalls,
-  recordedOutline,
   recordedPages,
   type RecordedPage,
 } from "./recorded-pages";
@@ -19,10 +18,7 @@ import { result, type SmokeCheck, type SmokeResult } from "./smoke-check";
 
 type Supabase = Parameters<SmokeCheck["run"]>[0]["supabase"];
 
-/**
- * The recorded lecture pages: the end of Chapter 3 and Chapter 4, Vector
- * Spaces. All of them, so the recorded Outline's heading ids still match.
- */
+/** The recorded lecture pages: the end of Chapter 3 and Chapter 4, Vector Spaces. */
 const LECTURE_PAGES = [17, 18, 19, 20, 21, 22, 23, 24];
 const EXERCISE_PAGE = 3;
 const SOLUTION_PAGE = 5;
@@ -59,8 +55,8 @@ function keptExercises(exercises: RecordedPage, solutions: RecordedPage) {
 
 /**
  * Update map from the recorded gold pages (#229): the lecture notes' pages
- * 17–24 and Exercises 7–10 with their printed solutions, parsed with their
- * recorded Outlines and without page calls, then built twice with the real
+ * 17–24 and Exercises 7–10 with their printed solutions, parsed without
+ * page calls, then built twice with the real
  * workflow in this process. On the default smoke model; pinned to a slow
  * model with AI_SMOKE_MODEL it may take 10 minutes (`AI_SMOKE_MAX_MINUTES=10`).
  */
@@ -87,13 +83,7 @@ export const mapSmoke: SmokeCheck = {
       ],
     ] as const) {
       const pdf = new Uint8Array(await readFile(`${GOLD}/${file}`));
-      await parseSeeded(
-        { supabase, studentId, pdf },
-        courseId,
-        name,
-        pages,
-        await recordedOutline(file),
-      );
+      await parseSeeded({ supabase, studentId, pdf }, courseId, name, pages);
     }
 
     const generating = async () =>
@@ -156,7 +146,6 @@ type StoredTopic = {
   parent_id: string | null;
   name: string;
   central_question: string | null;
-  chapter_ids: string[];
 };
 
 /**
@@ -170,7 +159,7 @@ async function checkMap(
   supabase: Supabase,
   courseId: string,
 ): Promise<SmokeResult[]> {
-  const [build, topics, chapters, extractions, chunks, kcs, exercises] =
+  const [build, topics, extractions, chunks, kcs, exercises] =
     await Promise.all([
       supabase
         .from("knowledge_map_builds")
@@ -179,24 +168,17 @@ async function checkMap(
         .single(),
       supabase
         .from("topics")
-        .select("id, parent_id, name, central_question, chapter_ids")
+        .select("id, parent_id, name, central_question")
         .eq("course_id", courseId)
         .order("position"),
       supabase
-        .from("chapters")
-        .select("id, parent_id, position, title, materials(name)")
+        .from("unit_extractions")
+        .select("material_id, kind, batch, output, kc_ids")
         .eq("course_id", courseId),
-      supabase
-        .from("chapter_extractions")
-        .select("chapter_id, kind, unit, output, kc_ids")
-        .eq("course_id", courseId),
-      supabase
-        .from("chunks")
-        .select("id, chapter_id, markdown")
-        .eq("course_id", courseId),
+      supabase.from("chunks").select("id, markdown").eq("course_id", courseId),
       supabase
         .from("kcs")
-        .select("name, description")
+        .select("id, name, description")
         .eq("course_id", courseId)
         .is("retired_at", null),
       supabase
@@ -204,7 +186,7 @@ async function checkMap(
         .select("question_chunk_id, final_answers")
         .eq("course_id", courseId),
     ]);
-  for (const { error } of [build, topics, chapters, extractions, chunks]) {
+  for (const { error } of [build, topics, extractions, chunks]) {
     if (error) throw new Error(error.message);
   }
   for (const { error } of [kcs, exercises]) {
@@ -229,16 +211,7 @@ async function checkMap(
       unitOf.get(link.from_kc) !== unitOf.get(link.to_kc),
   ).length;
 
-  // A KC may cite any chunk of its unit's `chapterIds`' subtrees.
-  const parentOf = new Map(
-    chapters.data!.map((c) => [c.id, c.parent_id] as const),
-  );
-  const inSubtree = (chapterId: string, roots: readonly string[]) => {
-    for (let id: string | null = chapterId; id; id = parentOf.get(id) ?? null) {
-      if (roots.includes(id)) return true;
-    }
-    return false;
-  };
+  // A KC may cite any chunk of its unit.
   const units = (
     await Promise.all(
       (["content", "exercise"] as const).map((kind) =>
@@ -249,21 +222,17 @@ async function checkMap(
   const unitChunks = new Map(
     units.map((unit) => [
       unitKey(unit),
-      new Set(
-        chunks
-          .data!.filter(
-            (chunk) =>
-              chunk.chapter_id !== null &&
-              inSubtree(chunk.chapter_id, unit.chapterIds),
-          )
-          .map((chunk) => chunk.id),
-      ),
+      new Set(unit.chunks.map((chunk) => chunk.id)),
     ]),
   );
   const strays = extractions.data!.flatMap((row) => {
     const allowed =
       unitChunks.get(
-        unitKey({ chapterId: row.chapter_id, kind: row.kind, unit: row.unit }),
+        unitKey({
+          materialId: row.material_id,
+          kind: row.kind,
+          batch: row.batch,
+        }),
       ) ?? new Set<string>();
     return (
       row.output as { kcs: Array<{ name: string; chunkIds: string[] }> }
@@ -282,30 +251,21 @@ async function checkMap(
     return !ENGLISH.test(prose) || NOT_ENGLISH.test(prose);
   });
 
-  // The lecture notes' Chapters in reading order, and each Topic's first.
-  const lectureChapters = new Map(
-    chapters
-      .data!.filter((c) => c.materials?.name === "Lecture notes")
-      .map((c) => [c.id, c]),
-  );
-  const childrenOf = (id: string | null) =>
-    topics.data!.filter((topic) => topic.parent_id === id);
-  const firstChapter = (topic: StoredTopic): number =>
-    Math.min(
-      ...topic.chapter_ids.flatMap((id) => {
-        const chapter = lectureChapters.get(id);
-        return chapter ? [chapter.position] : [];
-      }),
-      ...childrenOf(topic.id).map(firstChapter),
+  // The Topic tree: every live KC in one, at most two levels, and no Topic
+  // of a single KC unless the Course has fewer than three.
+  const topicKcs = await supabase
+    .from("topic_kcs")
+    .select("topic_id, kc_id")
+    .in(
+      "topic_id",
+      topics.data!.map((topic) => topic.id),
     );
-  const vectorSpaces = childrenOf(null).find((topic) =>
-    /vector spaces/i.test(topic.name),
-  );
-  const sections = vectorSpaces ? childrenOf(vectorSpaces.id) : [];
-  const starts = sections.map(firstChapter);
-  const inOrder =
-    sections.length >= 2 &&
-    starts.every((start, i) => i === 0 || start > starts[i - 1]!);
+  if (topicKcs.error) throw new Error(topicKcs.error.message);
+  const placed = new Set(topicKcs.data.map((row) => row.kc_id));
+  const unplaced = kcs.data!.filter((kc) => !placed.has(kc.id));
+  const kcsOf = (topic: StoredTopic) =>
+    topicKcs.data.filter((row) => row.topic_id === topic.id).length;
+  const single = topics.data!.filter((topic) => kcsOf(topic) === 1);
 
   const numberOf = new Map(
     chunks.data!.map((c) => [c.id, printedNumber(c.markdown)]),
@@ -357,13 +317,18 @@ async function checkMap(
       strays.join("; ") || undefined,
     ),
     result(
-      "a top-level Topic covers Vector Spaces with children in section order",
-      inOrder,
-      vectorSpaces
-        ? `${vectorSpaces.name}: ${sections.map((s) => s.name).join("; ") || "no children"}`
-        : `top-level: ${childrenOf(null)
-            .map((t) => t.name)
-            .join("; ")}`,
+      "every KC sits in a Topic",
+      unplaced.length === 0,
+      unplaced.map((kc) => kc.name).join("; ") || undefined,
+    ),
+    result(
+      "the Topic tree is at most two levels deep",
+      topics.data!.every((topic) => depthOf(topic) <= 1),
+    ),
+    result(
+      "no Topic holds a single KC",
+      kcs.data!.length < 3 || single.length === 0,
+      single.map((topic) => topic.name).join("; ") || undefined,
     ),
     result(
       // Exercise 10 asks for a basis and the dimension: its basis is a key too.

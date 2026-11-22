@@ -16,14 +16,6 @@ _Avoid_: Subject, class, folder
 A file a Student uploaded to one Course, such as slides, a script, an exercise sheet or an old exam, under a name the Student can change.
 _Avoid_: File, document, upload (as a noun; "upload" is fine as a verb), attachment
 
-**Outline**:
-A Material's tree of Chapters, found when it is parsed from its headings, the starts of its pages and its PDF outline. Its root Chapter is titled by the Material's name.
-_Avoid_: Table of contents, structure
-
-**Chapter**:
-One node of a Material's Outline, such as a part, a chapter or a section, with its title as printed and the chunks from its start to the next Chapter's. The map build extracts KCs from whole Chapters, and a Topic covers whole Chapters.
-_Avoid_: Section (a Reading section is something else), Part, heading
-
 **Old exam**:
 A past exam the build found in the Materials and the Student confirmed in the Brief: a set of Exercises, named as printed, wherever it is printed (a separate file, one of several in a file, the end of a script). Its Exercises count for Priority, and Mock exams are assembled from it. A rejected one is no old exam, and its Exercises are ordinary.
 _Avoid_: Past paper, Altklausur, exam Material
@@ -37,7 +29,7 @@ A Student-confirmed statement that the exam leaves out (`excluded`) or stresses 
 _Avoid_: Topic choice (a pin or skip is about the study plan, not the exam)
 
 **Knowledge map**:
-What a Course's Materials teach, built from them by the AI: its Topic tree, Knowledge components and Prerequisites, with its Exercises. What the Materials assume without explaining stays as text on the KCs that assume it. An update adds what new Materials teach and drops what deleted ones taught; its KCs and Exercises keep their identity across updates. Old exams teach nothing, but their exercises count.
+What a Course's Materials teach, built from them by the AI: its Knowledge components and Prerequisites, with its Exercises, and a Topic tree grouping the KCs by subject, whatever the layout of the Materials. What the Materials assume without explaining stays as text on the KCs that assume it. An update adds what new Materials teach and drops what deleted ones taught; its KCs and Exercises keep their identity across updates. Old exams teach nothing, but their exercises count.
 _Avoid_: Topic map, concept map, knowledge graph, syllabus
 
 **Course map**:
@@ -49,8 +41,8 @@ One thing an exam task could test on its own and a Student could learn in one si
 _Avoid_: Skill, learning objective, concept, node
 
 **Topic**:
-A named node of a Course's Topic tree, covering whole Chapters of its Materials, that a Student learns and sees as one. A Topic can hold Topics inside it and KCs of its own; one with KCs of its own has the central question they answer, its anchors (the Prerequisites outside it) and its Reading sections. It keeps its identity across Knowledge map updates while the tree call, or else the new Topic holding most of its Chapters, continues it.
-_Avoid_: Big idea, chapter, unit, lesson, module
+A named node of a Course's Topic tree, built from the Course's KCs, not from the layout of its Materials: one subject a Student learns as a block, usually a few to about ten KCs, joining what different Materials teach about it. The tree has at most two levels; a Topic can hold Topics inside it and KCs of its own, and every KC sits in exactly one Topic. One with KCs of its own has the central question they answer, its anchors (the Prerequisites outside it) and its Reading sections. It keeps its identity across Knowledge map updates while the tree call, or else the new Topic sharing most of its KCs, continues it.
+_Avoid_: Big idea, chapter (a Material's own headings do not decide Topics), unit, lesson, module
 
 **Reading section**:
 A part of a Topic's source pages, about one to three pages in Material order, cut when read from the chunks its KCs cite. The Student reads the pages as they are.
@@ -61,7 +53,7 @@ A link saying one KC must be learned before another. The Prerequisites of a Know
 _Avoid_: Dependency, requirement
 
 **Exercise**:
-One whole task of a Course's Materials, such as "Ex. 7.2": its statement with any stem shared by its subtasks, all its subtasks and every printed solution chunk, wherever they are printed (other pages, another Material). A Knowledge map build analyses it: the KCs it tests, a difficulty, its final answers as printed, each an answer key a code check can use (a mathjs expression with a label); without a printed solution, the AI solves it with the Student. Its label, such as "Linear maps · Sheet 2 p. 3" (its Chapter, Material and page), is built when read. Its chunks are labelled `exercise` and `solution`, grouped by the build; the subtasks share the Exercise's KCs and final answers. It belongs to at most one old exam.
+One whole task of a Course's Materials, such as "Ex. 7.2": its statement with any stem shared by its subtasks, all its subtasks and every printed solution chunk, wherever they are printed (other pages, another Material). A Knowledge map build analyses it: the KCs it tests, a difficulty, its final answers as printed, each an answer key a code check can use (a mathjs expression with a label); without a printed solution, the AI solves it with the Student. Its label, such as "Linear maps · Sheet 2 p. 3" (the heading it follows, its Material and page), is built when read. Its chunks are labelled `exercise` and `solution`, grouped by the build; the subtasks share the Exercise's KCs and final answers. It belongs to at most one old exam.
 _Avoid_: Task, assignment
 
 **Problem**:

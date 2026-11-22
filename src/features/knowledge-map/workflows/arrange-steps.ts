@@ -1,5 +1,6 @@
 import "server-only";
 import { loadChunkSources } from "@/features/ingestion/server";
+import { uncitedPages } from "@/features/knowledge-map/domain/check-report";
 import { SAME_KC_SIMILARITY } from "@/features/knowledge-map/domain/kc-clusters";
 import { exerciseLabel } from "@/features/knowledge-map/domain/exercise-label";
 import { redundantLinks } from "@/features/knowledge-map/domain/prerequisite-cycles";
@@ -9,12 +10,8 @@ import {
 } from "@/features/knowledge-map/domain/topic-tree";
 import { teachingOrder } from "@/features/knowledge-map/domain/topics";
 import type { CheckReport } from "@/features/knowledge-map/schemas";
-import {
-  loadKcVectors,
-  loadStoredTree,
-  treeKcs,
-  type TreeProposal,
-} from "@/features/knowledge-map/workflows/topic-steps";
+import { loadTopicTree } from "@/features/knowledge-map/server/stored-topics";
+import type { TreeProposal } from "@/features/knowledge-map/workflows/topic-steps";
 import {
   MIN_UNIT_COVERAGE,
   unitCoverage,
@@ -27,7 +24,7 @@ import {
   unitKey,
 } from "@/features/knowledge-map/workflows/build-steps";
 import {
-  courseOrder,
+  kcsInCourseOrder,
   loadMapInput,
   type MapInput,
 } from "@/features/knowledge-map/workflows/map-input";
@@ -61,16 +58,15 @@ export async function arrangeKnowledgeMap(
   if (!(await touchBuild(supabase, courseId))) return;
   await retireUnsourcedKcs(supabase, courseId);
 
-  const [input, stored, vectors] = await Promise.all([
+  const [input, stored] = await Promise.all([
     loadMapInput(supabase, courseId),
-    loadStoredTree(supabase, courseId),
-    loadKcVectors(supabase, courseId),
+    loadTopicTree(supabase, courseId),
   ]);
-  const kcs = courseOrder(input);
+  const ordered = kcsInCourseOrder(input);
+  const kcs = ordered.map((kc) => kc.id);
   const topics = planTopicTree({
     proposed: tree.topics ?? storedAsProposed(stored),
-    chapters: input.chapters,
-    kcs: treeKcs(input, vectors),
+    kcs: ordered,
     stored,
   }).map((topic) => ({
     ...topic,
@@ -89,8 +85,8 @@ export async function arrangeKnowledgeMap(
 }
 
 /**
- * What the build checks: Chapters with content of their own that no live
- * KC cites, Exercises without KCs, the KC pairs still alike after merging,
+ * What the build checks: pages with teaching content that no live KC
+ * cites, Exercises without KCs, the KC pairs still alike after merging,
  * the teaching units whose KCs cite less than MIN_UNIT_COVERAGE of them,
  * the pages read without units and the units the build gave up on.
  */
@@ -126,27 +122,16 @@ async function checkReport(
   const citedChunks = input.kcs.flatMap((kc) => kc.sources);
   const unitsBelowCoverage = units.flatMap((unit) => {
     const coverage = unitCoverage(unit.chunks, citedChunks);
-    return coverage < MIN_UNIT_COVERAGE
-      ? [{ chapter: unit.title, coverage }]
-      : [];
+    return coverage < MIN_UNIT_COVERAGE ? [{ unit: unit.title, coverage }] : [];
   });
 
-  const chapterOf = new Map(
-    input.chunks.map((chunk) => [chunk.id, chunk.chapterId]),
-  );
-  const cited = new Set(
-    input.kcs.flatMap((kc) => kc.sources.map((id) => chapterOf.get(id))),
-  );
-  const teaching = new Set(
-    input.chunks.flatMap((chunk) =>
-      chunk.label === "content" && chunk.chapterId ? [chunk.chapterId] : [],
-    ),
-  );
   const name = new Map(input.kcs.map((kc) => [kc.id, kc.name]));
   return {
-    chaptersWithoutKcs: input.chapters
-      .filter((chapter) => teaching.has(chapter.id) && !cited.has(chapter.id))
-      .map((chapter) => chapter.title),
+    uncitedPages: uncitedPages(
+      input.materials,
+      input.chunks,
+      new Set(citedChunks),
+    ),
     exercisesWithoutKcs: exercises,
     duplicates: alike.data.flatMap(({ a, b, similarity }) =>
       name.has(a) && name.has(b)

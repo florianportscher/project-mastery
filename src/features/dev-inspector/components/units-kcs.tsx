@@ -1,6 +1,5 @@
 import { CallRefs } from "@/features/dev-inspector/components/calls";
 import {
-  ChapterRefs,
   ChunkRefs,
   Flag,
   Json,
@@ -23,7 +22,7 @@ import { cn } from "@/lib/utils";
 
 const percent = (share: number) => `${Math.round(share * 100)}%`;
 
-/** Each teaching and exercise unit with its Chapters, coverage and KCs. */
+/** Each teaching and exercise batch with its chunks, coverage and KCs. */
 export function UnitsSection({
   snapshot,
   units,
@@ -56,6 +55,7 @@ export function UnitsSection({
       </p>
       {units.map((unit) => {
         const below = flags.unitsBelowCoverage.get(unit.key);
+        const report = flags.unitsInReport.get(unit.key) ?? [];
         return (
           <div
             key={unit.key}
@@ -63,18 +63,15 @@ export function UnitsSection({
             className="scroll-mt-4 space-y-0.5 rounded border p-2 target:border-yellow-500"
           >
             <div className="flex flex-wrap items-baseline gap-2 text-sm font-medium">
-              {unitName(unit, lookup)}
-              <span className="text-xs font-normal text-muted-foreground">
-                {lookup.material.get(unit.materialId)?.name}
-              </span>
+              {unitName(unit)}
               {below !== undefined && (
                 <Flag>coverage {percent(below)}, below the bar</Flag>
               )}
               {!unit.extraction && <Flag>no extraction</Flag>}
+              {report.map((note) => (
+                <Flag key={note}>check report: {note}</Flag>
+              ))}
             </div>
-            <Row label="Chapters">
-              <ChapterRefs ids={unit.chapterIds} lookup={lookup} />
-            </Row>
             <Row label="Chunks">
               <ChunkRefs ids={unit.chunkIds} lookup={lookup} />
             </Row>
@@ -181,7 +178,7 @@ export function KcsSection({
                   ]
               ).map((unit) => (
                 <Ref key={unit.key} to={anchor.unit(unit.key)}>
-                  {unitName(unit, lookup)}
+                  {unitName(unit)}
                 </Ref>
               ))}
             </Row>

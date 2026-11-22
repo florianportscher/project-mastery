@@ -299,8 +299,6 @@ export async function seedKc(
       ...owned,
       name: "Thrust basics",
       central_question: "What makes a rocket accelerate?",
-      // A Topic with KCs of its own holds a Chapter's.
-      chapter_ids: [crypto.randomUUID()],
       position: 0,
     })
     .select("id")

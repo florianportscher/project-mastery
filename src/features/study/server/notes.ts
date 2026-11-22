@@ -5,7 +5,7 @@ import type { Supabase } from "@/lib/supabase/types";
 
 /**
  * The notes of the Course's Materials, in Material order: the notation and
- * conventions each Material's Outline found. Materials without notes are
+ * conventions each Material's parse found. Materials without notes are
  * left out.
  */
 export async function loadMaterialNotes(

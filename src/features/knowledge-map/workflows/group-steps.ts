@@ -8,7 +8,6 @@ import {
   type GroupingItem,
 } from "@/features/knowledge-map/ai/exercise-grouping";
 import {
-  chapterPath,
   checkedExams,
   checkedGroups,
   courseExams,
@@ -20,7 +19,6 @@ import {
   ownGroups,
   type ExerciseGroup,
   type GroupingChunk,
-  type PathChapter,
 } from "@/features/knowledge-map/domain/exercise-groups";
 import {
   buildCall,
@@ -47,7 +45,7 @@ import type { AdminSupabase } from "@/lib/supabase/types";
 /**
  * The grouping step of a build: which exercise and solution chunks form
  * each Exercise. One call (task `ingest`) sees every exercise and solution
- * chunk of the Course in Course order, with its Material, Chapter path and
+ * chunk of the Course in Course order, with its Material, heading and
  * first characters, and answers the Exercises; a Course of more than 400
  * such chunks goes in calls of at most 400. It runs only when the Course's
  * exercise and solution chunks changed since the last grouping
@@ -166,7 +164,7 @@ async function groupRun(
       .map(([id, chunk]) => ({
         id,
         material: chunk.material,
-        chapter: chunk.chapter,
+        heading: chunk.heading,
         text: chunk.text,
       }));
   const exercises = items("exercise");
@@ -298,14 +296,14 @@ export async function assignExams(courseId: string): Promise<StepOutcome> {
 
 /**
  * The Course's exercise and solution chunks in Course order (Materials by
- * position, then chunks by position), each with its Material's name, its
- * Chapter path and its first characters.
+ * position, then chunks by position), each with its Material's name, the
+ * heading it follows and its first characters.
  */
 async function loadGroupingChunks(
   supabase: AdminSupabase,
   courseId: string,
 ): Promise<CourseChunk[]> {
-  const [materials, chapters, chunks] = await Promise.all([
+  const [materials, chunks] = await Promise.all([
     supabase
       .from("materials")
       .select("id, name")
@@ -313,18 +311,10 @@ async function loadGroupingChunks(
       .order("position")
       .order("created_at")
       .order("id"),
-    allRows("Loading the Chapters", (from, to) =>
-      supabase
-        .from("chapters")
-        .select("id, parent_id, depth, title")
-        .eq("course_id", courseId)
-        .order("id")
-        .range(from, to),
-    ),
     allRows("Loading the Course's exercises", (from, to) =>
       supabase
         .from("chunks")
-        .select("id, material_id, position, label, markdown, chapter_id")
+        .select("id, material_id, position, label, markdown, heading")
         .eq("course_id", courseId)
         .in("label", ["exercise", "solution"])
         .order("material_id")
@@ -333,16 +323,6 @@ async function loadGroupingChunks(
     ),
   ]);
   if (materials.error) failed("Loading the Materials", materials.error);
-  const chapterById = new Map<string, PathChapter>(
-    chapters.map((chapter) => [
-      chapter.id,
-      {
-        parentId: chapter.parent_id,
-        depth: chapter.depth,
-        title: chapter.title,
-      },
-    ]),
-  );
   return materials.data.flatMap((material) =>
     chunks
       .filter((chunk) => chunk.material_id === material.id)
@@ -350,7 +330,7 @@ async function loadGroupingChunks(
         id: chunk.id,
         label: chunk.label as GroupingChunk["label"],
         material: material.name,
-        chapter: chapterPath(chunk.chapter_id, chapterById).join(" > "),
+        heading: chunk.heading ?? "",
         text: chunk.markdown.slice(0, GROUPING_TEXT_CHARS),
       })),
   );

@@ -1,5 +1,5 @@
--- The build (#225, #229): Course order of Materials, unit extractions of
--- Chapters, KCs stored without Topics with their sources and an exercise
+-- The build (#225, #229, #351): Course order of Materials, unit extractions
+-- by Material, kind and batch, KCs stored without Topics with their sources and an exercise
 -- unit's Exercises, KC vectors with match_kcs, retired KCs that keep their
 -- Attempts, and the build's lease. Run with `pnpm db:test`.
 begin;
@@ -54,46 +54,41 @@ select results_eq(
   $$values ('Lecture 2'), ('Lecture 10'), ('Formulas')$$,
   'the moves swap neighbours');
 
--- An Outline, chunks and a unit extraction -------------------------------------
+-- Chunks and a unit extraction -------------------------------------------------
 
 select public.replace_material_chunks('aaaaaaaa-1111-0000-0000-000000000002',
-  '[{"position": 0, "parent_position": null, "depth": 0, "title": "Lecture 2", "page_from": 1},
-    {"position": 1, "parent_position": 0, "depth": 1, "title": "Vector spaces", "page_from": 1}]',
-  '[{"position": 0, "page_from": 1, "page_to": 1, "label": "content", "markdown": "A vector space is a set.", "chapter_position": 1},
-    {"position": 1, "page_from": 2, "page_to": 2, "label": "exercise", "markdown": "Find dim U.", "chapter_position": 1},
-    {"position": 2, "page_from": 2, "page_to": 2, "label": "exercise", "markdown": "Work in pairs.", "chapter_position": 1}]');
+  '[{"position": 0, "page_from": 1, "page_to": 1, "label": "content", "markdown": "A vector space is a set.", "heading": "Vector spaces"},
+    {"position": 1, "page_from": 2, "page_to": 2, "label": "exercise", "markdown": "Find dim U.", "heading": "Vector spaces"},
+    {"position": 2, "page_from": 2, "page_to": 2, "label": "exercise", "markdown": "Work in pairs.", "heading": "Vector spaces"}]');
 
 create function pg_temp.chunk(p_position int) returns uuid language sql as $$
   select id from public.chunks
   where material_id = 'aaaaaaaa-1111-0000-0000-000000000002' and position = p_position
 $$;
-create function pg_temp.chapter() returns uuid language sql as $$
-  select id from public.chapters where course_id = pg_temp.course() and title = 'Vector spaces'
-$$;
 
-insert into public.chapter_extractions (id, chapter_id, owner, course_id, kind, unit, content_hash, output)
+insert into public.unit_extractions (id, material_id, owner, course_id, kind, batch, content_hash, output)
 values
-  ('eeeeeeee-0000-0000-0000-000000000001', pg_temp.chapter(), '11111111-1111-1111-1111-111111111111',
+  ('eeeeeeee-0000-0000-0000-000000000001', 'aaaaaaaa-1111-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111',
     'aaaaaaaa-0000-0000-0000-000000000001', 'content', 0, repeat('a', 64),
     '{"kcs": [{"name": "Vector space", "embedding": [1]}], "prerequisites": []}'),
-  ('eeeeeeee-0000-0000-0000-000000000002', pg_temp.chapter(), '11111111-1111-1111-1111-111111111111',
+  ('eeeeeeee-0000-0000-0000-000000000002', 'aaaaaaaa-1111-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111',
     'aaaaaaaa-0000-0000-0000-000000000001', 'exercise', 0, repeat('b', 64),
     '{"kcs": [], "prerequisites": [], "exercises": []}');
 
 select throws_ok(
-  $$insert into public.chapter_extractions (chapter_id, owner, course_id, kind, unit, content_hash, output)
-    values (pg_temp.chapter(), '11111111-1111-1111-1111-111111111111',
+  $$insert into public.unit_extractions (material_id, owner, course_id, kind, batch, content_hash, output)
+    values ('aaaaaaaa-1111-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111',
       'aaaaaaaa-0000-0000-0000-000000000001', 'content', 0, repeat('c', 64), '{}')$$,
   '23505', null, 'a unit has one extraction');
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
-select is((select count(*)::int from public.chapter_extractions), 2, 'the owner reads their unit extractions');
+select is((select count(*)::int from public.unit_extractions), 2, 'the owner reads their unit extractions');
 select throws_ok(
-  $$update public.chapter_extractions set content_hash = repeat('c', 64)$$,
+  $$update public.unit_extractions set content_hash = repeat('c', 64)$$,
   '42501', null, 'a Student cannot write a unit extraction');
 set local request.jwt.claims = '{"sub": "22222222-2222-2222-2222-222222222222", "role": "authenticated"}';
-select is((select count(*)::int from public.chapter_extractions), 0, 'another Student reads none');
+select is((select count(*)::int from public.unit_extractions), 0, 'another Student reads none');
 reset role;
 
 create function pg_temp.vec(axis int) returns text language sql as $$
@@ -104,7 +99,7 @@ $$;
 -- Storing KCs -------------------------------------------------------------------
 
 select is(
-  public.store_chapter_kcs('aaaaaaaa-0000-0000-0000-000000000001',
+  public.store_unit_kcs('aaaaaaaa-0000-0000-0000-000000000001',
     jsonb_build_array(jsonb_build_object('id', 'bbbbbbbb-0000-0000-0000-000000000001', 'new', true,
       'name', 'Vector space', 'description', 'A set with addition.', 'embedding', pg_temp.vec(1),
       'sources', jsonb_build_array(pg_temp.chunk(0)))),
@@ -117,7 +112,7 @@ insert into public.knowledge_map_builds (course_id, owner, status)
 values ('aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'building');
 
 select is(
-  public.store_chapter_kcs('aaaaaaaa-0000-0000-0000-000000000001',
+  public.store_unit_kcs('aaaaaaaa-0000-0000-0000-000000000001',
     jsonb_build_array(
       jsonb_build_object('id', 'bbbbbbbb-0000-0000-0000-000000000001', 'new', true,
         'name', 'Vector space', 'description', 'A set with addition.', 'embedding', pg_temp.vec(1),
@@ -152,7 +147,7 @@ select results_eq(
   $$values (pg_temp.chunk(1), 'question'::text, 0), (pg_temp.chunk(2), 'question', 1)$$,
   'the Exercise holds its question chunks in order');
 select results_eq(
-  $$select unit, kc_ids, output -> 'kcs' -> 0 ? 'embedding' from public.chapter_extractions
+  $$select batch, kc_ids, output -> 'kcs' -> 0 ? 'embedding' from public.unit_extractions
     where course_id = pg_temp.course() and kind = 'content'$$,
   $$values (0, array['bbbbbbbb-0000-0000-0000-000000000001'::uuid], false)$$,
   'the extraction is marked stored and loses its embeddings');

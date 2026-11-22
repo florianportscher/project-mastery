@@ -94,26 +94,32 @@ export const knowledgeMapSchema = z
 
 /** What the build's checks found, stored with the map it checked. */
 export const checkReportSchema = z.object({
-  /** Titles of Chapters with content of their own that no live KC cites. */
-  chaptersWithoutKcs: z.array(z.string()),
+  /**
+   * Pages with teaching content that no live KC cites, per Material. A
+   * report from before #351 has none.
+   */
+  uncitedPages: z
+    .array(z.object({ material: z.string(), pages: z.array(z.number().int()) }))
+    .default([]),
   /** Labels of Exercises that test no KC. */
   exercisesWithoutKcs: z.array(z.string()),
   /** KC pairs still alike enough to be duplicates after merging, by name. */
   duplicates: z.array(z.object({ a: name, b: name, similarity: z.number() })),
   /**
-   * Teaching units whose KCs cite less than MIN_UNIT_COVERAGE of them, by
-   * their Chapters' titles, with the share they cite.
+   * Teaching batches whose KCs cite less than MIN_UNIT_COVERAGE of them,
+   * each as "Material p. 3–7", with the share they cite. A report from
+   * before #351 has none.
    */
-  unitsBelowCoverage: z.array(
-    z.object({ chapter: z.string(), coverage: z.number() }),
-  ),
+  unitsBelowCoverage: z
+    .array(z.object({ unit: z.string(), coverage: z.number() }))
+    .catch([]),
   /** Pages read without units, unreadable or uncovered, per Material. */
   unreadPages: z.array(
     z.object({ material: z.string(), pages: z.array(z.number().int()) }),
   ),
   /**
-   * Units the build gave up on because their calls kept failing, by their
-   * Chapters' titles: only the pieces that were answered are in the map.
+   * Units the build gave up on because their calls kept failing, each as
+   * "Material p. 3–7": only the pieces that were answered are in the map.
    */
   unitsNotExtracted: z.array(z.string()).default([]),
   /**
@@ -144,7 +150,7 @@ const extractedExerciseSchema = z.object({
 export type ExtractedExercise = z.infer<typeof extractedExerciseSchema>;
 
 /**
- * A stored unit extraction (`chapter_extractions.output`): its new KCs with
+ * A stored unit extraction (`unit_extractions.output`): its new KCs with
  * stored chunk ids, what each assumes from outside the Course
  * (`{ name, description }`) and, until they are stored, their vectors of
  * "name: description"; Prerequisites among them by index into `kcs`, and

@@ -2,6 +2,8 @@
 
 > The pairing pass at the end of the parse (below) is superseded by [ADR 0032](0032-exercises-as-whole-tasks-and-exams-as-records.md): a grouping call in the map build makes Exercises as whole tasks, and the parse makes no exercise call.
 >
+> The Outline call and the cutting of chunks at Chapter starts (below) are superseded by [ADR 0033](0033-topics-from-kcs-and-parse-without-outline.md): the parse makes no Outline, and chunks carry their heading.
+>
 > The map build: superseded by [ADR 0023](0023-knowledge-map-from-chapters.md), which builds the Knowledge map from Chapter units, each extracted once while its content is unchanged. Ingestion below is as #228 changed it: page batches, an Outline call and one pairing call.
 
 **Context.** Grounded answers need citations down to the slide or page. Course PDFs in STEM are full of formulas, diagrams and scanned exams, which plain text extraction loses. Not every model accepts PDF files directly, but most current models accept images.

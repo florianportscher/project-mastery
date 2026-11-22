@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { parseMaterial, type OutlineAnswer } from "@/features/ingestion/server";
+import { parseMaterial } from "@/features/ingestion/server";
 import { MATERIALS_BUCKET } from "@/lib/supabase/buckets";
 import type { Json } from "@/lib/supabase/database.types";
 import type { SmokeCheck } from "./smoke-check";
@@ -17,37 +17,39 @@ export type RecordedPage = {
   page_number: number;
   skipped: string | null;
   units: Array<Record<string, unknown>>;
+  language: string | null;
+  notes: string | null;
 };
 
 type Supabase = Parameters<SmokeCheck["run"]>[0]["supabase"];
 
-/** A gold PDF's recording: its pages and its structure call's Outline. */
-type Recording = { pages: RecordedPage[]; outline: OutlineAnswer | null };
-
-async function recording(file: string): Promise<Recording> {
-  const recorded = JSON.parse(
-    await readFile(`${GOLD}/pages.json`, "utf8"),
-  ) as Record<string, Recording>;
-  return recorded[file] ?? { pages: [], outline: null };
-}
+/**
+ * A gold PDF's recording: its pages, and in recordings made before #351
+ * the removed structure call's language and notes, which its pages lack.
+ */
+type Recording = {
+  pages: Array<
+    Omit<RecordedPage, "language" | "notes"> & Partial<RecordedPage>
+  >;
+  outline?: { language: string | null; notes: string | null } | null;
+};
 
 /** The recorded pages of a gold PDF, such as "exercises.pdf". */
 export async function recordedPages(file: string) {
-  const { pages } = await recording(file);
-  return (number: number) => {
+  const recorded = JSON.parse(
+    await readFile(`${GOLD}/pages.json`, "utf8"),
+  ) as Record<string, Recording>;
+  const { pages, outline } = recorded[file] ?? { pages: [] };
+  return (number: number): RecordedPage => {
     const found = pages.find((p) => p.page_number === number);
     if (!found) throw new Error(`pages.json has no page ${number} of ${file}.`);
-    return found;
+    return {
+      ...found,
+      language: found.language ?? outline?.language ?? null,
+      notes: found.notes ?? outline?.notes ?? null,
+    };
   };
 }
-
-/** The Outline the structure call gave a gold PDF's recorded pages. */
-export async function recordedOutline(file: string) {
-  return (await recording(file)).outline ?? NO_OUTLINE;
-}
-
-/** An Outline of only the root Chapter, without language and notes. */
-const NO_OUTLINE: OutlineAnswer = { language: null, notes: null, chapters: [] };
 
 export async function createCourse(
   supabase: Supabase,
@@ -65,8 +67,7 @@ export async function createCourse(
 
 /**
  * A Material of the whole PDF whose given pages have their recorded
- * results, parsed with only those pages and with `outline` instead of the
- * structure call, so no page is read again and no Outline is asked for.
+ * results, parsed with only those pages, so no page is read again.
  */
 export async function parseSeeded(
   {
@@ -77,7 +78,6 @@ export async function parseSeeded(
   courseId: string,
   name: string,
   pages: RecordedPage[],
-  outline: OutlineAnswer = NO_OUTLINE,
 ) {
   const materialId = randomUUID();
   const storagePath = `${studentId}/${courseId}/${materialId}`;
@@ -102,13 +102,14 @@ export async function parseSeeded(
       page_number: page.page_number,
       skipped: page.skipped,
       units: page.units as Json[],
+      language: page.language,
+      notes: page.notes,
     })),
   );
   if (seeded.error) throw new Error(seeded.error.message);
   for (let attempt = 1; ; attempt++) {
     await parseMaterial(materialId, {
       pages: pages.map((page) => page.page_number),
-      outline,
     });
     const { data, error } = await supabase
       .from("materials")

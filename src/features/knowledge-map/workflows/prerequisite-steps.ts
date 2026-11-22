@@ -114,7 +114,7 @@ export async function recheckAssumes(
   const candidates = kcsInCourseOrder(map).filter((kc) => fresh.has(kc.id));
   const offeredKcs = candidates.map((kc, index): OfferedKc => ({
     id: `k${index + 1}`,
-    chapter: kc.chapter,
+    heading: kc.heading,
     name: kc.name,
     description: kc.description,
   }));

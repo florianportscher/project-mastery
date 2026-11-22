@@ -21,8 +21,12 @@ export function buildFlags(
   const cited = new Set(live.flatMap((kc) => kc.sources));
   const report = readReport(snapshot.build?.checkReport);
   return {
-    chaptersWithoutKcs: chaptersWithoutKcs(snapshot, cited),
-    chaptersInReport: chaptersInReport(snapshot, report),
+    chunksWithoutKcs: new Set(
+      snapshot.chunks
+        .filter((chunk) => chunk.label === "content" && !cited.has(chunk.id))
+        .map((chunk) => chunk.id),
+    ),
+    unitsInReport: unitsInReport(units, report),
     kcsWithoutSources: new Set(
       live.filter((kc) => kc.sources.length === 0).map((kc) => kc.id),
     ),
@@ -62,26 +66,7 @@ export function unitCoverage(
   return covered / total;
 }
 
-/**
- * Chapters with `content` chunks of their own that no live KC cites, as
- * the build's check report counts them.
- */
-function chaptersWithoutKcs(
-  snapshot: Snapshot,
-  cited: ReadonlySet<string>,
-): Set<string> {
-  const teaching = new Set<string>();
-  const citedChapters = new Set<string>();
-  for (const chunk of snapshot.chunks) {
-    if (chunk.chapterId === null) continue;
-    if (chunk.label === "content") teaching.add(chunk.chapterId);
-    if (cited.has(chunk.id)) citedChapters.add(chunk.chapterId);
-  }
-  return new Set([...teaching].filter((id) => !citedChapters.has(id)));
-}
-
 type Report = {
-  chaptersWithoutKcs: string[];
   unitsBelowCoverage: string[];
   unitsNotExtracted: string[];
   duplicates: Array<{ a: string; b: string }>;
@@ -95,11 +80,10 @@ function readReport(value: unknown): Report {
   const strings = (key: string) =>
     list(key).filter((item): item is string => typeof item === "string");
   return {
-    chaptersWithoutKcs: strings("chaptersWithoutKcs"),
     unitsNotExtracted: strings("unitsNotExtracted"),
     unitsBelowCoverage: list("unitsBelowCoverage").flatMap((item) => {
-      const chapter = (item as { chapter?: unknown } | null)?.chapter;
-      return typeof chapter === "string" ? [chapter] : [];
+      const unit = (item as { unit?: unknown } | null)?.unit;
+      return typeof unit === "string" ? [unit] : [];
     }),
     duplicates: list("duplicates").flatMap((item) => {
       const { a, b } = (item ?? {}) as { a?: unknown; b?: unknown };
@@ -108,26 +92,19 @@ function readReport(value: unknown): Report {
   };
 }
 
-/**
- * Chapters the check report names, with what it says of each. A unit is
- * named by its Chapters' titles joined with ", ", so each title counts.
- */
-function chaptersInReport(
-  snapshot: Snapshot,
+/** Units the check report names by title, with what it says of each. */
+function unitsInReport(
+  units: readonly DevUnit[],
   report: Report,
 ): Map<string, string[]> {
   const notes = new Map<string, string[]>();
   const mark = (entries: string[], note: string) => {
-    for (const chapter of snapshot.chapters) {
-      const named = entries.some(
-        (entry) =>
-          entry === chapter.title || entry.split(", ").includes(chapter.title),
-      );
-      if (named)
-        notes.set(chapter.id, [...(notes.get(chapter.id) ?? []), note]);
+    for (const unit of units) {
+      if (entries.includes(unit.title)) {
+        notes.set(unit.key, [...(notes.get(unit.key) ?? []), note]);
+      }
     }
   };
-  mark(report.chaptersWithoutKcs, "without KCs");
   mark(report.unitsBelowCoverage, "unit below coverage");
   mark(report.unitsNotExtracted, "unit not extracted");
   return notes;

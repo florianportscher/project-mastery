@@ -222,31 +222,3 @@ export function exerciseBatches<
   }
   return batches;
 }
-
-/** A Chapter of a Material's Outline, as a Chapter path reads it. */
-export type PathChapter = {
-  parentId: string | null;
-  depth: number;
-  title: string;
-};
-
-/**
- * The titles from the top Chapter below the root down to this one, such as
- * ["4 Vector Spaces", "4.2 Subspaces"]; empty for the root or no Chapter.
- */
-export function chapterPath(
-  chapterId: string | null,
-  chapters: ReadonlyMap<string, PathChapter>,
-): string[] {
-  const titles: string[] = [];
-  const seen = new Set<string>();
-  let id = chapterId;
-  while (id !== null && !seen.has(id)) {
-    seen.add(id);
-    const chapter = chapters.get(id);
-    if (!chapter || chapter.depth === 0) break;
-    titles.unshift(chapter.title);
-    id = chapter.parentId;
-  }
-  return titles;
-}

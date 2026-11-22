@@ -3,7 +3,7 @@ import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
 
 export {
   flatTree,
-  unitTitle,
+  unitHeadings,
   useBuildModels,
   type SentCourse,
   type SentUnit,
@@ -13,7 +13,7 @@ export {
  * Test helpers for the build workflow in-process (`build-knowledge-map.ts`):
  * the admin client as a `fakeSupabase` whose database functions stand in
  * for the real ones, which pgTAP tests, and seeded Materials with their
- * Outlines. The mock models are in `build-models-testing.ts`. Each test
+ * chunks. The mock models are in `build-models-testing.ts`. Each test
  * file mocks `@/lib/supabase/admin` with its own `db`.
  */
 
@@ -42,10 +42,9 @@ export function createBuildDb() {
       courses: [] as FakeRow[],
       materials: [] as FakeRow[],
       material_pages: [] as FakeRow[],
-      chapters: [] as FakeRow[],
       chunks: [] as FakeRow[],
       knowledge_map_builds: [] as FakeRow[],
-      chapter_extractions: [] as FakeRow[],
+      unit_extractions: [] as FakeRow[],
       kcs: [] as FakeRow[],
       kc_sources: [] as FakeRow[],
       prerequisite_links: [] as FakeRow[],
@@ -58,9 +57,10 @@ export function createBuildDb() {
       topic_kcs: [] as FakeRow[],
       ai_usage: [] as FakeRow[],
     },
+    foreignKeys: { topic_kcs: { topic_id: "topics" } },
     defaults: {
       ai_usage: () => ({ created_at: now() }),
-      chapter_extractions: () => ({ id: crypto.randomUUID() }),
+      unit_extractions: () => ({ id: crypto.randomUUID() }),
       exams: () => ({ id: crypto.randomUUID(), confirmed: null, asked: false }),
     },
     functions: {
@@ -112,7 +112,7 @@ export function createBuildDb() {
           .toSorted((a, b) => b.similarity - a.similarity)
           .slice(0, Number(args.p_count));
       },
-      store_chapter_kcs: (args, tables) => {
+      store_unit_kcs: (args, tables) => {
         const build = building(tables, args.p_course_id);
         if (!build) return false;
         const owned = { owner: build.owner, course_id: args.p_course_id };
@@ -234,7 +234,7 @@ export function createBuildDb() {
           }
         }
         for (const unit of args.p_units as FakeRow[]) {
-          const row = tables.chapter_extractions.find(
+          const row = tables.unit_extractions.find(
             (extraction) => extraction.id === unit.extractionId,
           );
           if (!row) continue;
@@ -280,7 +280,7 @@ export function createBuildDb() {
           });
         }
         const ids = args.p_extraction_ids as string[];
-        for (const row of tables.chapter_extractions) {
+        for (const row of tables.unit_extractions) {
           if (ids.includes(row.id as string)) row.assumes_matched = true;
         }
         return true;
@@ -332,7 +332,6 @@ export function createBuildDb() {
           parent_id: topic.parent === null ? null : ids[topic.parent as number],
           name: topic.name,
           central_question: topic.centralQuestion,
-          chapter_ids: topic.chapterIds,
           position: index,
         }));
         tables.topic_kcs = planned.flatMap((topic, index) =>
@@ -364,15 +363,15 @@ type SeedChunk =
   string | { markdown: string; label?: "content" | "exercise" | "solution" };
 
 /**
- * A Chapter to seed: its title, its own chunks (by default one `content`
- * chunk "About <title>.", or `exercise` ones in an exercise Chapter) and
- * its children.
+ * A section to seed: its heading's title, its own chunks (by default one
+ * `content` chunk "About <title>.", or `exercise` ones in an exercise
+ * section), each following that heading, and the sections after it.
  */
-type SeedChapter = {
+type SeedSection = {
   title: string;
   exercise?: boolean;
   chunks?: SeedChunk[];
-  children?: SeedChapter[];
+  children?: SeedSection[];
 };
 
 /**
@@ -382,9 +381,8 @@ type SeedChapter = {
 const CHUNK_VECTOR = JSON.stringify(Array.from({ length: 64 }, () => 1));
 
 /**
- * Seeds a parsed Material at `position` in Course order, with its Outline
- * below a root Chapter titled by its name, and the Chapters' chunks in
- * reading order.
+ * Seeds a parsed Material at `position` in Course order, named "Material
+ * <position>", with its sections' chunks in reading order, one page each.
  */
 export function seedMaterial(
   db: BuildDb,
@@ -392,12 +390,12 @@ export function seedMaterial(
     id = crypto.randomUUID(),
     position = db.tables.materials.length,
     language = "English",
-    chapters,
+    sections,
   }: {
     id?: string;
     position?: number;
     language?: string;
-    chapters: SeedChapter[];
+    sections: SeedSection[];
   },
 ) {
   const name = `Material ${position}`;
@@ -411,67 +409,46 @@ export function seedMaterial(
     language,
     parse_status: "parsed",
   });
-  let chapterPosition = 0;
   let chunkPosition = 0;
-  const add = (
-    chapter: SeedChapter,
-    parentId: string | null,
-    depth: number,
-    root = false,
-  ) => {
-    const chapterId = crypto.randomUUID();
-    db.tables.chapters.push({
-      ...owned,
-      id: chapterId,
-      parent_id: parentId,
-      position: chapterPosition++,
-      depth,
-      title: chapter.title,
-      page_from: 1,
-    });
-    const chunks = chapter.chunks ?? (root ? [] : [`About ${chapter.title}.`]);
+  const add = (section: SeedSection) => {
+    const chunks = section.chunks ?? [`About ${section.title}.`];
     for (const chunk of chunks) {
       const { markdown, label } =
         typeof chunk === "string"
           ? { markdown: chunk, label: undefined }
           : chunk;
+      const page = chunkPosition + 1;
       db.tables.chunks.push({
         ...owned,
         id: crypto.randomUUID(),
-        chapter_id: chapterId,
+        heading: section.title,
         position: chunkPosition++,
-        page_from: 1,
-        page_to: 1,
-        label: label ?? (chapter.exercise ? "exercise" : "content"),
+        page_from: page,
+        page_to: page,
+        label: label ?? (section.exercise ? "exercise" : "content"),
         markdown,
         embedding: CHUNK_VECTOR,
       });
     }
-    for (const child of chapter.children ?? []) {
-      add(child, chapterId, depth + 1);
-    }
+    for (const child of section.children ?? []) add(child);
   };
-  add({ title: name, children: chapters }, null, 0, true);
+  for (const section of sections) add(section);
   return id;
 }
 
 /**
- * What deleting a Material leaves: its Chapters, chunks, extractions and
- * the KC sources of its chunks are gone, as the foreign keys cascade.
+ * What deleting a Material leaves: its chunks, extractions and the KC
+ * sources of its chunks are gone, as the foreign keys cascade.
  */
 export function deleteMaterial(db: BuildDb, materialId: string) {
   const ofMaterial = (row: FakeRow) => row.material_id === materialId;
-  const chapters = new Set(
-    db.tables.chapters.filter(ofMaterial).map((c) => c.id),
-  );
   const chunks = new Set(db.tables.chunks.filter(ofMaterial).map((c) => c.id));
   db.tables.materials = db.tables.materials.filter(
     (row) => row.id !== materialId,
   );
-  db.tables.chapters = db.tables.chapters.filter((row) => !ofMaterial(row));
   db.tables.chunks = db.tables.chunks.filter((row) => !ofMaterial(row));
-  db.tables.chapter_extractions = db.tables.chapter_extractions.filter(
-    (row) => !chapters.has(row.chapter_id),
+  db.tables.unit_extractions = db.tables.unit_extractions.filter(
+    (row) => !ofMaterial(row),
   );
   db.tables.kc_sources = db.tables.kc_sources.filter(
     (row) => !chunks.has(row.chunk_id),

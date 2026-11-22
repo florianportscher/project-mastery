@@ -5,15 +5,15 @@ import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { MAX_TOPIC_NAME } from "@/features/knowledge-map/domain/topic-tree";
 import { aiTask } from "@/lib/ai/models";
 
-/** A Chapter of a Material's Outline as the tree call gets it. */
-type OfferedChapter = {
-  /** Short and only for the call, such as c1. */
+/** A live KC as the tree call gets it, in Course order. */
+type OfferedKc = {
+  /** Short and only for the call, such as k1. */
   id: string;
-  title: string;
-  /** 0 for the Material itself. */
-  depth: number;
-  /** The names of the KCs it holds; absent when it holds none. */
-  kcs?: string[];
+  name: string;
+  /** The Material of its first source. */
+  material: string;
+  /** The heading over its first source; empty without one. */
+  heading: string;
 };
 
 /** A stored Topic as the tree call gets it. */
@@ -23,16 +23,16 @@ type OfferedStoredTopic = {
   name: string;
   /** 1 at the top. */
   level: number;
-  /** The ids of the Chapters whose KCs it holds itself. */
-  chapters: string[];
+  /** The ids of the KCs it holds itself. */
+  kcs: string[];
 };
 
-/** What the tree call gets: the Course's Outlines and its stored tree. */
+/** What the tree call gets: the Course's KCs and its stored tree. */
 export type OfferedCourse = {
   /** The Course language by name, such as English. */
   language: string;
-  /** In Course order. */
-  materials: Array<{ name: string; outline: OfferedChapter[] }>;
+  /** Every live KC, in Course order. */
+  kcs: OfferedKc[];
   storedTopics: OfferedStoredTopic[];
 };
 
@@ -42,7 +42,7 @@ export type OfferedCourse = {
  * that code checks (`offeredId`).
  */
 export const topicTreeSchema = (
-  chapterIds: readonly string[] = [],
+  kcIds: readonly string[] = [],
   topicIds: readonly string[] = [],
 ) =>
   z.object({
@@ -53,22 +53,22 @@ export const topicTreeSchema = (
             .int()
             .min(1)
             .describe(
-              "1 for a top-level Topic; a Topic sits in the nearest Topic before it with a lower level.",
+              "1 for a top-level Topic, 2 for a Topic inside the nearest level-1 Topic before it.",
             ),
           name: z
             .string()
             .describe(
               `At most ${MAX_TOPIC_NAME} characters, without numbering.`,
             ),
-          chapterIds: z
-            .array(offeredId(chapterIds))
+          kcIds: z
+            .array(offeredId(kcIds))
             .describe(
-              "The Chapters whose KCs this Topic holds itself; empty when it only holds child Topics.",
+              "The KCs this Topic holds itself; empty when it only groups child Topics.",
             ),
           centralQuestion: z
             .string()
             .describe(
-              "The one question its own KCs together answer; empty when it holds no Chapters.",
+              "The one question its own KCs together answer; empty when it holds no KCs.",
             ),
           continues: z
             .string()
@@ -81,15 +81,14 @@ export const topicTreeSchema = (
       .describe("Every Topic in tree order: a parent before its children."),
   });
 
-const TREE_INSTRUCTIONS = `You get the materials of a university course as JSON: each material's outline of chapters in course order, with the names of the knowledge components (KCs) under each chapter that teaches some, and the course's stored Topic tree. Group the chapters into a tree of Topics a student learns one at a time.
+const TREE_INSTRUCTIONS = `You get the knowledge components (KCs) of a university course as JSON, in course order, each with the material and heading it comes from, and the course's stored Topic tree. Group the KCs into Topics a student learns one at a time.
 
-- A Topic covers whole chapters. Give every chapter that has KCs to exactly one Topic, by its id; never list a chapter without KCs under chapterIds.
-- Follow the outlines: a chapter with sections usually becomes a Topic whose children are its sections' Topics, in section order, also when the chapter has no KCs of its own; that parent Topic then holds no chapters itself. A chapter's KCs outside its sections can sit on that parent Topic itself.
-- Join small neighbouring chapters on one subject into one Topic; split nothing.
-- Where several materials teach the same subject, such as a script and an exercise sheet, put their chapters in the same Topic.
-- List the Topics in tree order, each with its level: 1 at the top, a child one level below its parent.
-- Name each Topic close to its chapters' titles, without numbering. Give a Topic that holds chapters the one question its KCs together answer.
-- Name a Topic so that it is understood without its parent: "Vector spaces: definition and examples", not "Definition and examples".
+- A Topic is one subject the student learns as a block: usually a few to about ten KCs that belong together. Never make a Topic of a single KC when a neighbouring Topic fits it.
+- Group by subject, not by material or heading: where several materials teach the same subject, such as slides, a script and an exercise sheet, put their KCs in the same Topic. Headings only hint at what belongs together.
+- Give every KC to exactly one Topic, by its id.
+- The tree has at most two levels. A level-1 Topic with children only groups them and holds no KCs itself; use one only where several Topics form one larger subject. List the Topics in tree order, each child right after its parent.
+- Keep the course order where you can: a Topic's KCs come mostly from one stretch of the course.
+- Name each Topic after its subject, without numbering, so that it is understood without its parent: "Vector spaces: definition and examples", not "Definition and examples". Never name a Topic after a single slide or page. Give a Topic that holds KCs the one question its KCs together answer.
 - When a Topic is a stored one, kept or changed, give that stored Topic's id under continues, so the student's notes on it stay. Use each stored id at most once.
 - Write in the course language. Formulas in LaTeX ($...$).`;
 
@@ -102,15 +101,11 @@ const TREE_INSTRUCTIONS = `You get the materials of a university course as JSON:
 export function topicTreeSettings(course: OfferedCourse) {
   return {
     ...aiTask("topic"),
-    reasoning: "medium" as const,
+    reasoning: "high" as const,
     instructions: TREE_INSTRUCTIONS,
     output: Output.object({
       schema: topicTreeSchema(
-        course.materials.flatMap((material) =>
-          material.outline.flatMap((chapter) =>
-            chapter.kcs ? [chapter.id] : [],
-          ),
-        ),
+        course.kcs.map((kc) => kc.id),
         course.storedTopics.map((topic) => topic.id),
       ),
     }),

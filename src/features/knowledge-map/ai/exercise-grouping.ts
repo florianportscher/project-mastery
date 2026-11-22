@@ -9,8 +9,8 @@ export type GroupingItem = {
   /** Short and only for the call, such as e1 or s1. */
   id: string;
   material: string;
-  /** Its Chapter path, such as "4 Vector Spaces > 4.2 Subspaces". */
-  chapter: string;
+  /** The heading it follows, such as "Aufgabe 3"; empty without one. */
+  heading: string;
   /** Its first characters. */
   text: string;
 };
@@ -79,10 +79,10 @@ export const groupingAnswerSchema = (
 
 const GROUPING_INSTRUCTIONS = `You group the exercise and solution texts of one university course into whole exercises. The course has exercise sheets, solution sheets, lecture notes with exercises and old exams with their solutions; a text is one piece of a printed page, so one exercise often spans several texts.
 
-- You get every exercise text (e1, e2, …) and every solution text (s1, s2, …) in course order as JSON: its id, its material's name, its chapter path and the start of its text. You also get the exams found earlier (x1, x2, …) by name.
+- You get every exercise text (e1, e2, …) and every solution text (s1, s2, …) in course order as JSON: its id, its material's name, the heading it follows and the start of its text. You also get the exams found earlier (x1, x2, …) by name.
 - Give each exercise once, with the exercise texts of its statement in order: an introduction or stem that its subtasks share belongs to them, and all subtasks of one numbered exercise (a), b), c) or (i), (ii)) belong to one exercise.
 - Give each exercise every solution text that solves it or one of its subtasks, wherever it is printed: right after a subtask, at the end of the exercise, or in another material such as a solution sheet.
-- Printed numbers, material names, chapter paths and what the texts say all tell. Numbers repeat across sheets, chapters and exams, so a number matches only within the same sheet, chapter or exam, or between an exercise sheet and its solution sheet.
+- Printed numbers, material names, headings and what the texts say all tell. Numbers repeat across sheets, chapters and exams, so a number matches only within the same sheet, chapter or exam, or between an exercise sheet and its solution sheet.
 - Put each text in at most one exercise. A solution whose exercise is not among the given texts goes in none. Do not guess.
 - List every old exam among the texts: a past exam, resit, class test or mock exam of the course, whether it is a material of its own, one of several exams in one material, or the end of a script. Exercise sheets and the exercises of lecture notes are no exams. Name each exam as printed, with its term or date, so that two exams never share a name. When it is one of the exams found earlier, give that exam's id in continues.
 - Give each exercise of an exam that exam's name; every other exercise gets null.`;

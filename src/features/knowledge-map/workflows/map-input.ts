@@ -7,18 +7,18 @@ import type { AdminSupabase } from "@/lib/supabase/types";
 
 /**
  * The Course's map as the last steps of a build read it: its chunks in
- * Course order with their Chapters, its live KCs with their sources and the
+ * Course order with their headings, its live KCs with their sources and the
  * Prerequisites between live KCs.
  */
 export type MapInput = {
   /** In Course order: Materials by position, then chunks by position. */
-  chunks: Array<{ id: string; chapterId: string | null; label: string }>;
-  /** In Course order: Materials by position, then their Outlines in order. */
-  chapters: Array<{
+  chunks: Array<{
     id: string;
     materialId: string;
-    title: string;
-    depth: number;
+    heading: string | null;
+    label: string;
+    pageFrom: number;
+    pageTo: number;
   }>;
   /** The Course's Materials by position. */
   materials: Array<{ id: string; name: string }>;
@@ -38,25 +38,16 @@ export async function loadMapInput(
   supabase: AdminSupabase,
   courseId: string,
 ): Promise<MapInput> {
-  const [materials, chapters, chunks, rows] = await Promise.all([
+  const [materials, chunks, rows] = await Promise.all([
     supabase
       .from("materials")
       .select("id, name")
       .eq("course_id", courseId)
       .order("position"),
-    allRows("Loading the Chapters", (from, to) =>
-      supabase
-        .from("chapters")
-        .select("id, material_id, title, depth")
-        .eq("course_id", courseId)
-        .order("material_id")
-        .order("position")
-        .range(from, to),
-    ),
     allRows("Loading the chunks", (from, to) =>
       supabase
         .from("chunks")
-        .select("id, material_id, chapter_id, label, position")
+        .select("id, material_id, heading, label, position, page_from, page_to")
         .eq("course_id", courseId)
         .order("material_id")
         .order("position")
@@ -75,18 +66,11 @@ export async function loadMapInput(
         .filter((chunk) => chunk.material_id === material.id)
         .map((chunk) => ({
           id: chunk.id,
-          chapterId: chunk.chapter_id,
+          materialId: chunk.material_id,
+          heading: chunk.heading,
           label: chunk.label,
-        })),
-    ),
-    chapters: materials.data.flatMap((material) =>
-      chapters
-        .filter((chapter) => chapter.material_id === material.id)
-        .map((chapter) => ({
-          id: chapter.id,
-          materialId: chapter.material_id,
-          title: chapter.title,
-          depth: chapter.depth,
+          pageFrom: chunk.page_from,
+          pageTo: chunk.page_to,
         })),
     ),
     materials: materials.data,
@@ -118,21 +102,26 @@ export function firstSourcePlaces(map: MapInput): Map<string, number> {
 }
 
 /**
- * The live KCs with a first source in Course order, each with the title of
- * that source's Chapter (empty for a chunk without one).
+ * The live KCs with a first source in Course order, each with the heading
+ * that source follows (empty without one) and its Material's name.
  */
-export function kcsInCourseOrder(
-  map: MapInput,
-): Array<{ id: string; chapter: string; name: string; description: string }> {
+export function kcsInCourseOrder(map: MapInput): Array<{
+  id: string;
+  heading: string;
+  material: string;
+  name: string;
+  description: string;
+}> {
   const places = firstSourcePlaces(map);
-  const titleOf = new Map(map.chapters.map((c) => [c.id, c.title]));
+  const materialOf = new Map(map.materials.map((m) => [m.id, m.name]));
   const kcOf = new Map(map.kcs.map((kc) => [kc.id, kc]));
   return courseOrder(map).map((id) => {
     const kc = kcOf.get(id)!;
-    const { chapterId } = map.chunks[places.get(id)!]!;
+    const { heading, materialId } = map.chunks[places.get(id)!]!;
     return {
       id,
-      chapter: (chapterId && titleOf.get(chapterId)) || "",
+      heading: heading ?? "",
+      material: materialOf.get(materialId) ?? "",
       name: kc.name,
       description: kc.description,
     };
@@ -140,7 +129,7 @@ export function kcsInCourseOrder(
 }
 
 /** The live KCs with a first source, in Course order. */
-export function courseOrder(map: MapInput): string[] {
+function courseOrder(map: MapInput): string[] {
   const places = firstSourcePlaces(map);
   return map.kcs
     .map((kc) => kc.id)

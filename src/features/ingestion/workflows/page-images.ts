@@ -35,15 +35,6 @@ definePDFJSModule(() => import("pdfjs-dist/legacy/build/pdf.mjs"));
 /** The app's own canvas package, which `next.config.ts` ships to the function. */
 const canvasImport = () => import("@napi-rs/canvas");
 
-/** An entry of a PDF's outline, in document order. */
-export type OutlineEntry = {
-  title: string;
-  /** 1 for a top-level entry. */
-  level: number;
-  /** The 1-based page it points at. */
-  page: number;
-};
-
 /** A page rendered for its page call. */
 export type RenderedPage = {
   /** JPEG bytes, with the long edge at 2,000 pixels. */
@@ -99,42 +90,9 @@ export async function openPdf(bytes: Uint8Array) {
       .join("");
   }
 
-  /** The 1-based page an outline item points at; null when it points nowhere. */
-  async function outlinePage(dest: unknown): Promise<number | null> {
-    try {
-      const target =
-        typeof dest === "string" ? await pdf.getDestination(dest) : dest;
-      if (!Array.isArray(target)) return null;
-      const ref: unknown = target[0];
-      if (typeof ref === "number") return ref + 1;
-      return (await pdf.getPageIndex(ref as never)) + 1;
-    } catch {
-      return null;
-    }
-  }
-
   return {
     pageCount: pdf.numPages,
     pageText,
-    /**
-     * The PDF's outline (bookmarks) in document order, each entry with its
-     * level (1 at the top) and page; entries that point at no page are left
-     * out. Empty without an outline.
-     */
-    async outline(): Promise<OutlineEntry[]> {
-      const entries: OutlineEntry[] = [];
-      type Item = { title: string; dest: unknown; items: Item[] };
-      const walk = async (items: Item[], level: number) => {
-        for (const item of items) {
-          const page = await outlinePage(item.dest);
-          const title = item.title.trim();
-          if (page !== null && title) entries.push({ title, level, page });
-          await walk(item.items, level + 1);
-        }
-      };
-      await walk(((await pdf.getOutline()) ?? []) as Item[], 1);
-      return entries;
-    },
     /** Every page's text layer, in page order. */
     async pageTexts(): Promise<string[]> {
       const texts: string[] = [];

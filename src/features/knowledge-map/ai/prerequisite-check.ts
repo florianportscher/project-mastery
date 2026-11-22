@@ -8,8 +8,8 @@ import { aiTask } from "@/lib/ai/models";
 export type OfferedKc = {
   /** Short and only for the call, such as k1. */
   id: string;
-  /** The title of the Chapter of its first source. */
-  chapter: string;
+  /** The heading its first source follows; empty without one. */
+  heading: string;
   name: string;
   description: string;
 };

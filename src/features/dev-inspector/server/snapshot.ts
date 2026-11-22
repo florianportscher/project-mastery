@@ -3,7 +3,10 @@ import { buildFlags } from "@/features/dev-inspector/domain/flags";
 import type { DevUnit, Flags, Snapshot } from "@/features/dev-inspector/types";
 import {
   MIN_UNIT_COVERAGE,
-  chapterUnits,
+  UNIT_CHARS,
+  batchTitle,
+  exerciseBatches,
+  teachingBatches,
   unitKey,
 } from "@/features/knowledge-map/server";
 import { failed } from "@/lib/supabase/failed";
@@ -40,37 +43,66 @@ export async function getCourseInspection(
 }
 
 /**
- * The units the current chunks form, as the build forms them
- * (`loadCourseUnits`): teaching units in Course order, then exercise
- * units.
+ * The batches the current chunks form, as the build forms them
+ * (`loadCourseUnits`): teaching batches in Course order, then exercise
+ * batches of the stored Exercises by position, each by its question chunks.
  */
 function courseUnits(snapshot: Snapshot): DevUnit[] {
   const extractionOf = new Map(
     snapshot.extractions.map((e) => [unitKey(e), e]),
   );
-  return (["content", "exercise"] as const).flatMap((kind) =>
-    snapshot.materials.flatMap((material) => {
-      const outline = snapshot.chapters
-        .filter((c) => c.materialId === material.id)
-        .toSorted((a, b) => a.position - b.position);
-      const chunks = snapshot.chunks
-        .filter((c) => c.materialId === material.id && c.label === kind)
-        .toSorted((a, b) => a.position - b.position);
-      return chapterUnits(
-        outline.map((c) => ({ id: c.id, parentId: c.parentId })),
-        chunks,
-      ).map((unit) => {
-        const key = unitKey({ ...unit, kind });
-        return {
-          ...unit,
-          key,
-          kind,
-          materialId: material.id,
-          extraction: extractionOf.get(key) ?? null,
-        };
-      });
-    }),
+  const chunkOf = new Map(snapshot.chunks.map((c) => [c.id, c]));
+  const nameOf = new Map(snapshot.materials.map((m) => [m.id, m.name]));
+  const unit = (
+    kind: DevUnit["kind"],
+    materialId: string,
+    batch: number,
+    chunkIds: string[],
+  ): DevUnit => {
+    const key = unitKey({ materialId, kind, batch });
+    return {
+      key,
+      kind,
+      materialId,
+      batch,
+      title: batchTitle(
+        nameOf.get(materialId) ?? "",
+        chunkIds.map((id) => chunkOf.get(id)!),
+      ),
+      chunkIds,
+      extraction: extractionOf.get(key) ?? null,
+    };
+  };
+  const teaching = snapshot.materials.flatMap((material) =>
+    teachingBatches(
+      snapshot.chunks
+        .filter((c) => c.materialId === material.id && c.label === "content")
+        .toSorted((a, b) => a.position - b.position),
+    ).map((ids, batch) => unit("content", material.id, batch, ids)),
   );
+  const exercises = snapshot.exercises
+    .toSorted((a, b) => a.position - b.position)
+    .flatMap((exercise) => {
+      const first = chunkOf.get(exercise.questionChunkId);
+      if (!first) return [];
+      const chars = [...exercise.questionChunkIds, ...exercise.solutionChunkIds]
+        .map((id) => chunkOf.get(id)?.chars ?? 0)
+        .reduce((sum, n) => sum + n, 0);
+      return [{ material: first.materialId, chars, id: first.id }];
+    });
+  const batchesOf = new Map<string, number>();
+  const practice = exerciseBatches(exercises, UNIT_CHARS).map((items) => {
+    const materialId = items[0]!.material;
+    const batch = batchesOf.get(materialId) ?? 0;
+    batchesOf.set(materialId, batch + 1);
+    return unit(
+      "exercise",
+      materialId,
+      batch,
+      items.map((item) => item.id),
+    );
+  });
+  return [...teaching, ...practice];
 }
 
 /** One chunk's Markdown, for a developer who owns it; null for any other. */

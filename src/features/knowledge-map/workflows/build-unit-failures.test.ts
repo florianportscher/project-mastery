@@ -11,7 +11,6 @@ import {
   seedMaterial,
   useBuildModels,
 } from "./build-testing";
-import { unitTitle } from "./build-models-testing";
 
 /**
  * Update map with extraction calls that fail: a failed unit waits a step,
@@ -48,20 +47,20 @@ beforeEach(() => {
 
 test("stores the units answered before the rate limit, and extracts the rest after its wait", async () => {
   for (const title of ["Vectors", "Sums", "Bases"]) {
-    seedMaterial(db, { chapters: [{ title }] });
+    seedMaterial(db, { sections: [{ title }] });
   }
   // The third call meets the limit, which names 20 s.
   const { extractions } = useBuildModels({ rateLimitedCalls: [3] });
   const storedAtWait: number[] = [];
   sleep.mockImplementation(async () => {
-    storedAtWait.push(db.tables.chapter_extractions.length);
+    storedAtWait.push(db.tables.unit_extractions.length);
   });
 
   await update();
 
   expect(sleep.mock.calls).toEqual([[60_000]]);
   expect(storedAtWait).toEqual([2]);
-  expect(extractions.map(unitTitle)).toEqual([
+  expect(extractions.map((unit) => unit.material)).toEqual([
     "Material 0",
     "Material 1",
     "Material 2",
@@ -70,36 +69,38 @@ test("stores the units answered before the rate limit, and extracts the rest aft
     status: "built",
     check_report: expect.objectContaining({ unitsNotExtracted: [] }),
   });
-  expect(liveKcs(db)).toEqual(["Material 0", "Material 1", "Material 2"]);
+  expect(liveKcs(db)).toEqual(["Vectors", "Sums", "Bases"]);
 });
 
 test("stores an answer with no KCs without asking again", async () => {
-  seedMaterial(db, { chapters: [{ title: "Notation" }] });
+  seedMaterial(db, { sections: [{ title: "Notation" }] });
   const { extractions } = useBuildModels({ kcsOf: () => [] });
 
   await update();
 
   expect(extractions).toHaveLength(1);
-  expect(db.tables.chapter_extractions).toHaveLength(1);
+  expect(db.tables.unit_extractions).toHaveLength(1);
   expect(build()).toMatchObject({
     status: "built",
-    check_report: expect.objectContaining({ chaptersWithoutKcs: ["Notation"] }),
+    check_report: expect.objectContaining({
+      uncitedPages: [{ material: "Material 0", pages: [1] }],
+    }),
   });
 });
 
 test("leaves a unit whose call gives no answer to the next step", async () => {
-  seedMaterial(db, { chapters: [{ title: "Vectors" }] });
+  seedMaterial(db, { sections: [{ title: "Vectors" }] });
   const { extractions } = useBuildModels({ blankCalls: 1 });
 
   await update();
 
   expect(extractions).toHaveLength(1);
   expect(build()?.status).toBe("built");
-  expect(liveKcs(db)).toEqual(["Material 0"]);
+  expect(liveKcs(db)).toEqual(["Vectors"]);
 });
 
 test("leaves a unit whose call times out to the next step, and gives a single chunk up when it times out there too", async () => {
-  seedMaterial(db, { chapters: [{ title: "Vectors" }] });
+  seedMaterial(db, { sections: [{ title: "Vectors" }] });
   useBuildModels({ timeoutCalls: 1 });
 
   await update();
@@ -109,7 +110,7 @@ test("leaves a unit whose call times out to the next step, and gives a single ch
     expect.objectContaining({ task: "map", estimated: true }),
   );
 
-  seedMaterial(db, { chapters: [{ title: "Sums" }] });
+  seedMaterial(db, { sections: [{ title: "Sums" }] });
   useBuildModels({ timeoutCalls: 2 });
 
   await update();
@@ -117,15 +118,15 @@ test("leaves a unit whose call times out to the next step, and gives a single ch
   expect(build()).toMatchObject({
     status: "built",
     check_report: expect.objectContaining({
-      unitsNotExtracted: ["Material 1"],
+      unitsNotExtracted: ["Material 1 p. 1"],
     }),
   });
-  expect(db.tables.chapter_extractions).toHaveLength(1);
+  expect(db.tables.unit_extractions).toHaveLength(1);
 });
 
 test("calls a unit that failed twice in halves, and keeps the halves answered", async () => {
   seedMaterial(db, {
-    chapters: [{ title: "Vectors", chunks: ["About sums.", "About bases."] }],
+    sections: [{ title: "Vectors", chunks: ["About sums.", "About bases."] }],
   });
   const { extractions } = useBuildModels({
     kcsOf: (unit) => unit.chunks.map((chunk) => chunk.markdown),
@@ -146,5 +147,5 @@ test("calls a unit that failed twice in halves, and keeps the halves answered", 
     check_report: expect.objectContaining({ unitsNotExtracted: [] }),
   });
   expect(liveKcs(db)).toEqual(["About sums.", "About bases."]);
-  expect(db.tables.chapter_extractions).toHaveLength(1);
+  expect(db.tables.unit_extractions).toHaveLength(1);
 });

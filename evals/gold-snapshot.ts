@@ -24,9 +24,8 @@ export const SNAPSHOT_TABLES: { table: string; parent?: Parent }[] = [
     table: "material_pages",
     parent: { table: "materials", column: "material_id" },
   },
-  { table: "chapters" },
   { table: "chunks" },
-  { table: "chapter_extractions" },
+  { table: "unit_extractions" },
   { table: "knowledge_map_builds" },
   { table: "kcs" },
   { table: "kc_sources" },
@@ -107,7 +106,8 @@ export function remapSnapshot(
   }
 
   const tables: Record<string, Row[]> = {};
-  for (const [table, rows] of Object.entries(upgraded(snapshot.tables))) {
+  const current = withoutChapters(wholeExercises(snapshot.tables));
+  for (const [table, rows] of Object.entries(current)) {
     tables[table] = rows.map((row) => {
       const next = replaceIds(row, ids) as Row;
       next.owner = studentId;
@@ -134,7 +134,7 @@ export function remapSnapshot(
  * become its `exercise_chunks`, the pairs go, and so do the exercise
  * extractions, which the next Update map makes again.
  */
-function upgraded(tables: Snapshot["tables"]): Snapshot["tables"] {
+function wholeExercises(tables: Snapshot["tables"]): Snapshot["tables"] {
   const exercises = tables.exercises ?? [];
   if (!exercises.some((row) => "solution_chunk_id" in row)) return tables;
   const rest = Object.fromEntries(
@@ -171,6 +171,38 @@ function upgraded(tables: Snapshot["tables"]): Snapshot["tables"] {
     chapter_extractions: (rest.chapter_extractions ?? []).filter(
       (row) => row.kind !== "exercise",
     ),
+  };
+}
+
+/**
+ * The tables of a snapshot from before Chapters went (#351) as the schema
+ * has them now, as the migration does it: each chunk's heading is its
+ * Chapter's title (none under a root Chapter), the Chapters and the
+ * extractions go, and the map needs an update to extract again.
+ */
+function withoutChapters(tables: Snapshot["tables"]): Snapshot["tables"] {
+  if (!tables.chapters) return tables;
+  const rest = Object.fromEntries(
+    Object.entries(tables).filter(
+      ([name]) => name !== "chapters" && name !== "chapter_extractions",
+    ),
+  );
+  const chapters = tables.chapters;
+  const titleOf = new Map(
+    chapters
+      .filter((chapter) => Number(chapter.depth) > 0)
+      .map((chapter) => [chapter.id, chapter.title]),
+  );
+  return {
+    ...rest,
+    chunks: (rest.chunks ?? []).map(({ chapter_id, ...chunk }) => ({
+      ...chunk,
+      heading: titleOf.get(chapter_id) ?? null,
+    })),
+    knowledge_map_builds: (rest.knowledge_map_builds ?? []).map((build) => ({
+      ...build,
+      needs_update: true,
+    })),
   };
 }
 

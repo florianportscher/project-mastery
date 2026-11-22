@@ -1,7 +1,6 @@
 import { CallList } from "@/features/dev-inspector/components/calls";
 import { ChunkMarkdown } from "@/features/dev-inspector/components/chunk-markdown";
 import {
-  ChapterRefs,
   ChunkRefs,
   Flag,
   Json,
@@ -86,7 +85,7 @@ export function ExercisesSection({
   );
 }
 
-/** The Topic tree with each Topic's KCs and Chapters. */
+/** The Topic tree with each Topic's KCs. */
 export function TopicsSection({
   snapshot,
   lookup,
@@ -104,11 +103,6 @@ export function TopicsSection({
       <div className="text-sm font-medium">{topic.name}</div>
       {topic.centralQuestion && (
         <p className="text-xs text-muted-foreground">{topic.centralQuestion}</p>
-      )}
-      {topic.chapterIds.length > 0 && (
-        <Row label="Chapters">
-          <ChapterRefs ids={topic.chapterIds} lookup={lookup} />
-        </Row>
       )}
       {topic.kcIds.length > 0 && (
         <Row label="KCs">

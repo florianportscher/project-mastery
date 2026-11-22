@@ -98,35 +98,13 @@ export function chunkName(id: string, lookup: Lookup): string {
   return `${chunk.label} ${pages}`;
 }
 
-/** Links to Chapters by title. */
-export function ChapterRefs({
-  ids,
-  lookup,
-}: {
-  ids: string[];
-  lookup: Lookup;
-}) {
-  if (ids.length === 0) return <span className="text-muted-foreground">–</span>;
-  return (
-    <span className="inline-flex flex-wrap gap-x-2">
-      {ids.map((id) => (
-        <Ref key={id} to={anchor.chapter(id)}>
-          {lookup.chapter.get(id)?.title ?? id}
-        </Ref>
-      ))}
-    </span>
-  );
-}
-
-/** A unit's name: its Chapters' titles, kind and index. */
-export function unitName(
-  unit: { chapterIds: string[]; kind: string; unit: number },
-  lookup: Lookup,
-): string {
-  const titles = unit.chapterIds
-    .map((id) => lookup.chapter.get(id)?.title ?? id)
-    .join(", ");
-  return `${titles} · ${unit.kind} ${unit.unit}`;
+/** A unit's name: where it is, its kind and batch. */
+export function unitName(unit: {
+  title: string;
+  kind: string;
+  batch: number;
+}): string {
+  return `${unit.title} · ${unit.kind} ${unit.batch}`;
 }
 
 /** A key–value row of a detail list. */

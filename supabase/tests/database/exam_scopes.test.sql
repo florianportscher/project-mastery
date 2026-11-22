@@ -28,11 +28,11 @@ values
   ('aaaaaaaa-0000-0000-0000-0000000000f3', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', 'Notes', '11111111-1111-1111-1111-111111111111/aaaaaaaa-c000-0000-0000-000000000001/aaaaaaaa-0000-0000-0000-0000000000f3', 'application/pdf', 10, 'parsed');
 
 -- Matrices holds Determinants; Cells is Bob's.
-insert into public.topics (id, owner, course_id, parent_id, chapter_ids, name, central_question, position)
+insert into public.topics (id, owner, course_id, parent_id, name, central_question, position)
 values
-  ('aaaaaaaa-b000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', null, '{}', 'Matrices', null, 0),
-  ('aaaaaaaa-7000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', 'aaaaaaaa-b000-0000-0000-000000000001', '{aaaaaaaa-1111-0000-0000-000000000001}', 'Determinants', 'Why?', 1),
-  ('bbbbbbbb-b000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'bbbbbbbb-c000-0000-0000-000000000001', null, '{bbbbbbbb-1111-0000-0000-000000000001}', 'Cells', 'C?', 0);
+  ('aaaaaaaa-b000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', null, 'Matrices', null, 0),
+  ('aaaaaaaa-7000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', 'aaaaaaaa-b000-0000-0000-000000000001', 'Determinants', 'Why?', 1),
+  ('bbbbbbbb-b000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'bbbbbbbb-c000-0000-0000-000000000001', null, 'Cells', 'C?', 0);
 
 -- The exams the build found.
 insert into public.exams (id, owner, course_id, name, position)

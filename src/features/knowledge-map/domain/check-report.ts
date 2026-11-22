@@ -18,16 +18,50 @@ export function checkReportLine(report: CheckReport | null): string | null {
             .join(", ");
     parts.push(`couldn't read ${pages}`);
   }
-  const chapters = new Set([
-    ...report.unitsBelowCoverage.map((unit) => unit.chapter),
-    ...report.unitsNotExtracted,
-  ]).size;
-  if (chapters > 0) {
-    parts.push(
-      `covered ${chapters} ${chapters === 1 ? "Chapter" : "Chapters"} only in part`,
-    );
+  const partly = [
+    ...new Set([
+      ...report.unitsBelowCoverage.map((unit) => unit.unit),
+      ...report.unitsNotExtracted,
+    ]),
+  ];
+  if (partly.length > 0) {
+    parts.push(`covered ${partly.join(", ")} only in part`);
   }
   return parts.length === 0 ? null : `The AI ${parts.join(" and ")}`;
+}
+
+/**
+ * The pages with teaching content that no cited chunk covers, per Material
+ * in Course order: a page is listed when it holds `content` chunks and none
+ * of them is cited.
+ */
+export function uncitedPages(
+  materials: ReadonlyArray<{ id: string; name: string }>,
+  chunks: ReadonlyArray<{
+    id: string;
+    materialId: string;
+    label: string;
+    pageFrom: number;
+    pageTo: number;
+  }>,
+  cited: ReadonlySet<string>,
+): Array<{ material: string; pages: number[] }> {
+  return materials.flatMap((material) => {
+    const covered = new Map<number, boolean>();
+    for (const chunk of chunks) {
+      if (chunk.materialId !== material.id || chunk.label !== "content") {
+        continue;
+      }
+      for (let page = chunk.pageFrom; page <= chunk.pageTo; page++) {
+        covered.set(page, (covered.get(page) ?? false) || cited.has(chunk.id));
+      }
+    }
+    const pages = [...covered]
+      .filter(([, isCited]) => !isCited)
+      .map(([page]) => page)
+      .toSorted((a, b) => a - b);
+    return pages.length > 0 ? [{ material: material.name, pages }] : [];
+  });
 }
 
 /** "p. 10", "pp. 10, 36–38": pages in order, consecutive ones as a range. */

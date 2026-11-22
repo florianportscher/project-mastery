@@ -1,4 +1,3 @@
-import type { OutlineChapter } from "@/features/ingestion/domain/outline";
 import type { BatchUnit } from "@/features/ingestion/domain/page-batches";
 import type { ChunkLabel } from "@/features/ingestion/types";
 
@@ -8,15 +7,9 @@ export type DraftChunk = {
   pageTo: number;
   label: ChunkLabel;
   markdown: string;
-  /** The position of the deepest Chapter it is in. */
-  chapterPosition: number;
+  /** The heading it follows; null before the Material's first. */
+  heading: string | null;
 };
-
-/** Where a Chapter starts, as cutting chunks needs it. */
-export type ChapterStart = Pick<
-  OutlineChapter,
-  "position" | "depth" | "startUnit" | "startsAtHeading"
->;
 
 /** The longest a chunk gets, in characters, unless one paragraph is longer. */
 export const MAX_CHUNK_CHARS = 6000;
@@ -26,7 +19,7 @@ type Paragraph = { text: string; pageFrom: number; pageTo: number };
 
 type OpenChunk = {
   label: ChunkLabel;
-  chapterPosition: number;
+  heading: string | null;
   paragraphs: Paragraph[];
 };
 
@@ -34,7 +27,7 @@ type OpenChunk = {
 const HEADING_MARKS = /^\s*#+\s*|^\s*\*\*|\*\*\s*$/g;
 
 const headingText = (markdown: string) =>
-  markdown.replaceAll(HEADING_MARKS, "").trim();
+  markdown.replaceAll(HEADING_MARKS, "").replaceAll(/\s+/g, " ").trim();
 
 function paragraphs(unit: BatchUnit, markdown = unit.markdown): Paragraph[] {
   return markdown
@@ -45,51 +38,37 @@ function paragraphs(unit: BatchUnit, markdown = unit.markdown): Paragraph[] {
 }
 
 /**
- * The chunks of a Material's units, in reading order, cut at every
- * Chapter's start. Each unit is a chunk, except that a unit joins the one
- * before it across a batch edge when that one continues on the next batch,
- * it continues from the previous one, no heading or Chapter start stands
- * between them and their labels match. A Chapter's own heading becomes a
- * Markdown heading of the Chapter's depth at the start of the next unit;
- * any other heading becomes a bold line there. Headings with no unit after
- * them in their Chapter make a content chunk. A chunk over MAX_CHUNK_CHARS
- * splits between paragraphs. Without Chapters, every chunk is in the root.
+ * The chunks of a Material's units, in reading order. Each unit is a
+ * chunk, except that a unit joins the one before it across a batch edge
+ * when that one continues on the next batch, it continues from the previous
+ * one, no heading stands between them and their labels match. Each heading
+ * unit starts the next chunk: it becomes a bold line at its start and its
+ * `heading`, the last one when several stand together; a chunk without a
+ * heading of its own keeps the one before it. Headings with no unit after
+ * them make a content chunk. A chunk over MAX_CHUNK_CHARS splits between
+ * paragraphs.
  */
-export function chunksFromUnits(
-  units: readonly BatchUnit[],
-  chapters: readonly ChapterStart[] = [],
-): DraftChunk[] {
-  const starts = Map.groupBy(
-    chapters.toSorted((a, b) => a.position - b.position),
-    (chapter) => chapter.startUnit,
-  );
+export function chunksFromUnits(units: readonly BatchUnit[]): DraftChunk[] {
   const chunks: OpenChunk[] = [];
-  let chapterPosition = 0;
+  let heading: string | null = null;
   let headings: Paragraph[] = [];
   let previous: BatchUnit | null = null;
   const flushHeadings = () => {
     if (headings.length > 0) {
-      chunks.push({ label: "content", chapterPosition, paragraphs: headings });
+      chunks.push({ label: "content", heading, paragraphs: headings });
     }
     headings = [];
   };
 
-  units.forEach((unit, index) => {
-    const starting = starts.get(index);
-    if (starting) {
-      flushHeadings();
-      previous = null;
-      chapterPosition = starting.at(-1)!.position;
-    }
+  for (const unit of units) {
     if (unit.label === "heading") {
-      const own = starting?.find((chapter) => chapter.startsAtHeading);
       const text = headingText(unit.markdown);
-      const line = own
-        ? `${"#".repeat(Math.min(Math.max(own.depth, 1), 6))} ${text}`
-        : `**${text}**`;
-      headings.push(...paragraphs(unit, line));
+      if (text) {
+        headings.push(...paragraphs(unit, `**${text}**`));
+        heading = text;
+      }
       previous = null;
-      return;
+      continue;
     }
     const open = chunks.at(-1);
     if (
@@ -102,13 +81,13 @@ export function chunksFromUnits(
     } else {
       chunks.push({
         label: unit.label,
-        chapterPosition,
+        heading,
         paragraphs: [...headings, ...paragraphs(unit)],
       });
     }
     headings = [];
     previous = unit;
-  });
+  }
   flushHeadings();
 
   return chunks
@@ -119,7 +98,7 @@ export function chunksFromUnits(
         pageTo: Math.max(...part.map((paragraph) => paragraph.pageTo)),
         label: chunk.label,
         markdown: part.map((paragraph) => paragraph.text).join("\n\n"),
-        chapterPosition: chunk.chapterPosition,
+        heading: chunk.heading,
       })),
     );
 }

@@ -3,7 +3,7 @@ import { checkFlags } from "./kc-labels";
 
 test("check flags match a KC by its exact name", () => {
   const report = {
-    chaptersWithoutKcs: [],
+    uncitedPages: [],
     exercisesWithoutKcs: [],
     duplicates: [{ a: "Lift", b: "Thrust", similarity: 0.9 }],
     unitsBelowCoverage: [],

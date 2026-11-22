@@ -21,7 +21,7 @@ export type PageSkip =
   "blank" | "overlay" | "unreadable" | "uncovered" | "titles";
 
 /** The reasons a page batch answer gives for a page without units. */
-export const PAGE_SKIP_REASONS = ["titles_or_contents"] as const;
+export const PAGE_SKIP_REASONS = ["nothing_to_learn"] as const;
 
 /** Where a Material's parse stands. */
 export type ParseStatus =

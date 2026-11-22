@@ -170,10 +170,10 @@ describe("the map check", () => {
   const weak = {
     ...map,
     checkReport: {
-      chaptersWithoutKcs: ["Preface"],
+      uncitedPages: [{ material: "Notes", pages: [1, 2] }],
       exercisesWithoutKcs: [],
       duplicates: [],
-      unitsBelowCoverage: [{ chapter: "Bases", coverage: 0.3 }],
+      unitsBelowCoverage: [{ unit: "Notes p. 3–9", coverage: 0.3 }],
       unreadPages: [{ material: "Notes", pages: [10, 36, 37, 38] }],
       unitsNotExtracted: [],
       exercisesNotGrouped: false,
@@ -195,7 +195,7 @@ describe("the map check", () => {
     renderCheck(weak, false);
     const note = screen.getByRole("note", { name: "Map check" });
     expect(note).toHaveTextContent(
-      "The AI couldn't read pp. 10, 36–38 and covered 1 Chapter only in part.",
+      "The AI couldn't read pp. 10, 36–38 and covered Notes p. 3–9 only in part.",
     );
     expect(
       within(note).getByRole("button", { name: "Update map" }),
@@ -206,9 +206,9 @@ describe("the map check", () => {
   test("shows the full lists outside production", () => {
     renderCheck(weak, true);
     const note = screen.getByRole("note", { name: "Map check" });
-    expect(note).toHaveTextContent("Chapters without KCs");
-    expect(note).toHaveTextContent("Preface");
-    expect(note).toHaveTextContent("Bases: 30%");
+    expect(note).toHaveTextContent("Pages without KCs");
+    expect(note).toHaveTextContent("Notes pp. 1–2");
+    expect(note).toHaveTextContent("Notes p. 3–9: 30%");
   });
 
   test("says nothing of a full build to the Student", () => {

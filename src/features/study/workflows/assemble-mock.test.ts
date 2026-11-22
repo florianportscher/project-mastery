@@ -19,7 +19,6 @@ const TABLES = [
   "problems",
   "problem_kcs",
   "materials",
-  "chapters",
   "exams",
   "chunks",
   "kcs",
@@ -153,14 +152,6 @@ function seedCourse({ exam = false }: { exam?: boolean } = {}) {
     name: "Exam 2025",
     created_at: "2026-10-01T00:00:00Z",
   });
-  t.chapters.push({
-    id: "ch1",
-    ...owned,
-    material_id: "m1",
-    parent_id: null,
-    title: "Exam 2025",
-    depth: 0,
-  });
   if (exam) {
     t.exams.push({
       id: "e1",
@@ -205,7 +196,7 @@ function seedCourse({ exam = false }: { exam?: boolean } = {}) {
       id: `cccccccc-0000-4000-8000-00000000000${position}`,
       ...owned,
       material_id: "m1",
-      chapter_id: "ch1",
+      heading: null,
       position,
       page_from: 1,
       page_to: 1,
