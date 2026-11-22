@@ -57,7 +57,7 @@ export const batchResultSchema = z.object({
       }),
     )
     .describe(
-      "Every page of the batch that has no unit, with the reason: titles_or_contents for a page of only a title, a table of contents, an index or a reference list. A page with units is not listed. Empty when every page has units.",
+      "Every page of the batch that has no unit, with the reason nothing_to_learn: a page with nothing to learn or practise, such as decoration, a picture without information, a repeated course header, a title page, a table of contents, an index or a reference list. A page with units is not listed. Empty when every page has units.",
     ),
 });
 
@@ -83,7 +83,7 @@ const BATCH_INSTRUCTIONS = `You transcribe consecutive pages of a Student's cour
 - Write each unit as Markdown in the page's own language. Do not translate, summarize or solve anything.
 - Write every formula in LaTeX: $...$ inline, $$...$$ for display.
 - Describe a plot, chart or technical drawing inside its unit as a blockquote that starts with **Figure:**, saying what it shows. Leave out decorative images such as logos.
-- Do not transcribe running headers, footers, page numbers, logos, title pages, tables of contents, indexes or reference lists. A page with nothing else has no units: list it in skippedPages with its reason. Every page of the batch either has units or is listed there.
+- Do not transcribe running headers, footers, page numbers or logos. A page with nothing to learn or practise (decoration, a picture without information, a repeated course header, a title page, a table of contents, an index, a reference list) is not transcribed: it has no units, list it in skippedPages. Every page of the batch either has units or is listed there.
 - Give each unit the page it starts on and the page it ends on. A unit may run over several of these pages.
 - When the context unit from before these pages is given, do not transcribe it again. Mark the first unit when it starts mid-way and goes on from before these pages, and the last unit when it is cut off at the end of the last page.
 - language: the language these pages are written in, as an English name.
@@ -93,7 +93,7 @@ const BATCH_INSTRUCTIONS = `You transcribe consecutive pages of a Student's cour
  * Call settings for one page batch call of a parse (task `ingest`),
  * streamed so the Gateway's headers arrive before Node's 5-minute timeout:
  *
- *   streamText({ ...batchCallSettings(), messages: batchMessages(pages, context) })
+ *   streamText({ ...batchCallSettings(), messages: batchMessages(name, pages, context) })
  */
 export function batchCallSettings() {
   return {
@@ -116,10 +116,12 @@ export type BatchPage = {
 };
 
 /**
- * The user message of a batch call: the last unit before the batch as
- * context, if any, then each page's number, image and text layer.
+ * The user message of a batch call: the Material's name, the last unit
+ * before the batch as context, if any, then each page's number, image and
+ * text layer.
  */
 export function batchMessages(
+  materialName: string,
   pages: readonly BatchPage[],
   context: Pick<PageUnit, "label" | "markdown"> | null,
 ) {
@@ -135,6 +137,7 @@ export function batchMessages(
     {
       role: "user" as const,
       content: [
+        { type: "text" as const, text: `Material: ${materialName}` },
         ...intro,
         ...pages.flatMap((page) => [
           { type: "text" as const, text: `Page ${page.pageNumber}` },

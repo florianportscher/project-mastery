@@ -82,6 +82,7 @@ describe("parsing a PDF Material", () => {
     expect(sentImages(prompts)).toEqual([["image/jpeg", "image/jpeg"]]);
     expect(sentTexts(prompts)).toEqual([
       [
+        "Material: Lecture 1",
         "Page 1",
         expect.stringContaining("Definition: limit"),
         "Page 2",
@@ -165,7 +166,7 @@ describe("parsing a PDF Material", () => {
     await parseMaterial(MATERIAL);
 
     expect(sentImages(prompts).map((images) => images.length)).toEqual([5, 2]);
-    expect(sentTexts(prompts)[1]![0]).toContain("A vector space is");
+    expect(sentTexts(prompts)[1]![1]).toContain("A vector space is");
     expect(storedChunks(db)).toEqual([
       {
         position: 0,
@@ -228,7 +229,7 @@ describe("parsing a PDF Material", () => {
     const { model, prompts } = pageModel([
       {
         units: [unit({ markdown: "Two.", pageFrom: 2, pageTo: 5 })],
-        skippedPages: [{ pageNumber: 1, reason: "titles_or_contents" }],
+        skippedPages: [{ pageNumber: 1, reason: "nothing_to_learn" }],
       },
       { units: [unit({ markdown: "Six.", pageFrom: 6, pageTo: 7 })] },
     ]);
@@ -329,7 +330,7 @@ describe("parsing an image Material", () => {
       expect.objectContaining({ page_from: 1, page_to: 1, markdown: "$x^2$" }),
     ]);
     expect(sentImages(prompts)).toEqual([["image/png"]]);
-    expect(sentTexts(prompts)).toEqual([["Page 1"]]);
+    expect(sentTexts(prompts)).toEqual([["Material: Lecture 1", "Page 1"]]);
   });
 });
 

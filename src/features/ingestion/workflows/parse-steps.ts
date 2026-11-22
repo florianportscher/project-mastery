@@ -487,7 +487,10 @@ async function callBatch(
           throw new PageCallFailed(String(error), { cause: error });
         },
       },
-      { ...batchCallSettings(), messages: batchMessages(batch, context) },
+      {
+        ...batchCallSettings(),
+        messages: batchMessages(material.name, batch, context),
+      },
     );
   } catch (error) {
     // Any other failure, such as the database's, is the step's.
