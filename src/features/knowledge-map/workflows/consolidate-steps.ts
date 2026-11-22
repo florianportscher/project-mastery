@@ -32,7 +32,6 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * extraction also stores its Exercises, in place by their question chunks.
  */
 
-/** Parallel `match_kcs` calls. */
 const MATCHES_AT_ONCE = 10;
 
 type Pending = { extractionId: string; extraction: StoredExtraction };

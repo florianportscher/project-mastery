@@ -37,7 +37,6 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * heartbeat, and does nothing once the build no longer runs.
  */
 
-/** The most units one step extracts or consolidates. */
 export const UNITS_PER_STEP = 8;
 
 /**
@@ -128,7 +127,6 @@ export type CourseUnit = {
    * solutions as Markdown.
    */
   chunks: Array<{ id: string; heading: string | null; markdown: string }>;
-  /** An exercise batch's Exercises, in the order of `chunks`. */
   exercises?: BatchExercise[];
 };
 
@@ -317,7 +315,6 @@ export function planAttempts(
     .toSorted((a, b) => a.failures - b.failures || a.later - b.later);
 }
 
-/** A stored extraction whose KCs are stored, as repeats of those KCs. */
 function asRepeats(
   extraction: StoredExtraction,
   kcIds: readonly string[],

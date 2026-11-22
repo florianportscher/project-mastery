@@ -129,7 +129,6 @@ function reducedArrows(
   return edges;
 }
 
-/** The ids reachable from `start` over at least one edge. */
 function reachable(
   start: string,
   successors: Map<string, Set<string>>,

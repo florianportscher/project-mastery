@@ -21,12 +21,10 @@ type OfferedStoredTopic = {
   name: string;
   /** 1 at the top. */
   level: number;
-  /** The ids of the KCs it holds itself. */
   kcs: string[];
 };
 
 export type OfferedCourse = {
-  /** The Course language by name, such as English. */
   language: string;
   /** Every live KC, in Course order. */
   kcs: OfferedKc[];

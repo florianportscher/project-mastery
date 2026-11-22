@@ -5,10 +5,8 @@
  * is at most two levels deep. Pure code.
  */
 
-/** The most characters of a Topic name. */
 export const MAX_TOPIC_NAME = 80;
 const MAX_CENTRAL_QUESTION = 500;
-/** The deepest level of the tree. */
 const MAX_LEVEL = 2;
 
 /**
@@ -18,7 +16,6 @@ const MAX_LEVEL = 2;
 export type ProposedTopic = {
   level: number;
   name: string;
-  /** The KCs it holds itself. */
   kcIds: string[];
   centralQuestion: string;
   /** The stored Topic it continues; null for a new one. */
@@ -39,7 +36,6 @@ export type PlannedTopic = {
 
 export type TreeKc = {
   id: string;
-  /** The name of its first source's Material. */
   material: string;
 };
 

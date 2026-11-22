@@ -462,7 +462,6 @@ export function deleteMaterial(db: BuildDb, materialId: string) {
   );
 }
 
-/** The id of the seeded chunk with this Markdown. */
 export function chunkWith(db: BuildDb, markdown: string): string {
   return db.tables.chunks.find((chunk) => chunk.markdown === markdown)!
     .id as string;
@@ -521,7 +520,6 @@ export function topicTree(db: BuildDb): string[] {
   });
 }
 
-/** The live KCs' names in map order. */
 export function liveKcs(db: BuildDb) {
   return db.tables.kcs
     .filter((kc) => !kc.retired_at)

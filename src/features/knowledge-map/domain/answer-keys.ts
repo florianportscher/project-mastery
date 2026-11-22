@@ -61,7 +61,6 @@ math.import(
   { override: true },
 );
 
-/** A value mathjs cannot parse: the caller reports it. */
 export class UnreadableAnswerError extends Error {
   override name = "UnreadableAnswerError";
 }
@@ -157,7 +156,6 @@ function sameScalar(given: unknown, key: unknown): boolean | null {
   return null;
 }
 
-/** A matrix or array as a plain array without singleton dimensions. */
 function squeezed(value: unknown): unknown[] | null {
   if (!math.isMatrix(value) && !Array.isArray(value)) return null;
   const plain = math.squeeze(value as number[]);

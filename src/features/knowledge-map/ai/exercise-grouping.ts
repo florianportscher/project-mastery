@@ -10,7 +10,6 @@ export type GroupingItem = {
   material: string;
   /** The heading it follows, such as "Aufgabe 3"; empty without one. */
   heading: string;
-  /** Its first characters. */
   text: string;
 };
 

@@ -66,7 +66,6 @@ type KcNodeData = {
   band: MapRecallBand;
   selected: boolean;
   related: boolean;
-  /** The colour-by encoding's colour. */
   color: string;
   /** The factor the visual shrinks by; the layout box stays fixed. */
   scale: number;

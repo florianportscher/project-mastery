@@ -24,7 +24,6 @@ export type CheckedGroup = Omit<ExerciseGroup, "examId"> & {
 
 export type FoundExam = { name: string; storedId: string | null };
 
-/** The most exercise and solution chunks one grouping call sees. */
 const MAX_GROUPING_CHUNKS = 400;
 
 /**
@@ -184,7 +183,6 @@ export function courseExams(
   return { exams, groups };
 }
 
-/** What the grouping is made from: the chunks' ids and labels, in order. */
 export function groupingHash(chunks: readonly GroupingChunk[]): string {
   return createHash("sha256")
     .update(chunks.map((chunk) => `${chunk.label}:${chunk.id}`).join("\n"))

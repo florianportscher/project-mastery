@@ -12,10 +12,8 @@ import type { ExtractedExercise } from "@/features/knowledge-map/schemas";
  * the difficulty follows in code once the KCs are stored.
  */
 
-/** The most KCs one Exercise tests. */
 const MAX_EXERCISE_KCS = 6;
 
-/** The most final answers one Exercise keeps. */
 const MAX_FINAL_ANSWERS = 10;
 
 export type ExerciseAnswer = {
@@ -27,9 +25,7 @@ export type ExerciseAnswer = {
 };
 
 export type OfferedExercise = {
-  /** The call's id, such as x1. */
   id: string;
-  /** Its first question chunk. */
   chunkId: string;
   questionChunkIds: string[];
   solutionChunkIds: string[];

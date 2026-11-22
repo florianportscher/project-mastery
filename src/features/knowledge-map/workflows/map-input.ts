@@ -20,7 +20,6 @@ export type MapInput = {
     pageFrom: number;
     pageTo: number;
   }>;
-  /** The Course's Materials by position. */
   materials: Array<{ id: string; name: string }>;
   kcs: Array<{
     id: string;
@@ -30,7 +29,6 @@ export type MapInput = {
     sources: string[];
   }>;
   prerequisites: Link[];
-  /** Each Exercise's live KCs. */
   exercises: string[][];
 };
 
@@ -90,7 +88,6 @@ export async function loadMapInput(
   };
 }
 
-/** Each live KC's first source's place in Course order. */
 export function firstSourcePlaces(map: MapInput): Map<string, number> {
   const place = new Map(map.chunks.map((chunk, index) => [chunk.id, index]));
   return new Map(
@@ -128,7 +125,6 @@ export function kcsInCourseOrder(map: MapInput): Array<{
   });
 }
 
-/** The live KCs with a first source, in Course order. */
 function courseOrder(map: MapInput): string[] {
   const places = firstSourcePlaces(map);
   return map.kcs

@@ -32,7 +32,6 @@ export function ExercisePanel({
   onSelect,
 }: {
   exercise: ExerciseView;
-  /** The map's KCs by id. */
   kcs: Map<string, KcView>;
   learning: MapKcLearning;
   onSelect: (id: string) => void;

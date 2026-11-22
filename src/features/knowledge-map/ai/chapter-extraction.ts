@@ -24,7 +24,6 @@ export type KnownKc = {
 
 export type OfferedUnit = {
   material: string;
-  /** The course language by name, such as English. */
   language: string;
   chunks: readonly [OfferedChunk, ...OfferedChunk[]];
   /** Every live KC stored so far, in Course order. */

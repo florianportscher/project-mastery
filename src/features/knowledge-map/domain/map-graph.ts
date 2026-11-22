@@ -14,7 +14,6 @@ const KC_NODE_SIZE = { width: 224, height: 72 } as const;
 /** An Exercise node's size; the node clamps longer names. */
 const EXERCISE_NODE_SIZE = { width: 200, height: 64 } as const;
 
-/** What the graph shows; each toggle switches a layer on or off. */
 export type MapLayers = {
   exercises: boolean;
   prerequisites: boolean;

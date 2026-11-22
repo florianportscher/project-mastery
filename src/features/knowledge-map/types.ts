@@ -13,7 +13,6 @@ export type KcSourceView = {
   material: string;
   /** Such as "p. 3" or "pp. 3–4". */
   pages: string;
-  /** The chunk on its Material's page. */
   link: string;
   markdown: string;
 };

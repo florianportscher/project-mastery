@@ -37,7 +37,6 @@ export function checkAnswer(key: AnswerKey, value: string): AnswerCheck {
   }
 }
 
-/** `checkAnswers` with each value's check under the time limit. */
 export function checkAnswers(
   keys: readonly AnswerKey[],
   given: readonly GivenValue[],
@@ -45,7 +44,6 @@ export function checkAnswers(
   return checkAnswersUnbounded(keys, given, checkAnswer);
 }
 
-/** `checkEachAnswer` with each value's check under the time limit. */
 export function checkEachAnswer(
   keys: readonly AnswerKey[],
   given: readonly GivenValue[],

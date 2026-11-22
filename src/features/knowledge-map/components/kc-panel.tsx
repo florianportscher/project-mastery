@@ -25,7 +25,6 @@ import type {
 import { BandBadge, PriorityBadge, PriorityReasons } from "./kc-priority";
 import { Fact, formatDate, NodeButton, None, Section } from "./panel-parts";
 
-/** A KC named in the panel; clicking it selects that KC. */
 function KcButton({
   kc,
   onSelect,

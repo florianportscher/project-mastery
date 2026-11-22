@@ -7,7 +7,6 @@ import type { KnowledgeMap } from "@/features/knowledge-map/schemas";
  * its KCs cite (#224).
  */
 
-/** The most pages one Reading section spans. */
 const MAX_SECTION_PAGES = 3;
 
 export type ChunkSpan = {

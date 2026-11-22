@@ -21,7 +21,6 @@ import type { CourseUnit } from "./build-steps";
 export type BatchExercise = ExerciseGroup & {
   /** Its first question chunk, which keys the stored Exercise. */
   id: string;
-  /** Its question chunks' Markdown, joined. */
   statement: string;
   /** Its solution chunks' Markdown, joined; null without any. */
   solution: string | null;

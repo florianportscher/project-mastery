@@ -17,7 +17,6 @@ export const COLOR_BY_NAMES: Record<ColorBy, string> = {
   priority: "Priority",
 };
 
-/** What the Student can change in the graph and the page remembers. */
 export type MapSettings = {
   layers: MapLayers;
   colorBy: ColorBy;

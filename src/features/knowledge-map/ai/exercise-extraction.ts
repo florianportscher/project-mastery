@@ -6,7 +6,6 @@ import { aiTask } from "@/lib/ai/models";
 
 export type OfferedExerciseUnit = {
   material: string;
-  /** The course language by name, such as English. */
   language: string;
   exercises: ReadonlyArray<{
     /** Short and only for the call, such as x1. */

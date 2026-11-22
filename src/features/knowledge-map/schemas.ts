@@ -3,7 +3,6 @@ import { z } from "zod";
 // The course model of a Knowledge map (#51, #69). These schemas are the
 // source of truth: the tables of the knowledge map migrations mirror them.
 
-/** Stored row ids. */
 const id = z.string().trim().min(1).max(100);
 const name = z.string().trim().min(1).max(200);
 const description = z.string().trim().min(1).max(1000);
@@ -31,7 +30,6 @@ const prerequisiteSchema = z.object({ from: id, to: id });
  * Student's final value is checked against (`domain/answer-keys.ts`): such
  * as `{ label: "Thrust", value: "17.5 kN", anyOrder: false }`.
  */
-/** The longest answer key or final value read. */
 export const MAX_ANSWER_LENGTH = 500;
 
 export const answerKeySchema = z.object({
@@ -101,7 +99,6 @@ export const checkReportSchema = z.object({
   uncitedPages: z
     .array(z.object({ material: z.string(), pages: z.array(z.number().int()) }))
     .default([]),
-  /** Labels of Exercises that test no KC. */
   exercisesWithoutKcs: z.array(z.string()),
   /** KC pairs still alike enough to be duplicates after merging, by name. */
   duplicates: z.array(z.object({ a: name, b: name, similarity: z.number() })),

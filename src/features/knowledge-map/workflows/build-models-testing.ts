@@ -11,7 +11,6 @@ import { useMockModels } from "@/lib/ai/testing";
 
 type Prompt = Array<{ role: string; content: unknown }>;
 
-/** The JSON of a call's user message. */
 function userJson(prompt: unknown): Record<string, unknown> {
   const user = (prompt as Prompt).find((message) => message.role === "user");
   const [part] = user!.content as Array<{ text: string }>;
@@ -31,7 +30,6 @@ export type SentUnit = {
   }>;
 };
 
-/** The headings a batch's chunks follow, each once, in reading order. */
 export function unitHeadings(unit: SentUnit): string[] {
   return [...new Set(unit.chunks.flatMap((chunk) => chunk.heading ?? []))];
 }
@@ -206,10 +204,8 @@ export function useBuildModels({
   const extractions: SentUnit[] = [];
   const checks: SentCheck[] = [];
   const embedded: string[] = [];
-  /** Each `map` call's reasoning setting. */
   const reasoning: unknown[] = [];
   const blanks = Array.from({ length: blankCalls }, () => true);
-  /** Every extraction call, answered or not. */
   const extractCalls: unknown[] = [];
   const map = new MockLanguageModelV4({
     doStream: async (options) => {
