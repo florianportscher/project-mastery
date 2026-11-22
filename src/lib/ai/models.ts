@@ -8,12 +8,6 @@ import { AUDIO_PRICES, MODEL_PRICES } from "./prices";
 export type TaskConfig = {
   /** Gateway model id (`provider/model`), resolved through AI Gateway. */
   model: string;
-  /**
-   * Models AI Gateway tries in order when the primary fails or is
-   * unavailable. Embedding tasks have none: vectors from different models
-   * are not comparable.
-   */
-  fallbacks: readonly string[];
   /** Environment variable that overrides `model` without a code change. */
   override: Extract<keyof AiEnv, `AI_MODEL_${string}`>;
 };
@@ -32,43 +26,36 @@ export const AI_TASKS = {
   /** The AI's replies in a Chat. */
   chat: {
     model: "meta/muse-ember",
-    fallbacks: [],
     override: "AI_MODEL_CHAT",
   },
   /** The AI's replies in a Course's Brief, where it asks about the exam. */
   brief: {
     model: "meta/muse-ember",
-    fallbacks: [],
     override: "AI_MODEL_BRIEF",
   },
-  /** A short title for a Chat, on the cheapest model. */
+  /** A short title for a Chat. */
   title: {
     model: "meta/muse-ember",
-    fallbacks: [],
     override: "AI_MODEL_TITLE",
   },
   /** Vision: a rendered page image to markdown with LaTeX (ADR 0007). */
   ingest: {
     model: "meta/muse-ember",
-    fallbacks: [],
     override: "AI_MODEL_INGEST",
   },
   /** Builds a Course's Knowledge map from its chunks. */
   map: {
     model: "meta/muse-ember",
-    fallbacks: [],
     override: "AI_MODEL_MAP",
   },
   /** The Exercises of a Knowledge map build and the KCs they test. */
   exercise: {
     model: "meta/muse-ember",
-    fallbacks: [],
     override: "AI_MODEL_EXERCISE",
   },
   /** Proposes a Knowledge map build's Topic tree, with structured output. */
   topic: {
     model: "meta/muse-ember",
-    fallbacks: [],
     override: "AI_MODEL_TOPIC",
   },
   /**
@@ -78,7 +65,6 @@ export const AI_TASKS = {
    */
   generate: {
     model: "meta/muse-ember",
-    fallbacks: [],
     override: "AI_MODEL_GENERATE",
   },
   /**
@@ -88,7 +74,6 @@ export const AI_TASKS = {
    */
   grade_exam: {
     model: "meta/muse-ember",
-    fallbacks: [],
     override: "AI_MODEL_GRADE_EXAM",
   },
   /**
@@ -98,7 +83,6 @@ export const AI_TASKS = {
    */
   close: {
     model: "meta/muse-ember",
-    fallbacks: [],
     override: "AI_MODEL_CLOSE",
   },
   /**
@@ -107,7 +91,6 @@ export const AI_TASKS = {
    */
   embed: {
     model: "cohere/embed-v5.0-fast",
-    fallbacks: [],
     override: "AI_MODEL_EMBED",
   },
   /**
@@ -117,7 +100,6 @@ export const AI_TASKS = {
    */
   transcribe: {
     model: "openai/gpt-transcribe",
-    fallbacks: [],
     override: "AI_MODEL_TRANSCRIBE",
   },
 } as const satisfies Record<string, TaskConfig>;
@@ -140,20 +122,6 @@ export const EMBED_AS_DOCUMENTS = {
 const AI_MAX_RETRIES = 3;
 
 const taskConfig = (task: AiTask): TaskConfig => AI_TASKS[task];
-
-/**
- * The providers AI Gateway may use for a model. Verified live on 2026-10-14:
- * of the six providers of `xiaomi/mimo-v2.6-flash`, only `deepinfra` honors
- * the JSON schema of a structured output (the others get `json_object` mode
- * and answer in their own shape, so `Output.object` fails), and it is the
- * only one with zero data retention and no prompt training. `order` is not
- * enough: with an image in the request the Gateway ignored it. `only` also
- * excludes the `models` fallbacks, so a task overridden to MiMo has none.
- */
-const ONLY_PROVIDERS: Record<string, readonly string[]> = {
-  "xiaomi/mimo-v2.6-flash": ["deepinfra"],
-  "minimax/minimax-m3.1-flash": ["fireworks"],
-};
 
 /**
  * Models that take only `toolChoice: "auto"`. Verified live on 2026-11-12:
@@ -196,32 +164,6 @@ export function modelIdFor(task: AiTask): string {
   return overrideFor(task) ?? taskConfig(task).model;
 }
 
-/**
- * The model that answered a call made with `aiTask` settings: the requested
- * model or one of its gateway fallbacks, as named by the model id the
- * provider reports (`response.modelId`), so the call is stored and priced as
- * that model. Reported ids may lack the `provider/` prefix. An id that names none of them, or none at all, as for an
- * aborted call, means the requested model.
- */
-export function answeringModel(
-  settings: {
-    model: string;
-    providerOptions?: { gateway?: { models?: readonly string[] } };
-  },
-  reportedModelId: string | undefined,
-): string {
-  const candidates = [
-    settings.model,
-    ...(settings.providerOptions?.gateway?.models ?? []),
-  ];
-  const withoutProvider = (id: string) => id.slice(id.indexOf("/") + 1);
-  return (
-    candidates.find((id) => id === reportedModelId) ??
-    candidates.find((id) => withoutProvider(id) === reportedModelId) ??
-    settings.model
-  );
-}
-
 /** Model ids the Gemini API serves directly, when a Google key is set. */
 const GOOGLE_PREFIX = "google/";
 
@@ -262,7 +204,7 @@ function routeModels(env: AiEnv) {
 }
 
 /**
- * Call settings for one AI task: model, retries, gateway fallbacks and
+ * Call settings for one AI task: model, retries, Gateway tags and
  * telemetry. Spread it into every AI SDK call so each call is configured and
  * traced the same way:
  *
@@ -274,7 +216,6 @@ export function aiTask(task: AiTask) {
 }
 
 function taskSettings(task: AiTask, model: string) {
-  const { fallbacks } = AI_TASKS[task];
   const env = getAiEnv();
   if (
     env.AI_PROVIDER !== "mock" &&
@@ -286,7 +227,6 @@ function taskSettings(task: AiTask, model: string) {
     );
   }
   routeModels(env);
-  const only = ONLY_PROVIDERS[model];
   return {
     model,
     maxRetries: AI_MAX_RETRIES,
@@ -294,8 +234,6 @@ function taskSettings(task: AiTask, model: string) {
       gateway: {
         // Groups the Gateway's spend reports by task.
         tags: [`task:${task}`],
-        ...(only && { only: [...only] }),
-        ...(fallbacks.length > 0 && { models: [...fallbacks] }),
       },
     },
     // Spans are emitted only when tracing is registered (src/instrumentation.ts).

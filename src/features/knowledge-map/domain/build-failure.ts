@@ -3,15 +3,8 @@
  * plain: what went wrong, not how.
  */
 
-/** The Student's Daily limit, or the provider's daily quota, is used up. */
-export const dailyLimitReason = "Daily limit reached";
-
 /** The Course has no chunks to extract from. */
 export const nothingToMapReason = "The parsed materials have nothing to map";
-
-/** A unit's model call failed in two steps, by timeout or a bad answer. */
-export const keptFailingReason = (chapterTitle: string) =>
-  `A model call kept failing for ${chapterTitle}`;
 
 /** The build had no heartbeat for BUILD_LEASE_MINUTES. */
 export const buildStoppedReason = "The build stopped. Update the map again.";

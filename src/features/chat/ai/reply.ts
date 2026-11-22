@@ -8,7 +8,7 @@ import {
 
 /**
  * Call settings for the AI's reply in a Chat: the `chat` task's model, with
- * retries, fallbacks and telemetry, plus the static tutor instructions, as
+ * retries, tags and telemetry, plus the static tutor instructions, as
  * the request handler uses them:
  *
  *   streamText({ ...chatReplySettings(), messages: withTutorContext(…), tools })

@@ -11,10 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  pageNotFoundMessage,
-  pagesLabel,
-} from "@/features/chat/domain/sources";
+import { pageNotFoundMessage } from "@/features/chat/domain/sources";
+import { pagesLabel } from "@/features/courses";
 import {
   PaneDivider,
   usePaneWidth,
@@ -64,7 +62,7 @@ export function WithSourcePane({
  * page, which a Reading section or a citation opens. From `lg` up it sits
  * beside the Chat; below, it opens in a Sheet. Null `request` closes it.
  */
-export function SourcePane({
+function SourcePane({
   courseId,
   request,
   onClose,

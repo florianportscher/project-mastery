@@ -153,19 +153,19 @@ function mockText(prompt: Prompt, responseFormat: ResponseFormat): string {
 }
 
 /** A Student's message that starts with this makes the tutor mock ask. */
-export const MOCK_QUIZ_REQUEST = "Quiz me";
+const MOCK_QUIZ_REQUEST = "Quiz me";
 
 /**
  * A Student's message that starts with this makes the tutor mock open the
  * first Reading section the instructions list.
  */
-export const MOCK_READING_REQUEST = "Read with me";
+const MOCK_READING_REQUEST = "Read with me";
 
 /** The purpose question of the tutor mock's reading. */
-export const MOCK_READING_PURPOSE = "Mock purpose: what makes thrust?";
+const MOCK_READING_PURPOSE = "Mock purpose: what makes thrust?";
 
 /** The question the tutor mock asks. */
-export const MOCK_QUESTION = "Mock question: what is $2 + 2$?";
+const MOCK_QUESTION = "Mock question: what is $2 + 2$?";
 
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 
@@ -395,8 +395,7 @@ function embeddingModel(modelId: string) {
 }
 
 /** What the mock transcription model hears in any recording. */
-export const MOCK_DICTATION =
-  "The determinant of A is zero, so A is not invertible.";
+const MOCK_DICTATION = "The determinant of A is zero, so A is not invertible.";
 
 /**
  * Answers any audio with `MOCK_DICTATION`, 5 seconds long, with no token

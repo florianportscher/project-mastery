@@ -40,7 +40,7 @@ const PLACEHOLDER = /\{\{\s*([^{}]*?)\s*\}\}/g;
 const SIGNIFICANT_FIGURES = 4;
 
 /** A number at 4 significant figures, trailing zeros dropped, with its unit. */
-export function formatValue(value: number, unit: string | null): string {
+function formatValue(value: number, unit: string | null): string {
   const number = String(Number(value.toPrecision(SIGNIFICANT_FIGURES)));
   return unit ? `${number} ${unit}` : number;
 }

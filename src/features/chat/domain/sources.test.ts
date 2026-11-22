@@ -11,7 +11,6 @@ const { citedSource } = await import("./sources");
 const COURSE = "aaaaaaaa-0000-4000-8000-000000000001";
 const OTHER_COURSE = "aaaaaaaa-0000-4000-8000-000000000009";
 const MATERIAL = "bbbbbbbb-0000-4000-8000-000000000002";
-const CHUNK = "cccccccc-0000-4000-8000-000000000003";
 
 describe("citedSource", () => {
   test.each([
@@ -21,15 +20,6 @@ describe("citedSource", () => {
     expect(
       citedSource(materialChunksPath(COURSE, MATERIAL, pages), COURSE),
     ).toEqual({ kind: "pages", materialId: MATERIAL, pageFrom, pageTo });
-  });
-
-  test("reads an old chunk link", () => {
-    expect(
-      citedSource(
-        `${materialChunksPath(COURSE, MATERIAL)}#chunk-${CHUNK}`,
-        COURSE,
-      ),
-    ).toEqual({ kind: "chunk", id: CHUNK });
   });
 
   test.each([

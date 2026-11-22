@@ -57,7 +57,7 @@ export type ReservedExam = {
 };
 
 /** The Course language that the build writes the Knowledge map in. */
-export type CourseLanguage = {
+type CourseLanguage = {
   /** An English name, such as German. */
   name: string;
   /** Whether the Student asked for it, rather than the Materials' own. */

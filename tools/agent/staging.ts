@@ -171,7 +171,7 @@ export async function writeStaging(
 }
 
 /** The most rows one SQL call prints. */
-export const SQL_ROW_LIMIT = 200;
+const SQL_ROW_LIMIT = 200;
 
 /** Statements that only read. Anything else is refused before it reaches the database. */
 const READ_STATEMENT = /^\s*(select|with|table|values|show|explain)\b/i;

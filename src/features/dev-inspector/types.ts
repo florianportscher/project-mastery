@@ -86,7 +86,7 @@ export type SnapshotChunk = {
   chars: number;
 };
 
-export type SnapshotExtraction = {
+type SnapshotExtraction = {
   id: string;
   chapterId: string;
   kind: string;

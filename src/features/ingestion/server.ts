@@ -8,19 +8,11 @@ export { examChapterIds } from "./domain/old-exam-chapters";
 export { withLease } from "./domain/parse-state";
 export { getMaterialChunks } from "./server/chunk-queries";
 export {
-  type AdminChunk,
-  findChunkSpan,
   loadAdminChunks,
-  getChunkPlaces,
   loadChunkMaterials,
   loadCourseChunkSpans,
-  loadCourseChunks,
-  type ChunkSpan,
   loadChunkSources,
-  loadChunkTexts,
-  type ChunkText,
   loadChapterChunkIds,
-  type ChunkMaterials,
 } from "./server/course-chunks";
 export { loadCourseLanguage } from "./server/course-language";
 export { startPairing } from "./server/start-pairing";

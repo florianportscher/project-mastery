@@ -128,7 +128,7 @@ export const deleteChatSchema = chatIdSchema.extend({
 export const openSourceSchema = z.discriminatedUnion("kind", [
   z.object({
     courseId: z.uuid(),
-    kind: z.enum(["section", "chunk"]),
+    kind: z.literal("section"),
     id: z.uuid(),
   }),
   z.object({

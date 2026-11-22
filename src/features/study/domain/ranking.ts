@@ -14,7 +14,7 @@ import {
  * The final stretch is the exam day and this many days before it, when
  * everything in scope ranks together.
  */
-export const FINAL_STRETCH_DAYS = 7;
+const FINAL_STRETCH_DAYS = 7;
 
 /** Whether `now` falls in the final stretch before `examDate`. */
 export function inFinalStretch(examDate: string | null, now: Date): boolean {

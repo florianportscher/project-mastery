@@ -29,9 +29,9 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
-export const MIN_ZOOM = 0.5;
-export const MAX_ZOOM = 3;
-export const ZOOM_STEP = 0.25;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 3;
+const ZOOM_STEP = 0.25;
 const PAGE_GAP = 8;
 // A4 until the first page says otherwise.
 const DEFAULT_ASPECT = 1.414;

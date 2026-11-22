@@ -15,13 +15,13 @@ import {
   unitsOnPages,
 } from "@/features/ingestion/domain/page-batches";
 import { overlayPages } from "@/features/ingestion/domain/pages";
-import { dailyLimitReason } from "@/features/ingestion/domain/parse-failure";
 import type { PageSkip } from "@/features/ingestion/types";
 import {
   openMaterialPdf,
   type OpenedPdf,
 } from "@/features/ingestion/workflows/page-images";
 import {
+  dailyLimitReason,
   meteredStream,
   RATE_LIMITED_STEP_RETRIES,
 } from "@/features/usage/server";

@@ -13,7 +13,7 @@ import { spawn } from "node:child_process";
 export const MAX_PROGRAM_LENGTH = 4_000;
 
 /** How long a program may run once mathjs has loaded in its worker. */
-export const RUN_TIME_LIMIT_MS = 2_000;
+const RUN_TIME_LIMIT_MS = 2_000;
 
 /** How long a process may take to load mathjs before the run fails. */
 const START_LIMIT_MS = 20_000;
@@ -22,7 +22,7 @@ const START_LIMIT_MS = 20_000;
 const MAX_HEAP_MB = 256;
 
 /** A final answer a program declares: its variable and the unit it is in. */
-export type DeclaredAnswer = {
+type DeclaredAnswer = {
   variable: string;
   /** A mathjs unit such as "kN" or "m/s^2"; null for a plain number. */
   unit: string | null;
@@ -42,7 +42,7 @@ export type ProgramValue = {
  * A declared final answer's value: a number in its declared unit, or a
  * vector, matrix or complex number (`value` null) declared without one.
  */
-export type AnswerValue = DeclaredAnswer & {
+type AnswerValue = DeclaredAnswer & {
   /** The number in `unit`; null for a vector, matrix or complex number. */
   value: number | null;
   /** The value as a mathjs expression, in `unit`: its answer key. */

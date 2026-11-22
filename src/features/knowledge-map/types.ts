@@ -1,15 +1,5 @@
 import type { CheckReport } from "@/features/knowledge-map/schemas";
 
-/** A chunk of the Course as a build reads it. */
-export type MapChunk = {
-  id: string;
-  materialName: string;
-  /** The page it starts on. */
-  pageFrom: number;
-  label: string;
-  markdown: string;
-};
-
 /** Where a Course's last Knowledge map build stands; null: never built. */
 export type MapBuild = {
   status: "building" | "built" | "failed";

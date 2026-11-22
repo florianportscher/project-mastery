@@ -3,6 +3,7 @@ import { costUsd, type TokenUsage } from "@/lib/ai/cost";
 import type { AiTask } from "@/lib/ai/models";
 import { isAdminClient } from "@/lib/supabase/admin-brand";
 import { allRows } from "@/lib/supabase/all-rows";
+import { failed } from "@/lib/supabase/failed";
 import type {
   AdminSupabase,
   SessionSupabase,
@@ -106,7 +107,7 @@ export async function recordAiUsage(
     chat_id: chatId ?? null,
     reply_id: replyId ?? null,
   });
-  if (error) throw new Error(`Recording AI usage failed: ${error.message}`);
+  if (error) failed("Recording AI usage", error);
 }
 
 /**

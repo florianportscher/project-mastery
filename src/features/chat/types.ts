@@ -56,11 +56,11 @@ export type ChatWithMessages = {
 };
 
 /**
- * What the source pane opens: a Reading section by id, a Material at cited
- * pages, or (in old Chats) a cited chunk's Material at the chunk's pages.
+ * What the source pane opens: a Reading section by id, or a Material at
+ * cited pages.
  */
 export type SourceRequest =
-  | { kind: "section" | "chunk"; id: string }
+  | { kind: "section"; id: string }
   | { kind: "pages"; materialId: string; pageFrom: number; pageTo: number };
 
 /** A source as the source pane shows it (`openSource`). */

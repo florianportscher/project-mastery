@@ -8,14 +8,6 @@ import type { KcRecall } from "@/features/study/domain/replay";
 /** A KC's recall band. */
 export type RecallBand = "new" | "strong" | "fading" | "weak";
 
-/** Each band's name wherever the app shows it. */
-export const BAND_NAMES: Record<RecallBand, string> = {
-  new: "New",
-  strong: "Strong",
-  fading: "Fading",
-  weak: "Weak",
-};
-
 /** Below this recall a taught KC is `weak`. */
 const FADING_RECALL = 0.7;
 

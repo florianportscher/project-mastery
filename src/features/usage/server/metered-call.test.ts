@@ -197,6 +197,26 @@ describe("a timed-out call", () => {
   });
 });
 
+describe("meteredStream and the Daily limit", () => {
+  const stream = (admin: AdminSupabase, dailyLimit: "enforce" | "ignore") =>
+    meteredStream(
+      admin,
+      { ...scope, task: "map", dailyLimit },
+      { ...aiTask("map"), prompt: "Hi" },
+    );
+
+  test("stops at a reached limit unless it ignores it", async () => {
+    useMockModels({ map: mockTextModel("Done.") });
+    const stopped = reachedLimit();
+    expect(await stream(stopped.admin, "enforce")).toBeNull();
+    expect(stopped.db.tables.ai_usage).toHaveLength(1);
+
+    const past = reachedLimit();
+    expect(await stream(past.admin, "ignore")).not.toBeNull();
+    expect(past.db.tables.ai_usage).toHaveLength(2);
+  });
+});
+
 describe("meteredEmbed", () => {
   test("stores, then records an estimate when the provider reports no usage", async () => {
     useMockModels({ embed: mockEmbeddingModel(2) });

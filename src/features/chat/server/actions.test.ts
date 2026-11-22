@@ -143,22 +143,6 @@ describe("openSource", () => {
     return ids;
   }
 
-  test("gives a cited chunk's Material at the chunk's pages", async () => {
-    const { material, chunk } = seedSource(STUDENT, COURSE);
-
-    expect(
-      await openSource({ courseId: COURSE, kind: "chunk", id: chunk }),
-    ).toEqual({
-      ok: true,
-      data: {
-        materialId: material,
-        materialName: "Lecture 7",
-        pageFrom: 4,
-        pageTo: 5,
-      },
-    });
-  });
-
   test("gives a Material at the cited pages, or at p. 1 when they are missing", async () => {
     const { material } = seedSource(STUDENT, COURSE);
     db.tables.materials.find(({ id }) => id === material)!.pages_total = 12;
@@ -216,17 +200,12 @@ describe("openSource", () => {
     ["another Course of the Student", STUDENT, OTHER_COURSE],
     ["a classmate's Course", CLASSMATE, CLASSMATE_COURSE],
   ])("does not find a source of %s", async (_, owner, course) => {
-    const { chunk } = seedSource(owner, course);
+    seedSource(owner, course);
     seedMap();
-    const notFound = { ok: false, message: sourceNotFoundMessage };
 
-    for (const [courseId, kind, id] of [
-      [COURSE, "chunk", chunk],
-      [course, "section", MAP.section],
-      [COURSE, "chunk", "not-a-uuid"],
-    ] as const) {
-      expect(await openSource({ courseId, kind, id })).toEqual(notFound);
-    }
+    expect(
+      await openSource({ courseId: course, kind: "section", id: MAP.section }),
+    ).toEqual({ ok: false, message: sourceNotFoundMessage });
   });
 });
 

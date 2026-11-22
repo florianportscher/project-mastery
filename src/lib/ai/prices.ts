@@ -7,7 +7,7 @@ export type ModelPrice = {
 };
 
 /**
- * Prices of every model any task can call: defaults, gateway fallbacks and
+ * Prices of every model any task can call: defaults and
  * model choices (ADR 0006). Every AI call is priced from this table in every
  * provider mode, so a model without a price cannot be called; a unit test
  * checks that the task configuration in models.ts is covered.

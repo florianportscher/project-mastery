@@ -29,7 +29,7 @@ export type TopicChoice = {
 };
 
 /** Whether the plan holds a Topic. */
-export type TopicPlanStatus = "in_plan" | "if_time_allows" | "skipped";
+type TopicPlanStatus = "in_plan" | "if_time_allows" | "skipped";
 
 /** A Topic's place in the plan scope. */
 export type TopicScope = {

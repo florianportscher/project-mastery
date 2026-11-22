@@ -13,12 +13,7 @@ import {
 } from "@/lib/ai/call-timeout";
 import { estimatedUsage, tokenUsage, type SentFile } from "@/lib/ai/cost";
 import { isDailyQuotaError } from "@/lib/ai/daily-quota";
-import {
-  aiTask,
-  answeringModel,
-  EMBED_AS_DOCUMENTS,
-  type AiTask,
-} from "@/lib/ai/models";
+import { aiTask, EMBED_AS_DOCUMENTS, type AiTask } from "@/lib/ai/models";
 import { gatewayRateLimitWaitMs } from "@/lib/ai/rate-limit";
 import type {
   AdminSupabase,
@@ -59,23 +54,24 @@ type MeteredScope = {
   callFailed?: (error: unknown) => never;
 };
 
-/** A generate call's scope; `dailyLimit: "ignore"` makes it past the limit. */
-type GenerateScope = MeteredScope & {
+/** A model call's scope; `dailyLimit: "ignore"` makes it past the limit. */
+type CallScope = MeteredScope & {
   task: AiTask;
   dailyLimit?: "enforce" | "ignore";
 };
 
 /** A `generateText` call, with the settings `aiTask` gives. */
-type GenerateCall = Parameters<typeof generateText>[0] & {
-  model: string;
-  providerOptions?: { gateway?: { models?: readonly string[] } };
-};
+type GenerateCall = Parameters<typeof generateText>[0] & { model: string };
 
 /**
- * A metered `generateText` call. The result's `output` is read lazily, as
- * the AI SDK's is, so a step can handle a call that gave none.
+ * The frame of a metered generate or stream call: the Daily-limit check, the
+ * traced call and the usage record. `run` makes the call and returns the
+ * usage it reports with what the caller keeps; null when the limit is
+ * reached or the provider's daily quota is used up.
  */
-export async function meteredGenerate(
+async function meteredFrame<
+  R extends { usage: Parameters<typeof tokenUsage>[0] },
+>(
   admin: AdminSupabase,
   {
     studentId,
@@ -84,9 +80,10 @@ export async function meteredGenerate(
     metadata,
     callFailed,
     dailyLimit = "enforce",
-  }: GenerateScope,
-  call: GenerateCall,
-): Promise<{ readonly output: unknown } | null> {
+  }: CallScope,
+  call: SentCall,
+  run: () => Promise<R>,
+): Promise<R | null> {
   if (dailyLimit === "enforce") {
     const limit = await checkDailyLimit(admin, { studentId });
     if (limit.level === "reached") return null;
@@ -94,7 +91,7 @@ export async function meteredGenerate(
 
   const result = await withTraceAttributes(
     { userId: studentId, traceName, metadata },
-    () => generateText({ timeout: { totalMs: CALL_TIMEOUT_MS }, ...call }),
+    run,
   ).catch(async (error: unknown) =>
     quotaAsNull(
       await timedOutAsFailed(
@@ -109,21 +106,28 @@ export async function meteredGenerate(
   if (!result) return null;
   await recordAiUsage(
     admin,
-    {
-      task,
-      modelId: answeringModel(call, result.response.modelId),
-      usage: tokenUsage(result.usage),
-    },
+    { task, modelId: call.model, usage: tokenUsage(result.usage) },
     { studentId },
   );
   return result;
 }
 
+/**
+ * A metered `generateText` call. The result's `output` is read lazily, as
+ * the AI SDK's is, so a step can handle a call that gave none.
+ */
+export async function meteredGenerate(
+  admin: AdminSupabase,
+  scope: CallScope,
+  call: GenerateCall,
+): Promise<{ readonly output: unknown } | null> {
+  return meteredFrame(admin, scope, call, () =>
+    generateText({ timeout: { totalMs: CALL_TIMEOUT_MS }, ...call }),
+  );
+}
+
 /** A `streamText` call, with the settings `aiTask` gives. */
-type StreamCall = Parameters<typeof streamText>[0] & {
-  model: string;
-  providerOptions?: { gateway?: { models?: readonly string[] } };
-};
+type StreamCall = Parameters<typeof streamText>[0] & { model: string };
 
 /**
  * A metered `streamText` call with structured output, read to its end: the
@@ -135,64 +139,30 @@ type StreamCall = Parameters<typeof streamText>[0] & {
  */
 export async function meteredStream(
   admin: AdminSupabase,
-  {
-    studentId,
-    task,
-    traceName,
-    metadata,
-    callFailed,
-  }: Omit<GenerateScope, "dailyLimit">,
+  scope: CallScope,
   call: StreamCall,
 ): Promise<{ readonly output: Promise<unknown> } | null> {
-  const limit = await checkDailyLimit(admin, { studentId });
-  if (limit.level === "reached") return null;
-
-  const result = await withTraceAttributes(
-    { userId: studentId, traceName, metadata },
-    async () => {
-      let streamError: unknown;
-      const stream = streamText({
-        timeout: { totalMs: CALL_TIMEOUT_MS },
-        ...call,
-        onError: ({ error }) => {
-          streamError ??= error;
-        },
-      });
-      const output = Promise.resolve(stream.output);
-      output.catch(() => {});
-      try {
-        const [usage, step] = await Promise.all([
-          stream.usage,
-          stream.finalStep,
-        ]);
-        if (streamError) throw streamError;
-        return { usage, modelId: step.response.modelId, output };
-      } catch (error) {
-        throw streamError ?? error;
-      }
-    },
-  ).catch(async (error: unknown) =>
-    quotaAsNull(
-      await timedOutAsFailed(
-        error,
-        admin,
-        { studentId, task, traceName },
-        call,
-      ),
-      callFailed,
-    ),
-  );
-  if (!result) return null;
-  await recordAiUsage(
-    admin,
-    {
-      task,
-      modelId: answeringModel(call, result.modelId),
-      usage: tokenUsage(result.usage),
-    },
-    { studentId },
-  );
-  return { output: result.output };
+  const result = await meteredFrame(admin, scope, call, async () => {
+    let streamError: unknown;
+    const stream = streamText({
+      timeout: { totalMs: CALL_TIMEOUT_MS },
+      ...call,
+      onError: ({ error }) => {
+        streamError ??= error;
+      },
+    });
+    const output = Promise.resolve(stream.output);
+    output.catch(() => {});
+    try {
+      const usage = await stream.usage;
+      await stream.finalStep;
+      if (streamError) throw streamError;
+      return { usage, output };
+    } catch (error) {
+      throw streamError ?? error;
+    }
+  });
+  return result && { output: result.output };
 }
 
 /**
@@ -302,7 +272,7 @@ async function timedOutAsFailed(
     admin,
     {
       task,
-      modelId: answeringModel(call, undefined),
+      modelId: call.model,
       usage: estimatedUsage(sentInput(call)),
       estimated: true,
     },
@@ -314,7 +284,6 @@ async function timedOutAsFailed(
 /** What a call sends, as far as an estimate of its tokens needs it. */
 type SentCall = {
   model: string;
-  providerOptions?: { gateway?: { models?: readonly string[] } };
   instructions?: unknown;
   system?: unknown;
   prompt?: unknown;

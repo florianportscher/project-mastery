@@ -9,13 +9,7 @@ import {
   test,
   vi,
 } from "vitest";
-import {
-  AI_TASKS,
-  aiTask,
-  answeringModel,
-  modelIdFor,
-  textOnlyStep,
-} from "./models";
+import { AI_TASKS, aiTask, modelIdFor, textOnlyStep } from "./models";
 import { mockEmbeddingModel, mockTextModel, useMockModels } from "./testing";
 
 vi.mock("server-only", () => ({}));
@@ -167,13 +161,11 @@ describe("Gemini API for local development (ADR 0016)", () => {
 });
 
 describe("gateway routing", () => {
-  test("tags every call with its task and pins MiMo to DeepInfra", () => {
+  test("tags every call with its task", () => {
     vi.stubEnv("AI_GATEWAY_API_KEY", "test-key");
-    vi.stubEnv("AI_MODEL_TITLE", "xiaomi/mimo-v2.6-flash");
 
     expect(aiTask("title").providerOptions.gateway).toEqual({
       tags: ["task:title"],
-      only: ["deepinfra"],
     });
     expect(aiTask("chat").providerOptions.gateway).toEqual({
       tags: ["task:chat"],
@@ -257,7 +249,7 @@ describe("AI_PROVIDER=mock", () => {
 });
 
 describe("aiTask", () => {
-  test("configures retries, gateway fallbacks and telemetry", () => {
+  test("configures retries, Gateway tags and telemetry", () => {
     vi.stubEnv("AI_GATEWAY_API_KEY", "test-key");
 
     expect(aiTask("chat")).toEqual({
@@ -288,35 +280,6 @@ describe("aiTask", () => {
 
     expect(text).toBe("PASS");
     expect(embedding).toHaveLength(4);
-  });
-});
-
-describe("answeringModel", () => {
-  const settings = {
-    model: "google/gemini-3.5-flash-lite",
-    providerOptions: { gateway: { models: ["xiaomi/mimo-v2.6-flash"] } },
-  };
-
-  test("names the gateway fallback that answered", () => {
-    expect(answeringModel(settings, "xiaomi/mimo-v2.6-flash")).toBe(
-      "xiaomi/mimo-v2.6-flash",
-    );
-  });
-
-  test("matches an id reported without its provider prefix", () => {
-    expect(answeringModel(settings, "gemini-3.5-flash-lite")).toBe(
-      "google/gemini-3.5-flash-lite",
-    );
-    expect(answeringModel(settings, "mimo-v2.6-flash")).toBe(
-      "xiaomi/mimo-v2.6-flash",
-    );
-  });
-
-  test("falls back to the requested model for an unknown or missing id", () => {
-    expect(answeringModel(settings, "some-other-model")).toBe(
-      "google/gemini-3.5-flash-lite",
-    );
-    expect(answeringModel({ model: "google/x" }, undefined)).toBe("google/x");
   });
 });
 

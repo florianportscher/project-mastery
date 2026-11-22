@@ -6,7 +6,6 @@ import {
   topicTreeSettings,
   type OfferedCourse,
 } from "@/features/knowledge-map/ai/topic-tree";
-import { dailyLimitReason } from "@/features/knowledge-map/domain/build-failure";
 import {
   kcChapters,
   storedAsProposed,
@@ -15,7 +14,7 @@ import {
   type TreeKc,
 } from "@/features/knowledge-map/domain/topic-tree";
 import {
-  loadCourseLanguage,
+  loadCourseLanguageName,
   touchBuild,
 } from "@/features/knowledge-map/workflows/build-steps";
 import {
@@ -27,7 +26,10 @@ import {
   loadMapInput,
   type MapInput,
 } from "@/features/knowledge-map/workflows/map-input";
-import { RATE_LIMITED_STEP_RETRIES } from "@/features/usage/server";
+import {
+  dailyLimitReason,
+  RATE_LIMITED_STEP_RETRIES,
+} from "@/features/usage/server";
 import { retryTimeoutMs } from "@/lib/ai/call-timeout";
 import { allRows } from "@/lib/supabase/all-rows";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -204,7 +206,7 @@ export async function proposeTopicTree(courseId: string): Promise<TreeOutcome> {
       .select("topic_tree_hash")
       .eq("course_id", courseId)
       .single(),
-    loadCourseLanguage(supabase, courseId),
+    loadCourseLanguageName(supabase, courseId),
   ]);
   if (build.error) failed("Loading the build", build.error);
   const { course, hash, chapterIds, topicIds } = offeredCourse(

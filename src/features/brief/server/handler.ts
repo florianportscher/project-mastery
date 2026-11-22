@@ -37,7 +37,7 @@ import {
   dailyLimitReachedMessage,
   recordReplyUsage,
 } from "@/features/usage/server";
-import { answeringModel, textOnlyStep } from "@/lib/ai/models";
+import { textOnlyStep } from "@/lib/ai/models";
 import { messageText, replyErrorMessage } from "@/lib/ai/reply";
 import { getUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
@@ -174,9 +174,9 @@ async function streamReply({
     .map(({ parts }) => messageText(parts));
   const settings = briefReplySettings(context, courseMapPath(courseId));
   // What the provider reports when the call completes. A stopped or failed
-  // call reports neither.
+  // call reports none.
   let reportedUsage: LanguageModelUsage | undefined;
-  let modelId = settings.model;
+  const modelId = settings.model;
 
   const result = withTraceAttributes(
     { userId, sessionId: courseId, traceName: "brief-reply" },
@@ -210,9 +210,8 @@ async function streamReply({
         // A disconnect, such as a closed tab, aborts generation.
         abortSignal: request.signal,
         onError: ({ error }) => console.error("Brief reply failed:", error),
-        onEnd: ({ totalUsage, response }) => {
+        onEnd: ({ totalUsage }) => {
           reportedUsage = totalUsage;
-          modelId = answeringModel(settings, response.modelId);
         },
       }),
   );
@@ -226,7 +225,7 @@ async function streamReply({
         part.type === "start"
           ? { modelId }
           : part.type === "finish-step"
-            ? { modelId: answeringModel(settings, part.response.modelId) }
+            ? { modelId }
             : undefined,
       onError: replyErrorMessage,
       // Runs before the response ends, so the client sees the recorded usage
@@ -274,8 +273,7 @@ async function streamReply({
 }
 
 /** What the Student sees when a step ran past its time limit. */
-export const replyTimeoutMessage =
-  "The AI took too long to reply. Please try again.";
+const replyTimeoutMessage = "The AI took too long to reply. Please try again.";
 
 /**
  * Turns the abort a step's time limit causes into an error, which the
