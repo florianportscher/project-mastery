@@ -3,7 +3,6 @@ import { allRows } from "@/lib/supabase/all-rows";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
-/** A chunk with its text and where it is, as the AI cites it. */
 export type ChunkSource = {
   id: string;
   materialId: string;
@@ -119,7 +118,6 @@ export async function loadCourseChunkSpans(
   return spans;
 }
 
-/** A Course's chunks' Materials, as Priorities weighs them. */
 export type ChunkMaterials = {
   /** Each chunk's Material id by chunk id. */
   chunkMaterials: Record<string, string>;

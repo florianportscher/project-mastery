@@ -35,7 +35,6 @@ definePDFJSModule(() => import("pdfjs-dist/legacy/build/pdf.mjs"));
 /** The app's own canvas package, which `next.config.ts` ships to the function. */
 const canvasImport = () => import("@napi-rs/canvas");
 
-/** A page rendered for its page call. */
 export type RenderedPage = {
   /** JPEG bytes, with the long edge at 2,000 pixels. */
   jpeg: Uint8Array;
@@ -43,7 +42,6 @@ export type RenderedPage = {
   blank: boolean;
 };
 
-/** An opened PDF, to count, read and render its pages. */
 export async function openPdf(bytes: Uint8Array) {
   // pdf.js would otherwise create canvases (masks, patterns) with its own
   // `require("@napi-rs/canvas")` from the pnpm store, which the deployed

@@ -36,7 +36,6 @@ const batchUnitSchema = z.object({
     ),
 });
 
-/** What one page batch call returns. */
 export const batchResultSchema = z.object({
   language: z
     .string()
@@ -64,7 +63,6 @@ export const batchResultSchema = z.object({
 /** The units of a stored page result: those that start on that page. */
 export const storedUnitsSchema = z.array(batchUnitSchema);
 
-/** One unit of a page batch, as stored. */
 export type PageUnit = z.infer<typeof batchUnitSchema>;
 
 const BATCH_INSTRUCTIONS = `You transcribe consecutive pages of a Student's course material (slides, a script, an exercise sheet, a solution sheet or an old exam) into ordered units.
@@ -107,7 +105,6 @@ export function batchCallSettings() {
   };
 }
 
-/** A page of a batch: its number, image and text layer, if any. */
 export type BatchPage = {
   pageNumber: number;
   image: Uint8Array;

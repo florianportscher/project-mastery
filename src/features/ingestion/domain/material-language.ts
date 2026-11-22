@@ -4,7 +4,6 @@ const LANGUAGE_CHARS = { min: 2, max: 35 };
 /** The longest `materials.notes` gets. */
 export const MAX_NOTES_CHARS = 1000;
 
-/** What a page read answered about its pages, as stored with each page. */
 export type PageAnswer = { language: string | null; notes: string | null };
 
 /**

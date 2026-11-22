@@ -1,4 +1,3 @@
-/** The kinds of chunk a parse labels, one per chunk. */
 export const CHUNK_LABELS = [
   "content",
   "exercise",
@@ -23,7 +22,6 @@ export type PageSkip =
 /** The reasons a page batch answer gives for a page without units. */
 export const PAGE_SKIP_REASONS = ["nothing_to_learn"] as const;
 
-/** Where a Material's parse stands. */
 export type ParseStatus =
   "not_parsed" | "queued" | "parsing" | "parsed" | "failed";
 
@@ -48,7 +46,6 @@ export type ExerciseSolution =
     }
   | { status: "no_solution" };
 
-/** A parsed Material with its chunks, for the chunk view. */
 export type MaterialChunks = {
   materialId: string;
   courseId: string;

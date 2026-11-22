@@ -1,7 +1,6 @@
 import type { BatchUnit } from "@/features/ingestion/domain/page-batches";
 import type { ChunkLabel } from "@/features/ingestion/types";
 
-/** A chunk made of one unit or of units joined across a batch edge. */
 export type DraftChunk = {
   pageFrom: number;
   pageTo: number;
@@ -14,7 +13,6 @@ export type DraftChunk = {
 /** The longest a chunk gets, in characters, unless one paragraph is longer. */
 export const MAX_CHUNK_CHARS = 6000;
 
-/** A paragraph of a chunk, with the pages of the unit it came from. */
 type Paragraph = { text: string; pageFrom: number; pageTo: number };
 
 type OpenChunk = {

@@ -1,6 +1,5 @@
 import type { HEADING_STYLES, UnitLabel } from "@/features/ingestion/types";
 
-/** A unit of a page batch, as code places and joins it. */
 export type BatchUnit = {
   markdown: string;
   label: UnitLabel;
