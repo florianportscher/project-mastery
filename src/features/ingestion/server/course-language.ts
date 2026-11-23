@@ -1,5 +1,5 @@
 import "server-only";
-import { courseLanguage } from "@/features/ingestion/domain/course-language";
+import { courseLanguage } from "@/features/ingestion/domain/language";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 

@@ -6,7 +6,7 @@ import {
   storedUnitsSchema,
   type BatchPage,
 } from "@/features/ingestion/ai/page-units";
-import type { PageAnswer } from "@/features/ingestion/domain/material-language";
+import type { PageAnswer } from "@/features/ingestion/domain/language";
 import { missingPages } from "@/features/ingestion/domain/missing-pages";
 import {
   PAGES_PER_BATCH,

@@ -1,7 +1,7 @@
 import "server-only";
 import { storedUnitsSchema } from "@/features/ingestion/ai/page-units";
 import { chunksFromUnits } from "@/features/ingestion/domain/chunk-joining";
-import { materialLanguageAndNotes } from "@/features/ingestion/domain/material-language";
+import { materialLanguageAndNotes } from "@/features/ingestion/domain/language";
 import {
   hasChunks,
   loadMaterial,
