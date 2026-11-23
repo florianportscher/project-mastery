@@ -2,20 +2,20 @@ import "server-only";
 import { z } from "zod";
 import { getExamAids } from "@/features/brief/server";
 import { examProfile } from "@/features/study/domain/exam-profile";
-import { mockResultShares } from "@/features/study/domain/mock-grading";
+import {
+  mockResultShares,
+  taskGrade,
+} from "@/features/study/domain/mock-grading";
 import {
   gradingStalled,
   mockDeadline,
   mockStatus,
 } from "@/features/study/domain/mock-exam";
-import {
-  loadSureAnswers,
-  taskGrade,
-} from "@/features/study/server/mock-results";
 import type { MockExamView, MockTask } from "@/features/study/types";
 import { getUser } from "@/lib/auth/user";
 import { failed } from "@/lib/supabase/failed";
 import { createClient } from "@/lib/supabase/server";
+import type { Supabase } from "@/lib/supabase/types";
 
 const OPEN = ["assembling", "ready", "in_progress"];
 
@@ -135,6 +135,31 @@ export async function getMockExam(
       total: items.length,
     },
     result,
+  };
+}
+
+/**
+ * The Course's graded questions the Student answered with confidence 4,
+ * and how many were right: every attempt `full`. Null without one.
+ */
+async function loadSureAnswers(
+  supabase: Supabase,
+  courseId: string,
+): Promise<{ right: number; total: number } | null> {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("id, attempts(result), study_sessions!inner(course_id)")
+    .eq("study_sessions.course_id", courseId)
+    .eq("confidence", 4)
+    .not("graded_at", "is", null);
+  if (error) failed("Loading the sure answers", error);
+  const graded = data.filter((question) => question.attempts.length > 0);
+  if (graded.length === 0) return null;
+  return {
+    right: graded.filter((question) =>
+      question.attempts.every(({ result }) => result === "full"),
+    ).length,
+    total: graded.length,
   };
 }
 

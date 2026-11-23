@@ -4,14 +4,20 @@ import {
   type ExamGrading,
   type GradeExamInput,
 } from "@/features/study/ai/grade-exam-call";
-import { checkEachAnswer, worstCheck } from "@/features/knowledge-map/server";
+import { z } from "zod";
+import { loadChunkSources } from "@/features/ingestion/server";
+import {
+  answerKeySchema,
+  checkEachAnswer,
+  worstCheck,
+  type AnswerKey,
+} from "@/features/knowledge-map/server";
 import {
   awardedPoints,
   checkedResult,
   mockScore,
   type MockCheck,
 } from "@/features/study/domain/mock-grading";
-import { loadItemSource } from "@/features/study/server/mock-results";
 import { meteredGenerate } from "@/features/usage/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { failed } from "@/lib/supabase/failed";
@@ -134,6 +140,61 @@ export async function gradeMockItem(itemId: string): Promise<void> {
     .eq("id", itemId)
     .is("graded_at", null);
   if (itemError) failed("Storing the item's grade", itemError);
+}
+
+/**
+ * The item's reference solution and final answers: its Exercise's printed
+ * solution chunk or its Problem's solution.
+ */
+async function loadItemSource(
+  supabase: Supabase,
+  item: { exercise_id: string | null; problem_id: string | null },
+): Promise<{ reference: string | null; keys: AnswerKey[] | null }> {
+  const keysOf = (value: unknown) => {
+    const parsed = z.array(answerKeySchema).safeParse(value);
+    return parsed.success ? parsed.data : null;
+  };
+  if (item.problem_id !== null) {
+    const { data, error } = await supabase
+      .from("problems")
+      .select("solution, final_answers")
+      .eq("id", item.problem_id)
+      .maybeSingle();
+    if (error) failed("Loading the item's Problem", error);
+    return {
+      reference: data?.solution ?? null,
+      keys: keysOf(data?.final_answers),
+    };
+  }
+  if (item.exercise_id === null) return { reference: null, keys: null };
+  const [exercise, solutions] = await Promise.all([
+    supabase
+      .from("exercises")
+      .select("final_answers")
+      .eq("id", item.exercise_id)
+      .maybeSingle(),
+    supabase
+      .from("exercise_chunks")
+      .select("chunk_id")
+      .eq("exercise_id", item.exercise_id)
+      .eq("role", "solution")
+      .order("position"),
+  ]);
+  if (exercise.error) failed("Loading the item's Exercise", exercise.error);
+  if (solutions.error) {
+    failed("Loading the item's Exercise's solutions", solutions.error);
+  }
+  if (!exercise.data) return { reference: null, keys: null };
+  // The printed solutions, when the Materials have any.
+  const ids = solutions.data.map((row) => row.chunk_id);
+  const chunks = await loadChunkSources(supabase, ids);
+  const texts = ids.flatMap(
+    (id) => chunks.find((chunk) => chunk.id === id)?.markdown ?? [],
+  );
+  return {
+    reference: texts.length > 0 ? texts.join("\n\n") : null,
+    keys: keysOf(exercise.data.final_answers),
+  };
 }
 
 type ItemQuestion = {
