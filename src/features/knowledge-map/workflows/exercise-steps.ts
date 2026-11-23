@@ -15,17 +15,19 @@ import {
 } from "@/features/knowledge-map/schemas";
 import {
   countedProgress,
-  isCurrent,
   loadCourseLanguageName,
-  loadCourseUnits,
-  loadStoredUnits,
   recordProgress,
   touchCountingBuild,
-  unitKey,
   UNITS_PER_STEP,
-  type CourseUnit,
   type StepOutcome,
 } from "@/features/knowledge-map/workflows/build-steps";
+import {
+  isCurrent,
+  loadCourseUnits,
+  loadStoredUnits,
+  unitKey,
+  type CourseUnit,
+} from "@/features/knowledge-map/workflows/course-units";
 import {
   extractAttempts,
   planAttempts,
@@ -46,7 +48,7 @@ import type { AdminSupabase } from "@/lib/supabase/types";
 
 /**
  * The exercise steps of a build: one call (task `exercise`) per exercise
- * batch (`exercise-batches.ts`), with its Exercises' whole statements and
+ * batch (`course-units.ts`), with its Exercises' whole statements and
  * solutions and every live KC of the Course. Batches run one after another
  * in Course order, and each extraction is stored in `unit_extractions`
  * and then as KCs and Exercises before the next batch's call, so the KCs

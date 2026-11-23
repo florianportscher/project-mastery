@@ -8,12 +8,14 @@ import {
   type StoredExtraction,
 } from "@/features/knowledge-map/schemas";
 import {
-  loadCurrentExtractions,
   touchBuild,
   UNITS_PER_STEP,
   type StepOutcome,
-  type StoredUnit,
 } from "@/features/knowledge-map/workflows/build-steps";
+import {
+  loadCurrentExtractions,
+  type StoredUnit,
+} from "@/features/knowledge-map/workflows/course-units";
 import {
   dailyLimitReason,
   meteredEmbed,

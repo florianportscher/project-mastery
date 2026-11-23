@@ -6,13 +6,15 @@ import {
 } from "@/features/knowledge-map/schemas";
 import { RateLimited } from "@/features/knowledge-map/workflows/build-call";
 import {
-  isCurrent,
   runCalls,
-  unitKey,
   UNITS_PER_STEP,
+} from "@/features/knowledge-map/workflows/build-steps";
+import {
+  isCurrent,
+  unitKey,
   type CourseUnit,
   type StoredUnit,
-} from "@/features/knowledge-map/workflows/build-steps";
+} from "@/features/knowledge-map/workflows/course-units";
 import {
   givenUp,
   joinExtractions,

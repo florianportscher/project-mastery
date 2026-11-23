@@ -17,18 +17,20 @@ import {
 } from "@/features/knowledge-map/domain/unit-coverage";
 import {
   countedProgress,
-  isCurrent,
   loadCourseLanguageName,
-  loadCourseUnits,
-  loadStoredUnits,
   recordProgress,
-  sourceChunkIds,
   touchCountingBuild,
-  unitKey,
   UNITS_PER_STEP,
-  type CourseUnit,
   type StepOutcome,
 } from "@/features/knowledge-map/workflows/build-steps";
+import {
+  isCurrent,
+  loadCourseUnits,
+  loadStoredUnits,
+  sourceChunkIds,
+  unitKey,
+  type CourseUnit,
+} from "@/features/knowledge-map/workflows/course-units";
 import {
   extractAttempts,
   planAttempts,

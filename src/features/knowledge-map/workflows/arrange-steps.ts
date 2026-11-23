@@ -17,19 +17,21 @@ import {
   unitCoverage,
 } from "@/features/knowledge-map/domain/unit-coverage";
 import {
-  isCurrent,
-  loadCourseUnits,
-  loadStoredUnits,
   retireUnsourcedKcs,
   touchBuild,
-  unitKey,
 } from "@/features/knowledge-map/workflows/build-steps";
+import {
+  isCurrent,
+  loadCourseUnits,
+  loadStoredGroups,
+  loadStoredUnits,
+  unitKey,
+} from "@/features/knowledge-map/workflows/course-units";
 import {
   kcsInCourseOrder,
   loadMapInput,
   type MapInput,
 } from "@/features/knowledge-map/workflows/map-input";
-import { loadStoredGroups } from "@/features/knowledge-map/workflows/exercise-batches";
 import { allRows } from "@/lib/supabase/all-rows";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { failed } from "@/lib/supabase/failed";
