@@ -268,7 +268,7 @@ A Mock exam is a timed session without the AI: the Student answers on the mock p
 
 A session ends through End session, a Session rating, or when it has been idle for 2 hours. An idle end is written the next time something notices: a message or action on that Chat, or the first reply of another session in the Course. `endSession` then starts two things:
 
-1. **`closeStudySession`** claims the session (`close_started_at`, so a duplicate start stops) and makes one `close` call. Its result is stored by `store_session_close` in one transaction, which also sets `closed_at` and refuses to run twice.
+1. **`closeStudySession`** claims the session (`close_started_at`, so a duplicate start stops) and makes one `close` call. Its result is stored by `store_session_close` in one transaction, which also sets `closed_at` and refuses to run twice. When the call or the store still fails after the step's retries, the workflow sets `close_started_at` back to null (where `closed_at` is null) and rethrows, so the session counts as never claimed; a session without a Chat or a Student message stays claimed.
 2. **Problem generation** for the review stock, then the Ranking's next Topic (see [Problems](#problems)).
 
 The call reads the transcript, the session's Questions with their Attempts, the notes of the touched Topics (the Topics of its Attempts' KCs) and the Memory.

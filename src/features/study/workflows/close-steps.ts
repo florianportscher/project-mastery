@@ -33,6 +33,20 @@ export async function claimSessionClose(sessionId: string): Promise<boolean> {
   return data.length > 0;
 }
 
+/**
+ * Gives the claim back: sets `close_started_at` to null where the session
+ * is not closed, so a later start can claim it again.
+ */
+export async function releaseSessionClose(sessionId: string): Promise<void> {
+  "use step";
+  const { error } = await createAdminClient()
+    .from("study_sessions")
+    .update({ close_started_at: null })
+    .eq("id", sessionId)
+    .is("closed_at", null);
+  if (error) failed("Releasing the Study session's close", error);
+}
+
 /** The session's notes to store, with when the Memory read was written. */
 export type SessionClose = CloseNotes & {
   /** The `updated_at` of the Memory the call read; null without one. */
