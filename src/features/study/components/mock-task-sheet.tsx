@@ -83,11 +83,16 @@ export function MockTaskSheet({
     }
     const before = stored.current[questionId];
     stored.current[questionId] = answer;
+    // A save that does not reach the server is one to make again, and must
+    // not keep submit from running.
     const result = await saveMockTaskAnswer({
       questionId,
       answer: answer.text,
       confidence: answer.confidence ?? null,
-    });
+    }).catch(() => ({
+      ok: false as const,
+      message: "Not saved: check your connection.",
+    }));
     if (!result.ok && before) stored.current[questionId] = before;
     setNotices((notices) => ({
       ...notices,
