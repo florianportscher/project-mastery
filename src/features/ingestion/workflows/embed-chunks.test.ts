@@ -13,8 +13,7 @@ import {
   useMockModels,
 } from "@/features/ingestion/workflows/parse-testing";
 import { mockEmbeddingModel } from "@/lib/ai/testing";
-import { markAdminClient } from "@/lib/supabase/admin-brand";
-import type { Supabase } from "@/lib/supabase/types";
+import { markAdminClient, type Supabase } from "@/lib/supabase/types";
 
 vi.mock("server-only", () => ({}));
 
@@ -283,6 +282,43 @@ describe("the embed step of a parse", () => {
     const embed = new MockEmbeddingModelV4({
       doEmbed: async () => {
         throw geminiError(400, { status: "INVALID_ARGUMENT" });
+      },
+    });
+    useMockModels({ embed });
+    const { embedChunks } = await import("./embed-chunks");
+
+    const failed = await embedChunks(
+      db.tables.materials[0]!.id as string,
+    ).catch((error: unknown) => error);
+
+    expect(embed.doEmbedCalls).toHaveLength(1);
+    expect(FatalError.is(failed)).toBe(true);
+  });
+
+  test("a request AI Gateway rejects fails the step without retries", async () => {
+    seedMaterial(db, "application/pdf", await fixture("two-page-lecture.pdf"));
+    db.tables.chunks.push({
+      id: crypto.randomUUID(),
+      material_id: db.tables.materials[0]!.id,
+      position: 0,
+      label: "content",
+      markdown: "Alpha.",
+    });
+    const embed = new MockEmbeddingModelV4({
+      doEmbed: async () => {
+        // The shape of @ai-sdk/gateway's `GatewayInvalidRequestError`: no
+        // APICallError, the HTTP call's own error as its cause.
+        throw Object.assign(new Error("Invalid request"), {
+          name: "GatewayInvalidRequestError",
+          statusCode: 400,
+          isRetryable: false,
+          cause: new APICallError({
+            message: "Bad Request",
+            url: "https://ai-gateway.example.test",
+            requestBodyValues: {},
+            statusCode: 400,
+          }),
+        });
       },
     });
     useMockModels({ embed });

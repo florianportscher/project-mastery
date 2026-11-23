@@ -1,6 +1,7 @@
 import "server-only";
 import { allRows } from "@/lib/supabase/all-rows";
 import { failed } from "@/lib/supabase/failed";
+import { inSlices } from "@/lib/supabase/in-slices";
 import type { Supabase } from "@/lib/supabase/types";
 
 export type ChunkSource = {
@@ -23,19 +24,14 @@ export async function loadChunkSources(
   supabase: Supabase,
   chunkIds: string[],
 ): Promise<ChunkSource[]> {
-  const ids = [...new Set(chunkIds)];
-  const rows = [];
-  // Ids go in the query string, so long lists are read in slices.
-  for (let start = 0; start < ids.length; start += ID_SLICE) {
-    const { data, error } = await supabase
+  const rows = await inSlices("Loading the chunks", chunkIds, (ids) =>
+    supabase
       .from("chunks")
       .select(
         "id, material_id, position, page_from, page_to, markdown, heading",
       )
-      .in("id", ids.slice(start, start + ID_SLICE));
-    if (error) failed("Loading the chunks", error);
-    rows.push(...data);
-  }
+      .in("id", ids),
+  );
   if (rows.length === 0) return [];
 
   const materialIds = [...new Set(rows.map((row) => row.material_id))];
@@ -62,9 +58,6 @@ export async function loadChunkSources(
       heading: row.heading,
     }));
 }
-
-/** Chunk ids per `in` filter, which keeps the query string short. */
-const ID_SLICE = 100;
 
 /** Where a chunk is in the Course, and its label, without its text. */
 export type ChunkSpan = {

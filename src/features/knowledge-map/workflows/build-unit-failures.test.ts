@@ -1,8 +1,7 @@
 // @vitest-environment node
 import { beforeEach, expect, test, vi } from "vitest";
 import { silenceLogs } from "@/lib/log-testing";
-import { markAdminClient } from "@/lib/supabase/admin-brand";
-import type { Supabase } from "@/lib/supabase/types";
+import { markAdminClient, type Supabase } from "@/lib/supabase/types";
 import {
   COURSE,
   createBuildDb,

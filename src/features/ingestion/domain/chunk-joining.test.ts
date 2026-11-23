@@ -3,9 +3,9 @@ import {
   chunksFromUnits,
   MAX_CHUNK_CHARS,
 } from "@/features/ingestion/domain/chunk-joining";
-import type { BatchUnit } from "@/features/ingestion/domain/page-batches";
+import type { PageUnit } from "@/features/ingestion/domain/page-batches";
 
-const unit = (overrides: Partial<BatchUnit>): BatchUnit => ({
+const unit = (overrides: Partial<PageUnit>): PageUnit => ({
   markdown: "Text.",
   label: "content",
   pageFrom: 1,

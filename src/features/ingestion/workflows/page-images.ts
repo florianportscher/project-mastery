@@ -118,7 +118,7 @@ export async function openPdf(bytes: Uint8Array) {
   };
 }
 
-export type OpenedPdf = Awaited<ReturnType<typeof openPdf>>;
+type OpenedPdf = Awaited<ReturnType<typeof openPdf>>;
 
 /**
  * Opens a PDF Material from Storage. A missing file or one that is no
@@ -142,4 +142,44 @@ export async function openMaterialPdf(
   } catch {
     throw parseFailureError(fileUnreadableReason);
   }
+}
+
+/** A Material's pages for a page call: each one's image and text layer. */
+type PageSource = {
+  /** Null for a blank page, which needs no call. */
+  image(pageNumber: number): Promise<{
+    bytes: Uint8Array;
+    mediaType: string;
+  } | null>;
+  text(pageNumber: number): Promise<string | null>;
+};
+
+/**
+ * Opens a Material from Storage for reading its pages: a PDF's pages as
+ * JPEG renders with their text layer, an image as its own one page without
+ * one.
+ */
+export async function pageSource(
+  supabase: AdminSupabase,
+  material: { media_type: string; storage_path: string },
+): Promise<PageSource> {
+  if (material.media_type !== "application/pdf") {
+    const { data, error } = await supabase.storage
+      .from(MATERIALS_BUCKET)
+      .download(material.storage_path);
+    if (error) failed(`Reading ${material.storage_path}`, error);
+    const bytes = new Uint8Array(await data.arrayBuffer());
+    return {
+      image: async () => ({ bytes, mediaType: material.media_type }),
+      text: async () => null,
+    };
+  }
+  const pdf = await openMaterialPdf(supabase, material.storage_path);
+  return {
+    async image(pageNumber) {
+      const page = await pdf.renderPage(pageNumber);
+      return page.blank ? null : { bytes: page.jpeg, mediaType: "image/jpeg" };
+    },
+    text: (pageNumber) => pdf.pageText(pageNumber),
+  };
 }

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { isAdminClient } from "./admin-brand";
+import { isAdminClient } from "./types";
 import { fetchWithoutNul } from "./without-nul";
 
 vi.mock("server-only", () => ({}));

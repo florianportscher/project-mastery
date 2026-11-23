@@ -1,11 +1,8 @@
 import "server-only";
 import { Output } from "ai";
 import { z } from "zod";
-import {
-  HEADING_STYLES,
-  PAGE_SKIP_REASONS,
-  UNIT_LABELS,
-} from "@/features/ingestion/types";
+import type { PageUnit } from "@/features/ingestion/domain/page-batches";
+import { HEADING_STYLES, UNIT_LABELS } from "@/features/ingestion/types";
 import { aiTask } from "@/lib/ai/models";
 
 const batchUnitSchema = z.object({
@@ -51,7 +48,7 @@ export const batchResultSchema = z.object({
     .array(
       z.object({
         pageNumber: z.number().int(),
-        reason: z.enum(PAGE_SKIP_REASONS),
+        reason: z.enum(["nothing_to_learn"]),
       }),
     )
     .describe(
@@ -61,8 +58,6 @@ export const batchResultSchema = z.object({
 
 /** The units of a stored page result: those that start on that page. */
 export const storedUnitsSchema = z.array(batchUnitSchema);
-
-export type PageUnit = z.infer<typeof batchUnitSchema>;
 
 const BATCH_INSTRUCTIONS = `You transcribe consecutive pages of a Student's course material (slides, a script, an exercise sheet, a solution sheet or an old exam) into ordered units.
 

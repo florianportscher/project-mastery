@@ -12,8 +12,7 @@ import {
   useMockModels,
 } from "@/features/ingestion/workflows/parse-testing";
 import { silenceLogs } from "@/lib/log-testing";
-import { markAdminClient } from "@/lib/supabase/admin-brand";
-import type { Supabase } from "@/lib/supabase/types";
+import { markAdminClient, type Supabase } from "@/lib/supabase/types";
 
 /**
  * How a parse fails, resumes and stops: the parse workflow in-process on
@@ -35,6 +34,10 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => markAdminClient(db as unknown as Supabase),
 }));
 
+// Unpaced, as without AI_RPM, unless a test sets a wait.
+vi.mock("@/lib/ai/pacing", () => ({ paceCall: vi.fn(async () => 0) }));
+const { paceCall } = await import("@/lib/ai/pacing");
+
 const { parseMaterial } = await import("./parse-material");
 const { readPages } = await import("./parse-steps");
 
@@ -45,6 +48,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.mocked(paceCall).mockReset();
 });
 
 async function seedLecture(file = "two-page-lecture.pdf") {
@@ -389,5 +393,30 @@ describe("a read step", () => {
     expect(model.calls()).toBe(2);
     expect(storedPages().map(([page]) => page)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(material()).toMatchObject({ parse_status: "parsed" });
+  });
+
+  test("starts no call whose pace wait took it past its time box", async () => {
+    await seedLecture("seven-page-script.pdf");
+    let now = Date.now();
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    // With AI_RPM set, each call waits 60 seconds for its slot, and each
+    // batch call takes 50 seconds: the second batch fits the step at 110
+    // seconds, but not after its wait, at 170.
+    vi.mocked(paceCall).mockImplementation(async () => {
+      now += 60_000;
+      return 60_000;
+    });
+    const model = pageModel(
+      [pageResult("Pages 1 to 5", 1, 5), pageResult("Pages 6 and 7", 6, 7)],
+      () => {
+        now += 50_000;
+      },
+    );
+    useMockModels({ ingest: model.model });
+
+    const step = await readPages(MATERIAL, [1, 2, 3, 4, 5, 6, 7]);
+
+    expect(step).toEqual({ ok: true, left: [6, 7] });
+    expect(model.calls()).toBe(1);
   });
 });

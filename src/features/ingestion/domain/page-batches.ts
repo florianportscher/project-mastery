@@ -1,6 +1,7 @@
 import type { HEADING_STYLES, UnitLabel } from "@/features/ingestion/types";
 
-export type BatchUnit = {
+/** A run of one label under one heading, as a page read returns it. */
+export type PageUnit = {
   markdown: string;
   label: UnitLabel;
   pageFrom: number;
@@ -26,7 +27,7 @@ export function pageBatches(pages: readonly number[]): number[][] {
  * again alone, and stored `uncovered` when still none does.
  */
 export function uncoveredPages(
-  units: ReadonlyArray<Pick<BatchUnit, "pageFrom" | "pageTo">>,
+  units: ReadonlyArray<Pick<PageUnit, "pageFrom" | "pageTo">>,
   pages: readonly number[],
 ): number[] {
   return pages
@@ -46,14 +47,14 @@ export function uncoveredPages(
  * only the first unit continues from the previous batch and only the last
  * continues on the next, so the flags mark batch edges alone.
  */
-export function unitsOnPages<Unit extends BatchUnit>(
-  units: readonly Unit[],
+export function unitsOnPages(
+  units: readonly PageUnit[],
   pages: readonly number[],
-): Map<number, Unit[]> {
+): Map<number, PageUnit[]> {
   const sorted = pages.toSorted((a, b) => a - b);
   const first = sorted[0] ?? 1;
   const last = sorted.at(-1) ?? first;
-  const onPages = new Map(sorted.map((page) => [page, [] as Unit[]]));
+  const onPages = new Map(sorted.map((page) => [page, [] as PageUnit[]]));
   units.forEach((unit, index) => {
     const pageFrom = sorted.findLast((page) => page <= unit.pageFrom) ?? first;
     onPages.get(pageFrom)?.push({

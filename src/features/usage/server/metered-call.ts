@@ -12,9 +12,8 @@ import {
   isTimeoutError,
 } from "@/lib/ai/call-timeout";
 import { estimatedUsage, tokenUsage, type SentFile } from "@/lib/ai/cost";
-import { isDailyQuotaError } from "@/lib/ai/daily-quota";
 import { aiTask, EMBED_AS_DOCUMENTS, type AiTask } from "@/lib/ai/models";
-import { gatewayRateLimitWaitMs } from "@/lib/ai/rate-limit";
+import { gatewayRateLimitWaitMs, isDailyQuotaError } from "@/lib/ai/rate-limit";
 import type {
   AdminSupabase,
   SessionSupabase,

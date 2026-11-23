@@ -5,9 +5,8 @@ import {
   memoizeMathRunner,
   useGenerateModel,
 } from "@/features/study/workflows/generate-problems-testing";
-import { markAdminClient } from "@/lib/supabase/admin-brand";
 import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
-import type { Supabase } from "@/lib/supabase/types";
+import { markAdminClient, type Supabase } from "@/lib/supabase/types";
 
 vi.mock("server-only", () => ({}));
 // Each run of a program starts a process; the same program runs once per file.

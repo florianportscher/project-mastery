@@ -3,10 +3,10 @@ import {
   pageBatches,
   uncoveredPages,
   unitsOnPages,
-  type BatchUnit,
+  type PageUnit,
 } from "@/features/ingestion/domain/page-batches";
 
-const unit = (overrides: Partial<BatchUnit>): BatchUnit => ({
+const unit = (overrides: Partial<PageUnit>): PageUnit => ({
   markdown: "Text.",
   label: "content",
   pageFrom: 1,

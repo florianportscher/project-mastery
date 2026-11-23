@@ -1,13 +1,13 @@
 import "server-only";
 import { costUsd, type TokenUsage } from "@/lib/ai/cost";
 import type { AiTask } from "@/lib/ai/models";
-import { isAdminClient } from "@/lib/supabase/admin-brand";
 import { allRows } from "@/lib/supabase/all-rows";
 import { failed } from "@/lib/supabase/failed";
-import type {
-  AdminSupabase,
-  SessionSupabase,
-  Supabase,
+import {
+  isAdminClient,
+  type AdminSupabase,
+  type SessionSupabase,
+  type Supabase,
 } from "@/lib/supabase/types";
 
 /**

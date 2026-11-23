@@ -2,9 +2,8 @@
 import { MockLanguageModelV4 } from "ai/test";
 import { beforeEach, expect, test, vi } from "vitest";
 import { useMockModels } from "@/lib/ai/testing";
-import { markAdminClient } from "@/lib/supabase/admin-brand";
 import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
-import type { Supabase } from "@/lib/supabase/types";
+import { markAdminClient, type Supabase } from "@/lib/supabase/types";
 
 vi.mock("server-only", () => ({}));
 

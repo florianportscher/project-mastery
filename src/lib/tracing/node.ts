@@ -7,8 +7,8 @@ import { getTracingEnvironment, isTracingEnabled } from "./env";
 import { shouldExportSpan } from "./export-filter";
 
 /**
- * Sends AI SDK spans to Langfuse through OpenTelemetry (ARCHITECTURE decision
- * 12). Node.js runtime only. Without Langfuse keys, or with the mock provider,
+ * Sends AI SDK spans to Langfuse through OpenTelemetry (ADR 0012). Node.js
+ * runtime only. Without Langfuse keys, or with the mock provider,
  * nothing is registered, so AI calls emit no telemetry at all.
  *
  * Returns the provider so short-lived processes (smoke checks) can shut it down.

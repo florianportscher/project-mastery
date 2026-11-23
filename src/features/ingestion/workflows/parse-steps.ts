@@ -5,21 +5,20 @@ import {
   batchResultSchema,
   storedUnitsSchema,
   type BatchPage,
-  type PageUnit,
 } from "@/features/ingestion/ai/page-units";
-import type { PageAnswer } from "@/features/ingestion/domain/material-language";
-import { missingPages } from "@/features/ingestion/domain/missing-pages";
+import type { PageAnswer } from "@/features/ingestion/domain/language";
 import {
   PAGES_PER_BATCH,
   pageBatches,
   uncoveredPages,
   unitsOnPages,
+  type PageUnit,
 } from "@/features/ingestion/domain/page-batches";
-import { overlayPages } from "@/features/ingestion/domain/pages";
+import { missingPages, overlayPages } from "@/features/ingestion/domain/pages";
 import type { PageSkip } from "@/features/ingestion/types";
 import {
   openMaterialPdf,
-  type OpenedPdf,
+  pageSource,
 } from "@/features/ingestion/workflows/page-images";
 import {
   dailyLimitReason,
@@ -30,7 +29,6 @@ import { callFits } from "@/lib/ai/call-timeout";
 import { getAiEnv } from "@/lib/ai/env";
 import { paceCall } from "@/lib/ai/pacing";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { MATERIALS_BUCKET } from "@/lib/supabase/buckets";
 import { failed } from "@/lib/supabase/failed";
 import type { AdminSupabase } from "@/lib/supabase/types";
 
@@ -40,8 +38,6 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * the Material and its owner itself. Each step starts with `loadMaterial`,
  * which sets the Material's heartbeat, and does nothing when it is gone.
  */
-
-const BUCKET = MATERIALS_BUCKET;
 
 /** Postgres error code of a row that points at a deleted parent. */
 const FOREIGN_KEY_VIOLATION = "23503";
@@ -85,30 +81,6 @@ export async function loadMaterial(
     .maybeSingle();
   if (error) failed("Loading the Material", error);
   return data;
-}
-
-/**
- * Whether the Material has chunks. They are written in one transaction
- * after every page is read, so existing ones are complete: a parse started
- * again after a failed embed keeps them and their vectors.
- */
-export async function hasChunks(
-  supabase: AdminSupabase,
-  materialId: string,
-): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("chunks")
-    .select("id")
-    .eq("material_id", materialId)
-    .limit(1);
-  if (error) failed("Loading the chunks", error);
-  return data.length > 0;
-}
-
-async function download(supabase: AdminSupabase, path: string) {
-  const { data, error } = await supabase.storage.from(BUCKET).download(path);
-  if (error) failed(`Reading ${path}`, error);
-  return new Uint8Array(await data.arrayBuffer());
 }
 
 async function storedPageNumbers(
@@ -195,53 +167,22 @@ export async function preparePages(
     if (!kept) return null;
     stored.push(pageNumber);
   }
-  const toRead = missingPages(pageCount, stored).filter(selected);
+  const missing = missingPages(pageCount, stored);
 
   const { data, error } = await supabase
     .from("materials")
     .update({
-      parse_status: "parsing",
       pages_total: pageCount,
-      pages_done: pageCount - missingPages(pageCount, stored).length,
-      parse_failure: null,
+      pages_done: pageCount - missing.length,
     })
     .eq("id", materialId)
     .select("id");
   if (error) failed("Starting the parse", error);
-  return data.length === 0 ? null : toRead;
+  return data.length === 0 ? null : missing.filter(selected);
 }
 
 /** A page call that failed for good, after the AI SDK's retries. */
 class PageCallFailed extends Error {}
-
-type PageSource = {
-  image(pageNumber: number): Promise<{
-    bytes: Uint8Array;
-    mediaType: string;
-  } | null>;
-  text(pageNumber: number): Promise<string | null>;
-};
-
-async function pageSource(
-  supabase: AdminSupabase,
-  material: ParseMaterialRow,
-): Promise<PageSource> {
-  if (material.media_type !== "application/pdf") {
-    const bytes = await download(supabase, material.storage_path);
-    return {
-      image: async () => ({ bytes, mediaType: material.media_type }),
-      text: async () => null,
-    };
-  }
-  const pdf: OpenedPdf = await openMaterialPdf(supabase, material.storage_path);
-  return {
-    async image(pageNumber) {
-      const page = await pdf.renderPage(pageNumber);
-      return page.blank ? null : { bytes: page.jpeg, mediaType: "image/jpeg" };
-    },
-    text: (pageNumber) => pdf.pageText(pageNumber),
-  };
-}
 
 /**
  * Reads up to PAGES_PER_STEP of the Material's pages, opening the PDF once.
@@ -254,8 +195,9 @@ async function pageSource(
  * titles or contents is stored `titles`. A page with neither units nor a
  * reason is
  * read again alone, and stored `uncovered` when still none does. No call
- * starts that could run past the step's limit (`callFits`); the pages of
- * calls not started are left to the next step. A reached Daily limit stops
+ * starts that could run past the step's limit (`callFits`), also after its
+ * wait for a slot (`paceCall`); the pages of calls not started are left to
+ * the next step. A reached Daily limit stops
  * the parse.
  */
 export async function readPages(
@@ -339,12 +281,12 @@ export async function readPages(
 readPages.maxRetries = RATE_LIMITED_STEP_RETRIES;
 
 /**
- * Reads one batch: the results of its pages read so far, whether the
- * Student's Daily limit stopped it, and the pages left for the next step
- * because no call fits the step any more (`callFits` from `stepStartedAt`).
- * A batch whose call fails is read again page by page once; a page that
- * still fails is unreadable. A page of an answered batch that no unit
- * covers is read again alone once; a page still uncovered is stored so.
+ * Reads one batch. A batch whose call fails is read again page by page
+ * (`readEach`). A page of an answered batch that no unit covers is read
+ * again alone once; a page still uncovered is stored so. It gives the
+ * results of its pages read so far, whether the Student's Daily limit
+ * stopped it, and the pages left for the next step because no call fits
+ * the step any more.
  */
 async function readBatch(
   supabase: AdminSupabase,
@@ -352,93 +294,104 @@ async function readBatch(
   batch: BatchPage[],
   stepStartedAt: number,
 ): Promise<{ pages: PageRow[]; limit: boolean; left: number[] }> {
-  const placed = (pages: BatchPage[], units: PageUnit[]) =>
-    unitsOnPages(
-      units,
-      pages.map((page) => page.pageNumber),
-    );
-  const rows = (
-    onPages: Map<number, PageUnit[]>,
-    { language, notes }: PageAnswer,
-  ): PageRow[] =>
-    [...onPages].map(([pageNumber, units]) => ({
-      pageNumber,
-      units,
-      language,
-      notes,
-    }));
-
-  let context = await lastUnitBefore(supabase, material.id, batch[0]!);
-  const answer = await callBatch(supabase, material, batch, context);
+  let context = await lastUnitBefore(
+    supabase,
+    material.id,
+    batch[0]!.pageNumber,
+  );
+  const pageNumbers = batch.map((page) => page.pageNumber);
+  const answer = await callBatch(
+    supabase,
+    material,
+    batch,
+    context,
+    stepStartedAt,
+  );
   if (answer === "limit") return { pages: [], limit: true, left: [] };
-
-  const pages: PageRow[] = [];
+  if (answer === "late") return { pages: [], limit: false, left: pageNumbers };
   if (answer === "failed") {
-    for (const [index, page] of batch.entries()) {
-      if (!callFits(stepStartedAt)) {
-        const left = batch.slice(index).map((p) => p.pageNumber);
-        return { pages, limit: false, left };
-      }
-      const single = await callBatch(supabase, material, [page], context);
-      if (single === "limit") return { pages, limit: true, left: [] };
-      if (single === "failed") {
-        pages.push({ pageNumber: page.pageNumber, skipped: "unreadable" });
-        context = null;
-      } else {
-        pages.push(...rows(placed([page], single.units), single));
-        context = single.units.at(-1) ?? null;
-      }
-    }
-    return { pages, limit: false, left: [] };
+    return readEach(supabase, material, batch, context, stepStartedAt);
   }
 
-  const onPages = placed(batch, answer.units);
-  const skipped = new Set(answer.skipped);
+  const onPages = unitsOnPages(answer.units, pageNumbers);
   const uncovered = new Set(
-    uncoveredPages(
-      [...onPages.values()].flat(),
-      batch.map((page) => page.pageNumber),
-    ),
+    uncoveredPages([...onPages.values()].flat(), pageNumbers),
   );
+  const pages: PageRow[] = [];
   const left: number[] = [];
   for (const page of batch) {
-    const own = onPages.get(page.pageNumber) ?? [];
-    if (!uncovered.has(page.pageNumber)) {
-      pages.push({ pageNumber: page.pageNumber, units: own, ...said(answer) });
-      context = own.at(-1) ?? context;
+    const { pageNumber } = page;
+    if (!uncovered.has(pageNumber)) {
+      const units = onPages.get(pageNumber) ?? [];
+      const { language, notes } = answer;
+      pages.push({ pageNumber, units, language, notes });
+      context = units.at(-1) ?? context;
       continue;
     }
-    if (skipped.has(page.pageNumber)) {
-      pages.push({ pageNumber: page.pageNumber, skipped: "titles" });
+    if (answer.skipped.includes(pageNumber)) {
+      pages.push({ pageNumber, skipped: "titles" });
       continue;
     }
-    if (!callFits(stepStartedAt)) {
-      left.push(page.pageNumber);
-      continue;
-    }
-    const single = await callBatch(supabase, material, [page], context);
+    const single = await callBatch(
+      supabase,
+      material,
+      [page],
+      context,
+      stepStartedAt,
+    );
     if (single === "limit") return { pages, limit: true, left: [] };
-    if (single !== "failed" && single.skipped.includes(page.pageNumber)) {
-      pages.push({ pageNumber: page.pageNumber, skipped: "titles" });
-      continue;
-    }
-    const again = single === "failed" ? [] : single.units;
-    const onPage = placed([page], again).get(page.pageNumber) ?? [];
-    if (
-      single === "failed" ||
-      uncoveredPages(onPage, [page.pageNumber]).length > 0
-    ) {
-      pages.push({ pageNumber: page.pageNumber, skipped: "uncovered" });
+    if (single === "late") {
+      left.push(pageNumber);
+    } else if (single === "failed") {
+      pages.push({ pageNumber, skipped: "uncovered" });
+    } else if (single.skipped.includes(pageNumber)) {
+      pages.push({ pageNumber, skipped: "titles" });
     } else {
-      pages.push({
-        pageNumber: page.pageNumber,
-        units: onPage,
-        ...said(single),
-      });
-      context = onPage.at(-1) ?? context;
+      const read = readAlone(pageNumber, single);
+      pages.push(
+        read.units.length > 0 ? read : { pageNumber, skipped: "uncovered" },
+      );
+      context = read.units.at(-1) ?? context;
     }
   }
   return { pages, limit: false, left };
+}
+
+/**
+ * Reads a batch whose call failed page by page, once each, from `context`;
+ * a page whose call fails too is unreadable.
+ */
+async function readEach(
+  supabase: AdminSupabase,
+  material: ParseMaterialRow,
+  batch: BatchPage[],
+  context: PageUnit | null,
+  stepStartedAt: number,
+): Promise<{ pages: PageRow[]; limit: boolean; left: number[] }> {
+  const pages: PageRow[] = [];
+  for (const [index, page] of batch.entries()) {
+    const single = await callBatch(
+      supabase,
+      material,
+      [page],
+      context,
+      stepStartedAt,
+    );
+    if (single === "limit") return { pages, limit: true, left: [] };
+    if (single === "late") {
+      const left = batch.slice(index).map((p) => p.pageNumber);
+      return { pages, limit: false, left };
+    }
+    if (single === "failed") {
+      pages.push({ pageNumber: page.pageNumber, skipped: "unreadable" });
+      context = null;
+    } else {
+      const read = readAlone(page.pageNumber, single);
+      pages.push(read);
+      context = read.units.at(-1) ?? null;
+    }
+  }
+  return { pages, limit: false, left: [] };
 }
 
 /**
@@ -447,22 +400,32 @@ async function readBatch(
  */
 type BatchAnswer = PageAnswer & { units: PageUnit[]; skipped: number[] };
 
-const said = ({ language, notes }: PageAnswer): PageAnswer => ({
-  language,
-  notes,
-});
+/** A page's result from an answer of its call alone: every unit on it. */
+function readAlone(
+  pageNumber: number,
+  { units, language, notes }: BatchAnswer,
+) {
+  return {
+    pageNumber,
+    units: unitsOnPages(units, [pageNumber]).get(pageNumber) ?? [],
+    language,
+    notes,
+  };
+}
 
 /**
  * One streamed batch call: its answer, "failed" when the call fails for
- * good or gives no valid answer, or "limit" when the Student's Daily limit
- * is reached.
+ * good or gives no valid answer, "limit" when the Student's Daily limit
+ * is reached, or "late" when, after its wait for a slot (`paceCall`), the
+ * call no longer fits the step (`callFits`) and is not made.
  */
 async function callBatch(
   supabase: AdminSupabase,
   material: ParseMaterialRow,
   batch: BatchPage[],
   context: PageUnit | null,
-): Promise<BatchAnswer | "failed" | "limit"> {
+  stepStartedAt: number,
+): Promise<BatchAnswer | "failed" | "limit" | "late"> {
   const failedCall = (error: unknown) => {
     const pages = batch.map((page) => page.pageNumber).join(", ");
     console.error(`The batch call for pages ${pages} failed:`, error);
@@ -470,6 +433,7 @@ async function callBatch(
   };
   let result: Awaited<ReturnType<typeof meteredStream>>;
   await paceCall();
+  if (!callFits(stepStartedAt)) return "late";
   try {
     result = await meteredStream(
       supabase,
@@ -514,17 +478,17 @@ async function callBatch(
 async function lastUnitBefore(
   supabase: AdminSupabase,
   materialId: string,
-  first: BatchPage,
+  firstPage: number,
 ): Promise<PageUnit | null> {
   const { data, error } = await supabase
     .from("material_pages")
     .select("page_number, units")
     .eq("material_id", materialId)
-    .lt("page_number", first.pageNumber)
+    .lt("page_number", firstPage)
     .order("page_number", { ascending: false })
     .limit(PAGES_PER_STEP);
   if (error) failed("Loading the page results", error);
-  let expected = first.pageNumber - 1;
+  let expected = firstPage - 1;
   for (const page of data) {
     if (page.page_number !== expected) return null;
     const last = storedUnitsSchema.parse(page.units).at(-1);

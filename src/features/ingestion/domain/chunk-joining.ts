@@ -1,4 +1,4 @@
-import type { BatchUnit } from "@/features/ingestion/domain/page-batches";
+import type { PageUnit } from "@/features/ingestion/domain/page-batches";
 import type { ChunkLabel } from "@/features/ingestion/types";
 
 export type DraftChunk = {
@@ -27,7 +27,7 @@ const HEADING_MARKS = /^\s*#+\s*|^\s*\*\*|\*\*\s*$/g;
 const headingText = (markdown: string) =>
   markdown.replaceAll(HEADING_MARKS, "").replaceAll(/\s+/g, " ").trim();
 
-function paragraphs(unit: BatchUnit, markdown = unit.markdown): Paragraph[] {
+function paragraphs(unit: PageUnit, markdown = unit.markdown): Paragraph[] {
   return markdown
     .split(/\n{2,}/)
     .map((text) => text.trim())
@@ -46,11 +46,11 @@ function paragraphs(unit: BatchUnit, markdown = unit.markdown): Paragraph[] {
  * them make a content chunk. A chunk over MAX_CHUNK_CHARS splits between
  * paragraphs.
  */
-export function chunksFromUnits(units: readonly BatchUnit[]): DraftChunk[] {
+export function chunksFromUnits(units: readonly PageUnit[]): DraftChunk[] {
   const chunks: OpenChunk[] = [];
   let heading: string | null = null;
   let headings: Paragraph[] = [];
-  let previous: BatchUnit | null = null;
+  let previous: PageUnit | null = null;
   const flushHeadings = () => {
     if (headings.length > 0) {
       chunks.push({ label: "content", heading, paragraphs: headings });

@@ -18,6 +18,17 @@ test("an invalid tool call's error keeps its message, also as a string", () => {
   expect(replyErrorMessage(text)).toBe(text);
 });
 
+test("AI Gateway's rate limit, which is no APICallError, tells the Student the AI is busy", () => {
+  // The shape of `GatewayRateLimitError` from @ai-sdk/gateway.
+  const rateLimit = Object.assign(new Error("Rate limit exceeded"), {
+    name: "GatewayRateLimitError",
+    statusCode: 429,
+  });
+  expect(replyErrorMessage(rateLimit)).toBe(
+    "The AI is busy right now. Please try again in a moment.",
+  );
+});
+
 test("any other error becomes the generic message", () => {
   expect(replyErrorMessage("connection reset")).toBe(
     "The AI could not reply. Please try again.",

@@ -121,8 +121,6 @@ export const EMBED_AS_DOCUMENTS = {
  */
 const AI_MAX_RETRIES = 3;
 
-const taskConfig = (task: AiTask): TaskConfig => AI_TASKS[task];
-
 /**
  * Models that take only `toolChoice: "auto"`. Verified live on 2026-11-12:
  * `meta/muse-ember` answers `"none"` with a 400, and with no tools offered
@@ -145,7 +143,7 @@ export function textOnlyStep(model: string) {
  * for prices by a unit test, overrides here, since every call is priced.
  */
 function overrideFor(task: AiTask): string | undefined {
-  const config = taskConfig(task);
+  const config = AI_TASKS[task];
   const override = getAiEnv()[config.override];
   const [prices, table] =
     task === "transcribe"
@@ -160,7 +158,7 @@ function overrideFor(task: AiTask): string | undefined {
 }
 
 export function modelIdFor(task: AiTask): string {
-  return overrideFor(task) ?? taskConfig(task).model;
+  return overrideFor(task) ?? AI_TASKS[task].model;
 }
 
 /** Model ids the Gemini API serves directly, when a Google key is set. */
@@ -172,10 +170,6 @@ const GOOGLE_PREFIX = "google/";
  * which serves no Google model on its free credit. Muse and the embeddings
  * stay on the gateway.
  */
-function routeToGeminiApi(apiKey: string) {
-  globalThis.AI_SDK_DEFAULT_PROVIDER ??= geminiRouter(apiKey);
-}
-
 function geminiRouter(apiKey: string) {
   const google = createGoogleGenerativeAI({ apiKey });
   const geminiId = (id: string) => id.slice(GOOGLE_PREFIX.length);
@@ -198,7 +192,9 @@ function geminiRouter(apiKey: string) {
 function routeModels(env: AiEnv) {
   if (env.AI_PROVIDER === "mock") routeToMockModels();
   else if (env.GOOGLE_GENERATIVE_AI_API_KEY) {
-    routeToGeminiApi(env.GOOGLE_GENERATIVE_AI_API_KEY);
+    globalThis.AI_SDK_DEFAULT_PROVIDER ??= geminiRouter(
+      env.GOOGLE_GENERATIVE_AI_API_KEY,
+    );
   }
 }
 
@@ -211,10 +207,7 @@ function routeModels(env: AiEnv) {
  *   embed({ ...aiTask("embed"), value })
  */
 export function aiTask(task: AiTask) {
-  return taskSettings(task, modelIdFor(task));
-}
-
-function taskSettings(task: AiTask, model: string) {
+  const model = modelIdFor(task);
   const env = getAiEnv();
   if (
     env.AI_PROVIDER !== "mock" &&

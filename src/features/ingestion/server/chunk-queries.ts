@@ -9,6 +9,7 @@ import {
 import { getUser } from "@/lib/auth/user";
 import { allRows } from "@/lib/supabase/all-rows";
 import { failed } from "@/lib/supabase/failed";
+import { inSlices } from "@/lib/supabase/in-slices";
 import { createClient } from "@/lib/supabase/server";
 import type { Supabase } from "@/lib/supabase/types";
 
@@ -62,30 +63,6 @@ export async function getMaterialChunks(
       solution: solutions.get(chunk.id) ?? null,
     })),
   };
-}
-
-/** Ids per `in` filter, which keeps the query string short. */
-const ID_SLICE = 100;
-
-/**
- * The rows `read` gives for `ids`, read in slices of `ID_SLICE` distinct
- * ids, since ids go in the query string. No ids make no request.
- */
-async function inSlices<Row>(
-  action: string,
-  ids: string[],
-  read: (
-    slice: string[],
-  ) => PromiseLike<{ data: Row[] | null; error: { message: string } | null }>,
-): Promise<Row[]> {
-  const unique = [...new Set(ids)];
-  const rows: Row[] = [];
-  for (let start = 0; start < unique.length; start += ID_SLICE) {
-    const { data, error } = await read(unique.slice(start, start + ID_SLICE));
-    if (error) failed(action, error);
-    rows.push(...(data ?? []));
-  }
-  return rows;
 }
 
 /**

@@ -10,12 +10,12 @@ import {
 } from "@/lib/ai/testing";
 import { CallTimeoutError } from "@/lib/ai/call-timeout";
 import { aiTask } from "@/lib/ai/models";
-import { markAdminClient } from "@/lib/supabase/admin-brand";
 import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
-import type {
-  AdminSupabase,
-  SessionSupabase,
-  Supabase,
+import {
+  markAdminClient,
+  type AdminSupabase,
+  type SessionSupabase,
+  type Supabase,
 } from "@/lib/supabase/types";
 
 vi.mock("server-only", () => ({}));

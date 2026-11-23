@@ -307,13 +307,21 @@ export const architecture = [
           ],
         },
       ],
-      // Public entry files list their exports, so the API stays deliberate.
       "no-restricted-syntax": [
         "error",
+        // Public entry files list their exports, so the API stays deliberate.
         {
           selector: "ExportAllDeclaration",
           message:
             "List exports by name instead of `export *`, so a module's public API stays explicit.",
+        },
+        // An .in() filter's ids go in the query string, so one helper reads
+        // long lists in slices.
+        {
+          selector:
+            "CallExpression[callee.property.name='in'] > CallExpression[callee.property.name='slice']",
+          message:
+            "Read a long id list with inSlices (@/lib/supabase/in-slices) instead of slicing it for .in() by hand.",
         },
       ],
       "import-x/no-cycle": ["error", { ignoreExternal: true }],
