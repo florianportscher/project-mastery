@@ -50,6 +50,7 @@ const built = (checkReport: unknown): Snapshot["build"] => ({
   finishedAt: null,
   heartbeatAt: "",
   needsUpdate: false,
+  appCommit: null,
   checkReport,
 });
 

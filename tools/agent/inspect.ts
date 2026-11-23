@@ -93,6 +93,7 @@ export type Snapshot = {
     startedAt: string;
     finishedAt: string | null;
     needsUpdate: boolean;
+    appCommit?: string | null;
     checkReport: unknown;
   } | null;
 };
@@ -315,7 +316,7 @@ function describeCall(call: Call): string {
   const unit = call.metadata.unitKey ? ` unit ${call.metadata.unitKey}` : "";
   const error =
     call.level === "ERROR" ? ` ERROR ${call.statusMessage ?? ""}` : "";
-  return `${call.id} ${call.startTime.slice(11, 19)} ${call.name} ${call.model ?? "-"} ${seconds} ${call.inputTokens}>${call.outputTokens} tok ${cost}${unit}${error}`;
+  return `${call.id} ${call.startTime.slice(11, 19)} ${call.name} ${call.model ?? "-"} ${call.metadata.appCommit ?? "-"} ${seconds} ${call.inputTokens}>${call.outputTokens} tok ${cost}${unit}${error}`;
 }
 
 type Report = {
@@ -482,7 +483,7 @@ export function formatSection(
     case "build":
       lines.push(
         s.build
-          ? `${s.build.status} started ${s.build.startedAt} finished ${s.build.finishedAt ?? "-"}${s.build.needsUpdate ? " needs update" : ""}${s.build.failureReason ? ` FAILED ${s.build.failureReason}` : ""}`
+          ? `${s.build.status} commit ${s.build.appCommit ?? "-"} models ${[...new Set((calls ?? []).flatMap((c) => (c.model ? [c.model] : [])))].join(", ") || "-"} started ${s.build.startedAt} finished ${s.build.finishedAt ?? "-"}${s.build.needsUpdate ? " needs update" : ""}${s.build.failureReason ? ` FAILED ${s.build.failureReason}` : ""}`
           : "no build",
         JSON.stringify(s.build?.checkReport ?? null),
       );

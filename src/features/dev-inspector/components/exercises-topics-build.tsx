@@ -117,6 +117,15 @@ export function TopicsSection({
   );
 }
 
+/** The models the Course's traced calls ran on, comma-separated. */
+function modelsOf(calls: DevCalls): string {
+  if (calls.status !== "ok") return "–";
+  const models = new Set(
+    calls.calls.flatMap((c) => (c.model ? [c.model] : [])),
+  );
+  return models.size > 0 ? [...models].join(", ") : "–";
+}
+
 export function BuildSection({
   snapshot,
   calls,
@@ -144,6 +153,8 @@ export function BuildSection({
               <Flag>{build.failureReason}</Flag>
             </Row>
           )}
+          <Row label="Commit">{build.appCommit ?? "–"}</Row>
+          <Row label="Models">{modelsOf(calls)}</Row>
           <Row label="Started">{time(build.startedAt)}</Row>
           <Row label="Finished">{time(build.finishedAt)}</Row>
           <Row label="Heartbeat">{time(build.heartbeatAt)}</Row>

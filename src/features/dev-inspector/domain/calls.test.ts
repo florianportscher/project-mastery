@@ -14,6 +14,7 @@ const call = (over: Partial<DevCall> & { id: string }): DevCall => ({
   cost: null,
   materialId: null,
   unitKey: null,
+  appCommit: null,
   ...over,
 });
 

@@ -90,6 +90,7 @@ export function CallList({
               · {call.inputTokens} in / {call.outputTokens} out
               {call.cost !== null && ` · $${call.cost.toFixed(4)}`}
               {call.model && ` · ${call.model}`}
+              {call.appCommit && ` · ${call.appCommit}`}
             </span>
             {flags.failed.has(call.id) && <Flag>failed</Flag>}
             {flags.retried.has(call.id) && <Flag>retried</Flag>}
