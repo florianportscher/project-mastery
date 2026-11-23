@@ -163,7 +163,7 @@ export async function setSessionMinutes(
 export async function endSession(
   supabase: Supabase,
   chatId: string,
-  at: string = new Date().toISOString(),
+  at: string,
 ): Promise<boolean> {
   const { data, error } = await supabase
     .from("study_sessions")

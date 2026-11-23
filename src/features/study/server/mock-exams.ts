@@ -28,10 +28,10 @@ const isUuid = (value: string) => z.uuid().safeParse(value).success;
  */
 export async function getOpenMockExam(
   courseId: string,
-  now: Date = new Date(),
 ): Promise<string | null> {
   if (!isUuid(courseId) || !(await getUser())) return null;
   const supabase = await createClient();
+  const now = new Date();
   const { data, error } = await supabase
     .from("mock_exams")
     .select("id, status, failure, created_at")
@@ -53,10 +53,10 @@ export async function getOpenMockExam(
 export async function getMockExam(
   courseId: string,
   mockId: string,
-  now: Date = new Date(),
 ): Promise<MockExamView | null> {
   if (!isUuid(courseId) || !isUuid(mockId) || !(await getUser())) return null;
   const supabase = await createClient();
+  const now = new Date();
   const load = () =>
     supabase
       .from("mock_exams")

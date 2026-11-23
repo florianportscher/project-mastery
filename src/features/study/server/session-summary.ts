@@ -14,15 +14,15 @@ import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
 /**
- * What the close card shows of a Chat's Study session at `now`: each KC
- * checked in it with its latest result there and its next review. Null
- * without a session.
+ * What the close card shows of a Chat's Study session now: each KC checked
+ * in it with its latest result there and its next review. Null without a
+ * session.
  */
 export async function loadSessionSummary(
   supabase: Supabase,
   chatId: string,
-  now: Date = new Date(),
 ): Promise<SessionSummary | null> {
+  const now = new Date();
   const session = await loadChatSession(supabase, chatId);
   if (!session) return null;
   const { courseId } = session;
