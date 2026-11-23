@@ -14,6 +14,9 @@ const checkoutPort =
 const PORT = Number(process.env.PORT ?? checkoutPort);
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`;
 
+const FAULT_PORT = PORT + 200;
+const faultURL = `http://localhost:${FAULT_PORT}`;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -27,7 +30,22 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+      testIgnore: /mock-fault\.spec\.ts/,
+    },
+    // Its own server, where every mock model call fails (`agent up
+    // --mock-fault`); no other spec runs on it.
+    ...(process.env.PLAYWRIGHT_BASE_URL
+      ? []
+      : [
+          {
+            name: "mock-fault",
+            use: { ...devices["Desktop Chrome"], baseURL: faultURL },
+            testMatch: /mock-fault\.spec\.ts/,
+          },
+        ]),
     {
       // Only the specs that depend on screen size.
       name: "mobile",
@@ -40,12 +58,20 @@ export default defineConfig({
   // (e.g. a Vercel preview), where signed-in tests skip themselves.
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
-    : {
-        command: `pnpm start --port ${PORT}`,
-        url: baseURL,
-        // A Daily limit that tests reach by seeding usage (seedAiSpend).
-        env: { AI_PROVIDER: "mock", AI_DAILY_LIMIT_USD: "1" },
-        // A server already on the port is another build, never this one.
-        reuseExistingServer: false,
-      },
+    : [
+        {
+          command: `pnpm start --port ${PORT}`,
+          url: baseURL,
+          // A Daily limit that tests reach by seeding usage (seedAiSpend).
+          env: { AI_PROVIDER: "mock", AI_DAILY_LIMIT_USD: "1" },
+          // A server already on the port is another build, never this one.
+          reuseExistingServer: false,
+        },
+        {
+          command: `pnpm start --port ${FAULT_PORT}`,
+          url: faultURL,
+          env: { AI_PROVIDER: "mock", MOCK_AI_FAULT: "error" },
+          reuseExistingServer: false,
+        },
+      ],
 });
