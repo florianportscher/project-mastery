@@ -170,10 +170,6 @@ const GOOGLE_PREFIX = "google/";
  * which serves no Google model on its free credit. Muse and the embeddings
  * stay on the gateway.
  */
-function routeToGeminiApi(apiKey: string) {
-  globalThis.AI_SDK_DEFAULT_PROVIDER ??= geminiRouter(apiKey);
-}
-
 function geminiRouter(apiKey: string) {
   const google = createGoogleGenerativeAI({ apiKey });
   const geminiId = (id: string) => id.slice(GOOGLE_PREFIX.length);
@@ -196,7 +192,9 @@ function geminiRouter(apiKey: string) {
 function routeModels(env: AiEnv) {
   if (env.AI_PROVIDER === "mock") routeToMockModels();
   else if (env.GOOGLE_GENERATIVE_AI_API_KEY) {
-    routeToGeminiApi(env.GOOGLE_GENERATIVE_AI_API_KEY);
+    globalThis.AI_SDK_DEFAULT_PROVIDER ??= geminiRouter(
+      env.GOOGLE_GENERATIVE_AI_API_KEY,
+    );
   }
 }
 
