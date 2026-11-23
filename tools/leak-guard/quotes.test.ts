@@ -3,7 +3,12 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { fingerprints, loadFingerprints, matchingLines } from "./quotes";
+import {
+  fingerprints,
+  loadFingerprints,
+  matchingLines,
+  quotedDiffLines,
+} from "./quotes";
 
 const material =
   "Die Eigenwerte einer Matrix sind die Nullstellen des charakteristischen Polynoms, wie gezeigt.";
@@ -35,6 +40,13 @@ describe("matchingLines", () => {
     expect(
       matchingLines("Nothing to see here at all, really none", known),
     ).toEqual([]);
+  });
+});
+
+describe("quotedDiffLines", () => {
+  it("finds a quote in an added line that starts with `++ `", () => {
+    const diff = `diff --git a/n.md b/n.md\n--- a/n.md\n+++ b/n.md\n@@ -0,0 +1,2 @@\n+fine\n++ ${material}\n`;
+    expect(quotedDiffLines(diff, known)).toEqual(["n.md:2"]);
   });
 });
 
@@ -78,6 +90,17 @@ describe("the gh hook in guard-bash.sh", () => {
   it("refuses a body file and a gh api field file", () => {
     expect(run(`gh pr create --title t --body-file ${body}`).status).toBe(2);
     expect(run(`gh api repos/x/y/issues -F body=@${body}`).status).toBe(2);
+  });
+
+  it("reads a relative body file from the command's directory and refuses an unreadable one", () => {
+    const relative = run(
+      `gh pr create --title t --body-file ${path.relative(path.join(import.meta.dirname, "../.."), body)}`,
+    );
+    expect(relative.status).toBe(2);
+    expect(relative.stderr).toMatch(/quotes 8 or more words/);
+    const missing = run(`gh pr create --title t --body-file nope/missing.md`);
+    expect(missing.status).toBe(2);
+    expect(missing.stderr).toMatch(/cannot read a body file/);
   });
 
   it("allows clean text and unrelated gh commands", () => {

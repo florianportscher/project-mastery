@@ -59,13 +59,18 @@ if runs 'gh\s+((issue|pr)\s+(create|edit|comment)|api\s)' &&
   { ! runs 'gh\s+api\s' || grep -qE '\s(-f|-F|--field|--raw-field|--input)(\s|=)' <<<"$cmd"; }; then
   files=$(grep -oE '(--body-file|--input|-F)[ =]+['"'"'"]?[^ '"'"'";&|]+|=@['"'"'"]?[^ '"'"'";&|]+' <<<"$cmd" |
     sed -E "s/^(--body-file|--input|-F)[ =]+//; s/^.*=@//; s/^['\"]//")
+  if [[ -n "$cwd" && -d "$cwd" ]]; then cd "$cwd" || true; fi
   text=$(
     printf '%s\n' "$cmd"
     while IFS= read -r file; do
-      [[ -n "$file" && "$file" != -* && -f "$file" ]] && cat "$file"
+      [[ -z "$file" || "$file" == -* ]] && continue
+      cat "$file" 2>/dev/null || echo "UNREADABLE: $file"
     done <<<"$files"
   )
-  if [[ -n "$cwd" && -d "$cwd" ]]; then cd "$cwd" || true; fi
+  if grep -q '^UNREADABLE: ' <<<"$text"; then
+    echo "The leak guard cannot read a body file of this gh command: $(grep -m1 '^UNREADABLE: ' <<<"$text" | cut -d' ' -f2-). Write it first, or fix the path." >&2
+    exit 2
+  fi
   if ! reason=$(pnpm -s leak-guard check-text <<<"$text" 2>&1); then
     echo "$reason" >&2
     exit 2

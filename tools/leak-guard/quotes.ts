@@ -11,10 +11,12 @@ import path from "node:path";
 
 export const WINDOW = 8;
 
-export const casesDir = (env: NodeJS.ProcessEnv = process.env) =>
+type Env = Record<string, string | undefined>;
+
+export const casesDir = (env: Env = process.env) =>
   env.MASTERY_CASES_DIR ?? path.join(homedir(), "project-mastery-cases");
 
-export const fingerprintsFile = (env: NodeJS.ProcessEnv = process.env) =>
+export const fingerprintsFile = (env: Env = process.env) =>
   path.join(casesDir(env), "fingerprints.txt");
 
 /** Lowercase letters and digits only: punctuation, markup and line breaks do not count. */
@@ -31,6 +33,30 @@ export function fingerprints(text: string): Set<string> {
     found.add(fingerprint(words.slice(i, i + WINDOW)));
   }
   return found;
+}
+
+/** `file:line` of each added line of a unified diff that quotes a real Material. */
+export function quotedDiffLines(diff: string, known: Set<string>) {
+  const hits: string[] = [];
+  let file = "";
+  let line = 0;
+  let header = false; // only between `diff --git` and the first `@@` are `+++ ` lines headers
+  for (const text of diff.split("\n")) {
+    if (text.startsWith("diff --git ")) header = true;
+    else if (header && text.startsWith("+++ ")) {
+      file = text.slice(4).replace(/^b\//, "");
+    } else if (header && text.startsWith("--- ")) continue;
+    else if (text.startsWith("@@")) {
+      header = false;
+      line = Number(/\+(\d+)/.exec(text)?.[1] ?? 1) - 1;
+    } else if (!header && text.startsWith("+")) {
+      line++;
+      if (matchingLines(text.slice(1), known).length > 0) {
+        hits.push(`${file}:${line}`);
+      }
+    }
+  }
+  return hits;
 }
 
 /** The 1-based lines of the text where a window starts that is a fingerprint. */
@@ -55,7 +81,9 @@ export const FINGERPRINTS_MISSING =
   "The fingerprints of the real Materials are missing, so the quote check cannot run. Make them with `pnpm leak-guard fingerprints` (reads staging, writes to the private cases repo).";
 
 /** The stored fingerprints; throws, so the check fails closed, when they are missing. */
-export function loadFingerprints(env: NodeJS.ProcessEnv = process.env) {
+export function loadFingerprints(
+  env: Record<string, string | undefined> = process.env,
+) {
   const file = fingerprintsFile(env);
   if (!existsSync(file)) throw new Error(FINGERPRINTS_MISSING);
   return new Set(readFileSync(file, "utf8").split("\n").filter(Boolean));

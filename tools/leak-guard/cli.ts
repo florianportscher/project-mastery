@@ -14,7 +14,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { readAllowlist, refusal, unlistedDocuments } from "./allowlist";
 import { writeFingerprints } from "./generate";
-import { loadFingerprints, matchingLines } from "./quotes";
+import { loadFingerprints, matchingLines, quotedDiffLines } from "./quotes";
 
 const ZERO = /^0+$/;
 
@@ -80,22 +80,7 @@ function quotedLines(commit: string, known: Set<string>) {
     "-U0",
     commit,
   ).toString("utf8");
-  const hits: string[] = [];
-  let file = "";
-  let line = 0;
-  for (const text of diff.split("\n")) {
-    if (text.startsWith("+++ ")) file = text.slice(4).replace(/^b\//, "");
-    else if (text.startsWith("--- ")) continue;
-    else if (text.startsWith("@@")) {
-      line = Number(/\+(\d+)/.exec(text)?.[1] ?? 1) - 1;
-    } else if (text.startsWith("+")) {
-      line++;
-      if (matchingLines(text.slice(1), known).length > 0) {
-        hits.push(`${file}:${line}`);
-      }
-    }
-  }
-  return hits;
+  return quotedDiffLines(diff, known);
 }
 
 /** Every commit of each pushed ref that the remote does not have yet, file by file. */

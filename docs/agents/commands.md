@@ -30,6 +30,7 @@ Every command and slash skill of this repo, one line each, for the maintainer an
 | `pnpm test:e2e`      | Playwright tests; rebuilds the app first when the code is newer |
 | `pnpm db:test`       | Database tests (Row Level Security) in `supabase/tests/`        |
 | `pnpm db:lint`       | Lints the local database schema                                 |
+| `pnpm leak-guard`    | Git hook checks for document files and quoted real Materials    |
 
 ## Local database
 
@@ -63,15 +64,14 @@ In an agent worktree the local database is shared: see [worktrees.md](worktrees.
 
 These call real models and cost money; read [live-ai.md](live-ai.md) first.
 
-| Command                 | What it does                                                                                                                                                                                    |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm smoke <name>`     | Runs one feature path once on a real model and checks it                                                                                                                                        |
-| `pnpm gold <command>`   | Pulls, seeds or lists the gold Course snapshots in `evals/gold/`                                                                                                                                |
-| `pnpm tutor-eval <cmd>` | Runs a tutoring scenario from `evals/tutor/scenarios/`                                                                                                                                          |
-| `pnpm brief-eval <cmd>` | Runs a Brief scenario from `evals/brief/scenarios/`                                                                                                                                             |
-| `pnpm metrics`          | Scores Chats in Langfuse                                                                                                                                                                        |
-| `pnpm leak-guard <cmd>` | Git hooks' check for unlisted document files and quoted real Materials; `fingerprints` rebuilds the quote fingerprints from staging ([ADR 0034](../adr/0034-leak-guards-for-real-materials.md)) |
-| `pnpm langfuse:models`  | Pushes the model prices in `src/lib/ai/prices.ts` to Langfuse                                                                                                                                   |
+| Command                 | What it does                                                     |
+| ----------------------- | ---------------------------------------------------------------- |
+| `pnpm smoke <name>`     | Runs one feature path once on a real model and checks it         |
+| `pnpm gold <command>`   | Pulls, seeds or lists the gold Course snapshots in `evals/gold/` |
+| `pnpm tutor-eval <cmd>` | Runs a tutoring scenario from `evals/tutor/scenarios/`           |
+| `pnpm brief-eval <cmd>` | Runs a Brief scenario from `evals/brief/scenarios/`              |
+| `pnpm metrics`          | Scores Chats in Langfuse                                         |
+| `pnpm langfuse:models`  | Pushes the model prices in `src/lib/ai/prices.ts` to Langfuse    |
 
 ## Slash skills
 
