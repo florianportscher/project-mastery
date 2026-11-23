@@ -5,6 +5,7 @@ import {
   type KnowledgeMap,
 } from "@/features/knowledge-map/schemas";
 import { allRows } from "@/lib/supabase/all-rows";
+import { inSlices } from "@/lib/supabase/in-slices";
 import type { Supabase } from "@/lib/supabase/types";
 
 /**
@@ -57,21 +58,23 @@ export async function loadExamChunkIds(
       .order("id")
       .range(from, to),
   );
-  const ids = exercises.map(({ id }) => id);
-  const chunks: string[] = [];
-  // Ids go in the query string, so long lists are read in slices.
-  for (let start = 0; start < ids.length; start += 100) {
-    const rows = await allRows("Loading the exam's chunks", (from, to) =>
-      supabase
-        .from("exercise_chunks")
-        .select("chunk_id")
-        .in("exercise_id", ids.slice(start, start + 100))
-        .order("chunk_id")
-        .range(from, to),
-    );
-    chunks.push(...rows.map(({ chunk_id }) => chunk_id));
-  }
-  return chunks;
+  const action = "Loading the exam's chunks";
+  const rows = await inSlices(
+    action,
+    exercises.map(({ id }) => id),
+    async (ids) => ({
+      data: await allRows(action, (from, to) =>
+        supabase
+          .from("exercise_chunks")
+          .select("chunk_id")
+          .in("exercise_id", ids)
+          .order("chunk_id")
+          .range(from, to),
+      ),
+      error: null,
+    }),
+  );
+  return rows.map(({ chunk_id }) => chunk_id);
 }
 
 /**

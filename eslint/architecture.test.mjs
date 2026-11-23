@@ -379,6 +379,12 @@ const cases = {
       expected: ["no-restricted-syntax"],
     },
     {
+      name: "long id lists go through inSlices",
+      file: "src/features/auth/server/example.ts",
+      code: 'import "server-only";\nexport const read = (q: { in(c: string, ids: string[]): unknown }, ids: string[]) => q.in("id", ids.slice(0, 100));',
+      expected: ["no-restricted-syntax"],
+    },
+    {
       name: "process.env only in env modules",
       file: "src/features/auth/domain/example.ts",
       code: "export const key = process.env.SECRET;",
