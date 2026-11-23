@@ -201,6 +201,7 @@ Each technical decision is an ADR in [adr/](adr/), with its context, the choice 
 - [0031](adr/0031-developer-view-outside-production.md): Developer view outside production: `/dev/…` pages for accounts with a `developers` row, 404 in production, reading one `course_build_snapshot` jsonb as the signed-in user
 - [0032](adr/0032-exercises-as-whole-tasks-and-exams-as-records.md): Exercises as whole tasks and old exams as records: a grouping call in the build replaces pairing, `exams` replace the Chapter exam flags; supersedes the exam parts of 0023
 - [0033](adr/0033-topics-from-kcs-and-parse-without-outline.md): Topics from KCs, parse without Outline: the tree call groups KCs by subject, chunks carry their heading, teaching batches per Material replace Chapter units; supersedes the Outline, Chapter units and Topics-from-Chapters parts of 0023
+- [0034](adr/0034-leak-guards-for-real-materials.md): Leak guards for real Materials: a document-file allowlist in the git hooks, 8-word fingerprints for pushes and `gh` calls, the private cases repo for everything derived
 
 ## Comments
 
