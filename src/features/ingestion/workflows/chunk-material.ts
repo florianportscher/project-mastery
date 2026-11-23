@@ -2,12 +2,28 @@ import "server-only";
 import { storedUnitsSchema } from "@/features/ingestion/ai/page-units";
 import { chunksFromUnits } from "@/features/ingestion/domain/chunk-joining";
 import { materialLanguageAndNotes } from "@/features/ingestion/domain/language";
-import {
-  hasChunks,
-  loadMaterial,
-} from "@/features/ingestion/workflows/parse-steps";
+import { loadMaterial } from "@/features/ingestion/workflows/parse-steps";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { failed } from "@/lib/supabase/failed";
+import type { AdminSupabase } from "@/lib/supabase/types";
+
+/**
+ * Whether the Material has chunks. They are written in one transaction
+ * after every page is read, so existing ones are complete: a parse started
+ * again after a failed embed keeps them and their vectors.
+ */
+async function hasChunks(
+  supabase: AdminSupabase,
+  materialId: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("chunks")
+    .select("id")
+    .eq("material_id", materialId)
+    .limit(1);
+  if (error) failed("Loading the chunks", error);
+  return data.length > 0;
+}
 
 /**
  * The chunk step of a parse (`parse-material.ts`), after every page is
