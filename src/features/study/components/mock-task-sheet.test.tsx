@@ -139,6 +139,31 @@ test("submits only after a save still in flight has landed", async () => {
   expect(submitMockExam).toHaveBeenCalledExactlyOnceWith({ mockId: MOCK });
 });
 
+test("saves an answer again after its save did not reach the server", async () => {
+  saveMockTaskAnswer.mockRejectedValueOnce(new Error("Failed to fetch"));
+  sheet(30);
+  const box = screen.getByRole("textbox");
+  fireEvent.change(box, { target: { value: "25 kN" } });
+  fireEvent.blur(box);
+  await act(async () => {});
+  expect(screen.getByRole("status")).not.toHaveTextContent("Saved");
+
+  fireEvent.blur(box);
+  await act(async () => {});
+  expect(saveMockTaskAnswer).toHaveBeenCalledTimes(2);
+  expect(screen.getByRole("status")).toHaveTextContent("Saved");
+});
+
+test("submits at 0 when the open answer's save does not reach the server", async () => {
+  saveMockTaskAnswer.mockRejectedValue(new Error("Failed to fetch"));
+  sheet(1);
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "25 kN" } });
+
+  await act(async () => vi.advanceTimersByTime(60_000));
+
+  expect(submitMockExam).toHaveBeenCalledExactlyOnceWith({ mockId: MOCK });
+});
+
 test("Submit asks first", async () => {
   sheet(30);
   fireEvent.click(screen.getByRole("button", { name: "Submit" }));
