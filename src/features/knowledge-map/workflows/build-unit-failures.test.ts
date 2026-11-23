@@ -52,14 +52,24 @@ test("stores the units answered before the rate limit, and extracts the rest aft
   // The third call meets the limit, which names 20 s.
   const { extractions } = useBuildModels({ rateLimitedCalls: [3] });
   const storedAtWait: number[] = [];
+  const progressAtWait: unknown[] = [];
   sleep.mockImplementation(async () => {
     storedAtWait.push(db.tables.unit_extractions.length);
+    progressAtWait.push(build()!.progress);
   });
 
   await update();
 
   expect(sleep.mock.calls).toEqual([[60_000]]);
   expect(storedAtWait).toEqual([2]);
+  expect(progressAtWait).toEqual([
+    {
+      stage: "materials",
+      done: 2,
+      total: 3,
+      waitUntil: expect.stringMatching(/^\d{4}-/),
+    },
+  ]);
   expect(extractions.map((unit) => unit.material)).toEqual([
     "Material 0",
     "Material 1",

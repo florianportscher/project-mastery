@@ -10,6 +10,7 @@ import { acyclicLinks } from "@/features/knowledge-map/domain/prerequisite-cycle
 import { kcAssumesSchema } from "@/features/knowledge-map/schemas";
 import {
   runCalls,
+  recordProgress,
   touchBuild,
 } from "@/features/knowledge-map/workflows/build-steps";
 import {
@@ -67,7 +68,7 @@ export async function recheckAssumes(
   "use step";
   const startedAt = Date.now();
   const supabase = createAdminClient();
-  const owner = await touchBuild(supabase, courseId);
+  const owner = await touchBuild(supabase, courseId, { stage: "connecting" });
   if (!owner) return { ok: true, left: null, after };
 
   const [build, kcs] = await Promise.all([
@@ -200,6 +201,9 @@ export async function recheckAssumes(
   // The names up to the first call that never ran are done.
   const firstUnasked = calls.findIndex((_, index) => !asked.has(index));
   const done = firstUnasked < 0 ? batch.length : firstUnasked * NAMES_PER_CALL;
+  if (waitMs !== undefined) {
+    await recordProgress(supabase, courseId, { stage: "connecting" }, waitMs);
+  }
   return {
     ok: true,
     left: names.length - done,

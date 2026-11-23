@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(14);
+select plan(15);
 
 insert into auth.users (id, email)
 values
@@ -96,9 +96,17 @@ select is(
   0, 'another Student reads none of the map');
 
 -- A rebuild whose workflow does not start fails with a reason; the map stays.
+reset role;
+update public.knowledge_map_builds set progress = '{"stage": "topics"}'
+  where course_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+set local role authenticated;
 set local request.jwt.claims = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
 select is(public.queue_knowledge_map_build('aaaaaaaa-0000-0000-0000-000000000001'), true,
   'the owner starts a rebuild');
+select is(
+  (select progress from public.knowledge_map_builds
+    where course_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
+  null, 'a rebuild starts without the last build''s progress');
 select is(public.record_knowledge_map_build_start_failure('aaaaaaaa-0000-0000-0000-000000000001'), true,
   'a failed start is recorded');
 select results_eq(

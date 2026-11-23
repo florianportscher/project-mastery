@@ -8,7 +8,10 @@ import {
 } from "@/features/knowledge-map/domain/build-state";
 import { exerciseLabel } from "@/features/knowledge-map/domain/exercise-label";
 import { loadMapRows } from "@/features/knowledge-map/server/stored-map";
-import { checkReportSchema } from "@/features/knowledge-map/schemas";
+import {
+  buildProgressSchema,
+  checkReportSchema,
+} from "@/features/knowledge-map/schemas";
 import type {
   KcSourceView,
   KcView,
@@ -48,7 +51,7 @@ export async function getKnowledgeMap(
     supabase
       .from("knowledge_map_builds")
       .select(
-        "status, failure_reason, finished_at, check_report, heartbeat_at, needs_update",
+        "status, failure_reason, finished_at, started_at, progress, check_report, heartbeat_at, needs_update",
       )
       .eq("course_id", courseId)
       .maybeSingle(),
@@ -118,6 +121,11 @@ export async function getKnowledgeMap(
         status: buildStatus.parse(build.data.status),
         failureReason: build.data.failure_reason,
         finishedAt: build.data.finished_at,
+        startedAt: build.data.started_at,
+        progress: buildProgressSchema
+          .nullable()
+          .catch(null)
+          .parse(build.data.progress),
       },
       build.data.heartbeat_at,
     );

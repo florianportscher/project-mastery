@@ -250,6 +250,28 @@ describe("Update map", () => {
     ]);
   });
 
+  test("records the stage and its count of sections done as it reads the Materials", async () => {
+    for (const title of ["Vectors", "Sums", "Bases"]) {
+      seedMaterial(db, { sections: [{ title }] });
+    }
+    const progress: unknown[] = [];
+    useBuildModels({ afterCall: () => progress.push(build()!.progress) });
+
+    await update();
+
+    expect(progress).toEqual(
+      [0, 1, 2].map((done) => ({
+        stage: "materials",
+        done,
+        total: 3,
+      })),
+    );
+    expect(build()).toMatchObject({
+      status: "built",
+      progress: { stage: "finishing" },
+    });
+  });
+
   test("makes no call for units it extracted before", async () => {
     seedMaterial(db, { sections: [{ title: "Vectors" }] });
     seedMaterial(db, { sections: [{ title: "Sums" }] });

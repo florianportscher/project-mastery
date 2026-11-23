@@ -496,6 +496,7 @@ export function queueBuild(db: BuildDb) {
       finished_at: null,
       started_at: now(),
       heartbeat_at: now(),
+      progress: null,
       topic_tree_hash: last?.topic_tree_hash ?? null,
       exercise_groups: last?.exercise_groups ?? null,
       exercise_grouping_hash: last?.exercise_grouping_hash ?? null,

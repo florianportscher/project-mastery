@@ -6,6 +6,8 @@ const built = {
   status: "built",
   failureReason: null,
   finishedAt: null,
+  startedAt: "2026-10-30T10:00:00Z",
+  progress: null,
 } as const;
 
 describe("canBuildMap", () => {
