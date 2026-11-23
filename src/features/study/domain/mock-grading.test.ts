@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { awardedPoints, checkedResult, mockScore } from "./mock-grading";
+import {
+  awardedPoints,
+  checkedResult,
+  mockResultShares,
+  mockScore,
+} from "./mock-grading";
 
 const step = (points: number) => ({ points, reason: "Step." });
 
@@ -44,4 +49,12 @@ describe("mockScore", () => {
       mockScore([{ points: 8, awarded: null, predictedSuccess: 0.5 }]),
     ).toEqual({ score: 0, brier: null });
   });
+});
+
+test("a mock with no task graded has no score to show", () => {
+  const { scorePercent } = mockResultShares([
+    { points: 8, awarded: null, predictedSuccess: 0.5, topic: "Thrust" },
+  ]);
+
+  expect(scorePercent).toBeNull();
 });
