@@ -105,6 +105,16 @@ export function replySegments(
   return segments;
 }
 
+/**
+ * Whether an AI reply that has ended shows the Student nothing: no text and
+ * no tool call, question or reading.
+ */
+export function replyIsEmpty(parts: ChatUIMessage["parts"]): boolean {
+  return replySegments(parts, { inProgress: false }).every(
+    (segment) => segment.kind === "text" && segment.text.trim() === "",
+  );
+}
+
 export type ToolPart = Extract<Part, { toolCallId: string }>;
 
 /** The question of an `ask` call that stored it; null for any other part. */

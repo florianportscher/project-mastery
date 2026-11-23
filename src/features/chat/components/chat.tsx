@@ -34,6 +34,7 @@ import { ContextAction } from "@/features/chat/components/context-action";
 import { MessageActionRow } from "@/features/chat/components/message-action-row";
 import { ReplyFooter } from "@/features/chat/components/reply-footer";
 import { ReplyParts } from "@/features/chat/components/reply-parts";
+import { replyIsEmpty } from "@/features/chat/domain/reply-steps";
 import { chatLabel } from "@/features/chat/domain/chat-label";
 import { SessionStrip } from "@/features/chat/components/session-strip";
 import { sessionStrip } from "@/features/chat/domain/session-strip";
@@ -112,6 +113,8 @@ type ChatProps = {
    */
   showDetails: boolean;
 };
+
+const emptyReplyMessage = "The AI sent no answer. Try again.";
 
 /**
  * A Chat with the AI: the messages, streamed replies and the message input.
@@ -254,6 +257,12 @@ export function Chat({
   const ended =
     chat.ended || endedHere || error?.message === sessionEndedMessage;
   const lastMessage = messages.at(-1);
+  // A reply that ended with nothing to show fails like one that errored.
+  const emptyReply =
+    status === "ready" &&
+    lastMessage?.role === "assistant" &&
+    !lastMessage.metadata?.stopped &&
+    replyIsEmpty(lastMessage.parts);
   const strip = sessionStrip(messages);
   // The replies loaded with the Chat; any other arrived while it was open.
   const storedIds = useMemo(
@@ -318,6 +327,7 @@ export function Chat({
             ) : (
               messages.map((message) => {
                 const isLast = message === lastMessage;
+                if (isLast && emptyReply) return null;
                 const isStreaming = isBusy && isLast;
                 // Until the reply has text, a line says what the AI is doing in
                 // its place, in the same box the text then fills.
@@ -402,9 +412,9 @@ export function Chat({
             )}
             {/* At the limit or once ended, the notice below explains the
               refusal. */}
-            {error && !limitReached && !ended && (
+            {(error || emptyReply) && !limitReached && !ended && (
               <ReplyError
-                message={error.message}
+                message={error?.message ?? emptyReplyMessage}
                 onRetry={() => void regenerate()}
               />
             )}
