@@ -39,6 +39,8 @@ import {
   runSql,
   startSupabase,
 } from "./supabase";
+import { walk } from "./walk";
+import { diffWalks } from "./walk-diff";
 
 const HELP = `pnpm -s agent <command>   (local stack, except \`staging\`)
 
@@ -62,6 +64,10 @@ Browser (one session per checkout, login survives restarts)
 Diagnostics
   check                  compile issues (all routes), runtime and server errors
   routes                 the app's routes
+
+Walk (replaces the test users' data with seeded data; needs the app on the mock AI)
+  walk <dir>             open every page as student, the main pages as classmate; write one normalized text snapshot each
+  walk diff <a> <b>      \`same: N pages\` when two walks match, else each changed page's diff
 
 Data
   sql "<query>" [--as student|classmate|anon|<email>] [--all]
@@ -295,6 +301,15 @@ async function run(
       return resetStagingMap(args[0]);
     case "inspect":
       return inspect(args);
+    case "walk": {
+      if (args[0] === "diff") {
+        if (!args[1] || !args[2])
+          throw new AgentError("Usage: agent walk diff <dirA> <dirB>");
+        return diffWalks(path.resolve(args[1]), path.resolve(args[2]));
+      }
+      if (!args[0]) throw new AgentError("Usage: agent walk <dir>");
+      return walk(path.resolve(args[0]), await requireDevServer(), login);
+    }
     case "users":
       return Object.entries(PERSONAS)
         .map(([name, { email }]) => `${name.padEnd(10)}${email}`)
