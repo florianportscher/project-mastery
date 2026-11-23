@@ -21,7 +21,7 @@ import {
 } from "./archive-bundle";
 import { AgentError } from "./config";
 import { fetchSnapshot, noKeys, observations, type Raw, UUID } from "./inspect";
-import { queryStaging, stagingEnv } from "./staging";
+import { queryStaging, stagingEnv, writeStaging } from "./staging";
 
 /**
  * `pnpm archive course <courseId> [--note "…"]`: keeps a Course's current map
@@ -225,7 +225,7 @@ async function archiveCase(
     materials: number;
     assemble: (caseId: string, archivedAt: string) => Bundle;
   }>,
-): Promise<string> {
+): Promise<{ caseId: string; report: string }> {
   const dirs = {
     cases: real(casesDir(env)),
     materials: real(materialsDir(env)),
@@ -275,7 +275,7 @@ async function archiveCase(
   }
 
   const { calls } = bundle.manifest;
-  return [
+  const report = [
     `case ${caseId} pushed to the cases repo · ${calls.archived} calls${calls.missing ? `, ${calls.missing} missing` : ""} · ${materials} Materials in ${dirs.materials}`,
     ...Object.keys(files).map(
       (name) =>
@@ -284,14 +284,19 @@ async function archiveCase(
     // Placeholder until `pnpm leak-guard` exists (#382): then refresh the quote fingerprints here.
     "quote fingerprints not refreshed",
   ].join("\n");
+  return { caseId, report };
 }
 
 /** Archives a Course's current map build as a case. */
-export function archiveCourse(
+export async function archiveCourse(
   courseId: string,
   note: string | null,
   env: Env = process.env,
 ): Promise<string> {
+  return (await courseCase(courseId, note, env)).report;
+}
+
+function courseCase(courseId: string, note: string | null, env: Env) {
   return archiveCase("map", env, async (dirs) => {
     const snapshot = await fetchSnapshot(courseId, env);
     const chunks = await allRows<{ id: string; markdown: string }>(
@@ -327,11 +332,15 @@ export function archiveCourse(
 }
 
 /** Archives a Chat as a case: its messages, its Course's build and the calls of its session. */
-function archiveChat(
+async function archiveChat(
   chatId: string,
   note: string | null,
   env: Env = process.env,
 ): Promise<string> {
+  return (await chatCase(chatId, note, env)).report;
+}
+
+function chatCase(chatId: string, note: string | null, env: Env) {
   if (!UUID.test(chatId))
     throw new AgentError(`"${chatId}" is not a Chat id (a UUID).`);
   return archiveCase("chat", env, async (dirs) => {
@@ -373,7 +382,129 @@ function archiveChat(
   });
 }
 
-const USAGE = 'Usage: pnpm archive <course|chat> <id> [--note "…"]';
+/** A row of `developer_flags` as `archive flagged` reads it. */
+export type Flag = {
+  id: string;
+  course_id: string | null;
+  chat_id: string | null;
+  note: string;
+  app_commit: string | null;
+  finished_at: string | null;
+};
+
+/** The Course's current build, as the snapshot reports it. */
+export type CurrentBuild = {
+  appCommit: string | null;
+  finishedAt: string | null;
+} | null;
+
+/**
+ * What to do with one unarchived flag: archive a Chat or the build it was sent
+ * for, or skip it. A map build flag is refused when the Course's current
+ * build is another one, so a rebuild is never archived under an old note.
+ */
+export function flagAction(
+  flag: Flag,
+  current: CurrentBuild,
+):
+  | { action: "chat"; chatId: string }
+  | { action: "map"; courseId: string }
+  | { action: "lost" }
+  | { action: "stale"; reason: string } {
+  if (!flag.course_id) return { action: "lost" };
+  if (flag.chat_id) return { action: "chat", chatId: flag.chat_id };
+  const time = (value: string | null) =>
+    value === null ? null : Date.parse(value);
+  const same =
+    current !== null &&
+    current.appCommit === flag.app_commit &&
+    time(current.finishedAt) === time(flag.finished_at);
+  if (!same)
+    return {
+      action: "stale",
+      reason: current
+        ? `the Course was rebuilt since (flagged commit ${flag.app_commit ?? "-"} finished ${flag.finished_at ?? "-"}, now commit ${current.appCommit ?? "-"} finished ${current.finishedAt ?? "-"})`
+        : "the Course has no build any more",
+    };
+  return { action: "map", courseId: flag.course_id };
+}
+
+async function markFlag(id: string, caseId: string, env: Env): Promise<void> {
+  await writeStaging(
+    `PATCH developer_flags?id=eq.${id}`,
+    JSON.stringify({ case_id: caseId }),
+    env,
+  );
+}
+
+/** One flag's line for the report, archiving it when it can be. */
+async function archiveFlag(flag: Flag, env: Env): Promise<string> {
+  const label = flag.chat_id
+    ? `Chat ${flag.chat_id}`
+    : `build of Course ${flag.course_id ?? "(deleted)"}`;
+  const snapshot = flag.course_id
+    ? await fetchSnapshot(flag.course_id, env)
+    : null;
+  const build = snapshot?.build;
+  const todo = flagAction(
+    flag,
+    build
+      ? { appCommit: build.appCommit ?? null, finishedAt: build.finishedAt }
+      : null,
+  );
+  if (todo.action === "lost") {
+    return `${label}: lost, its Course was deleted`;
+  }
+  if (todo.action === "stale") {
+    const root = path.join(real(casesDir(env)), "cases");
+    const would = nextCaseId(
+      existsSync(root) ? readdirSync(root) : [],
+      new Date().toISOString().slice(0, 10),
+      "map",
+    );
+    return `${label}: not archived, ${todo.reason}. It would have been case ${would}.`;
+  }
+  const note = flag.note || null;
+  const { caseId } =
+    todo.action === "chat"
+      ? await chatCase(todo.chatId, note, env)
+      : await courseCase(todo.courseId, note, env);
+  try {
+    await markFlag(flag.id, caseId, env);
+  } catch (error) {
+    // The case is pushed: name it, so the flag can be set by hand.
+    throw new Error(
+      `case ${caseId} was archived but the flag was not marked (${error instanceof Error ? error.message : String(error)}); set developer_flags.case_id by hand`,
+    );
+  }
+  return `${label}: case ${caseId}`;
+}
+
+/**
+ * `pnpm archive flagged`: archives each developer flag that has no case yet,
+ * with its note, and sets the flag's `case_id`. One line per flag.
+ */
+async function archiveFlagged(env: Env): Promise<string> {
+  const flags = await allRows<Flag>(
+    "developer_flags?case_id=is.null&select=id,course_id,chat_id,note,app_commit,finished_at&order=created_at",
+    env,
+  );
+  if (flags.length === 0) return "no flagged runs waiting";
+  const lines: string[] = [];
+  for (const flag of flags) {
+    try {
+      lines.push(await archiveFlag(flag, env));
+    } catch (error) {
+      lines.push(
+        `flag ${flag.id}: failed, ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+  return lines.join("\n");
+}
+
+const USAGE =
+  'Usage: pnpm archive <course|chat> <id> [--note "…"] | pnpm archive flagged';
 
 /** `pnpm archive course <courseId> [--note "…"]`, `pnpm archive chat <chatId> [--note "…"]`. */
 export async function archive(
@@ -386,6 +517,7 @@ export async function archive(
     options: { note: { type: "string" } },
   });
   const [kind, id] = positionals;
+  if (kind === "flagged") return archiveFlagged(env);
   if (!id) throw new AgentError(USAGE);
   const note = values.note ?? null;
   if (kind === "course") return archiveCourse(id, note, env);

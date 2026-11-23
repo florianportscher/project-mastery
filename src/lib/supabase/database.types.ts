@@ -495,6 +495,65 @@ export type Database = {
           },
         ];
       };
+      developer_flags: {
+        Row: {
+          app_commit: string | null;
+          case_id: string | null;
+          chat_id: string | null;
+          course_id: string | null;
+          created_at: string;
+          finished_at: string | null;
+          id: string;
+          note: string;
+          owner: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          app_commit?: string | null;
+          case_id?: string | null;
+          chat_id?: string | null;
+          course_id?: string | null;
+          created_at?: string;
+          finished_at?: string | null;
+          id?: string;
+          note?: string;
+          owner: string;
+        };
+        Update: {
+          app_commit?: string | null;
+          case_id?: string | null;
+          chat_id?: string | null;
+          course_id?: string | null;
+          created_at?: string;
+          finished_at?: string | null;
+          id?: string;
+          note?: string;
+          owner?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "developer_flags_chat_id_fkey";
+            columns: ["chat_id"];
+            isOneToOne: false;
+            referencedRelation: "chats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "developer_flags_course_id_fkey";
+            columns: ["course_id"];
+            isOneToOne: false;
+            referencedRelation: "courses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "developer_flags_owner_fkey";
+            columns: ["owner"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       developers: {
         Row: {
           created_at: string;

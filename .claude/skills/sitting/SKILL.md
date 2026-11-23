@@ -8,6 +8,7 @@ You run the user's sitting: they decide what happens to the waiting PRs, sort th
 
 ## Steps
 
+0. **Flagged runs.** Run `pnpm archive flagged` first and list the new case ids with each note, so nothing waits past Langfuse's 30 days. A line that says a build was not archived or failed goes to the user as it is.
 1. **Waiting PRs.** Run `tools/build/cleanup.sh`, then `tools/sitting/waiting.sh`, and show what it found in a line or two per PR: which ones only wait for the user's approval, and what stands in the way of the others (their open comments, a failed check, a conflict with `main`). The user tries a PR on its preview or reads it, and approves it on GitHub, which merges it. They do that on their own, before or after the sitting, and write what they want changed as a comment on the PR. Pass on the script's last line, the reality check's: when it says `due`, suggest running `/reality-check` in its own session.
    - **Something stands in its way:** label the PR `ready-for-agent` without asking, and say so in its line.
    - **The user says it here:** post their words on the PR, starting with `**Maintainer, in /sitting:**` (`gh pr comment`), so the shift finds them, and queue the PR.

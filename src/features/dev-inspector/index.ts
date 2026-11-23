@@ -3,4 +3,5 @@
 // `server.ts`.
 export { CourseInspector } from "./components/course-inspector";
 export { DevLink } from "./components/dev-link";
+export { SendToDeveloper } from "./components/send-to-developer";
 export { devCoursePath } from "./domain/dev-paths";

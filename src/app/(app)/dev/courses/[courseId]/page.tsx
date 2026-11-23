@@ -4,6 +4,7 @@ import { CourseInspector, devCoursePath } from "@/features/dev-inspector";
 import {
   getCourseCalls,
   getCourseInspection,
+  isBuildFlagged,
   requireDeveloper,
 } from "@/features/dev-inspector/server";
 import { courseMapPath } from "@/features/knowledge-map";
@@ -25,10 +26,18 @@ export default async function DevCoursePage({
   if (!inspection) notFound();
   // After the snapshot, so another Student's Course id reads nothing here.
   const calls = await getCourseCalls(courseId);
+  const { build } = inspection.snapshot;
+  const buildSent = build
+    ? await isBuildFlagged(courseId, {
+        appCommit: build.appCommit,
+        finishedAt: build.finishedAt,
+      })
+    : null;
   return (
     <CourseInspector
       {...inspection}
       calls={calls}
+      buildSent={buildSent}
       backHref={courseMapPath(courseId)}
     />
   );

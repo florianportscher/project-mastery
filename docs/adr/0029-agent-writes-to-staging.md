@@ -6,6 +6,8 @@
 
 `pnpm -s agent staging-reset-map <courseId>` is a convenience over the same `DELETE` path: one filtered `DELETE` by `course_id` on each table a map build fills (Topics, Exercises, exams, extractions, KCs, build state), leaving Materials and chunks. It refuses an unknown Course and a running build. Deleting the KCs also deletes what hangs off them, including Students' attempts and Priorities for that Course.
 
+`pnpm archive flagged` ([ADR 0035](0035-case-archive.md)) is a third write path: it PATCHes `case_id` of a `developer_flags` row through the same `writeStaging`, nothing else.
+
 Still not allowed: SQL writes and schema changes (DDL), and anything against production. Migrations reach staging as before, applied by hand (superseded by [ADR 0030](0030-migrations-from-github-actions.md): GitHub Actions applies them).
 
 **Consequences.** Agents can set up and change rows on staging. The secret key bypasses Row Level Security, so the table and filter rules in the CLI are the only guard; a mistake changes real staging rows and there is no undo. Agents write only what the task needs and name what they changed. This supersedes the "agents never write to staging" sentence of ADR 0025.
