@@ -39,13 +39,13 @@ export const checkedResult = (
   check === "mismatch" && result === "full" ? "partial" : result;
 
 /** An item as the score reads it; `awarded` is null when grading failed. */
-export type ScoredItem = {
+type ScoredItem = {
   points: number;
   awarded: number | null;
   predictedSuccess: number;
 };
 
-export type ResultItem = ScoredItem & { topic: string | null };
+type ResultItem = ScoredItem & { topic: string | null };
 
 /**
  * The score and the prediction as percentages, and the points per Topic in

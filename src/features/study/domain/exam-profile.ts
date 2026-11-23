@@ -15,13 +15,13 @@ export function itemMinutes(difficulty: number): number {
 }
 
 /** The Brief's answers on aids, each null until answered. */
-export type ExamAids = {
+type ExamAids = {
   openBook: boolean | null;
   formulaSheet: boolean | null;
   calculator: boolean | null;
 };
 
-export type ExamProfile = {
+type ExamProfile = {
   minutes: number;
   aids: string[];
 };

@@ -48,7 +48,7 @@ type PlannedItem = {
   predictedSuccess: number;
 };
 
-export type MockPlan = {
+type MockPlan = {
   items: PlannedItem[];
   /** Why the mock fails when it ends up without items. */
   emptyReason: string;

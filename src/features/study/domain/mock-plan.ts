@@ -125,7 +125,7 @@ export function fillMock<Candidate extends MockCandidate>(
   });
 }
 
-export type GapProblem =
+type GapProblem =
   | {
       source: "variant";
       exerciseId: string;

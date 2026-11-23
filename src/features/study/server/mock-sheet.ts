@@ -2,7 +2,7 @@ import "server-only";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
-export type MockAnswerSaved = "saved" | "closed" | "unknown";
+type MockAnswerSaved = "saved" | "closed" | "unknown";
 
 /**
  * Starts the Student's ready mock (`start_mock_exam`): its session and one

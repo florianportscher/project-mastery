@@ -68,7 +68,7 @@ async function loadCourseProblems(
   }));
 }
 
-export type RunPlan = { studentId: string; problemIds: string[] };
+type RunPlan = { studentId: string; problemIds: string[] };
 
 /**
  * Plans the stock of the Course's running run, queues its Problems and

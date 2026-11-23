@@ -11,7 +11,7 @@ import { allRows } from "@/lib/supabase/all-rows";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
-export type CourseAttempt = ReplayAttempt & {
+type CourseAttempt = ReplayAttempt & {
   /** The Exercise its question posed; null for the AI's own question. */
   exerciseId: string | null;
 };

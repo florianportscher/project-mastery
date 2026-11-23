@@ -9,7 +9,7 @@ export type RecallBand = "new" | "strong" | "fading" | "weak";
 
 const FADING_RECALL = 0.7;
 
-export type KcBand = {
+type KcBand = {
   band: RecallBand;
   /** 0 to 1; null untaught. */
   recallToday: number | null;

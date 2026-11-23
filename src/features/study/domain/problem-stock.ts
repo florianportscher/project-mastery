@@ -26,7 +26,7 @@ type StockExercise = {
   hasVariant: boolean;
 };
 
-export type StockInput = {
+type StockInput = {
   exercises: StockExercise[];
   /** The KCs of each unseen Problem of the Course. */
   unseen: Array<{ kcs: string[] }>;

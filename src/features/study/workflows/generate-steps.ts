@@ -31,7 +31,7 @@ const SOURCES_PER_KC = 3;
 
 const STYLE_ANCHORS = 2;
 
-export type GenerateOutcome = "ready" | "failed" | "limited" | "gone";
+type GenerateOutcome = "ready" | "failed" | "limited" | "gone";
 
 type QueuedProblem = {
   id: string;

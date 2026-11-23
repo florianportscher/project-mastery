@@ -34,7 +34,7 @@ export async function claimSessionClose(sessionId: string): Promise<boolean> {
 }
 
 /** The session's notes to store, with when the Memory read was written. */
-export type SessionClose = CloseNotes & {
+type SessionClose = CloseNotes & {
   /** The `updated_at` of the Memory the call read; null without one. */
   memoryReadAt: string | null;
 };
