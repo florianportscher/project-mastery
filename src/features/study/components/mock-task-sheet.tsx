@@ -107,7 +107,13 @@ export function MockTaskSheet({
     await Promise.all(
       tasks.map((task) => save(task.questionId, answers[task.questionId]!)),
     );
-    await submitMockExam({ mockId: mock.id });
+    try {
+      await submitMockExam({ mockId: mock.id });
+    } catch {
+      // Not reached: Submit works again.
+      setSubmitting(false);
+      return;
+    }
     router.refresh();
   }
 
