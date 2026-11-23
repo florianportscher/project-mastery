@@ -155,7 +155,7 @@ function shownReading(part: ToolPart): ShownReading | null {
   };
 }
 
-function replyStep(part: ToolPart, inProgress = true): ReplyStep {
+function replyStep(part: ToolPart, inProgress: boolean): ReplyStep {
   const name = getToolName(part);
   const base = { id: part.toolCallId, name };
   const title = TOOL_TITLES[name] ?? name;
