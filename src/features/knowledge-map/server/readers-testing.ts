@@ -65,6 +65,8 @@ export function createDb() {
           status: "built",
           failure_reason: null,
           finished_at: "2026-01-02",
+          started_at: "2026-01-01",
+          progress: { stage: "finishing" },
           check_report: {
             uncitedPages: [{ material: "Thrust", pages: [2] }],
             exercisesWithoutKcs: [],

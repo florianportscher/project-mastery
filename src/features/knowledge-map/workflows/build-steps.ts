@@ -11,7 +11,10 @@ import {
 import type { UnitExtraction } from "@/features/knowledge-map/domain/chapter-extraction";
 import { loadCourseLanguage as loadLanguage } from "@/features/ingestion/server";
 import {
+  buildProgressSchema,
   storedExtractionSchema,
+  type BuildProgress,
+  type BuildStage,
   type StoredExtraction,
 } from "@/features/knowledge-map/schemas";
 import { RateLimited } from "@/features/knowledge-map/workflows/build-call";
@@ -70,21 +73,82 @@ export type BuildStep = (
 
 /**
  * Sets the running build's heartbeat, so `queue_knowledge_map_build` sees
- * it alive, and returns the Course's owner. Null when no build runs.
+ * it alive, and with `progress` the stage it runs, and returns the Course's
+ * owner. Null when no build runs.
  */
 export async function touchBuild(
   supabase: AdminSupabase,
   courseId: string,
+  progress?: BuildProgress,
 ): Promise<string | null> {
+  return (
+    (await touchCountingBuild(supabase, courseId, progress))?.owner ?? null
+  );
+}
+
+/**
+ * `touchBuild` for a step that counts its units, which also returns the
+ * build's progress so far, to go on counting (`countedProgress`).
+ */
+export async function touchCountingBuild(
+  supabase: AdminSupabase,
+  courseId: string,
+  progress?: BuildProgress,
+): Promise<{ owner: string; progress: BuildProgress | null } | null> {
   const { data, error } = await supabase
     .from("knowledge_map_builds")
-    .update({ heartbeat_at: new Date().toISOString() })
+    .update({ heartbeat_at: new Date().toISOString(), progress })
     .eq("course_id", courseId)
     .eq("status", "building")
-    .select("owner")
+    .select("owner, progress")
     .maybeSingle();
   if (error) failed("Recording the build's heartbeat", error);
-  return data?.owner ?? null;
+  if (!data) return null;
+  const parsed = buildProgressSchema.safeParse(data.progress);
+  return { owner: data.owner, progress: parsed.success ? parsed.data : null };
+}
+
+/**
+ * The progress of a counting stage with `pending` units left: on the
+ * stage's first run they are its total; on later runs the total stays and
+ * the rest are done.
+ */
+export function countedProgress(
+  previous: BuildProgress | null,
+  stage: BuildStage,
+  pending: number,
+): BuildProgress {
+  if (previous?.stage === stage && previous.total !== undefined) {
+    const { total } = previous;
+    return { stage, done: Math.max(0, total - pending), total };
+  }
+  return { stage, done: 0, total: pending };
+}
+
+/**
+ * Records the running build's progress; with `waitMs`, that the rate limit
+ * pauses it until then. The next record clears the wait.
+ */
+export async function recordProgress(
+  supabase: AdminSupabase,
+  courseId: string,
+  progress: BuildProgress,
+  waitMs?: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from("knowledge_map_builds")
+    .update({
+      progress:
+        waitMs === undefined
+          ? progress
+          : {
+              ...progress,
+              waitUntil: new Date(Date.now() + waitMs).toISOString(),
+            },
+    })
+    .eq("course_id", courseId)
+    .eq("status", "building");
+  if (error) failed("Recording the build's progress", error);
 }
 
 /**

@@ -16,12 +16,14 @@ import {
   unitCoverage,
 } from "@/features/knowledge-map/domain/unit-coverage";
 import {
+  countedProgress,
   extractAttempts,
   loadCourseLanguageName,
   loadCourseUnits,
   loadStoredUnits,
   planAttempts,
-  touchBuild,
+  recordProgress,
+  touchCountingBuild,
   unitKey,
   UNITS_PER_STEP,
   type CourseUnit,
@@ -79,8 +81,9 @@ export async function extractTeachingBatches(
   "use step";
   const startedAt = Date.now();
   const supabase = createAdminClient();
-  const owner = await touchBuild(supabase, courseId);
-  if (!owner) return { ok: true, left: null };
+  const touched = await touchCountingBuild(supabase, courseId);
+  if (!touched) return { ok: true, left: null };
+  const { owner } = touched;
 
   const units = await loadCourseUnits(supabase, courseId, "content");
   const complete = new Map(
@@ -106,6 +109,12 @@ export async function extractTeachingBatches(
   );
   const attempts = planAttempts(todo, stored, failed, deferred);
   if (attempts.length === 0) return { ok: true, left: 0 };
+  let progress = countedProgress(
+    touched.progress,
+    "materials",
+    attempts.length,
+  );
+  await recordProgress(supabase, courseId, progress);
 
   const language = await loadCourseLanguageName(supabase, courseId);
   let done = 0;
@@ -135,6 +144,10 @@ export async function extractTeachingBatches(
       const after = await storeComplete();
       if (after === "limit") return { ok: false, reason: dailyLimitReason };
       if (after === "stopped") return { ok: true, left: null };
+    }
+    if (outcome.done > 0 || outcome.waitMs !== undefined) {
+      progress = { ...progress, done: (progress.done ?? 0) + outcome.done };
+      await recordProgress(supabase, courseId, progress, outcome.waitMs);
     }
     if (outcome.waitMs !== undefined) {
       return {

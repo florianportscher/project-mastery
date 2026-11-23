@@ -95,7 +95,7 @@ erDiagram
 | KCs an Exercise tests | `exercise_kcs`         | At most 6 per Exercise                                                                                                                                                                                                                      | Build                                         |
 | Topic                 | `topics`               | Name, parent, tree order, `central_question`                                                                                                                                                                                                | Build                                         |
 | A Topic's own KCs     | `topic_kcs`            | Each KC in one Topic, in teaching order                                                                                                                                                                                                     | Build                                         |
-| Build state           | `knowledge_map_builds` | One row per Course: status, failure reason, heartbeat, `check_report`, `topic_tree_hash`, `exercise_grouping_hash`, the grouping's `exercise_groups`, and `needs_update`                                                                    | Build                                         |
+| Build state           | `knowledge_map_builds` | One row per Course: status, failure reason, heartbeat, `progress`, `check_report`, `topic_tree_hash`, `exercise_grouping_hash`, the grouping's `exercise_groups`, and `needs_update`                                                        | Build                                         |
 
 **"Unit" means two things**, one in each job. A _page unit_ is a run of one label under one heading, as a page read returns it. A _teaching batch_ is the run of a Material's `content` chunks one extraction call reads. They never meet: page units become chunks, and chunks are packed into batches. (Stored extractions and code say "unit" for a batch.)
 
@@ -136,6 +136,8 @@ The chunk labels decide where each chunk goes next:
 The `buildKnowledgeMap` workflow in `workflows/build-knowledge-map.ts` passes only the Course's id. Each step reads what it needs from tables, does a bounded amount of work and reports how much is left, and the workflow calls it again until nothing is.
 
 The Student's button calls `startKnowledgeMapBuild`, which queues through `queue_knowledge_map_build`. It lets a build through only when none runs, a Material is parsed and none waits or parses, so two presses start one build.
+
+**Progress.** `knowledge_map_builds.progress` (`{ stage, done?, total?, waitUntil? }`, `buildProgressSchema`) records how far the build got; queueing sets it to null, which the page reads as `materials` without a count. Steps 1 and 2 are the stage `materials`, counted in sections (teaching batches); step 3 and 4 are `exercises`, counted in batches once the grouping knows them; step 5 is `connecting`, 6 `topics` and 7 `finishing`. A counting step's first run of its stage records its pending units as `total` (`countedProgress`), later runs `total − pending` as `done`, and each unit it stores adds one. A step that the rate limit turned away records `waitUntil`, and the next record clears it. The other steps record their stage in the heartbeat's update (`touchBuild`).
 
 ### 0. Prepare
 
@@ -311,7 +313,7 @@ A parse never changes a Material's chunks once it has stored them, so a unit's h
 
 ## The Course map
 
-The Course map (`/courses/[courseId]/map`, where the Course's home redirects) polls while a build is `building`. It draws the Topics as nested boxes of Topic cards with arrows between Topics ([ADR 0017](../adr/0017-react-flow-and-elk-for-the-knowledge-map-graph.md)): `domain/` computes the graph, and ELK lays it out in a web worker only when it changes.
+The Course map (`/courses/[courseId]/map`, where the Course's home redirects) polls while a build is `building`. Before a first map has Topics, the build's panel (`BuildPanel`) fills the map's place: when it started, a bar of five equal segments, the stages (`buildStages`) with the running one's count or the rate limit's pause, and how many things to learn (live KCs) it found so far. It draws the Topics as nested boxes of Topic cards with arrows between Topics ([ADR 0017](../adr/0017-react-flow-and-elk-for-the-knowledge-map-graph.md)): `domain/` computes the graph, and ELK lays it out in a web worker only when it changes.
 
 A card opens the Topic page (`map/[topicId]`): its detail, anchors, KCs, Reading sections and neighbours in Course order, above a KC graph of the Topic's KCs, its anchors and the Exercises that test them. Clicking a KC opens a panel with every stat about it.
 

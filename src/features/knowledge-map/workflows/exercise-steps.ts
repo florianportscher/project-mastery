@@ -14,12 +14,14 @@ import {
   type StoredExtraction,
 } from "@/features/knowledge-map/schemas";
 import {
+  countedProgress,
   extractAttempts,
   loadCourseLanguageName,
   loadCourseUnits,
   loadStoredUnits,
   planAttempts,
-  touchBuild,
+  recordProgress,
+  touchCountingBuild,
   unitKey,
   UNITS_PER_STEP,
   type CourseUnit,
@@ -66,8 +68,9 @@ export async function extractExercises(
   "use step";
   const startedAt = Date.now();
   const supabase = createAdminClient();
-  const owner = await touchBuild(supabase, courseId);
-  if (!owner) return { ok: true, left: null };
+  const touched = await touchCountingBuild(supabase, courseId);
+  if (!touched) return { ok: true, left: null };
+  const { owner } = touched;
 
   const [units, stored] = await Promise.all([
     loadCourseUnits(supabase, courseId, "exercise"),
@@ -84,6 +87,12 @@ export async function extractExercises(
   );
   const attempts = planAttempts(todo, stored, failed, deferred);
   if (attempts.length === 0) return { ok: true, left: 0 };
+  let progress = countedProgress(
+    touched.progress,
+    "exercises",
+    attempts.length,
+  );
+  await recordProgress(supabase, courseId, progress);
 
   // A complete extraction is stored as KCs and Exercises at once; a partial
   // one waits until its unit is complete or given up.
@@ -124,6 +133,10 @@ export async function extractExercises(
       const after = await storeComplete();
       if (after === "limit") return { ok: false, reason: dailyLimitReason };
       if (after === "stopped") return { ok: true, left: null };
+    }
+    if (outcome.done > 0 || outcome.waitMs !== undefined) {
+      progress = { ...progress, done: (progress.done ?? 0) + outcome.done };
+      await recordProgress(supabase, courseId, progress, outcome.waitMs);
     }
     if (outcome.waitMs !== undefined) {
       return {

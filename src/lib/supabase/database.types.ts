@@ -958,6 +958,7 @@ export type Database = {
           heartbeat_at: string;
           needs_update: boolean;
           owner: string;
+          progress: Json | null;
           started_at: string;
           status: string;
           topic_tree_hash: string | null;
@@ -973,6 +974,7 @@ export type Database = {
           heartbeat_at?: string;
           needs_update?: boolean;
           owner: string;
+          progress?: Json | null;
           started_at?: string;
           status: string;
           topic_tree_hash?: string | null;
@@ -987,6 +989,7 @@ export type Database = {
           heartbeat_at?: string;
           needs_update?: boolean;
           owner?: string;
+          progress?: Json | null;
           started_at?: string;
           status?: string;
           topic_tree_hash?: string | null;

@@ -76,7 +76,13 @@ const kc = (id: string, name: string): KcView => ({
 
 const map: KnowledgeMapView = {
   courseId: "c1",
-  build: { status: "built", failureReason: null, finishedAt: null },
+  build: {
+    status: "built",
+    failureReason: null,
+    finishedAt: null,
+    startedAt: "2026-10-20T10:00:00Z",
+    progress: null,
+  },
   kcs: [kc("k1", "Momentum"), kc("k2", "Nozzles")],
   prerequisites: [{ from: "k1", to: "k2" }],
   exercises: [

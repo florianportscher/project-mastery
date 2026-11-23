@@ -25,6 +25,7 @@ import {
   RateLimited,
 } from "@/features/knowledge-map/workflows/build-call";
 import {
+  recordProgress,
   touchBuild,
   type StepOutcome,
 } from "@/features/knowledge-map/workflows/build-steps";
@@ -70,7 +71,7 @@ export async function groupExercises(
   "use step";
   const startedAt = Date.now();
   const supabase = createAdminClient();
-  const owner = await touchBuild(supabase, courseId);
+  const owner = await touchBuild(supabase, courseId, { stage: "exercises" });
   if (!owner) return { ok: true, left: null };
 
   const [chunks, stored] = await Promise.all([
@@ -97,6 +98,12 @@ export async function groupExercises(
     );
     if (answer === "limit") return { ok: false, reason: dailyLimitReason };
     if (answer instanceof RateLimited) {
+      await recordProgress(
+        supabase,
+        courseId,
+        { stage: "exercises" },
+        answer.waitMs,
+      );
       return { ok: true, left: runs.length - index, waitMs: answer.waitMs };
     }
     if (answer === "failed") {

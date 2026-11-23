@@ -25,6 +25,7 @@ import type {
   MapTopicBadges,
   MapTopicStudies,
 } from "@/features/knowledge-map/types";
+import { BuildPanel } from "./build-panel";
 import { CourseMapGraph } from "./course-map-graph";
 
 const dateFormat = new Intl.DateTimeFormat("en", {
@@ -70,6 +71,8 @@ export function CourseMap({
 }) {
   const { kcs } = map;
   const building = map.build?.status === "building";
+  // No map to show yet: the build's panel takes its place.
+  const firstBuild = building && (kcs.length === 0 || topics.length === 0);
   useBuildPolling(building);
   const buildButton = (
     <BuildButton
@@ -88,7 +91,7 @@ export function CourseMap({
           actions={buildButton}
         />
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm text-muted-foreground">
-          <BuildStatus build={map.build} />
+          <BuildStatus build={map.build} panel={firstBuild} />
           {kcs.length > 0 && (
             <>
               {progressLine}
@@ -129,9 +132,21 @@ export function CourseMap({
         )}
       </div>
 
-      {kcs.length === 0 || (topics.length === 0 && building) ? (
+      {firstBuild && map.build ? (
+        <div className="flex min-h-0 flex-1">
+          <BuildPanel
+            startedAt={map.build.startedAt}
+            progress={map.build.progress}
+            found={kcs.length}
+          />
+        </div>
+      ) : kcs.length === 0 ? (
         <div className="max-w-3xl">
-          <EmptyMap building={building} />
+          <EmptyState
+            icon={<WaypointsIcon />}
+            title="No map yet"
+            description="Parse your materials, then build the map of what they teach."
+          />
         </div>
       ) : topics.length === 0 ? (
         <div className="max-w-3xl">
@@ -159,20 +174,6 @@ export function CourseMap({
   );
 }
 
-function EmptyMap({ building }: { building: boolean }) {
-  return (
-    <EmptyState
-      icon={<WaypointsIcon />}
-      title={building ? "Building your map" : "No map yet"}
-      description={
-        building
-          ? "The first map appears here when the build is done."
-          : "Parse your materials, then build the map of what they teach."
-      }
-    />
-  );
-}
-
 function FormattedTime({ iso }: { iso: string }) {
   return (
     <time dateTime={iso} suppressHydrationWarning>
@@ -181,7 +182,8 @@ function FormattedTime({ iso }: { iso: string }) {
   );
 }
 
-function BuildStatus({ build }: { build: MapBuild }) {
+/** The build's state under the title; with `panel`, the panel shows it. */
+function BuildStatus({ build, panel }: { build: MapBuild; panel: boolean }) {
   const lastBuilt = build?.finishedAt && (
     <>
       Last built <FormattedTime iso={build.finishedAt} />
@@ -194,7 +196,7 @@ function BuildStatus({ build }: { build: MapBuild }) {
       className="flex flex-col gap-1 text-sm text-muted-foreground"
     >
       {build === null && <p>Not built yet.</p>}
-      {build?.status === "building" && (
+      {build?.status === "building" && !panel && (
         <p className="flex items-center gap-2">
           <Spinner className="size-3" />
           Building…

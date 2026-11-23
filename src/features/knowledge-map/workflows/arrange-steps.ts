@@ -54,7 +54,7 @@ export async function arrangeKnowledgeMap(
 ): Promise<void> {
   "use step";
   const supabase = createAdminClient();
-  if (!(await touchBuild(supabase, courseId))) return;
+  if (!(await touchBuild(supabase, courseId, { stage: "finishing" }))) return;
   await retireUnsourcedKcs(supabase, courseId);
 
   const [input, stored] = await Promise.all([

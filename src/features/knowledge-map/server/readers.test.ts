@@ -94,6 +94,8 @@ describe("getKnowledgeMap", () => {
       status: "built",
       failureReason: null,
       finishedAt: "2026-01-02",
+      startedAt: "2026-01-01",
+      progress: { stage: "finishing" },
     });
     expect(view.canBuild).toBe(true);
     const [momentum, thrust] = view.kcs;
