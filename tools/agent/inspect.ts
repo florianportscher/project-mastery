@@ -53,6 +53,7 @@ export type Snapshot = {
     batch: number;
     promptDigest: string | null;
     kcIds: string[] | null;
+    createdAt?: string;
   }>;
   kcs: Array<{
     id: string;
@@ -116,7 +117,7 @@ export type Call = {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Reads the Course's snapshot through the read-only staging role. */
-async function fetchSnapshot(
+export async function fetchSnapshot(
   courseId: string,
   env: Env = process.env,
 ): Promise<Snapshot> {
@@ -150,7 +151,8 @@ function langfuse(env: Env) {
   };
 }
 
-async function observations(
+/** One page of the staging calls that match `filters`; null without Langfuse keys. */
+export async function observations(
   env: Env,
   filters: object[],
   fields: string,
@@ -188,7 +190,7 @@ async function observations(
 }
 
 /** One Langfuse observation, as far as the CLI reads it. */
-type Raw = {
+export type Raw = {
   id: string;
   parentObservationId?: string | null;
   name?: string;
@@ -204,7 +206,7 @@ type Raw = {
   output?: unknown;
 };
 
-function toCall(o: Raw): Call {
+export function toCall(o: Raw): Call {
   const metadata = Object.fromEntries(
     Object.entries(o.metadata ?? {}).filter(([, v]) => typeof v === "string"),
   ) as Record<string, string>;
@@ -300,7 +302,7 @@ async function fetchCallDetail(
   ].join("\n");
 }
 
-const noKeys =
+export const noKeys =
   "No Langfuse keys: set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY in .env.local.";
 
 const asText = (value: unknown) =>

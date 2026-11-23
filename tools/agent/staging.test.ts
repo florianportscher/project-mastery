@@ -201,9 +201,12 @@ describe("resetStagingMap", () => {
     });
   }
 
-  it("deletes the map tables for the Course and leaves Materials and chunks", async () => {
+  const archived = async () => "case 2026-11-23-map-1 pushed";
+
+  it("archives the build, then deletes the map tables for the Course and leaves Materials and chunks", async () => {
     const fetchFn = staging("built");
-    const output = await resetStagingMap(COURSE, ENV, fetchFn);
+    const output = await resetStagingMap(COURSE, archived, ENV, fetchFn);
+    expect(output).toContain("case 2026-11-23-map-1 pushed");
 
     const deletes = fetchFn.mock.calls
       .filter(([, init]) => init?.method === "DELETE")
@@ -225,9 +228,22 @@ describe("resetStagingMap", () => {
 
   it("refuses a running build and deletes nothing", async () => {
     const fetchFn = staging("building");
-    await expect(resetStagingMap(COURSE, ENV, fetchFn)).rejects.toThrow(
-      /running/,
-    );
+    await expect(
+      resetStagingMap(COURSE, archived, ENV, fetchFn),
+    ).rejects.toThrow(/running/);
+    expect(
+      fetchFn.mock.calls.some(([, init]) => init?.method === "DELETE"),
+    ).toBe(false);
+  });
+
+  it("deletes nothing when the archive fails", async () => {
+    const fetchFn = staging("built");
+    const failing = async () => {
+      throw new Error("push rejected");
+    };
+    await expect(
+      resetStagingMap(COURSE, failing, ENV, fetchFn),
+    ).rejects.toThrow(/push rejected/);
     expect(
       fetchFn.mock.calls.some(([, init]) => init?.method === "DELETE"),
     ).toBe(false);
@@ -235,10 +251,10 @@ describe("resetStagingMap", () => {
 
   it("refuses an unknown Course and an id that is not a UUID", async () => {
     await expect(
-      resetStagingMap(COURSE, ENV, staging(undefined, false)),
+      resetStagingMap(COURSE, archived, ENV, staging(undefined, false)),
     ).rejects.toThrow(/No Course/);
-    await expect(resetStagingMap("7", ENV, staging())).rejects.toThrow(
-      /not a Course id/,
-    );
+    await expect(
+      resetStagingMap("7", archived, ENV, staging()),
+    ).rejects.toThrow(/not a Course id/);
   });
 });

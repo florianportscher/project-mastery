@@ -272,10 +272,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * Deletes a Course's whole map build on staging and keeps its Materials and
  * their parse, so the next Build starts from the chunks. Uses `writeStaging`,
  * so it is bound by ADR 0029: one filtered DELETE per table, no undo. Refuses
- * an unknown Course and a build that is running.
+ * an unknown Course and a build that is running. `archive` keeps the build as
+ * a case first (`agent archive`); when it throws, nothing is deleted.
  */
 export async function resetStagingMap(
   courseId: string,
+  archive: () => Promise<string>,
   env: Env = process.env,
   fetchFn: typeof fetch = fetch,
 ): Promise<string> {
@@ -300,7 +302,8 @@ export async function resetStagingMap(
       "This Course's build is running. Wait for it to end, then reset.",
     );
   }
-  const lines: string[] = [];
+  const lines: string[] =
+    builds.length > 0 ? [await archive()] : ["no build to archive"];
   for (const table of MAP_BUILD_TABLES) {
     // `course_id` is the one column every table here has (the builds table has no `id`).
     const rows = JSON.parse(
