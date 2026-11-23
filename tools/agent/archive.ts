@@ -166,7 +166,8 @@ async function copyMaterials(
       dir,
       `${sha256}.${EXTENSIONS[row.media_type] ?? "bin"}`,
     );
-    if (!existsSync(file)) writeFileSync(file, bytes);
+    // The name is the hash of these bytes, so rewriting an existing file is harmless.
+    writeFileSync(file, bytes);
     materials.push({
       id: row.id,
       sha256,
@@ -326,7 +327,7 @@ export function archiveCourse(
 }
 
 /** Archives a Chat as a case: its messages, its Course's build and the calls of its session. */
-export function archiveChat(
+function archiveChat(
   chatId: string,
   note: string | null,
   env: Env = process.env,

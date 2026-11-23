@@ -80,10 +80,7 @@ const isPart = (value: unknown): value is Part =>
  * Material's sha256 and the number of the `Page N` text part before it, as the
  * parse sends them (`batchMessages` in ingestion).
  */
-export function replacePageImages(
-  value: unknown,
-  material: string | null,
-): unknown {
+function replacePageImages(value: unknown, material: string | null): unknown {
   if (Array.isArray(value)) {
     let page: number | null = null;
     return value.map((item) => {
