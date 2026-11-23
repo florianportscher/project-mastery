@@ -206,6 +206,23 @@ test("a session claimed already or still running gets no call", async () => {
   expect(stored).toEqual([]);
 });
 
+test("a close that fails gives the claim back and rethrows", async () => {
+  useMockModels({
+    close: new MockLanguageModelV4({
+      doGenerate: async () => {
+        throw new Error("boom");
+      },
+    }),
+  });
+  seedSession();
+
+  await expect(closeStudySession("s1")).rejects.toThrow();
+
+  expect(session().close_started_at).toBeNull();
+  expect(session().closed_at).toBeNull();
+  expect(stored).toEqual([]);
+});
+
 test.each([
   ["without a Student message", { chat_id: "c1" }, "user"],
   ["without a Chat (a mock)", { chat_id: null }, "none"],

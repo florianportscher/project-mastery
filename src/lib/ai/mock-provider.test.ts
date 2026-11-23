@@ -215,4 +215,11 @@ describe("a mock fault", () => {
     await expect((await ask("malformed")).object()).rejects.toThrow();
     vi.unstubAllEnvs();
   });
+
+  test("malformed fails a text call like error", async () => {
+    await expect((await ask("malformed")).text()).rejects.toThrow(
+      /Mock AI fault/,
+    );
+    vi.unstubAllEnvs();
+  });
 });

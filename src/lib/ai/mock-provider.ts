@@ -176,7 +176,12 @@ async function failCall(signal?: AbortSignal) {
 function mockText(prompt: Prompt, responseFormat: ResponseFormat): string {
   const fault = mockFault();
   if (fault === "empty") return "";
-  if (fault === "malformed") return '{"mock": [';
+  if (fault === "malformed") {
+    // Half a JSON string is no reply: a text call fails like `error`.
+    if (responseFormat?.type !== "json")
+      throw new Error("Mock AI fault: the call failed.");
+    return '{"mock": [';
+  }
   if (responseFormat?.type === "json") {
     assertStrictOutputSchema(responseFormat);
     return JSON.stringify(mockObject(responseFormat.schema));
