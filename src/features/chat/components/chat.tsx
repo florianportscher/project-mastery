@@ -403,7 +403,6 @@ export function Chat({
                 event.target.value = "";
               }}
             />
-            {/* Controlled, so a refused message stays in the input. */}
             <QuickReplies
               replies={QUICK_REPLIES}
               visible={
@@ -415,6 +414,7 @@ export function Chat({
                 void sendMessage({ parts: [{ type: "text", text }] })
               }
             />
+            {/* Controlled, so a refused message stays in the input. */}
             <PromptInputProvider>
               <PromptInput onSubmit={handleSubmit}>
                 <AttachmentChips

@@ -56,7 +56,7 @@ export async function findChat(
 /**
  * Creates a Chat owned by the signed-in Student in their Course `courseId`,
  * with `replyId` as its latest reply (see `startReply`). The database starts
- * its learn session with it. Refuses with "taken" when the id is taken,
+ * its Study session with it. Refuses with "taken" when the id is taken,
  * which for the Student means it belongs to someone else, and with "no
  * course" when the Course is not (or no longer) theirs.
  */
