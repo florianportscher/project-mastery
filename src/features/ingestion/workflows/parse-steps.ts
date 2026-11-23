@@ -195,8 +195,9 @@ class PageCallFailed extends Error {}
  * titles or contents is stored `titles`. A page with neither units nor a
  * reason is
  * read again alone, and stored `uncovered` when still none does. No call
- * starts that could run past the step's limit (`callFits`); the pages of
- * calls not started are left to the next step. A reached Daily limit stops
+ * starts that could run past the step's limit (`callFits`), also after its
+ * wait for a slot (`paceCall`); the pages of calls not started are left to
+ * the next step. A reached Daily limit stops
  * the parse.
  */
 export async function readPages(
@@ -302,13 +303,20 @@ async function readBatch(
     material.id,
     batch[0]!.pageNumber,
   );
-  const answer = await callBatch(supabase, material, batch, context);
+  const pageNumbers = batch.map((page) => page.pageNumber);
+  const answer = await callBatch(
+    supabase,
+    material,
+    batch,
+    context,
+    stepStartedAt,
+  );
   if (answer === "limit") return { pages: [], limit: true, left: [] };
+  if (answer === "late") return { pages: [], limit: false, left: pageNumbers };
   if (answer === "failed") {
     return readEach(supabase, material, batch, context, stepStartedAt);
   }
 
-  const pageNumbers = batch.map((page) => page.pageNumber);
   const onPages = unitsOnPages(answer.units, pageNumbers);
   const uncovered = new Set(
     uncoveredPages([...onPages.values()].flat(), pageNumbers),
@@ -328,13 +336,17 @@ async function readBatch(
       pages.push({ pageNumber, skipped: "titles" });
       continue;
     }
-    if (!callFits(stepStartedAt)) {
-      left.push(pageNumber);
-      continue;
-    }
-    const single = await callBatch(supabase, material, [page], context);
+    const single = await callBatch(
+      supabase,
+      material,
+      [page],
+      context,
+      stepStartedAt,
+    );
     if (single === "limit") return { pages, limit: true, left: [] };
-    if (single === "failed") {
+    if (single === "late") {
+      left.push(pageNumber);
+    } else if (single === "failed") {
       pages.push({ pageNumber, skipped: "uncovered" });
     } else if (single.skipped.includes(pageNumber)) {
       pages.push({ pageNumber, skipped: "titles" });
@@ -362,12 +374,18 @@ async function readEach(
 ): Promise<BatchRead> {
   const pages: PageRow[] = [];
   for (const [index, page] of batch.entries()) {
-    if (!callFits(stepStartedAt)) {
+    const single = await callBatch(
+      supabase,
+      material,
+      [page],
+      context,
+      stepStartedAt,
+    );
+    if (single === "limit") return { pages, limit: true, left: [] };
+    if (single === "late") {
       const left = batch.slice(index).map((p) => p.pageNumber);
       return { pages, limit: false, left };
     }
-    const single = await callBatch(supabase, material, [page], context);
-    if (single === "limit") return { pages, limit: true, left: [] };
     if (single === "failed") {
       pages.push({ pageNumber: page.pageNumber, skipped: "unreadable" });
       context = null;
@@ -401,15 +419,17 @@ function readAlone(
 
 /**
  * One streamed batch call: its answer, "failed" when the call fails for
- * good or gives no valid answer, or "limit" when the Student's Daily limit
- * is reached.
+ * good or gives no valid answer, "limit" when the Student's Daily limit
+ * is reached, or "late" when, after its wait for a slot (`paceCall`), the
+ * call no longer fits the step (`callFits`) and is not made.
  */
 async function callBatch(
   supabase: AdminSupabase,
   material: ParseMaterialRow,
   batch: BatchPage[],
   context: PageUnit | null,
-): Promise<BatchAnswer | "failed" | "limit"> {
+  stepStartedAt: number,
+): Promise<BatchAnswer | "failed" | "limit" | "late"> {
   const failedCall = (error: unknown) => {
     const pages = batch.map((page) => page.pageNumber).join(", ");
     console.error(`The batch call for pages ${pages} failed:`, error);
@@ -417,6 +437,7 @@ async function callBatch(
   };
   let result: Awaited<ReturnType<typeof meteredStream>>;
   await paceCall();
+  if (!callFits(stepStartedAt)) return "late";
   try {
     result = await meteredStream(
       supabase,
