@@ -27,7 +27,6 @@ export function StudentMessage({
   const text = messageText(message.parts);
   return (
     <Message from="user">
-      {/* A long word, such as a pasted formula, wraps instead of being cut off. */}
       <MessageContent data-testid="message-text" className="wrap-break-word">
         <AttachedMaterials
           parts={message.parts}
