@@ -60,6 +60,6 @@ function toDevCall(call: TracedCall): DevCall {
     ...rest,
     materialId: metadata.materialId ?? null,
     unitKey: metadata.unitKey ?? null,
-    appCommit: metadata.appCommit ?? null,
+    inSession: "attributes.langfuse.session.id" in metadata,
   };
 }

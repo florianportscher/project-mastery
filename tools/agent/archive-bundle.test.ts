@@ -89,6 +89,9 @@ const bundle = mapBundle({
     call("extract", "2026-11-22T17:28:00Z", {
       unitKey: `${MATERIAL}/content/0`,
     }),
+    call("chat-reply", "2026-11-22T17:30:00Z", {
+      "attributes.langfuse.session.id": "chat1",
+    }),
     call("old-build", "2026-11-21T12:00:00Z", {
       unitKey: `${MATERIAL}/content/0`,
     }),
@@ -96,7 +99,7 @@ const bundle = mapBundle({
 });
 
 describe("mapBundle", () => {
-  it("keeps the parse and the current build's calls, oldest first", () => {
+  it("keeps the parse and the current build's calls, oldest first, without Chat calls", () => {
     expect(bundle.calls.map((c) => c.id)).toEqual(["parse", "extract"]);
   });
 
@@ -123,7 +126,7 @@ describe("mapBundle", () => {
           { sha256: SHA, kind: "application/pdf", pages: 30, language: "de" },
         ],
       },
-      run: { startedAt: "2026-11-22T17:27:01.347Z", appCommit: "f3a54da" },
+      run: { startedAt: "2026-11-22T17:27:01.347Z" },
       appCommits: ["f3a54da"],
       models: ["muse-ember-1.0"],
       cost: 0.002,
@@ -166,7 +169,7 @@ describe("chatBundle", () => {
     });
     expect(manifest).toMatchObject({
       kind: "chat",
-      chat: { id: "chat1", messages: 2 },
+      chat: { id: "chat1" },
       calls: { archived: 2, missing: 0 },
     });
   });

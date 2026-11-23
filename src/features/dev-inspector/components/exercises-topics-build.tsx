@@ -117,11 +117,18 @@ export function TopicsSection({
   );
 }
 
-/** The models the Course's traced calls ran on, comma-separated. */
-function modelsOf(calls: DevCalls): string {
-  if (calls.status !== "ok") return "–";
+/** The models of the build's calls (its start to its end, outside Chats), comma-separated. */
+function modelsOf(calls: DevCalls, build: Snapshot["build"]): string {
+  if (calls.status !== "ok" || !build) return "–";
+  const from = Date.parse(build.startedAt);
+  const to = build.finishedAt ? Date.parse(build.finishedAt) : Date.now();
   const models = new Set(
-    calls.calls.flatMap((c) => (c.model ? [c.model] : [])),
+    calls.calls
+      .filter((c) => {
+        const start = Date.parse(c.startTime);
+        return !c.inSession && start >= from && start <= to;
+      })
+      .flatMap((c) => (c.model ? [c.model] : [])),
   );
   return models.size > 0 ? [...models].join(", ") : "–";
 }
@@ -154,7 +161,7 @@ export function BuildSection({
             </Row>
           )}
           <Row label="Commit">{build.appCommit ?? "–"}</Row>
-          <Row label="Models">{modelsOf(calls)}</Row>
+          <Row label="Models">{modelsOf(calls, build)}</Row>
           <Row label="Started">{time(build.startedAt)}</Row>
           <Row label="Finished">{time(build.finishedAt)}</Row>
           <Row label="Heartbeat">{time(build.heartbeatAt)}</Row>

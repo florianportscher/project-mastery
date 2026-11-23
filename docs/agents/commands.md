@@ -57,6 +57,7 @@ In an agent worktree the local database is shared: see [worktrees.md](worktrees.
 | `pnpm -s agent staging*`                                           | Read the staging project, and write to it for testing ([ADR 0029](../adr/0029-agent-writes-to-staging.md))                  |
 | `pnpm -s agent staging-reset-map <id>`                             | Archive, then delete a Course's whole map build on staging; Materials and chunks stay                                       |
 | `pnpm archive course <courseId> [--note "…"]`                      | Keep a Course's current map build as a case in the private cases repo ([cases.md](cases.md))                                |
+| `pnpm archive chat <chatId> [--note "…"]`                          | Keep a Chat, its Course's build snapshot and its model calls as a case                                                      |
 | `pnpm -s agent inspect <courseId>`                                 | A Course's stored map build and its model calls as text: the first stop for a wrong map                                     |
 | `pnpm -s agent walk <dir>` · `walk diff <a> <b>`                   | Seed data, snapshot every page as `student` (main pages as `classmate`); `diff` prints `same: N pages` or each changed page |
 

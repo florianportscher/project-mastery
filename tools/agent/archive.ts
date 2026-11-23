@@ -4,8 +4,8 @@ import {
   existsSync,
   mkdirSync,
   readdirSync,
-  readFileSync,
   realpathSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from "node:fs";
@@ -26,7 +26,7 @@ import { queryStaging, stagingEnv } from "./staging";
 /**
  * `pnpm archive course <courseId> [--note "…"]`: keeps a Course's current map
  * build on staging as a case in the private cases repo (issue #383,
- * docs/agents/cases.md, ADR 0034). Reads staging and Langfuse only, writes the
+ * docs/agents/cases.md, ADR 0035). Reads staging and Langfuse only, writes the
  * bundle and pushes it to the cases repo's `main`, and copies the Material
  * files to the materials folder outside both repos.
  */
@@ -209,22 +209,6 @@ async function allObservations(filter: object, env: Env): Promise<Raw[]> {
 const git = (dir: string, args: string[]) =>
   execFileSync("git", args, { cwd: dir, encoding: "utf8", stdio: "pipe" });
 
-/** Refreshes the leak guards' quote fingerprints, once `pnpm leak-guard` exists (#382). */
-function refreshFingerprints(): string {
-  const scripts = (
-    JSON.parse(readFileSync(path.join(REPO_ROOT, "package.json"), "utf8")) as {
-      scripts: Record<string, string>;
-    }
-  ).scripts;
-  if (!scripts["leak-guard"])
-    return "fingerprints not refreshed: `pnpm leak-guard` does not exist yet";
-  execFileSync("pnpm", ["-s", "leak-guard", "fingerprints"], {
-    cwd: REPO_ROOT,
-    stdio: "inherit",
-  });
-  return "fingerprints refreshed";
-}
-
 type Bundle = ReturnType<typeof mapBundle>;
 
 /**
@@ -269,20 +253,25 @@ async function archiveCase(
       bundle.calls.map((c) => JSON.stringify(c)).join("\n"),
     ),
   };
-  for (const [name, content] of Object.entries(files))
-    writeFileSync(path.join(dir, name), content);
-
   const relative = path.relative(dirs.cases, dir);
-  git(dirs.cases, ["add", "--", relative]);
-  git(dirs.cases, [
-    "commit",
-    "--quiet",
-    "-m",
-    `case ${caseId}: ${courseName}`,
-    "--",
-    relative,
-  ]);
-  git(dirs.cases, ["push", "--quiet", "origin", "HEAD:main"]);
+  try {
+    for (const [name, content] of Object.entries(files))
+      writeFileSync(path.join(dir, name), content);
+    git(dirs.cases, ["add", "--", relative]);
+    git(dirs.cases, [
+      "commit",
+      "--quiet",
+      "-m",
+      `case ${caseId}: ${courseName}`,
+      "--",
+      relative,
+    ]);
+    git(dirs.cases, ["push", "--quiet", "origin", "HEAD:main"]);
+  } catch (error) {
+    // A retry takes the same case id again; leave no half-written bundle behind.
+    rmSync(dir, { recursive: true, force: true });
+    throw error;
+  }
 
   const { calls } = bundle.manifest;
   return [
@@ -291,7 +280,8 @@ async function archiveCase(
       (name) =>
         `  ${relative}/${name} ${statSync(path.join(dir, name)).size} bytes`,
     ),
-    refreshFingerprints(),
+    // Placeholder until `pnpm leak-guard` exists (#382): then refresh the quote fingerprints here.
+    "quote fingerprints not refreshed",
   ].join("\n");
 }
 

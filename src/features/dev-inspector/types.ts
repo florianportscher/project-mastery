@@ -138,8 +138,8 @@ export type DevCall = {
   cost: number | null;
   materialId: string | null;
   unitKey: string | null;
-  /** The app commit the call ran on; null for calls before it was recorded. */
-  appCommit: string | null;
+  /** Whether the call ran in a Chat session rather than the parse or build. */
+  inSession: boolean;
 };
 
 /**

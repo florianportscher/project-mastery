@@ -1,4 +1,4 @@
-import { type Raw, type Snapshot, toCall } from "./inspect";
+import { inBuildWindow, type Raw, type Snapshot, toCall } from "./inspect";
 
 /**
  * The files of one case bundle (issue #383, docs/agents/cases.md), assembled
@@ -30,19 +30,14 @@ export type Manifest = {
       language: string | null;
     }>;
   };
-  run: {
-    status: string | null;
-    startedAt: string | null;
-    finishedAt: string | null;
-    appCommit: string | null;
-  };
+  run: { startedAt: string | null; finishedAt: string | null };
   appCommits: string[];
   models: string[];
   cost: number;
   calls: { archived: number; missing: number };
   observations: string[];
   /** A Chat's case: the Chat, and whether the map was rebuilt after its first message. */
-  chat?: { id: string; messages: number; mapRebuiltAfterFirstMessage: boolean };
+  chat?: { id: string; mapRebuiltAfterFirstMessage: boolean };
 };
 
 /** One archived model call, a line of `calls.jsonl.gz`. */
@@ -124,18 +119,13 @@ function runCalls(
   materialIds: Set<string>,
 ): Raw[] {
   const parents = new Set(observations.map((o) => o.parentObservationId));
-  const from = snapshot.build ? Date.parse(snapshot.build.startedAt) : Infinity;
-  const to = snapshot.build?.finishedAt
-    ? Date.parse(snapshot.build.finishedAt)
-    : Infinity;
   return observations
     .filter((o) => !parents.has(o.id))
     .filter((o) => {
       const materialId = o.metadata?.materialId;
       if (typeof materialId === "string" && materialIds.has(materialId))
         return true;
-      const start = Date.parse(o.startTime);
-      return start >= from && start <= to;
+      return inBuildWindow(o, snapshot.build);
     })
     .toSorted((a, b) => a.startTime.localeCompare(b.startTime));
 }
@@ -210,10 +200,8 @@ function manifestOf(
       })),
     },
     run: {
-      status: snapshot.build?.status ?? null,
       startedAt: utc(snapshot.build?.startedAt),
       finishedAt: utc(snapshot.build?.finishedAt),
-      appCommit: snapshot.build?.appCommit ?? null,
     },
     appCommits: distinct(
       calls.map((c) => c.metadata.appCommit as string | undefined),
@@ -277,7 +265,6 @@ export function chatBundle(input: ChatBundleInput): {
       ...manifestOf(input, "chat", calls, 0),
       chat: {
         id: chat.id,
-        messages: messages.length,
         mapRebuiltAfterFirstMessage:
           !!first && !!built && Date.parse(built) > Date.parse(first),
       },

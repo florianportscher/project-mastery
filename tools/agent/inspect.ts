@@ -114,6 +114,26 @@ export type Call = {
   metadata: Record<string, string>;
 };
 
+/** Langfuse's metadata key for the session a call ran in: a Chat's calls have one, the parse and build do not. */
+const SESSION_KEY = "attributes.langfuse.session.id";
+
+/**
+ * Whether a call belongs to the current map build: made from its start to its
+ * end (to now while it runs), outside any Chat session.
+ */
+export function inBuildWindow(
+  call: { startTime: string; metadata?: Record<string, unknown> },
+  build: Snapshot["build"],
+  now = Date.now(),
+): boolean {
+  if (!build || call.metadata?.[SESSION_KEY]) return false;
+  const start = Date.parse(call.startTime);
+  return (
+    start >= Date.parse(build.startedAt) &&
+    start <= (build.finishedAt ? Date.parse(build.finishedAt) : now)
+  );
+}
+
 export const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -486,7 +506,15 @@ export function formatSection(
     case "build":
       lines.push(
         s.build
-          ? `${s.build.status} commit ${s.build.appCommit ?? "-"} models ${[...new Set((calls ?? []).flatMap((c) => (c.model ? [c.model] : [])))].join(", ") || "-"} started ${s.build.startedAt} finished ${s.build.finishedAt ?? "-"}${s.build.needsUpdate ? " needs update" : ""}${s.build.failureReason ? ` FAILED ${s.build.failureReason}` : ""}`
+          ? `${s.build.status} commit ${s.build.appCommit ?? "-"} models ${
+              [
+                ...new Set(
+                  (calls ?? [])
+                    .filter((c) => inBuildWindow(c, s.build))
+                    .flatMap((c) => (c.model ? [c.model] : [])),
+                ),
+              ].join(", ") || "-"
+            } started ${s.build.startedAt} finished ${s.build.finishedAt ?? "-"}${s.build.needsUpdate ? " needs update" : ""}${s.build.failureReason ? ` FAILED ${s.build.failureReason}` : ""}`
           : "no build",
         JSON.stringify(s.build?.checkReport ?? null),
       );

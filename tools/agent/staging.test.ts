@@ -236,6 +236,28 @@ describe("resetStagingMap", () => {
     ).toBe(false);
   });
 
+  it("deletes nothing when a build started while the archive ran", async () => {
+    let started = "2026-11-23T10:00:00Z";
+    const fetchFn = vi.fn(async (input: URL | RequestInfo) => {
+      const url = new URL(input.toString());
+      if (url.pathname.endsWith("/courses"))
+        return new Response('[{"id":"x"}]');
+      return new Response(`[{"status":"built","started_at":"${started}"}]`);
+    });
+    const slow = async () => {
+      started = "2026-11-23T10:05:00Z";
+      return "archived";
+    };
+    await expect(resetStagingMap(COURSE, slow, ENV, fetchFn)).rejects.toThrow(
+      /changed while/,
+    );
+    expect(
+      fetchFn.mock.calls.some(
+        (call) => (call as [unknown, RequestInit?])[1]?.method === "DELETE",
+      ),
+    ).toBe(false);
+  });
+
   it("deletes nothing when the archive fails", async () => {
     const fetchFn = staging("built");
     const failing = async () => {
