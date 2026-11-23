@@ -30,6 +30,7 @@ Every command and slash skill of this repo, one line each, for the maintainer an
 | `pnpm test:e2e`      | Playwright tests; rebuilds the app first when the code is newer |
 | `pnpm db:test`       | Database tests (Row Level Security) in `supabase/tests/`        |
 | `pnpm db:lint`       | Lints the local database schema                                 |
+| `pnpm leak-guard`    | Git hook checks for document files and quoted real Materials    |
 
 ## Local database
 

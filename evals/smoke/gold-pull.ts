@@ -8,6 +8,7 @@ import {
   SNAPSHOT_TABLES,
   type Snapshot,
 } from "../gold-snapshot";
+import { assertMaterialsListed } from "../../tools/leak-guard/allowlist";
 import { GOLD_DIR } from "./gold-seed";
 
 /**
@@ -106,15 +107,23 @@ export async function pullCourse(
     tables,
   };
 
-  const dir = path.join(options.dir ?? GOLD_DIR, slug);
-  await mkdir(path.join(dir, "materials"), { recursive: true });
+  const files: { name: string; bytes: Buffer }[] = [];
   for (const material of tables.materials ?? []) {
     const url = `${staging.url}/storage/v1/object/${MATERIALS_BUCKET}/${material.storage_path as string}`;
-    const bytes = Buffer.from(
-      await (await get(staging, fetchFn, url)).arrayBuffer(),
-    );
-    const file = `${material.id as string}.${extensionOf(material.media_type as string)}`;
-    await writeFileAtomic(path.join(dir, "materials", file), bytes);
+    files.push({
+      name: `${material.id as string}.${extensionOf(material.media_type as string)}`,
+      bytes: Buffer.from(
+        await (await get(staging, fetchFn, url)).arrayBuffer(),
+      ),
+    });
+  }
+  // Real course Materials never reach the repo: refuse before writing anything.
+  assertMaterialsListed(files);
+
+  const dir = path.join(options.dir ?? GOLD_DIR, slug);
+  await mkdir(path.join(dir, "materials"), { recursive: true });
+  for (const file of files) {
+    await writeFileAtomic(path.join(dir, "materials", file.name), file.bytes);
   }
   await writeFileAtomic(
     path.join(dir, "snapshot.json.gz"),

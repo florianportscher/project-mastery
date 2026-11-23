@@ -52,4 +52,29 @@ if [[ "$cwd" == */.claude/worktrees/* ]]; then
     "Change files with the Write and Edit tools, not from the shell: they run the lint hook on every change. For many similar edits, send several Edit calls in one turn instead of a script."
 fi
 
+# GitHub text is public: a `gh` command that creates or edits an issue, PR or
+# comment is refused when its text, inline or from a body file, quotes 8 or more
+# words of a real Material (#382). No ALLOW_ escape: rewrite the line.
+if runs 'gh\s+((issue|pr)\s+(create|edit|comment)|api\s)' &&
+  { ! runs 'gh\s+api\s' || grep -qE '\s(-f|-F|--field|--raw-field|--input)(\s|=)' <<<"$cmd"; }; then
+  files=$(grep -oE '(--body-file|--input|-F)[ =]+['"'"'"]?[^ '"'"'";&|]+|=@['"'"'"]?[^ '"'"'";&|]+' <<<"$cmd" |
+    sed -E "s/^(--body-file|--input|-F)[ =]+//; s/^.*=@//; s/^['\"]//")
+  if [[ -n "$cwd" && -d "$cwd" ]]; then cd "$cwd" || true; fi
+  text=$(
+    printf '%s\n' "$cmd"
+    while IFS= read -r file; do
+      [[ -z "$file" || "$file" == -* ]] && continue
+      cat "$file" 2>/dev/null || echo "UNREADABLE: $file"
+    done <<<"$files"
+  )
+  if grep -q '^UNREADABLE: ' <<<"$text"; then
+    echo "The leak guard cannot read a body file of this gh command: $(grep -m1 '^UNREADABLE: ' <<<"$text" | cut -d' ' -f2-). Write it first, or fix the path." >&2
+    exit 2
+  fi
+  if ! reason=$(pnpm -s leak-guard check-text <<<"$text" 2>&1); then
+    echo "$reason" >&2
+    exit 2
+  fi
+fi
+
 exit 0
