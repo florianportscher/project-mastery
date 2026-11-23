@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vitest";
 import {
   activeSeconds,
+  DEFAULT_PACE,
   measurePace,
   paceEvidence,
   type TeachingSession,
 } from "./pace";
-import { DEFAULT_PACE } from "./plan";
 import type { ReplayAttempt } from "./replay";
 
 /** A Good attempt on `kcId` in session `sessionId`, `day` days in. */

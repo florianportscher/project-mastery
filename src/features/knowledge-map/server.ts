@@ -36,7 +36,7 @@ export { loadStoredTopics, loadTopicTree } from "./server/stored-topics";
 export { topicLineage } from "./domain/topic-tree";
 export { buildKnowledgeMap } from "./workflows/build-knowledge-map";
 // The map smoke check reads the units a KC may cite from.
-export { loadCourseUnits, unitKey } from "./workflows/build-steps";
+export { loadCourseUnits, unitKey } from "./workflows/course-units";
 // The grouping smoke check runs the grouping step alone.
 export { groupExercises } from "./workflows/group-steps";
 // The developer view forms the units from its snapshot.
@@ -45,6 +45,6 @@ export {
   teachingBatches,
   UNIT_CHARS,
 } from "./domain/teaching-batches";
-export { extractionDigest } from "./workflows/build-steps";
+export { extractionDigest } from "./workflows/course-units";
 export { exerciseBatches } from "./domain/exercise-groups";
 export { MIN_UNIT_COVERAGE } from "./domain/unit-coverage";

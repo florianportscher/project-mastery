@@ -87,7 +87,10 @@ export function MockTaskSheet({
       questionId,
       answer: answer.text,
       confidence: answer.confidence ?? null,
-    });
+    }).catch(() => ({
+      ok: false as const,
+      message: "Not saved: check your connection.",
+    }));
     if (!result.ok && before) stored.current[questionId] = before;
     setNotices((notices) => ({
       ...notices,
@@ -102,7 +105,11 @@ export function MockTaskSheet({
     await Promise.all(
       tasks.map((task) => save(task.questionId, answers[task.questionId]!)),
     );
-    await submitMockExam({ mockId: mock.id });
+    const result = await submitMockExam({ mockId: mock.id }).catch(() => null);
+    if (!result?.ok) {
+      setSubmitting(false);
+      return;
+    }
     router.refresh();
   }
 

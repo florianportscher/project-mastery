@@ -42,6 +42,8 @@ const ALLOWED_FILES = [
   "tools/retro/*.ts",
   // Areas, numbers and ledger of /garden.
   "tools/garden/*.ts",
+  // Allowlist of document files and its hooks (leak guards for real Materials).
+  "tools/leak-guard/*.ts",
 ];
 
 /** Unit tests sit next to the file they test, under the same name. */
@@ -172,6 +174,13 @@ export const architecture = [
               from: { element: { types: { anyOf: ["root", "evals"] } } },
               allow: {
                 to: [{ element: { type: "lib" } }, featureEntries("server.ts")],
+              },
+            },
+            // The gold commands check Materials against the leak guard's allowlist.
+            {
+              from: { element: { type: "evals" } },
+              allow: {
+                to: { file: { path: "tools/leak-guard/allowlist.ts" } },
               },
             },
             // Messages for the most likely mistakes, instead of the generic one.

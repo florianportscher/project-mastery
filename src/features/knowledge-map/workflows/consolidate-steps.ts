@@ -1,5 +1,5 @@
 import "server-only";
-import { REVIVE_SIMILARITY } from "@/features/knowledge-map/domain/kc-clusters";
+import { REVIVE_SIMILARITY } from "@/features/knowledge-map/domain/kc-similarity";
 import { exerciseDifficulty } from "@/features/knowledge-map/domain/exercise-extraction";
 import { acyclicLinks } from "@/features/knowledge-map/domain/prerequisite-cycles";
 import {
@@ -8,12 +8,14 @@ import {
   type StoredExtraction,
 } from "@/features/knowledge-map/schemas";
 import {
-  loadCurrentExtractions,
   touchBuild,
   UNITS_PER_STEP,
   type StepOutcome,
-  type StoredUnit,
 } from "@/features/knowledge-map/workflows/build-steps";
+import {
+  loadCurrentExtractions,
+  type StoredUnit,
+} from "@/features/knowledge-map/workflows/course-units";
 import {
   dailyLimitReason,
   meteredEmbed,

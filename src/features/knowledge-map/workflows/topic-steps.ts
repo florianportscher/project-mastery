@@ -12,10 +12,8 @@ import {
   type ProposedTopic,
   type StoredTreeTopic,
 } from "@/features/knowledge-map/domain/topic-tree";
-import {
-  loadCourseLanguageName,
-  touchBuild,
-} from "@/features/knowledge-map/workflows/build-steps";
+import { loadCourseLanguage } from "@/features/ingestion/server";
+import { touchBuild } from "@/features/knowledge-map/workflows/build-steps";
 import {
   buildCall,
   RateLimited,
@@ -108,7 +106,7 @@ export async function proposeTopicTree(courseId: string): Promise<TreeOutcome> {
   const owner = await touchBuild(supabase, courseId, { stage: "topics" });
   if (!owner) return { ok: true, tree: null };
 
-  const [input, stored, build, language] = await Promise.all([
+  const [input, stored, build, { name: language }] = await Promise.all([
     loadMapInput(supabase, courseId),
     loadTopicTree(supabase, courseId),
     supabase
@@ -116,7 +114,7 @@ export async function proposeTopicTree(courseId: string): Promise<TreeOutcome> {
       .select("topic_tree_hash")
       .eq("course_id", courseId)
       .single(),
-    loadCourseLanguageName(supabase, courseId),
+    loadCourseLanguage(supabase, courseId),
   ]);
   if (build.error) failed("Loading the build", build.error);
   const kcs = kcsInCourseOrder(input);

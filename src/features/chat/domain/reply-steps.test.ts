@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import type { ChatUIMessage } from "@/features/chat/types";
-import { replySegments } from "./reply-steps";
+import { replyIsEmpty, replySegments } from "./reply-steps";
 
 type Parts = ChatUIMessage["parts"];
 
@@ -74,6 +74,15 @@ test("shows an opened reading as a reading card", () => {
       },
     },
   ]);
+});
+
+test("a reply is empty without text or a tool call, not with either", () => {
+  expect(replyIsEmpty([])).toBe(true);
+  expect(
+    replyIsEmpty([{ type: "step-start" }, { type: "text", text: " \n" }]),
+  ).toBe(true);
+  expect(replyIsEmpty([{ type: "text", text: "Hi" }])).toBe(false);
+  expect(replyIsEmpty([readingPart("r1", "s1")])).toBe(false);
 });
 
 test("keeps text and tool calls in order, merging text across steps", () => {

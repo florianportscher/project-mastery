@@ -1,0 +1,13 @@
+# Document files (PDF, PPTX, PPT, DOCX, DOC, KEY, ODP) that may be committed: `path sha256`.
+# Real course Materials must never be listed. A new AI-written file gets its line in the same PR:
+#   sha256sum <file>
+e2e/files/lecture-notes.pdf a34cf01f8c4de33a35017eff412186d8bfce22b59f7932c2823039c729654f1b
+evals/gold/linear-algebra-I/exercises.pdf 7f7a2ba61888ac769321504bb07e88190e80665122fdd9126174409b3a1fe43a
+evals/gold/linear-algebra-I/lecture-notes.pdf 1fe78c7034523be0d1522d5525d152bd313dbd04d5f0c502ca0de038bae0e189
+evals/gold/linear-algebra-I/materials/b585de0b-19e8-4e82-9883-0950c68c6e2e.pdf 57e0bbec195fa31da60e002c6b27890a3777acf2e493c4311a829b9010d0f0b6
+evals/gold/linear-algebra-I/past-exams.pdf 1c3b97288fa7351dde5284fe7b0387d8e3c06d16d072ec77deeb1bee06667d50
+src/features/ingestion/workflows/test-files/exercise-sheet.pdf bf3a4b66a272a313ed15a03b39e219606c3714a373721188dec7079fb6abb3db
+src/features/ingestion/workflows/test-files/old-exam.pdf c50e3b02745bf4fc0d230ed22056aa1d7d2915a9c0de62a2ccacff5478d4f70e
+src/features/ingestion/workflows/test-files/seven-page-script.pdf ce48354f10ccbb2c0274cd7e1c92f89474c84f389c9cdcc9739594cf5aad7645
+src/features/ingestion/workflows/test-files/slides-with-blank.pdf 54035c3502b27bdf22d5f30fdb00aebd2e2e0cfdb87172ea060110b6c2ae1ac5
+src/features/ingestion/workflows/test-files/two-page-lecture.pdf 8943117c175fcbedd10f848273cf4feaa5df847ac2d5a82eca51eb9b2d0c9a25

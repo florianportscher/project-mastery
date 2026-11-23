@@ -1,9 +1,11 @@
 import type {
   AttemptHelp,
   AttemptResult,
+  Goal,
 } from "@/features/study/domain/replay";
-import type { MockStatus } from "@/features/study/domain/mock-paths";
-import type { Pace, Progress, TopicScope } from "@/features/study/domain/plan";
+import type { MockStatus } from "@/features/study/domain/mock-exam";
+import type { Pace } from "@/features/study/domain/pace";
+import type { Progress, TopicScope } from "@/features/study/domain/plan";
 import type { ProblemSource } from "@/features/study/domain/exercises";
 import type { RecallBand } from "@/features/study/domain/recall-band";
 import type { TopicFacts } from "@/features/study/domain/topic-facts";
@@ -26,7 +28,7 @@ export type TutorContext = {
   /** From today to the exam date; null without one. */
   daysLeft: number | null;
   /** The Student's goal from the Brief; null until answered. */
-  goal: "pass" | "good_grade" | "master_everything" | null;
+  goal: Goal;
   session: SessionFacts;
   proposal: Proposal;
   /** The first 8 refreshes of the ranking. */
@@ -369,8 +371,8 @@ export type MockExamView = {
 
 /** A graded Mock exam's score, over the tasks that could be graded. */
 export type MockResult = {
-  /** The share of points awarded, from 0 to 100. */
-  scorePercent: number;
+  /** The share of points awarded, from 0 to 100; null when no task could be graded. */
+  scorePercent: number | null;
   /** The share Readiness predicted, from 0 to 100. */
   predictedPercent: number;
   /** Points per Topic, in task order; "Other" for tasks without a Topic. */

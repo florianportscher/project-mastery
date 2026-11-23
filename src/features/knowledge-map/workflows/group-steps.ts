@@ -33,7 +33,7 @@ import {
 import {
   loadStoredGroups,
   type StoredGroups,
-} from "@/features/knowledge-map/workflows/exercise-batches";
+} from "@/features/knowledge-map/workflows/course-units";
 import {
   dailyLimitReason,
   RATE_LIMITED_STEP_RETRIES,

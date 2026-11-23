@@ -1,5 +1,7 @@
+import { z } from "zod";
 import type { AnswerCheck } from "@/features/knowledge-map";
 import type { AttemptResult } from "@/features/study/domain/replay";
+import type { MockTaskGrade } from "@/features/study/types";
 
 /**
  * The scoring rules of a graded Mock exam (#186): an item's points from its
@@ -8,6 +10,33 @@ import type { AttemptResult } from "@/features/study/domain/replay";
  */
 
 export type GradedStep = { points: number; reason: string };
+
+const stepsSchema = z.array(
+  z.object({ points: z.number(), reason: z.string() }),
+);
+
+/** A task's grade from its item's columns; null until grading finished. */
+export function taskGrade(item: {
+  graded_at: string | null;
+  points_awarded: number | null;
+  steps: unknown;
+  check: string | null;
+}): MockTaskGrade | null {
+  if (item.graded_at === null) return null;
+  if (item.points_awarded === null) return { status: "failed" };
+  const steps = stepsSchema.safeParse(item.steps);
+  return {
+    status: "graded",
+    pointsAwarded: item.points_awarded,
+    steps: steps.success ? (steps.data satisfies GradedStep[]) : [],
+    check:
+      item.check === "match" ||
+      item.check === "mismatch" ||
+      item.check === "unchecked"
+        ? item.check
+        : null,
+  };
+}
 
 /**
  * The worst check of the item's final values against its keys; null when
@@ -49,10 +78,10 @@ export type ResultItem = ScoredItem & { topic: string | null };
 
 /**
  * The score and the prediction as percentages, and the points per Topic in
- * task order, all over the graded items.
+ * task order, all over the graded items; the score is null without one.
  */
 export function mockResultShares(items: ResultItem[]): {
-  scorePercent: number;
+  scorePercent: number | null;
   predictedPercent: number;
   topics: Array<{ name: string; awarded: number; points: number }>;
 } {
@@ -69,7 +98,7 @@ export function mockResultShares(items: ResultItem[]): {
     topics.set(name, topic);
   }
   return {
-    scorePercent: percent(mockScore(graded).score),
+    scorePercent: graded.length === 0 ? null : percent(mockScore(graded).score),
     predictedPercent: percent(
       graded.reduce(
         (sum, item) => sum + item.points * item.predictedSuccess,

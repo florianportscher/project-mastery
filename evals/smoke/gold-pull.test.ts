@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { mkdtemp, readFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -7,14 +8,16 @@ import { insertRows } from "./gold-course";
 import { pullCourse } from "./gold-pull";
 
 const staging = { url: "https://staging.example", secretKey: "secret" };
+/** A file on the leak guard's allowlist. */
+const allowedPdf = readFileSync("e2e/files/lecture-notes.pdf");
 
 /** A fake staging: rows per table, and one stored file. */
-function fakeStaging(rows: Record<string, object[]>) {
+function fakeStaging(rows: Record<string, object[]>, file = allowedPdf) {
   const requests: { url: string; method?: string }[] = [];
   const fetchFn = (async (input: string, init?: RequestInit) => {
     requests.push({ url: input, method: init?.method });
     if (input.includes("/storage/v1/object/")) {
-      return new Response(new Uint8Array([37, 80, 68, 70]));
+      return new Response(new Uint8Array(file));
     }
     const table = /\/rest\/v1\/([a-z_]+)\?/.exec(input)?.[1] ?? "";
     return Response.json(rows[table] ?? []);
@@ -51,6 +54,28 @@ it("pulls every snapshot table and the Materials' files from staging", async () 
     "m1.pdf",
   ]);
   expect(requests.every((r) => r.method === "GET")).toBe(true);
+});
+
+it("refuses a Material whose file is not on the allowlist and writes nothing", async () => {
+  const { fetchFn } = fakeStaging(
+    {
+      courses: [{ id: "c", name: "Real" }],
+      materials: [
+        {
+          id: "m1",
+          course_id: "c",
+          media_type: "application/pdf",
+          storage_path: "owner/c/m1",
+        },
+      ],
+    },
+    Buffer.from("a real lecture"),
+  );
+  const dir = await mkdtemp(path.join(tmpdir(), "gold-pull-"));
+  await expect(
+    pullCourse(staging, "c", "real", { fetchFn, dir }),
+  ).rejects.toThrow("m1.pdf");
+  expect(await readdir(dir)).toEqual([]);
 });
 
 it("stops when the Course is not on staging", async () => {

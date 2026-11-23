@@ -14,10 +14,6 @@ import {
 /** The share of the total Topic priority the goal *to pass* takes. */
 const PASS_SHARE = 0.8;
 
-export type Pace = { minutesPerKc: number; minutesPerReview: number };
-
-export const DEFAULT_PACE: Pace = { minutesPerKc: 30, minutesPerReview: 2 };
-
 export type TopicChoice = {
   topicId: string;
   choice: "pinned" | "skipped";
