@@ -16,7 +16,7 @@ const MAX_EXERCISE_KCS = 6;
 
 const MAX_FINAL_ANSWERS = 10;
 
-export type ExerciseAnswer = {
+type ExerciseAnswer = {
   id: string;
   notAnExercise: boolean;
   kcIds: string[];

@@ -18,7 +18,7 @@ export type ChunkSpan = {
   label: string;
 };
 
-export type SectionCut = {
+type SectionCut = {
   materialId: string;
   materialName: string;
   pageFrom: number;

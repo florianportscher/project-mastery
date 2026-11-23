@@ -122,7 +122,7 @@ function asRepeats(
   };
 }
 
-export type UnitAttempt = {
+type UnitAttempt = {
   unit: CourseUnit;
   failures: number;
   /** The partial extraction of its pieces answered before. */

@@ -14,7 +14,7 @@ import type { Supabase } from "@/lib/supabase/types";
 
 type TopicKc = { id: string; name: string };
 
-export type CourseTopic = {
+type CourseTopic = {
   id: string;
   /** The Topic it sits in; null at the top. */
   parentId: string | null;

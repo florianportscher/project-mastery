@@ -12,7 +12,7 @@ import { createHash } from "node:crypto";
  */
 export const UNIT_CHARS = 12_000;
 
-export type BatchChunk = { id: string; heading: string | null; chars: number };
+type BatchChunk = { id: string; heading: string | null; chars: number };
 
 /**
  * One Material's chunks packed in reading order into batches of at most

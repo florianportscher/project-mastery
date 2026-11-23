@@ -48,7 +48,7 @@ const CHECK_INSTRUCTIONS = `You get things that knowledge components (KCs) of a 
 - Answer null when no KC is meant, or when you are not sure. Do not guess: a null answer keeps it as something the KC assumes from outside the course.`;
 
 /** One check call: up to 50 names, and the KCs they may mean. */
-export type CheckInput = {
+type CheckInput = {
   names: readonly OfferedName[];
   kcs: readonly OfferedKc[];
 };

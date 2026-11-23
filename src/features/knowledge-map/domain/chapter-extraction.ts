@@ -18,7 +18,7 @@ export type ExtractedKc = {
   assumes: Assumption[];
 };
 
-export type AnsweredExtraction = {
+type AnsweredExtraction = {
   repeats: Array<{ kcId: string; chunkIds: string[] }>;
   kcs: Array<{
     id: string;

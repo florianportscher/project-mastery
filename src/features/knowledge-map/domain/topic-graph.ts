@@ -30,7 +30,7 @@ type TopicGraphNode =
 /** Topic `source` holds a Prerequisite of a KC in Topic `target`. */
 type TopicGraphEdge = { id: string; source: string; target: string };
 
-export type TopicGraph = { nodes: TopicGraphNode[]; edges: TopicGraphEdge[] };
+type TopicGraph = { nodes: TopicGraphNode[]; edges: TopicGraphEdge[] };
 
 /**
  * The Topic tree as a graph in tree order: a Topic with children becomes a

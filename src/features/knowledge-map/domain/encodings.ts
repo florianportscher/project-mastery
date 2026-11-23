@@ -85,7 +85,7 @@ function rampColor(fraction: number): string {
   return PRIORITY_RAMP[step]!;
 }
 
-export type ColorContext = {
+type ColorContext = {
   band: MapRecallBand;
   /** From `priorityFractions`; undefined without a Priority. */
   fraction: number | undefined;

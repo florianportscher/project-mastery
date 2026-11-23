@@ -17,7 +17,7 @@ const countUnits: Partial<Record<BuildStage, string>> = {
   exercises: "batches",
 };
 
-export type StageView = {
+type StageView = {
   stage: BuildStage;
   label: string;
   state: "done" | "running" | "todo";

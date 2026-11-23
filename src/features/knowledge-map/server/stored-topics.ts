@@ -4,7 +4,7 @@ import { allRows } from "@/lib/supabase/all-rows";
 import type { Supabase } from "@/lib/supabase/types";
 
 /** A stored Topic of the tree; one without KCs of its own has no question. */
-export type TreeTopic = {
+type TreeTopic = {
   id: string;
   parentId: string | null;
   name: string;

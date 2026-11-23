@@ -22,7 +22,7 @@ export type ProposedTopic = {
   continues: string | null;
 };
 
-export type PlannedTopic = {
+type PlannedTopic = {
   /** The stored Topic it continues; null inserts one. */
   id: string | null;
   /** The index of its parent in the plan; null at the top. */
@@ -34,7 +34,7 @@ export type PlannedTopic = {
   kcs: string[];
 };
 
-export type TreeKc = {
+type TreeKc = {
   id: string;
   material: string;
 };

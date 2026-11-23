@@ -46,7 +46,7 @@ export type TreeProposal = {
   topics: ProposedTopic[] | null;
 };
 
-export type TreeOutcome =
+type TreeOutcome =
   { ok: true; tree: TreeProposal | null } | { ok: false; reason: string };
 
 /**

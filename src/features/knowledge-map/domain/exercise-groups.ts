@@ -60,7 +60,7 @@ export function offeredIds<Chunk extends GroupingChunk>(
   return offered;
 }
 
-export type AnsweredExercise = {
+type AnsweredExercise = {
   questionIds: string[];
   solutionIds: string[];
   exam?: string | null;
@@ -128,7 +128,7 @@ export function ownGroups(chunks: readonly GroupingChunk[]): CheckedGroup[] {
     }));
 }
 
-export type AnsweredExam = { name: string; continues?: string | null };
+type AnsweredExam = { name: string; continues?: string | null };
 
 /**
  * The exams of one run, from the call's answer: names trimmed, an empty or

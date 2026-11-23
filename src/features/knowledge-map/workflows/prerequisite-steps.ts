@@ -48,7 +48,7 @@ const nameKey = (name: string) => name.trim().toLowerCase();
  * or null when the build no longer runs, and the key of the last name it
  * handled, which the next step starts after; or why the build stops.
  */
-export type RematchOutcome =
+type RematchOutcome =
   | { ok: true; left: number | null; after: string; waitMs?: number }
   | { ok: false; reason: string };
 
