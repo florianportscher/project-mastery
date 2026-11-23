@@ -25,7 +25,7 @@ import type {
   MapTopicBadges,
   MapTopicStudies,
 } from "@/features/knowledge-map/types";
-import { BuildPanel } from "./build-panel";
+import { BuildPanel, UpdateLine } from "./build-panel";
 import { CourseMapGraph } from "./course-map-graph";
 
 const dateFormat = new Intl.DateTimeFormat("en", {
@@ -72,8 +72,19 @@ export function CourseMap({
   const { kcs } = map;
   const building = map.build?.status === "building";
   // No map to show yet: the build's panel takes its place.
-  const firstBuild = building && (kcs.length === 0 || topics.length === 0);
+  const failed = map.build?.status === "failed";
+  const firstBuild =
+    (building && (kcs.length === 0 || topics.length === 0)) ||
+    (failed && map.build?.finishedAt == null);
   useBuildPolling(building);
+  const tryAgain = (
+    <BuildButton
+      courseId={map.courseId}
+      hasMap={map.build?.finishedAt != null}
+      disabled={!map.canBuild}
+      label="Try again"
+    />
+  );
   const buildButton = (
     <BuildButton
       courseId={map.courseId}
@@ -91,7 +102,11 @@ export function CourseMap({
           actions={buildButton}
         />
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm text-muted-foreground">
-          <BuildStatus build={map.build} panel={firstBuild} />
+          <BuildStatus
+            build={map.build}
+            panel={firstBuild}
+            tryAgain={tryAgain}
+          />
           {kcs.length > 0 && (
             <>
               {progressLine}
@@ -138,6 +153,11 @@ export function CourseMap({
             startedAt={map.build.startedAt}
             progress={map.build.progress}
             found={kcs.length}
+            failure={
+              failed
+                ? { reason: map.build.failureReason ?? "", action: tryAgain }
+                : undefined
+            }
           />
         </div>
       ) : kcs.length === 0 ? (
@@ -183,7 +203,15 @@ function FormattedTime({ iso }: { iso: string }) {
 }
 
 /** The build's state under the title; with `panel`, the panel shows it. */
-function BuildStatus({ build, panel }: { build: MapBuild; panel: boolean }) {
+function BuildStatus({
+  build,
+  panel,
+  tryAgain,
+}: {
+  build: MapBuild;
+  panel: boolean;
+  tryAgain: ReactNode;
+}) {
   const lastBuilt = build?.finishedAt && (
     <>
       Last built <FormattedTime iso={build.finishedAt} />
@@ -197,13 +225,15 @@ function BuildStatus({ build, panel }: { build: MapBuild; panel: boolean }) {
     >
       {build === null && <p>Not built yet.</p>}
       {build?.status === "building" && !panel && (
-        <p className="flex items-center gap-2">
-          <Spinner className="size-3" />
-          Building…
-        </p>
+        <UpdateLine progress={build.progress} />
       )}
-      {build?.status === "failed" && (
-        <p className="text-destructive">Build failed: {build.failureReason}</p>
+      {build?.status === "failed" && !panel && (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-destructive">
+            Build failed: {build.failureReason}
+          </p>
+          {tryAgain}
+        </div>
       )}
       {lastBuilt && <p>{lastBuilt}</p>}
     </div>
@@ -288,7 +318,9 @@ function BuildButton({
   disabled,
   size,
   variant,
+  label,
 }: {
+  label?: string;
   courseId: string;
   hasMap: boolean;
   disabled: boolean;
@@ -319,7 +351,7 @@ function BuildButton({
         ) : (
           <RotateCwIcon data-icon="inline-start" />
         )}
-        {hasMap ? "Update map" : "Build knowledge map"}
+        {label ?? (hasMap ? "Update map" : "Build knowledge map")}
       </Button>
       {error && (
         <span role="alert" className="text-sm text-destructive">

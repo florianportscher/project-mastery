@@ -311,6 +311,76 @@ describe("the first build's panel", () => {
   });
 });
 
+describe("an Update map and a failed build", () => {
+  const build = (over: Partial<NonNullable<KnowledgeMapView["build"]>>) => ({
+    status: "building" as const,
+    failureReason: null,
+    finishedAt: "2026-01-01T10:00:00Z",
+    startedAt: new Date(Date.now() - 60_000).toISOString(),
+    progress: null,
+    ...over,
+  });
+
+  test("an update keeps the map and shows the stage under the title", () => {
+    renderMap(
+      {
+        ...map,
+        build: build({ progress: { stage: "materials", done: 3, total: 4 } }),
+      },
+      topics,
+    );
+    const status = screen.getByRole("status", { name: "Build status" });
+    expect(status).toHaveTextContent(
+      "Reading your Materials · 3 of 4 sections",
+    );
+    expect(
+      within(status).getByRole("progressbar", { name: "Update progress" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Build progress" })).toBeNull();
+  });
+
+  test("a failed first build keeps the panel, marks the stage and offers Try again", () => {
+    renderMap(
+      {
+        ...map,
+        kcs: [],
+        build: build({
+          status: "failed",
+          failureReason: "The AI stopped answering.",
+          finishedAt: null,
+          progress: { stage: "topics" },
+        }),
+      },
+      [],
+    );
+    const panel = screen.getByRole("region", { name: "Build progress" });
+    expect(panel).toHaveTextContent("The AI stopped answering.");
+    expect(within(panel).getByLabelText("Stopped here")).toBeVisible();
+    expect(
+      within(panel).getByRole("button", { name: "Try again" }),
+    ).toBeVisible();
+  });
+
+  test("a failed update keeps the map and shows the reason with Try again", () => {
+    renderMap(
+      {
+        ...map,
+        build: build({
+          status: "failed",
+          failureReason: "The AI stopped answering.",
+        }),
+      },
+      topics,
+    );
+    const status = screen.getByRole("status", { name: "Build status" });
+    expect(status).toHaveTextContent("The AI stopped answering.");
+    expect(
+      within(status).getByRole("button", { name: "Try again" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Build progress" })).toBeNull();
+  });
+});
+
 describe("the Progress line", () => {
   test("shows the bar and the line", () => {
     renderMap(map, topics);
