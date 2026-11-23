@@ -1,5 +1,4 @@
 import "server-only";
-import { loadCourseLanguage as loadLanguage } from "@/features/ingestion/server";
 import {
   buildProgressSchema,
   type BuildProgress,
@@ -153,18 +152,6 @@ export async function runCalls<Item>(
   await Promise.all(
     Array.from({ length: getAiEnv().AI_CONCURRENCY }, () => worker()),
   );
-}
-
-/**
- * The Course language by name: the one the Student asked for in the
- * Brief, else the most common language of its Materials; English when none
- * has one.
- */
-export async function loadCourseLanguageName(
-  supabase: AdminSupabase,
-  courseId: string,
-): Promise<string> {
-  return (await loadLanguage(supabase, courseId)).name;
 }
 
 /**

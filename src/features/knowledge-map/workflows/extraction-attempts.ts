@@ -1,4 +1,5 @@
 import "server-only";
+import { loadCourseLanguage } from "@/features/ingestion/server";
 import type { KnownKc } from "@/features/knowledge-map/ai/chapter-extraction";
 import type { UnitExtraction } from "@/features/knowledge-map/domain/chapter-extraction";
 import {
@@ -10,7 +11,6 @@ import {
 import { RateLimited } from "@/features/knowledge-map/workflows/build-call";
 import {
   countedProgress,
-  loadCourseLanguageName,
   recordProgress,
   runCalls,
   UNITS_PER_STEP,
@@ -92,7 +92,7 @@ export async function extractInCourseOrder(
   let progress = countedProgress(step.progress, step.stage, attempts.length);
   await recordProgress(supabase, courseId, progress);
 
-  const language = await loadCourseLanguageName(supabase, courseId);
+  const { name: language } = await loadCourseLanguage(supabase, courseId);
   let done = 0;
   const failedKeys: string[] = [];
   const stale = new Map(plan.todo.map((unit) => [unitKey(unit), unit]));
