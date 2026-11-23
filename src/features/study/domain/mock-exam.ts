@@ -1,3 +1,8 @@
+/**
+ * A stored Mock exam as its page sees it: its path, its status at a time,
+ * its deadline once started and whether its grading stalled. Pure.
+ */
+
 export function mockExamPath(courseId: string, mockId: string): string {
   return `/courses/${courseId}/mock/${mockId}`;
 }

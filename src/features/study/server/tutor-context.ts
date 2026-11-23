@@ -11,7 +11,7 @@ import { topicFacts } from "@/features/study/domain/topic-facts";
 import { tutorContext } from "@/features/study/domain/tutor-context";
 import { loadAskedProblems } from "@/features/study/server/attempts";
 import { loadMemory } from "@/features/study/server/memory";
-import { taskGrade } from "@/features/study/server/mock-results";
+import { taskGrade } from "@/features/study/domain/mock-grading";
 import { loadMaterialNotes } from "@/features/study/server/notes";
 import { loadReadyProblems } from "@/features/study/server/problems";
 import {

@@ -91,6 +91,15 @@ export function CourseMap({
       disabled={!map.canBuild}
     />
   );
+  const updateButton = (
+    <BuildButton
+      courseId={map.courseId}
+      hasMap
+      disabled={!map.canBuild}
+      size="sm"
+      variant="outline"
+    />
+  );
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col gap-6 px-4 pt-8 pb-4 sm:px-6">
@@ -120,28 +129,14 @@ export function CourseMap({
             className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground"
           >
             <p>Your Materials changed since the map was last built.</p>
-            <BuildButton
-              courseId={map.courseId}
-              hasMap
-              disabled={!map.canBuild}
-              size="sm"
-              variant="outline"
-            />
+            {updateButton}
           </div>
         )}
         {!building && (
           <MapCheck
             report={map.checkReport}
             details={checkDetails}
-            updateButton={
-              <BuildButton
-                courseId={map.courseId}
-                hasMap
-                disabled={!map.canBuild}
-                size="sm"
-                variant="outline"
-              />
-            }
+            updateButton={updateButton}
           />
         )}
       </div>

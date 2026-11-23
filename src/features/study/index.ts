@@ -11,7 +11,7 @@ export { ProgressLine } from "./components/progress-line";
 export { ReadinessLine } from "./components/readiness-line";
 export { MockExamStatus } from "./components/mock-exam-status";
 export { MockTaskSheet } from "./components/mock-task-sheet";
-export { mockExamPath } from "./domain/mock-paths";
+export { mockExamPath } from "./domain/mock-exam";
 export { ProblemFlagControl } from "./components/problem-flag-control";
 export { TopicChoiceControls } from "./components/topic-choice-controls";
 export { TodayCard } from "./components/today-card";

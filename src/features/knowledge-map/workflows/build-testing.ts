@@ -1,4 +1,4 @@
-import { cosineSimilarity } from "@/features/knowledge-map/domain/kc-clusters";
+import { cosineSimilarity } from "@/features/knowledge-map/domain/kc-similarity";
 import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
 
 export {

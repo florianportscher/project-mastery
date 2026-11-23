@@ -1,12 +1,6 @@
 import "server-only";
 import { loadChunkSources } from "@/features/ingestion/server";
-import {
-  loadKcAssumes,
-  topicAnchors,
-  type loadReadingSections,
-  type loadStoredMap,
-  type loadStoredTopics,
-} from "@/features/knowledge-map/server";
+import { loadKcAssumes, topicAnchors } from "@/features/knowledge-map/server";
 import {
   TutorToolError,
   tutorTools,
@@ -14,7 +8,6 @@ import {
   type TutorTools,
 } from "@/features/study/ai/tools";
 import { kcBand } from "@/features/study/domain/recall-band";
-import type { TopicFacts } from "@/features/study/domain/topic-facts";
 import { desiredRetention } from "@/features/study/domain/replay";
 import { loadRecall } from "@/features/study/server/attempts";
 import { findProblems } from "@/features/study/server/find-problems";
@@ -35,8 +28,6 @@ import { loadTutorContext } from "@/features/study/server/tutor-context";
 import type { AskedProblem, TutorContext } from "@/features/study/types";
 import type { Supabase } from "@/lib/supabase/types";
 
-type KnowledgeMap = Awaited<ReturnType<typeof loadStoredMap>>;
-
 const SOURCES_PER_KC = 3;
 
 /**
@@ -53,53 +44,43 @@ export async function startTutoring(
   { openedSections }: { openedSections: string[] },
 ): Promise<{ context: TutorContext; tools: TutorTools }> {
   const session = await loadTutorSession(supabase, chatId);
-  const loaded = await loadTutorContext(
+  const { context, ...reads } = await loadTutorContext(
     supabase,
     { courseId, session, openedSections },
     new Date(),
   );
   return {
-    context: loaded.context,
+    context,
     tools: tutorTools(
-      tutorToolActions(supabase, {
-        courseId,
-        chatId,
-        sessionId: session?.id ?? null,
-        facts: loaded.exam,
-        map: loaded.map,
-        topics: loaded.topics,
-        readings: loaded.readings,
-        reserved: loaded.reserved,
-        topicFacts: loaded.topicFacts,
-      }),
+      tutorToolActions(
+        supabase,
+        { courseId, chatId, sessionId: session?.id ?? null },
+        reads,
+      ),
     ),
   };
 }
 
+/**
+ * What the tools do in the Chat `chatId`, on the reads of the reply's
+ * tutor context: the map and Reading sections without the reserved exam,
+ * whose chunks (`reserved`) no tool gives the AI.
+ */
 function tutorToolActions(
   supabase: Supabase,
   {
     courseId,
     chatId,
     sessionId,
-    facts,
+  }: { courseId: string; chatId: string; sessionId: string | null },
+  {
+    exam,
     map,
     topics,
     readings,
     reserved,
     topicFacts,
-  }: {
-    courseId: string;
-    chatId: string;
-    sessionId: string | null;
-    facts: Parameters<typeof loadRecall>[2];
-    map: KnowledgeMap;
-    topics: Awaited<ReturnType<typeof loadStoredTopics>>;
-    readings: Awaited<ReturnType<typeof loadReadingSections>>;
-    /** The reserved exam's chunks, which no tool gives the AI. */
-    reserved: Set<string>;
-    topicFacts: Map<string, TopicFacts>;
-  },
+  }: Omit<Awaited<ReturnType<typeof loadTutorContext>>, "context">,
 ): TutorToolActions {
   const kcById = new Map(map.kcs.map((kc) => [kc.id, kc]));
   const session = () => {
@@ -145,7 +126,7 @@ function tutorToolActions(
       ? null
       : { statement, page: null, generatedProblemId: problemId };
   };
-  const retention = desiredRetention(facts.goal);
+  const retention = desiredRetention(exam.goal);
   const kcBuildsOn = new Map(
     [...topicFacts.values()].flatMap((f) => Object.entries(f.kcBuildsOn)),
   );
@@ -238,7 +219,7 @@ function tutorToolActions(
         );
       }
       const [recall, assumes] = await Promise.all([
-        loadRecall(supabase, courseId, facts, new Date()),
+        loadRecall(supabase, courseId, exam, new Date()),
         loadKcAssumes(supabase, courseId),
       ]);
       const bandOf = (id: string) => kcBand(recall.get(id), retention);

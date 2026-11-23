@@ -7,11 +7,8 @@ import {
 } from "@/features/knowledge-map/server";
 import { loadKcPriorities } from "@/features/priorities/server";
 import { mockResultShares } from "@/features/study/domain/mock-grading";
-import {
-  DEFAULT_PACE,
-  planProgress,
-  planScope,
-} from "@/features/study/domain/plan";
+import { DEFAULT_PACE } from "@/features/study/domain/pace";
+import { planProgress, planScope } from "@/features/study/domain/plan";
 import { inFinalStretch, rankNext } from "@/features/study/domain/ranking";
 import { readiness } from "@/features/study/domain/readiness";
 import { replayCourse, utcDay } from "@/features/study/domain/replay";
@@ -134,16 +131,15 @@ export async function loadStudy(
   courseId: string,
   now: Date,
 ) {
-  const [map, priorities, exam, topics, attempts, choices, pace] =
-    await Promise.all([
-      loadStoredMap(supabase, courseId),
-      loadKcPriorities(supabase, courseId),
-      getExamFacts(supabase, courseId),
-      loadStoredTopics(supabase, courseId),
-      loadCourseAttempts(supabase, courseId),
-      loadTopicChoices(supabase, courseId),
-      loadPace(supabase, courseId),
-    ]);
+  const [map, priorities, exam, topics, attempts, choices] = await Promise.all([
+    loadStoredMap(supabase, courseId),
+    loadKcPriorities(supabase, courseId),
+    getExamFacts(supabase, courseId),
+    loadStoredTopics(supabase, courseId),
+    loadCourseAttempts(supabase, courseId),
+    loadTopicChoices(supabase, courseId),
+  ]);
+  const pace = await loadPace(supabase, attempts);
   const recall = replayCourse(attempts, { ...exam, now });
   const scope = planScope({ topics, priorities, goal: exam.goal, choices });
   const ranked = rankNext({
@@ -191,7 +187,8 @@ async function loadLastSessionMinutes(
 
 /**
  * The score of the Course's latest graded Mock exam, 0 to 100, over the
- * items grading did not fail, read with `supabase`; null without one.
+ * items grading did not fail, read with `supabase`; null without one, or
+ * when grading failed on all its items.
  */
 async function loadLastMockPercent(
   supabase: Supabase,
