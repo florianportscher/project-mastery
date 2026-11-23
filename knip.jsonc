@@ -20,4 +20,6 @@
     // (pnpm-workspace.yaml).
     "pdfjs-dist",
   ],
+  // The system diff, run by tools/agent walk diff.
+  "ignoreBinaries": ["diff"],
 }
