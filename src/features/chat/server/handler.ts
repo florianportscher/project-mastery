@@ -132,8 +132,10 @@ export async function respondInChat({
   const { chatId, courseId, mockId, minutes, message } = parsed.data;
 
   const existing = await findChat(supabase, chatId);
-  if (!existing && !courseId) return refuse(404, chatNotFoundMessage);
-  if (!existing && !(await getCourseWith(supabase, courseId!))) {
+  // A stored Chat stays in its Course; a new one is created in the request's.
+  const chatCourseId = existing?.courseId ?? courseId;
+  if (!chatCourseId) return refuse(404, chatNotFoundMessage);
+  if (!existing && !(await getCourseWith(supabase, chatCourseId))) {
     return refuse(404, courseNotFoundMessage);
   }
   // An ended session's Chat is read-only; one gone idle ends now.
@@ -144,11 +146,7 @@ export async function respondInChat({
   // A stored message, as when retrying, is answered as stored: its
   // Materials may have been deleted since.
   if (!existing || !(await hasMessage(supabase, existing.id, message.id))) {
-    const refusal = await attachmentRefusal(
-      supabase,
-      message,
-      existing?.courseId ?? courseId!,
-    );
+    const refusal = await attachmentRefusal(supabase, message, chatCourseId);
     if (refusal) return refuse(400, refusal);
   }
 
@@ -169,7 +167,7 @@ export async function respondInChat({
   const replyId = randomUUID();
   const chat =
     existing ??
-    (await createChat(supabase, chatId, { courseId: courseId!, replyId }));
+    (await createChat(supabase, chatId, { courseId: chatCourseId, replyId }));
   if (chat === "taken") return refuse(404, chatNotFoundMessage);
   // The Course was deleted since it was checked.
   if (chat === "no course") return refuse(404, courseNotFoundMessage);
