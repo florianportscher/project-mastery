@@ -1,17 +1,7 @@
 import type { UIMessage } from "ai";
 import type { MaterialReference } from "@/features/courses";
 import type { ProblemFlag, TutorContext } from "@/features/study";
-
-/** The tokens and cost of the AI call that wrote a reply. */
-export type ReplyUsage = {
-  /** All input tokens, cached ones included. */
-  inputTokens: number;
-  cachedInputTokens: number;
-  outputTokens: number;
-  costUsd: number;
-  /** Whether the tokens were estimated, as for a stopped reply. */
-  estimated: boolean;
-};
+import type { ReplyUsage } from "@/features/usage";
 
 /** What the server attaches to an AI message besides its parts. */
 export type ChatMessageMetadata = {

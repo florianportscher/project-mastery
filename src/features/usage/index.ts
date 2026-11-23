@@ -6,4 +6,4 @@ export {
 } from "./components/daily-limit-notice";
 export { dailyLimitPercentLeft } from "./domain/daily-limit";
 export { loadDailyUsage, refreshDailyLimitStatus } from "./server/actions";
-export type { DailyLimitStatus, DailyUsage } from "./types";
+export type { DailyLimitStatus, DailyUsage, ReplyUsage } from "./types";

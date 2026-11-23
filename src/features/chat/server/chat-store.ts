@@ -2,8 +2,9 @@ import "server-only";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
-import type { ChatUIMessage, ReplyUsage } from "@/features/chat/types";
+import type { ChatUIMessage } from "@/features/chat/types";
 import type { TutorContext } from "@/features/study";
+import type { ReplyUsage } from "@/features/usage";
 import { loadReplyUsage } from "@/features/usage/server";
 
 /**
