@@ -322,7 +322,16 @@ export function Chat({
             ) : (
               messages.map((message) => {
                 const isLast = message === lastMessage;
-                if (isLast && emptyReply) return null;
+                // A reply that ended, failed or not, with nothing to show is
+                // left out; the last one's error shows below.
+                if (
+                  message.role === "assistant" &&
+                  !(isBusy && isLast) &&
+                  !message.metadata?.stopped &&
+                  replyIsEmpty(message.parts)
+                ) {
+                  return null;
+                }
                 return message.role === "assistant" ? (
                   <AiReply
                     key={message.id}
