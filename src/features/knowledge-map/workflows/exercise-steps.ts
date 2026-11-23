@@ -14,11 +14,7 @@ import {
   type StoredExtraction,
 } from "@/features/knowledge-map/schemas";
 import {
-  countedProgress,
-  loadCourseLanguageName,
-  recordProgress,
   touchCountingBuild,
-  UNITS_PER_STEP,
   type StepOutcome,
 } from "@/features/knowledge-map/workflows/build-steps";
 import {
@@ -29,20 +25,15 @@ import {
   type CourseUnit,
 } from "@/features/knowledge-map/workflows/course-units";
 import {
-  extractAttempts,
+  extractInCourseOrder,
   planAttempts,
+  type UnitOffer,
 } from "@/features/knowledge-map/workflows/extraction-attempts";
 import {
   buildCall,
   RateLimited,
 } from "@/features/knowledge-map/workflows/build-call";
-import { storePendingExtractions } from "@/features/knowledge-map/workflows/consolidate-steps";
-import { loadKnownKcs } from "@/features/knowledge-map/workflows/extract-steps";
-import {
-  dailyLimitReason,
-  RATE_LIMITED_STEP_RETRIES,
-} from "@/features/usage/server";
-import { BUILD_CALL_TIMEOUT_MS, callFits } from "@/lib/ai/call-timeout";
+import { RATE_LIMITED_STEP_RETRIES } from "@/features/usage/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AdminSupabase } from "@/lib/supabase/types";
 
@@ -90,68 +81,24 @@ export async function extractExercises(
   const todo = units.filter(
     (unit) => !isCurrent(storedOf.get(unitKey(unit)), unit),
   );
-  const attempts = planAttempts(todo, stored, failed, deferred);
-  if (attempts.length === 0) return { ok: true, left: 0 };
-  let progress = countedProgress(
-    touched.progress,
-    "exercises",
-    attempts.length,
-  );
-  await recordProgress(supabase, courseId, progress);
-
-  // A complete extraction is stored as KCs and Exercises at once; a partial
-  // one waits until its unit is complete or given up.
-  const unitOf = new Map(units.map((unit) => [unitKey(unit), unit]));
-  const storeComplete = () =>
-    storePendingExtractions(supabase, owner, courseId, (row) => {
-      const unit = unitOf.get(row.key);
-      return unit !== undefined && isCurrent(row, unit);
-    });
-  const language = await loadCourseLanguageName(supabase, courseId);
-  let done = 0;
-  const failedKeys: string[] = [];
-  const stale = new Map(todo.map((unit) => [unitKey(unit), unit]));
-  for (const attempt of attempts.slice(0, UNITS_PER_STEP)) {
-    if (!callFits(startedAt, BUILD_CALL_TIMEOUT_MS)) break;
-    const known = await loadKnownKcs(supabase, courseId, [...stale.values()]);
-    const outcome = await extractAttempts(
-      supabase,
-      { owner, courseId },
-      [attempt],
-      (unit, chunks) =>
-        extractUnit(supabase, owner, {
-          courseId,
-          unit,
-          exerciseIds: chunks.map((chunk) => chunk.id),
-          language,
-          known,
-        }),
+  return extractInCourseOrder(
+    supabase,
+    {
+      owner,
+      courseId,
       startedAt,
-    );
-    if (outcome.limit) return { ok: false, reason: dailyLimitReason };
-    failedKeys.push(...outcome.failedKeys);
-    done += outcome.done;
-    if (outcome.done > 0) {
-      stale.delete(unitKey(attempt.unit));
-      const after = await storeComplete();
-      if (after === "limit") return { ok: false, reason: dailyLimitReason };
-      if (after === "stopped") return { ok: true, left: null };
-    }
-    if (outcome.done > 0 || outcome.waitMs !== undefined) {
-      progress = { ...progress, done: (progress.done ?? 0) + outcome.done };
-      await recordProgress(supabase, courseId, progress, outcome.waitMs);
-    }
-    if (outcome.waitMs !== undefined) {
-      return {
-        ok: true,
-        left: attempts.length - done,
-        failed: failedKeys,
-        deferred: outcome.done > 0 ? [] : [unitKey(attempt.unit)],
-        waitMs: outcome.waitMs,
-      };
-    }
-  }
-  return { ok: true, left: attempts.length - done, failed: failedKeys };
+      stage: "exercises",
+      progress: touched.progress,
+    },
+    { units, todo, attempts: planAttempts(todo, stored, failed, deferred) },
+    (unit, chunks, offer) =>
+      extractUnit(supabase, owner, {
+        courseId,
+        unit,
+        exerciseIds: chunks.map((chunk) => chunk.id),
+        offer,
+      }),
+  );
 }
 
 extractExercises.maxRetries = RATE_LIMITED_STEP_RETRIES;
@@ -167,14 +114,12 @@ async function extractUnit(
     courseId,
     unit,
     exerciseIds,
-    language,
-    known,
+    offer: { language, known },
   }: {
     courseId: string;
     unit: CourseUnit;
     exerciseIds: readonly string[];
-    language: string;
-    known: Awaited<ReturnType<typeof loadKnownKcs>>;
+    offer: UnitOffer;
   },
 ): Promise<StoredExtraction | "limit" | "failed" | RateLimited> {
   const batch = (unit.exercises ?? []).filter((exercise) =>

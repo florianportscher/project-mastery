@@ -3,7 +3,6 @@ import {
   chapterExtractionMessages,
   chapterExtractionSchema,
   chapterExtractionSettings,
-  type KnownKc,
   type OfferedChunk,
   type OfferedUnit,
 } from "@/features/knowledge-map/ai/chapter-extraction";
@@ -16,44 +15,31 @@ import {
   unitCoverage,
 } from "@/features/knowledge-map/domain/unit-coverage";
 import {
-  countedProgress,
-  loadCourseLanguageName,
-  recordProgress,
   touchCountingBuild,
-  UNITS_PER_STEP,
   type StepOutcome,
 } from "@/features/knowledge-map/workflows/build-steps";
 import {
   isCurrent,
   loadCourseUnits,
   loadStoredUnits,
-  sourceChunkIds,
   unitKey,
   type CourseUnit,
 } from "@/features/knowledge-map/workflows/course-units";
 import {
-  extractAttempts,
+  extractInCourseOrder,
   planAttempts,
+  storeComplete,
+  type UnitOffer,
 } from "@/features/knowledge-map/workflows/extraction-attempts";
 import {
   buildCall,
   RateLimited,
 } from "@/features/knowledge-map/workflows/build-call";
-import { storePendingExtractions } from "@/features/knowledge-map/workflows/consolidate-steps";
-import {
-  kcsInCourseOrder,
-  loadMapInput,
-  withoutOwnKcs,
-} from "@/features/knowledge-map/workflows/map-input";
 import {
   dailyLimitReason,
   RATE_LIMITED_STEP_RETRIES,
 } from "@/features/usage/server";
-import {
-  BUILD_CALL_TIMEOUT_MS,
-  callFits,
-  retryTimeoutMs,
-} from "@/lib/ai/call-timeout";
+import { retryTimeoutMs } from "@/lib/ai/call-timeout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AdminSupabase } from "@/lib/supabase/types";
 
@@ -93,15 +79,7 @@ export async function extractTeachingBatches(
   const { owner } = touched;
 
   const units = await loadCourseUnits(supabase, courseId, "content");
-  const unitOf = new Map(units.map((unit) => [unitKey(unit), unit]));
-  // A complete extraction is stored as KCs at once; a partial one waits
-  // until its unit is complete or given up (`consolidateKcs`).
-  const storeComplete = () =>
-    storePendingExtractions(supabase, owner, courseId, (row) => {
-      const unit = unitOf.get(row.key);
-      return unit !== undefined && isCurrent(row, unit);
-    });
-  const before = await storeComplete();
+  const before = await storeComplete(supabase, owner, courseId, units);
   if (before === "limit") return { ok: false, reason: dailyLimitReason };
   if (before === "stopped") return { ok: true, left: null };
 
@@ -110,90 +88,25 @@ export async function extractTeachingBatches(
   const todo = units.filter(
     (unit) => !isCurrent(storedOf.get(unitKey(unit)), unit),
   );
-  const attempts = planAttempts(todo, stored, failed, deferred);
-  if (attempts.length === 0) return { ok: true, left: 0 };
-  let progress = countedProgress(
-    touched.progress,
-    "materials",
-    attempts.length,
-  );
-  await recordProgress(supabase, courseId, progress);
-
-  const language = await loadCourseLanguageName(supabase, courseId);
-  let done = 0;
-  const failedKeys: string[] = [];
-  const stale = new Map(todo.map((unit) => [unitKey(unit), unit]));
-  for (const attempt of attempts.slice(0, UNITS_PER_STEP)) {
-    if (!callFits(startedAt, BUILD_CALL_TIMEOUT_MS)) break;
-    const known = await loadKnownKcs(supabase, courseId, [...stale.values()]);
-    const outcome = await extractAttempts(
-      supabase,
-      { owner, courseId },
-      [attempt],
-      (unit, chunks) =>
-        extractUnit(supabase, owner, {
-          courseId,
-          unit,
-          chunks,
-          language,
-          known,
-          startedAt,
-        }),
+  return extractInCourseOrder(
+    supabase,
+    {
+      owner,
+      courseId,
       startedAt,
-    );
-    if (outcome.limit) return { ok: false, reason: dailyLimitReason };
-    failedKeys.push(...outcome.failedKeys);
-    done += outcome.done;
-    if (outcome.done > 0) {
-      stale.delete(unitKey(attempt.unit));
-      const after = await storeComplete();
-      if (after === "limit") return { ok: false, reason: dailyLimitReason };
-      if (after === "stopped") return { ok: true, left: null };
-    }
-    if (outcome.done > 0 || outcome.waitMs !== undefined) {
-      progress = { ...progress, done: (progress.done ?? 0) + outcome.done };
-      await recordProgress(supabase, courseId, progress, outcome.waitMs);
-    }
-    if (outcome.waitMs !== undefined) {
-      return {
-        ok: true,
-        left: attempts.length - done,
-        failed: failedKeys,
-        deferred: outcome.done > 0 ? [] : [unitKey(attempt.unit)],
-        waitMs: outcome.waitMs,
-      };
-    }
-  }
-  return { ok: true, left: attempts.length - done, failed: failedKeys };
-}
-
-/**
- * The live KCs a unit's call is offered, in Course order: not those sourced
- * only on the chunks of units still to extract (`staleUnits`, the unit itself
- * included), so that a unit extracted again names its KCs anew instead of
- * repeating the ones it, or a unit not yet extracted again, gave before.
- */
-export async function loadKnownKcs(
-  supabase: AdminSupabase,
-  courseId: string,
-  staleUnits: readonly CourseUnit[],
-): Promise<{ offered: KnownKc[]; storedId: Map<string, string> }> {
-  const kcs = kcsInCourseOrder(
-    withoutOwnKcs(
-      await loadMapInput(supabase, courseId),
-      staleUnits.flatMap(sourceChunkIds),
-    ),
+      stage: "materials",
+      progress: touched.progress,
+    },
+    { units, todo, attempts: planAttempts(todo, stored, failed, deferred) },
+    (unit, chunks, offer) =>
+      extractUnit(supabase, owner, {
+        courseId,
+        unit,
+        chunks,
+        offer,
+        startedAt,
+      }),
   );
-  const offered = kcs.map((kc, index) => ({
-    id: `k${index + 1}`,
-    heading: kc.heading,
-    name: kc.name,
-    description: kc.description,
-  }));
-  return {
-    offered,
-    storedId: new Map(kcs.map((kc, index) => [offered[index]!.id, kc.id])),
-  };
 }
 
 extractTeachingBatches.maxRetries = RATE_LIMITED_STEP_RETRIES;
@@ -214,15 +127,13 @@ async function extractUnit(
     courseId,
     unit: whole,
     chunks,
-    language,
-    known,
+    offer: { language, known },
     startedAt,
   }: {
     courseId: string;
     unit: CourseUnit;
     chunks: CourseUnit["chunks"];
-    language: string;
-    known: Awaited<ReturnType<typeof loadKnownKcs>>;
+    offer: UnitOffer;
     startedAt: number;
   },
 ): Promise<UnitExtraction | "limit" | "failed" | RateLimited> {
