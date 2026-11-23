@@ -495,30 +495,6 @@ export type Database = {
           },
         ];
       };
-      developers: {
-        Row: {
-          created_at: string;
-          user_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          created_at?: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "developers_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       developer_flags: {
         Row: {
           app_commit: string | null;
@@ -573,6 +549,30 @@ export type Database = {
             foreignKeyName: "developer_flags_owner_fkey";
             columns: ["owner"];
             isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      developers: {
+        Row: {
+          created_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "developers_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
