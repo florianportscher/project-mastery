@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { mockExamPath } from "@/features/study/domain/mock-paths";
+import { mockExamPath } from "@/features/study/domain/mock-exam";
 import { queueMockExam } from "@/features/study/server/actions";
 
 /**

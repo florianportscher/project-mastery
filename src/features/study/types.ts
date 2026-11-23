@@ -2,7 +2,7 @@ import type {
   AttemptHelp,
   AttemptResult,
 } from "@/features/study/domain/replay";
-import type { MockStatus } from "@/features/study/domain/mock-paths";
+import type { MockStatus } from "@/features/study/domain/mock-exam";
 import type { Pace } from "@/features/study/domain/pace";
 import type { Progress, TopicScope } from "@/features/study/domain/plan";
 import type { ProblemSource } from "@/features/study/domain/exercises";

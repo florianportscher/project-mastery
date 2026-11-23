@@ -7,7 +7,7 @@ import {
   gradingStalled,
   mockDeadline,
   mockStatus,
-} from "@/features/study/domain/mock-paths";
+} from "@/features/study/domain/mock-exam";
 import {
   loadSureAnswers,
   taskGrade,
