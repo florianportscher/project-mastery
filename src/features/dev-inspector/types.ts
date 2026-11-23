@@ -60,6 +60,8 @@ export type Snapshot = {
     finishedAt: string | null;
     heartbeatAt: string;
     needsUpdate: boolean;
+    /** The app commit that ran the build; null before it was recorded. */
+    appCommit: string | null;
     checkReport: unknown;
   } | null;
 };
@@ -136,6 +138,8 @@ export type DevCall = {
   cost: number | null;
   materialId: string | null;
   unitKey: string | null;
+  /** Whether the call ran in a Chat session rather than the parse or build. */
+  inSession: boolean;
 };
 
 /**

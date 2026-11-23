@@ -6,6 +6,7 @@ import {
 } from "@/features/knowledge-map/schemas";
 import { BUILD_CALL_TIMEOUT_MS, callFits } from "@/lib/ai/call-timeout";
 import { getAiEnv } from "@/lib/ai/env";
+import { appCommit } from "@/lib/app-commit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { failed } from "@/lib/supabase/failed";
 import type { AdminSupabase } from "@/lib/supabase/types";
@@ -169,7 +170,7 @@ export async function prepareBuild(
   // the map again.
   const cleared = await supabase
     .from("knowledge_map_builds")
-    .update({ needs_update: false })
+    .update({ needs_update: false, app_commit: appCommit() })
     .eq("course_id", courseId);
   if (cleared.error) failed("Clearing the map's update mark", cleared.error);
   const chunks = await supabase

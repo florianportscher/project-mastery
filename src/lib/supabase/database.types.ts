@@ -949,6 +949,7 @@ export type Database = {
       };
       knowledge_map_builds: {
         Row: {
+          app_commit: string | null;
           check_report: Json | null;
           course_id: string;
           exercise_grouping_hash: string | null;
@@ -965,6 +966,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          app_commit?: string | null;
           check_report?: Json | null;
           course_id: string;
           exercise_grouping_hash?: string | null;
@@ -980,6 +982,7 @@ export type Database = {
           topic_tree_hash?: string | null;
         };
         Update: {
+          app_commit?: string | null;
           check_report?: Json | null;
           course_id?: string;
           exercise_grouping_hash?: string | null;

@@ -53,6 +53,7 @@ export type Snapshot = {
     batch: number;
     promptDigest: string | null;
     kcIds: string[] | null;
+    createdAt?: string;
   }>;
   kcs: Array<{
     id: string;
@@ -93,6 +94,7 @@ export type Snapshot = {
     startedAt: string;
     finishedAt: string | null;
     needsUpdate: boolean;
+    appCommit?: string | null;
     checkReport: unknown;
   } | null;
 };
@@ -112,10 +114,31 @@ export type Call = {
   metadata: Record<string, string>;
 };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Langfuse's metadata key for the session a call ran in: a Chat's calls have one, the parse and build do not. */
+const SESSION_KEY = "attributes.langfuse.session.id";
+
+/**
+ * Whether a call belongs to the current map build: made from its start to its
+ * end (to now while it runs), outside any Chat session.
+ */
+export function inBuildWindow(
+  call: { startTime: string; metadata?: Record<string, unknown> },
+  build: Snapshot["build"],
+  now = Date.now(),
+): boolean {
+  if (!build || call.metadata?.[SESSION_KEY]) return false;
+  const start = Date.parse(call.startTime);
+  return (
+    start >= Date.parse(build.startedAt) &&
+    start <= (build.finishedAt ? Date.parse(build.finishedAt) : now)
+  );
+}
+
+export const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Reads the Course's snapshot through the read-only staging role. */
-async function fetchSnapshot(
+export async function fetchSnapshot(
   courseId: string,
   env: Env = process.env,
 ): Promise<Snapshot> {
@@ -149,7 +172,8 @@ function langfuse(env: Env) {
   };
 }
 
-async function observations(
+/** One page of the staging calls that match `filters`; null without Langfuse keys. */
+export async function observations(
   env: Env,
   filters: object[],
   fields: string,
@@ -187,7 +211,7 @@ async function observations(
 }
 
 /** One Langfuse observation, as far as the CLI reads it. */
-type Raw = {
+export type Raw = {
   id: string;
   parentObservationId?: string | null;
   name?: string;
@@ -203,7 +227,7 @@ type Raw = {
   output?: unknown;
 };
 
-function toCall(o: Raw): Call {
+export function toCall(o: Raw): Call {
   const metadata = Object.fromEntries(
     Object.entries(o.metadata ?? {}).filter(([, v]) => typeof v === "string"),
   ) as Record<string, string>;
@@ -299,7 +323,7 @@ async function fetchCallDetail(
   ].join("\n");
 }
 
-const noKeys =
+export const noKeys =
   "No Langfuse keys: set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY in .env.local.";
 
 const asText = (value: unknown) =>
@@ -315,7 +339,7 @@ function describeCall(call: Call): string {
   const unit = call.metadata.unitKey ? ` unit ${call.metadata.unitKey}` : "";
   const error =
     call.level === "ERROR" ? ` ERROR ${call.statusMessage ?? ""}` : "";
-  return `${call.id} ${call.startTime.slice(11, 19)} ${call.name} ${call.model ?? "-"} ${seconds} ${call.inputTokens}>${call.outputTokens} tok ${cost}${unit}${error}`;
+  return `${call.id} ${call.startTime.slice(11, 19)} ${call.name} ${call.model ?? "-"} ${call.metadata.appCommit ?? "-"} ${seconds} ${call.inputTokens}>${call.outputTokens} tok ${cost}${unit}${error}`;
 }
 
 type Report = {
@@ -482,7 +506,15 @@ export function formatSection(
     case "build":
       lines.push(
         s.build
-          ? `${s.build.status} started ${s.build.startedAt} finished ${s.build.finishedAt ?? "-"}${s.build.needsUpdate ? " needs update" : ""}${s.build.failureReason ? ` FAILED ${s.build.failureReason}` : ""}`
+          ? `${s.build.status} commit ${s.build.appCommit ?? "-"} models ${
+              [
+                ...new Set(
+                  (calls ?? [])
+                    .filter((c) => inBuildWindow(c, s.build))
+                    .flatMap((c) => (c.model ? [c.model] : [])),
+                ),
+              ].join(", ") || "-"
+            } started ${s.build.startedAt} finished ${s.build.finishedAt ?? "-"}${s.build.needsUpdate ? " needs update" : ""}${s.build.failureReason ? ` FAILED ${s.build.failureReason}` : ""}`
           : "no build",
         JSON.stringify(s.build?.checkReport ?? null),
       );

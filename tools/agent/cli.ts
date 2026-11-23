@@ -10,6 +10,7 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { archive, archiveCourse } from "./archive";
 import { browser, react, settle, SHOT_DIR, snapshot } from "./browser";
 import {
   AgentError,
@@ -96,7 +97,13 @@ Staging (real data; reads, and REST writes for testing; from .env.local, ADR 002
   staging-reset-map <courseId>
                          delete a Course's whole map build (Topics, KCs, Exercises, exams,
                          extractions, build state); Materials and chunks stay, so Build
-                         starts again from the parse. Refuses a running build. No undo
+                         starts again from the parse. Refuses a running build. Archives
+                         the build as a case first and stops if that fails. No undo
+  archive course <courseId> [--note "…"]
+                         keep a Course's current map build as a case in the private
+                         cases repo and push it (also \`pnpm archive\`; docs/agents/cases.md)
+  archive chat <chatId> [--note "…"]
+                         keep a Chat, its Course's build and its model calls the same way
   inspect <courseId> [materials|chunks|units|kcs|exercises|topics|build|calls]
                          a Course's stored map build and its model calls as text, suspect
                          spots first; the first stop when diagnosing a map
@@ -328,10 +335,16 @@ async function run(
     case "staging-sql":
       if (!args[0]) throw new AgentError('Usage: agent staging-sql "<query>"');
       return queryStagingSql(args[0]);
-    case "staging-reset-map":
-      if (!args[0])
+    case "staging-reset-map": {
+      const courseId = args[0];
+      if (!courseId)
         throw new AgentError("Usage: agent staging-reset-map <courseId>");
-      return resetStagingMap(args[0]);
+      return resetStagingMap(courseId, () =>
+        archiveCourse(courseId, "before staging-reset-map"),
+      );
+    }
+    case "archive":
+      return archive(args);
     case "inspect":
       return inspect(args);
     case "walk": {

@@ -1,5 +1,6 @@
 import { propagateAttributes } from "@langfuse/tracing";
 import { trace } from "@opentelemetry/api";
+import { appCommit } from "@/lib/app-commit";
 
 export type TraceAttributes = {
   userId?: string;
@@ -12,13 +13,20 @@ export type TraceAttributes = {
 
 /**
  * Applies user, session and other attributes to every span created inside
- * `fn`, including AI SDK calls. A no-op when tracing is not registered.
+ * `fn`, including AI SDK calls, and the app commit as `appCommit` metadata.
+ * A no-op when tracing is not registered.
  */
 export function withTraceAttributes<T>(
   attributes: TraceAttributes,
   fn: () => T,
 ): T {
-  return propagateAttributes(attributes, fn);
+  return propagateAttributes(
+    {
+      ...attributes,
+      metadata: { ...attributes.metadata, appCommit: appCommit() },
+    },
+    fn,
+  );
 }
 
 /**

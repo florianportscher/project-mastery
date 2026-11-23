@@ -272,10 +272,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * Deletes a Course's whole map build on staging and keeps its Materials and
  * their parse, so the next Build starts from the chunks. Uses `writeStaging`,
  * so it is bound by ADR 0029: one filtered DELETE per table, no undo. Refuses
- * an unknown Course and a build that is running.
+ * an unknown Course and a build that is running. `archive` keeps the build as
+ * a case first (`agent archive`); when it throws, nothing is deleted.
  */
 export async function resetStagingMap(
   courseId: string,
+  archive: () => Promise<string>,
   env: Env = process.env,
   fetchFn: typeof fetch = fetch,
 ): Promise<string> {
@@ -288,19 +290,47 @@ export async function resetStagingMap(
   if (course.length === 0) {
     throw new AgentError(`No Course ${courseId} on staging.`);
   }
-  const builds = JSON.parse(
-    await queryStaging(
-      `knowledge_map_builds?course_id=eq.${courseId}&select=status`,
-      env,
-      fetchFn,
-    ),
-  ) as { status: string }[];
-  if (builds[0]?.status === "building") {
+  const build = async () => {
+    const rows = JSON.parse(
+      await queryStaging(
+        `knowledge_map_builds?course_id=eq.${courseId}&select=status,started_at`,
+        env,
+        fetchFn,
+      ),
+    ) as { status: string; started_at: string }[];
+    return rows[0] ?? null;
+  };
+  const before = await build();
+  if (before?.status === "building") {
     throw new AgentError(
       "This Course's build is running. Wait for it to end, then reset.",
     );
   }
+  let hasRows = false;
+  for (const table of MAP_BUILD_TABLES) {
+    const rows = JSON.parse(
+      await queryStaging(
+        `${table}?course_id=eq.${courseId}&select=course_id&limit=1`,
+        env,
+        fetchFn,
+      ),
+    ) as unknown[];
+    hasRows ||= rows.length > 0;
+  }
   const lines: string[] = [];
+  if (hasRows) {
+    lines.push(await archive());
+    // The archive takes minutes: a build that started meanwhile is not the archived one.
+    const after = await build();
+    if (
+      after?.status === "building" ||
+      after?.started_at !== before?.started_at
+    ) {
+      throw new AgentError(
+        "The Course's build changed while it was archived. Nothing was deleted; archive and reset again.",
+      );
+    }
+  } else lines.push("no map to archive");
   for (const table of MAP_BUILD_TABLES) {
     // `course_id` is the one column every table here has (the builds table has no `id`).
     const rows = JSON.parse(
