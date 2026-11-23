@@ -212,7 +212,7 @@ export type StoredUnit = {
   id: string;
   key: string;
   contentHash: string;
-  /** Null for an extraction stored before prompts were keyed (#375). */
+  /** Null for a row stored without one; such a row is never current. */
   promptDigest: string | null;
   output: unknown;
   kcIds: string[] | null;

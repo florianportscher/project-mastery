@@ -169,7 +169,7 @@ describe("Update map's Exercises", () => {
         unit.knownKcs.map((kc) => kc.name),
       ]),
     ).toEqual([
-      ["Dimension", ["Rank", "Basis"]],
+      ["Dimension", ["Basis"]],
       ["Rank", ["Dimension", "Basis"]],
     ]);
     expect({ kcs: live(), sources: sources() }).toEqual(before);

@@ -151,7 +151,7 @@ An old exam is no flag: its text is ordinary content and its tasks are ordinary 
 
 A stored answer is current only for the same content and the same prompt (`isCurrent` in `workflows/build-steps.ts`): the unit's hash covers its chunks' Markdown (`unitHash`), not `knownKcs`, and the row's `prompt_digest` must equal the digest of the call's instructions and output schema (`promptDigest` in `lib/ai/prompt-digest.ts`, computed in code from the prompt, so an edit can't forget it). A current unit makes no call: this is why Update map is cheap. After a deploy that changes a build prompt, the next Update map extracts again every batch answered under another prompt, and a build on an older preview leaves answers that a newer one calls again instead of reusing. Rows from before #375 have no digest and count as stale.
 
-A unit extracted again is not offered the known KCs whose sources all lie on its own chunks (`withoutOwnKcs` in `workflows/map-input.ts`), so it names its KCs anew instead of repeating the ones it gave before.
+A unit extracted again is not offered the known KCs whose sources all lie on the chunks of units still to extract, its own included (`withoutOwnKcs` in `workflows/map-input.ts`), so it names its KCs anew instead of repeating the ones it, or another stale unit, gave before.
 
 The call answers:
 

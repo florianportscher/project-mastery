@@ -109,13 +109,10 @@ export async function extractTeachingBatches(
   const language = await loadCourseLanguageName(supabase, courseId);
   let done = 0;
   const failedKeys: string[] = [];
+  const stale = new Map(todo.map((unit) => [unitKey(unit), unit]));
   for (const attempt of attempts.slice(0, UNITS_PER_STEP)) {
     if (!callFits(startedAt, BUILD_CALL_TIMEOUT_MS)) break;
-    const known = await loadKnownKcs(
-      supabase,
-      courseId,
-      sourceChunkIds(attempt.unit),
-    );
+    const known = await loadKnownKcs(supabase, courseId, [...stale.values()]);
     const outcome = await extractAttempts(
       supabase,
       { owner, courseId },
@@ -135,6 +132,7 @@ export async function extractTeachingBatches(
     failedKeys.push(...outcome.failedKeys);
     done += outcome.done;
     if (outcome.done > 0) {
+      stale.delete(unitKey(attempt.unit));
       const after = await storeComplete();
       if (after === "limit") return { ok: false, reason: dailyLimitReason };
       if (after === "stopped") return { ok: true, left: null };
@@ -154,16 +152,20 @@ export async function extractTeachingBatches(
 
 /**
  * The live KCs a unit's call is offered, in Course order: not those sourced
- * only on the unit's own chunks (`ownChunkIds`), so that a unit extracted
- * again names its KCs anew instead of repeating the ones it gave before.
+ * only on the chunks of units still to extract (`staleUnits`, the unit itself
+ * included), so that a unit extracted again names its KCs anew instead of
+ * repeating the ones it, or a unit not yet extracted again, gave before.
  */
 export async function loadKnownKcs(
   supabase: AdminSupabase,
   courseId: string,
-  ownChunkIds: readonly string[],
+  staleUnits: readonly CourseUnit[],
 ): Promise<{ offered: KnownKc[]; storedId: Map<string, string> }> {
   const kcs = kcsInCourseOrder(
-    withoutOwnKcs(await loadMapInput(supabase, courseId), ownChunkIds),
+    withoutOwnKcs(
+      await loadMapInput(supabase, courseId),
+      staleUnits.flatMap(sourceChunkIds),
+    ),
   );
   const offered = kcs.map((kc, index) => ({
     id: `k${index + 1}`,

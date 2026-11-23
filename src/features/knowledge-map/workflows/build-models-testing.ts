@@ -9,6 +9,10 @@ import { useMockModels } from "@/lib/ai/testing";
  * and `embed` vectors, one call at a time, every structured call streamed.
  */
 
+/** The texts embedded so far, shared so that a text keeps its vector when a test sets the models up again. */
+const texts: string[] = [];
+const dimensions = 512;
+
 type Prompt = Array<{ role: string; content: unknown }>;
 
 function userJson(prompt: unknown): Record<string, unknown> {
@@ -264,8 +268,6 @@ export function useBuildModels({
       return result;
     },
   });
-  const dimensions = 64;
-  const texts: string[] = [];
   const embed = new MockEmbeddingModelV4({
     doEmbed: async ({ values }) => {
       embedded.push(...values);

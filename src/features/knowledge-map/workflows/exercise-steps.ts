@@ -20,7 +20,6 @@ import {
   loadCourseUnits,
   loadStoredUnits,
   planAttempts,
-  sourceChunkIds,
   touchBuild,
   unitKey,
   UNITS_PER_STEP,
@@ -98,13 +97,10 @@ export async function extractExercises(
   const language = await loadCourseLanguageName(supabase, courseId);
   let done = 0;
   const failedKeys: string[] = [];
+  const stale = new Map(todo.map((unit) => [unitKey(unit), unit]));
   for (const attempt of attempts.slice(0, UNITS_PER_STEP)) {
     if (!callFits(startedAt, BUILD_CALL_TIMEOUT_MS)) break;
-    const known = await loadKnownKcs(
-      supabase,
-      courseId,
-      sourceChunkIds(attempt.unit),
-    );
+    const known = await loadKnownKcs(supabase, courseId, [...stale.values()]);
     const outcome = await extractAttempts(
       supabase,
       { owner, courseId },
@@ -123,6 +119,7 @@ export async function extractExercises(
     failedKeys.push(...outcome.failedKeys);
     done += outcome.done;
     if (outcome.done > 0) {
+      stale.delete(unitKey(attempt.unit));
       const after = await storeComplete();
       if (after === "limit") return { ok: false, reason: dailyLimitReason };
       if (after === "stopped") return { ok: true, left: null };
