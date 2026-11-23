@@ -181,24 +181,24 @@ export async function respondInChat({
     if (minutes) await setSessionMinutes(supabase, chat.id, minutes);
   }
 
-  const history =
-    resent ??
-    ((await saveStudentMessage(supabase, chat, message, !existing)) && [
-      ...stored,
-      message,
-    ]);
+  // A resent message is stored and recorded already.
+  let history = resent;
   if (!history) {
-    if (existing) {
-      await cancelReply(supabase, chat.id, {
-        replyId,
-        previousReplyId: existing.latestReplyId,
-      });
+    // Its id is taken elsewhere: undo the reply's start, and delete a new
+    // Chat so none is left empty.
+    if (!(await saveMessage(supabase, chat.id, message))) {
+      if (existing) {
+        await cancelReply(supabase, chat.id, {
+          replyId,
+          previousReplyId: existing.latestReplyId,
+        });
+      } else {
+        await deleteChat(supabase, chat.id);
+      }
+      return refuse(409, alreadySentMessage);
     }
-    return refuse(409, alreadySentMessage);
-  }
-  // A new message is part of the answer to the open Question; a resent one
-  // is recorded already.
-  if (!resent) {
+    history = [...stored, message];
+    // A new message is part of the answer to the open Question.
     await recordAnswer(supabase, chat.id, {
       messageId: message.id,
       text: messageText(message.parts),
@@ -252,21 +252,6 @@ function resentHistory(
   const later = stored.slice(index + 1);
   if (later.some((m) => m.role === "user")) return "refused";
   return stored.slice(0, index + 1);
-}
-
-/**
- * Stores the Student's new message. Returns false if its id is taken
- * elsewhere, deleting a new Chat so none is left empty.
- */
-async function saveStudentMessage(
-  supabase: Supabase,
-  chat: StoredChat,
-  message: ChatUIMessage,
-  isNewChat: boolean,
-): Promise<boolean> {
-  const saved = await saveMessage(supabase, chat.id, message);
-  if (!saved && isNewChat) await deleteChat(supabase, chat.id);
-  return saved;
 }
 
 async function streamReply({
