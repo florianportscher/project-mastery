@@ -17,17 +17,18 @@ export type SizeMetrics = {
   usedOutside: number;
 };
 
-type ParsedFile = {
+export type ParsedFile = {
   loc: number;
   exports: string[];
   /** Repo-relative target file and the names imported from it, "*" for all. */
   imports: { target: string; names: string[] }[];
 };
 
-export function computeSizes(
+/** Every code file of the areas, tests and generated code left out. */
+export function parseAreas(
   root: string,
   areas: Area[],
-): Record<string, SizeMetrics> {
+): Map<string, ParsedFile> {
   const options = compilerOptions(root);
   const parsed = new Map<string, ParsedFile>();
   for (const area of areas) {
@@ -35,6 +36,14 @@ export function computeSizes(
       if (!isExcluded(file)) parsed.set(file, parseFile(root, file, options));
     }
   }
+  return parsed;
+}
+
+export function computeSizes(
+  root: string,
+  areas: Area[],
+): Record<string, SizeMetrics> {
+  const parsed = parseAreas(root, areas);
 
   /** "file#name" of exports imported from another area; "file#*" for all. */
   const usedOutside = new Set<string>();

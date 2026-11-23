@@ -27,11 +27,7 @@ Your prompt gives the open points of a PR that waits for the maintainer: their c
 
 ## Garden jobs
 
-`/garden` runs without an issue: these jobs are your spec. Every commit carries the scope `garden` (`refactor(garden): …`), which keeps it out of the next run's change counts.
-
-- **`simplify`**: your prompt names one area and the changes the maintainer rejected there; propose none of them again. Make the area simpler for the next agent: delete, inline, merge duplicates, remove layers, fix names against `GLOSSARY.md`, fix comments and docs that contradict the code. Behaviour stays the same: change no text a Student or a model reads (prompts, tool descriptions, UI copy) and no test assertion. When one problem shows up in two or more places, add a lint rule or a knip or CI threshold that catches it from then on. Handoff: one line per change saying why it is simpler, each test changed or deleted with its reason, each rule added.
-- **`break`**: drive the app on mock AI as a Student would, and in the odd orders one might, with `pnpm -s agent` (the `run-app` skill), also under `up --mock-fault <error|timeout|empty|malformed>`. For each small bug, commit a failing test first (`test(garden): …`) and keep its failing output, then the fix (`fix(garden): …`). A larger bug becomes an inbox issue ([issue-tracker.md](../../docs/agents/issue-tracker.md)). End with `pnpm -s agent up`, which turns the fault off. Handoff: per bug its test commit, the failing output and a step to try on the preview; the issues filed.
-- **`garden finish`**: the `finish` job without an issue, smoke check or `Try it`. Then `pnpm -s agent walk <dir>/walk-after` and `pnpm -s agent walk diff <dir>/walk-before <dir>/walk-after`: a changed page that no listed bug fix explains is a regression to fix. Then `pnpm -s garden:areas write <dir>/before.json <areas>`, and fill each section of `docs/garden/<date>.md` from the handoffs, the reviews and the diff (`git diff --stat origin/main...HEAD` finds the changed tests), quoting each bug test's passing output at HEAD beside its failing one. Commit as `docs(garden): report <date>`.
+For the jobs `simplify`, `break` and `garden finish`, [.claude/skills/garden/jobs.md](../skills/garden/jobs.md) replaces the issue: read it before your first command.
 
 ## Handoff
 

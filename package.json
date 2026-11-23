@@ -42,7 +42,7 @@
     "sitting": "sh -c 'exec claude --model sonnet \"/sitting $*\"' --",
     "shift": "sh -c 'exec claude --model haiku \"/build $*\"' --",
     "retro": "tsx tools/retro/cli.ts",
-    "garden": "sh -c 'exec claude --model haiku \"/garden $*\"' --",
+    "garden": "sh -c 'exec claude --model sonnet \"/garden $*\"' --",
     "garden:areas": "tsx tools/garden/cli.ts"
   },
   "dependencies": {

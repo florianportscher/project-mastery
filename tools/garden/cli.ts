@@ -4,6 +4,7 @@
  *   pnpm -s garden:areas [--areas N]     areas with their change and numbers; * marks the N it picks
  *   pnpm -s garden:areas pick [--areas N]
  *                                        the picked area names, one per line
+ *   pnpm -s garden:areas map <area>      the area's structure: modules, imports, cycles, files by change
  *   pnpm -s garden:areas measure <area>... [--out file]
  *                                        all numbers of the areas as JSON
  *   pnpm -s garden:areas write <before.json> <area>...
@@ -25,10 +26,12 @@ import {
   writeLedger,
   type Measure,
 } from "./ledger";
-import { measureAreas } from "./measure";
-import { computeSizes, type SizeMetrics } from "./metrics";
+import { renderMap } from "./map";
+import { complexFunctions, measureAreas } from "./measure";
+import { computeSizes, parseAreas, type SizeMetrics } from "./metrics";
 import {
   changeOf,
+  isGardenCommit,
   LOG_FORMAT,
   parseLog,
   pickAreas,
@@ -62,6 +65,25 @@ function statOf(area: Area, loc: number) {
   );
   const since = sinceLastGarden(parseLog(log));
   return changeOf(area.name, since.commits, since.neverGardened, loc);
+}
+
+/** Lines changed per file of the area since its last garden. */
+function changedFiles(area: Area): Record<string, number> {
+  const log = git(
+    "log",
+    "--no-renames",
+    "--numstat",
+    `--format=${LOG_FORMAT}`,
+    "--",
+    ...area.paths,
+  );
+  const changed: Record<string, number> = {};
+  for (const commit of sinceLastGarden(parseLog(log)).commits) {
+    if (isGardenCommit(commit.subject)) continue;
+    for (const { file, lines } of commit.files)
+      changed[file] = (changed[file] ?? 0) + lines;
+  }
+  return changed;
 }
 
 function stats(sizes: Record<string, SizeMetrics>): AreaStat[] {
@@ -122,6 +144,18 @@ async function main([command, ...args]: string[]) {
     );
     if (out < 0) console.log(result);
     else writeFileSync(args[out + 1]!, `${result}\n`);
+  } else if (command === "map") {
+    const area = areas.find((a) => a.name === args[0]);
+    if (!area) throw new Error("Usage: map <area>");
+    console.log(
+      renderMap({
+        area,
+        areas,
+        parsed: parseAreas(root, areas),
+        changed: changedFiles(area),
+        complex: await complexFunctions(root, area.paths),
+      }),
+    );
   } else if (command === "write") {
     const [beforeFile, ...names] = args;
     if (!beforeFile || !names.length)
@@ -180,7 +214,7 @@ async function main([command, ...args]: string[]) {
       console.log(`- ${r.change} (${r.files.join(", ")}): ${r.reason}`);
   } else {
     console.error(
-      "Usage: pnpm -s garden:areas [--areas N] | pick | measure | write | reject | rejected",
+      "Usage: pnpm -s garden:areas [--areas N] | pick | map | measure | write | reject | rejected",
     );
     process.exit(1);
   }

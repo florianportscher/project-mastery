@@ -10,12 +10,39 @@ import os from "node:os";
 import path from "node:path";
 import { areaOf, isExcluded, type Area } from "./areas";
 import type { Measure } from "./ledger";
+import { parseComplexity, type ComplexFunction } from "./map";
 import { computeSizes } from "./metrics";
 
 /** Functions above this cyclomatic complexity count as complex. */
 const COMPLEXITY = 10;
 
 type Counts = Record<string, number>;
+
+function eslintComplexity(targets: string[], root: string): Promise<string> {
+  return run(
+    [
+      "pnpm",
+      "exec",
+      "eslint",
+      ...targets,
+      "--format",
+      "json",
+      "--rule",
+      `complexity: [warn, ${COMPLEXITY}]`,
+    ],
+    root,
+  );
+}
+
+/** The complex functions under the given paths, with their scores. */
+export async function complexFunctions(
+  root: string,
+  paths: string[],
+): Promise<ComplexFunction[]> {
+  return parseComplexity(jsonOf(await eslintComplexity(paths, root)), (abs) =>
+    path.relative(root, abs),
+  ).filter(({ file }) => !isExcluded(file));
+}
 
 function run(args: string[], cwd: string): Promise<string> {
   return new Promise((resolve) => {
@@ -72,14 +99,10 @@ export function countClones(json: string, areas: Area[]): Counts {
 
 function countComplex(json: string, areas: Area[], root: string): Counts {
   const counts: Counts = {};
-  const files = JSON.parse(json) as {
-    filePath: string;
-    messages: { ruleId: string | null }[];
-  }[];
-  for (const { filePath, messages } of files) {
-    const found = messages.filter((m) => m.ruleId === "complexity").length;
-    if (found) bump(counts, areas, path.relative(root, filePath), found);
-  }
+  for (const { file } of parseComplexity(json, (abs) =>
+    path.relative(root, abs),
+  ))
+    bump(counts, areas, file);
   return counts;
 }
 
@@ -143,19 +166,7 @@ export async function measureAreas(
         ],
         root,
       ),
-      run(
-        [
-          "pnpm",
-          "exec",
-          "eslint",
-          ".",
-          "--format",
-          "json",
-          "--rule",
-          `complexity: [warn, ${COMPLEXITY}]`,
-        ],
-        root,
-      ),
+      eslintComplexity(["."], root),
     ]);
     await run(
       ["pnpm", "exec", "jscpd", "--reporters", "json", "--output", tmp],
