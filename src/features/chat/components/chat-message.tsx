@@ -27,7 +27,8 @@ export function StudentMessage({
   const text = messageText(message.parts);
   return (
     <Message from="user">
-      <MessageContent data-testid="message-text">
+      {/* A long word, such as a pasted formula, wraps instead of being cut off. */}
+      <MessageContent data-testid="message-text" className="wrap-break-word">
         <AttachedMaterials
           parts={message.parts}
           materialsById={materialsById}
@@ -70,7 +71,7 @@ export function AiReply({
   const activity = inProgress ? replyActivity(message.parts) : null;
   return (
     <Message from="assistant">
-      <MessageContent data-testid="message-text">
+      <MessageContent data-testid="message-text" className="wrap-break-word">
         <ReplyParts
           parts={message.parts}
           streaming={streaming}
