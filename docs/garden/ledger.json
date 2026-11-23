@@ -59,6 +59,36 @@
         "tests": 200,
         "coverage": 64
       }
+    },
+    "ingestion": {
+      "commit": "8cbe83b692e5de4fe2bc6cb854da679085eda979",
+      "date": "2026-11-23",
+      "measure": {
+        "files": 24,
+        "loc": 1723,
+        "exports": 17,
+        "usedOutside": 16,
+        "knip": 0,
+        "clones": 0,
+        "complex": 1,
+        "tests": 93,
+        "coverage": 92
+      }
+    },
+    "lib": {
+      "commit": "8cbe83b692e5de4fe2bc6cb854da679085eda979",
+      "date": "2026-11-23",
+      "measure": {
+        "files": 41,
+        "loc": 2450,
+        "exports": 110,
+        "usedOutside": 60,
+        "knip": 0,
+        "clones": 0,
+        "complex": 7,
+        "tests": 190,
+        "coverage": 83
+      }
     }
   },
   "rejected": [
