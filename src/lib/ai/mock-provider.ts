@@ -1,5 +1,6 @@
 import "server-only";
 import { simulateReadableStream, type JSONSchema7 } from "ai";
+import { getAiEnv } from "./env";
 import { assertStrictOutputSchema } from "./strict-schema";
 
 /**
@@ -143,8 +144,39 @@ function mockObject(definition: SchemaDefinition | undefined): unknown {
 type ResponseFormat =
   { type: "text" } | { type: "json"; schema?: JSONSchema7 } | undefined;
 
+/** How long a `timeout` fault holds a call before it fails. */
+const TIMEOUT_MS = 30_000;
+
+/**
+ * The failure every mock call shows while MOCK_AI_FAULT names one (set by
+ * `agent up --mock-fault`; never in tests or e2e), so a developer can see
+ * the app's error states.
+ */
+function mockFault() {
+  return getAiEnv().MOCK_AI_FAULT;
+}
+
+/** Applies `error` and `timeout`: throws, the latter after a wait. */
+async function failCall(signal?: AbortSignal) {
+  const fault = mockFault();
+  if (fault === "timeout") {
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, TIMEOUT_MS);
+      signal?.addEventListener("abort", () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
+    throw new Error("Mock AI fault: the call timed out.");
+  }
+  if (fault === "error") throw new Error("Mock AI fault: the call failed.");
+}
+
 /** The text a mock call answers: JSON for structured output, else a reply. */
 function mockText(prompt: Prompt, responseFormat: ResponseFormat): string {
+  const fault = mockFault();
+  if (fault === "empty") return "";
+  if (fault === "malformed") return '{"mock": [';
   if (responseFormat?.type === "json") {
     assertStrictOutputSchema(responseFormat);
     return JSON.stringify(mockObject(responseFormat.schema));
@@ -329,48 +361,58 @@ function languageModel(modelId: string) {
     doGenerate: async ({
       prompt,
       responseFormat,
+      abortSignal,
     }: {
       prompt: Prompt;
       responseFormat?: ResponseFormat;
-    }) => ({
-      content: [
-        { type: "text" as const, text: mockText(prompt, responseFormat) },
-      ],
-      finishReason,
-      usage,
-      warnings: [],
-    }),
+      abortSignal?: AbortSignal;
+    }) => {
+      await failCall(abortSignal);
+      return {
+        content: [
+          { type: "text" as const, text: mockText(prompt, responseFormat) },
+        ],
+        finishReason,
+        usage,
+        warnings: [],
+      };
+    },
     doStream: async ({
       prompt,
       tools,
       responseFormat,
+      abortSignal,
     }: {
       prompt: Prompt;
       tools?: ReadonlyArray<MockTool>;
       responseFormat?: ResponseFormat;
-    }) => ({
-      stream:
-        mockTutorQuestions(prompt, tools) ??
-        simulateReadableStream({
-          initialDelayInMs: null,
-          // Structured output streams at once: no Student watches it.
-          chunkDelayInMs:
-            responseFormat?.type === "json" ? null : WORD_DELAY_MS,
-          chunks: [
-            { type: "stream-start" as const, warnings: [] },
-            { type: "text-start" as const, id: "text-1" },
-            ...mockText(prompt, responseFormat)
-              .split(/(?<= )/)
-              .map((delta) => ({
-                type: "text-delta" as const,
-                id: "text-1",
-                delta,
-              })),
-            { type: "text-end" as const, id: "text-1" },
-            { type: "finish" as const, finishReason, usage },
-          ],
-        }),
-    }),
+      abortSignal?: AbortSignal;
+    }) => {
+      await failCall(abortSignal);
+      return {
+        stream:
+          (mockFault() ? null : mockTutorQuestions(prompt, tools)) ??
+          simulateReadableStream({
+            initialDelayInMs: null,
+            // Structured output streams at once: no Student watches it.
+            chunkDelayInMs:
+              responseFormat?.type === "json" ? null : WORD_DELAY_MS,
+            chunks: [
+              { type: "stream-start" as const, warnings: [] },
+              { type: "text-start" as const, id: "text-1" },
+              ...mockText(prompt, responseFormat)
+                .split(/(?<= )/)
+                .map((delta) => ({
+                  type: "text-delta" as const,
+                  id: "text-1",
+                  delta,
+                })),
+              { type: "text-end" as const, id: "text-1" },
+              { type: "finish" as const, finishReason, usage },
+            ],
+          }),
+      };
+    },
   };
 }
 
@@ -381,14 +423,23 @@ function embeddingModel(modelId: string) {
     modelId,
     maxEmbeddingsPerCall: undefined,
     supportsParallelCalls: true,
-    doEmbed: async ({ values }: { values: string[] }) => ({
-      embeddings: values.map(() =>
-        Array.from({ length: EMBEDDING_DIMENSIONS }, () => 0.5),
-      ),
-      // Like some providers, which report no usage for embeddings.
-      usage: undefined,
-      warnings: [],
-    }),
+    doEmbed: async ({
+      values,
+      abortSignal,
+    }: {
+      values: string[];
+      abortSignal?: AbortSignal;
+    }) => {
+      await failCall(abortSignal);
+      return {
+        embeddings: values.map(() =>
+          Array.from({ length: EMBEDDING_DIMENSIONS }, () => 0.5),
+        ),
+        // Like some providers, which report no usage for embeddings.
+        usage: undefined,
+        warnings: [],
+      };
+    },
   };
 }
 

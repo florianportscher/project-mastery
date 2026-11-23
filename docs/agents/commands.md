@@ -47,15 +47,16 @@ In an agent worktree the local database is shared: see [worktrees.md](worktrees.
 
 `pnpm -s agent help` is the full, current list and the only place that explains each subcommand. In short:
 
-| Command                                          | What it does                                                                                                                |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm -s agent up` · `down` · `status`           | Start and stop the local stack and dev server                                                                               |
-| `pnpm -s agent login` · `open` · `act`           | Drive the app in a browser as a test user, with compact page snapshots                                                      |
-| `pnpm -s agent check` · `sql` · `mail`           | Compile and runtime errors, SQL with Row Level Security, the latest email                                                   |
-| `pnpm -s agent staging*`                         | Read the staging project, and write to it for testing ([ADR 0029](../adr/0029-agent-writes-to-staging.md))                  |
-| `pnpm -s agent staging-reset-map <id>`           | Delete a Course's whole map build on staging; Materials and chunks stay                                                     |
-| `pnpm -s agent inspect <courseId>`               | A Course's stored map build and its model calls as text: the first stop for a wrong map                                     |
-| `pnpm -s agent walk <dir>` · `walk diff <a> <b>` | Seed data, snapshot every page as `student` (main pages as `classmate`); `diff` prints `same: N pages` or each changed page |
+| Command                                                            | What it does                                                                                                                |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm -s agent up` · `down` · `status`                             | Start and stop the local stack and dev server                                                                               |
+| `pnpm -s agent up --mock-fault <error\|timeout\|empty\|malformed>` | Restart the dev server so every mock model call fails that way; `up` alone turns it off                                     |
+| `pnpm -s agent login` · `open` · `act`                             | Drive the app in a browser as a test user, with compact page snapshots                                                      |
+| `pnpm -s agent check` · `sql` · `mail`                             | Compile and runtime errors, SQL with Row Level Security, the latest email                                                   |
+| `pnpm -s agent staging*`                                           | Read the staging project, and write to it for testing ([ADR 0029](../adr/0029-agent-writes-to-staging.md))                  |
+| `pnpm -s agent staging-reset-map <id>`                             | Delete a Course's whole map build on staging; Materials and chunks stay                                                     |
+| `pnpm -s agent inspect <courseId>`                                 | A Course's stored map build and its model calls as text: the first stop for a wrong map                                     |
+| `pnpm -s agent walk <dir>` · `walk diff <a> <b>`                   | Seed data, snapshot every page as `student` (main pages as `classmate`); `diff` prints `same: N pages` or each changed page |
 
 ## Live AI and evals
 
