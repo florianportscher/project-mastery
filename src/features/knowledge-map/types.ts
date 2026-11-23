@@ -1,4 +1,7 @@
-import type { CheckReport } from "@/features/knowledge-map/schemas";
+import type {
+  BuildProgress,
+  CheckReport,
+} from "@/features/knowledge-map/schemas";
 
 /** Where a Course's last Knowledge map build stands; null: never built. */
 export type MapBuild = {
@@ -6,6 +9,13 @@ export type MapBuild = {
   failureReason: string | null;
   /** When the shown map was built, as an ISO timestamp; null before one. */
   finishedAt: string | null;
+  /** When the last build started, as an ISO timestamp. */
+  startedAt: string;
+  /**
+   * How far the last build got; null before its first step recorded one,
+   * which counts as the stage `materials` without a count yet.
+   */
+  progress: BuildProgress | null;
 } | null;
 
 export type KcSourceView = {

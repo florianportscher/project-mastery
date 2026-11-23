@@ -188,5 +188,27 @@ export const kcAssumesSchema = z.array(z.object({ name, description }));
 
 export const startKnowledgeMapBuildSchema = z.object({ courseId: z.uuid() });
 
+export const BUILD_STAGES = [
+  "materials",
+  "exercises",
+  "connecting",
+  "topics",
+  "finishing",
+] as const;
+
+/**
+ * How far a running build has got (`knowledge_map_builds.progress`): its
+ * stage, `done` of `total` units of it when the stage counts them, and
+ * until when the rate limit pauses it, as an ISO timestamp.
+ */
+export const buildProgressSchema = z.object({
+  stage: z.enum(BUILD_STAGES),
+  done: z.number().int().optional(),
+  total: z.number().int().optional(),
+  waitUntil: z.string().optional(),
+});
+
 export type KnowledgeMap = z.infer<typeof knowledgeMapSchema>;
 export type CheckReport = z.infer<typeof checkReportSchema>;
+export type BuildStage = (typeof BUILD_STAGES)[number];
+export type BuildProgress = z.infer<typeof buildProgressSchema>;

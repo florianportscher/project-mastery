@@ -105,7 +105,7 @@ export async function proposeTopicTree(courseId: string): Promise<TreeOutcome> {
   "use step";
   const startedAt = Date.now();
   const supabase = createAdminClient();
-  const owner = await touchBuild(supabase, courseId);
+  const owner = await touchBuild(supabase, courseId, { stage: "topics" });
   if (!owner) return { ok: true, tree: null };
 
   const [input, stored, build, language] = await Promise.all([

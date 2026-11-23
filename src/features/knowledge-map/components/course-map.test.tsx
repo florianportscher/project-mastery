@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
+import type { BuildProgress } from "@/features/knowledge-map/schemas";
 import type {
   KnowledgeMapView,
   MapTopic,
@@ -68,6 +69,8 @@ const map: KnowledgeMapView = {
     status: "built",
     failureReason: null,
     finishedAt: "2026-10-20T10:00:00Z",
+    startedAt: "2026-10-20T09:50:00Z",
+    progress: { stage: "finishing" },
   },
   kcs: [kc("k1"), kc("k2")],
   prerequisites: [{ from: "k1", to: "k2" }],
@@ -242,6 +245,140 @@ test("without a map, the page says so", () => {
   expect(
     screen.getByRole("button", { name: "Build knowledge map" }),
   ).toBeVisible();
+});
+
+describe("the first build's panel", () => {
+  const firstBuild = (
+    progress: BuildProgress | null,
+    kcs: KnowledgeMapView["kcs"] = [],
+  ) =>
+    renderMap(
+      {
+        ...map,
+        kcs,
+        build: {
+          status: "building",
+          failureReason: null,
+          finishedAt: null,
+          startedAt: new Date(Date.now() - 150_000).toISOString(),
+          progress,
+        },
+      },
+      [],
+    );
+  const stages = () =>
+    within(screen.getByRole("region", { name: "Build progress" }))
+      .getAllByRole("listitem")
+      .map((item) => item.textContent);
+
+  test("starts reading the Materials before a step recorded progress", () => {
+    firstBuild(null);
+    expect(
+      screen.getByRole("heading", { name: "Building your map" }),
+    ).toBeVisible();
+    expect(screen.getByText("Started 2 min ago")).toBeVisible();
+    expect(stages()[0]).toBe("Reading your Materials");
+    expect(screen.getByText("0 things to learn found so far")).toBeVisible();
+    expect(screen.queryByText("Building…")).toBeNull();
+  });
+
+  test("marks the stages done before the running one, with its count", () => {
+    firstBuild({ stage: "exercises", done: 2, total: 5 }, [kc("k1"), kc("k2")]);
+    expect(stages()).toEqual([
+      "Reading your Materials",
+      "Working through your Exercises2 of 5 batches",
+      "Connecting what builds on what",
+      "Grouping into Topics",
+      "Finishing",
+    ]);
+    expect(screen.getAllByLabelText("Done")).toHaveLength(1);
+    expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent(
+      "Working through your Exercises",
+    );
+    expect(screen.getByText("2 things to learn found so far")).toBeVisible();
+  });
+
+  test("tells how long the rate limit pauses the build", () => {
+    firstBuild({
+      stage: "materials",
+      done: 4,
+      total: 12,
+      waitUntil: new Date(Date.now() + 39_500).toISOString(),
+    });
+    expect(stages()[0]).toBe(
+      "Reading your MaterialsWaiting for the AI, continues in 40 s",
+    );
+  });
+});
+
+describe("an Update map and a failed build", () => {
+  const build = (over: Partial<NonNullable<KnowledgeMapView["build"]>>) => ({
+    status: "building" as const,
+    failureReason: null,
+    finishedAt: "2026-01-01T10:00:00Z",
+    startedAt: new Date(Date.now() - 60_000).toISOString(),
+    progress: null,
+    ...over,
+  });
+
+  test("an update keeps the map and shows the stage under the title", () => {
+    renderMap(
+      {
+        ...map,
+        build: build({ progress: { stage: "materials", done: 3, total: 4 } }),
+      },
+      topics,
+    );
+    const status = screen.getByRole("status", { name: "Build status" });
+    expect(status).toHaveTextContent(
+      "Reading your Materials · 3 of 4 sections",
+    );
+    expect(
+      within(status).getByRole("progressbar", { name: "Update progress" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Build progress" })).toBeNull();
+  });
+
+  test("a failed first build keeps the panel, marks the stage and offers Try again", () => {
+    renderMap(
+      {
+        ...map,
+        kcs: [],
+        build: build({
+          status: "failed",
+          failureReason: "The AI stopped answering.",
+          finishedAt: null,
+          progress: { stage: "topics" },
+        }),
+      },
+      [],
+    );
+    const panel = screen.getByRole("region", { name: "Build progress" });
+    expect(panel).toHaveTextContent("The AI stopped answering.");
+    expect(within(panel).getByLabelText("Stopped here")).toBeVisible();
+    expect(
+      within(panel).getByRole("button", { name: "Try again" }),
+    ).toBeVisible();
+  });
+
+  test("a failed update keeps the map and shows the reason with Try again", () => {
+    renderMap(
+      {
+        ...map,
+        build: build({
+          status: "failed",
+          failureReason: "The AI stopped answering.",
+        }),
+      },
+      topics,
+    );
+    const status = screen.getByRole("status", { name: "Build status" });
+    expect(status).toHaveTextContent("The AI stopped answering.");
+    expect(
+      within(status).getByRole("button", { name: "Try again" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Build progress" })).toBeNull();
+  });
 });
 
 describe("the Progress line", () => {

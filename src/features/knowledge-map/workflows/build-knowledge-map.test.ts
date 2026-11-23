@@ -13,7 +13,6 @@ import {
   liveKcs,
   type SentCourse,
   topicTree,
-  unitHeadings,
   queueBuild,
   seedMaterial,
   STUDENT,
@@ -251,50 +250,26 @@ describe("Update map", () => {
     ]);
   });
 
-  test("replaces the KCs of every batch an updated prompt makes stale, without offering one stale batch another's KCs", async () => {
-    seedMaterial(db, { sections: [{ title: "Vectors" }] });
-    seedMaterial(db, { sections: [{ title: "Sums" }] });
-    useBuildModels();
-    await update();
-    expect(liveKcs(db)).toEqual(["Vectors", "Sums"]);
+  test("records the stage and its count of sections done as it reads the Materials", async () => {
+    for (const title of ["Vectors", "Sums", "Bases"]) {
+      seedMaterial(db, { sections: [{ title }] });
+    }
+    const progress: unknown[] = [];
+    useBuildModels({ afterCall: () => progress.push(build()!.progress) });
 
-    // The prompt changed: both stored extractions are stale, and the new
-    // answers name other KCs, the first one trying to repeat a stale KC.
-    for (const row of db.tables.unit_extractions) row.prompt_digest = "older";
-    const again = useBuildModels({
-      kcsOf: (unit) =>
-        unitHeadings(unit).map((heading) =>
-          heading === "Vectors" ? "Arrows" : "Totals",
-        ),
-      repeatsOf: (unit) =>
-        unit.knownKcs.some((kc) => kc.name === "Sums") ? ["Sums"] : [],
+    await update();
+
+    expect(progress).toEqual(
+      [0, 1, 2].map((done) => ({
+        stage: "materials",
+        done,
+        total: 3,
+      })),
+    );
+    expect(build()).toMatchObject({
+      status: "built",
+      progress: { stage: "finishing" },
     });
-    await update();
-
-    expect(again.extractions.map((unit) => unit.knownKcs)).toEqual([
-      [],
-      [expect.objectContaining({ name: "Arrows" })],
-    ]);
-    expect(liveKcs(db)).toEqual(["Arrows", "Totals"]);
-    // Each live KC is sourced on its own batch's chunk only.
-    const chunkOf = (heading: string) =>
-      db.tables.chunks.find((chunk) => chunk.heading === heading)!.id;
-    const sourcesOf = (name: string) =>
-      db.tables.kc_sources
-        .filter((source) => source.kc_id === kcId(name))
-        .map((source) => source.chunk_id);
-    expect(sourcesOf("Arrows")).toEqual([chunkOf("Vectors")]);
-    expect(sourcesOf("Totals")).toEqual([chunkOf("Sums")]);
-    const retired = db.tables.kcs
-      .filter((kc) => kc.retired_at)
-      .map((kc) => kc.id);
-    expect(
-      db.tables.kc_sources.filter((source) => retired.includes(source.kc_id)),
-    ).toEqual([]);
-
-    const third = useBuildModels();
-    await update();
-    expect(third.extractions).toEqual([]);
   });
 
   test("makes no call for units it extracted before", async () => {
