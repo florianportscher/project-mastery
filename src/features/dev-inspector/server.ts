@@ -4,4 +4,5 @@ import "server-only";
 
 export { isDeveloper, requireDeveloper } from "./server/access";
 export { getCourseInspection } from "./server/snapshot";
+export { isBuildFlagged, isChatFlagged } from "./server/flags";
 export { getCourseCalls } from "./server/calls";

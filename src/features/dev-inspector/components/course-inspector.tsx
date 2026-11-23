@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SendToDeveloper } from "@/features/dev-inspector/components/send-to-developer";
 import {
   BuildSection,
   ExercisesSection,
@@ -40,12 +41,15 @@ export function CourseInspector({
   units,
   flags,
   calls,
+  buildSent,
   backHref,
 }: {
   snapshot: Snapshot;
   units: DevUnit[];
   flags: Flags;
   calls: DevCalls;
+  /** Whether this build was sent to the developer; null without a build. */
+  buildSent: boolean | null;
   backHref: string;
 }) {
   const lookup = buildLookup(snapshot, units);
@@ -66,12 +70,22 @@ export function CourseInspector({
         <Link href={backHref} className="text-xs text-muted-foreground">
           ← Course map
         </Link>
-        <h1 className="text-xl font-semibold">
-          {snapshot.course.name}{" "}
-          <span className="text-sm font-normal text-muted-foreground">
-            developer view
-          </span>
-        </h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl font-semibold">
+            {snapshot.course.name}{" "}
+            <span className="text-sm font-normal text-muted-foreground">
+              developer view
+            </span>
+          </h1>
+          {buildSent !== null && (
+            <SendToDeveloper
+              // A new build is a new flag target.
+              key={`${snapshot.build?.appCommit}-${snapshot.build?.finishedAt}`}
+              courseId={snapshot.course.id}
+              sent={buildSent}
+            />
+          )}
+        </div>
         <nav className="flex flex-wrap gap-3 text-sm">
           {SECTIONS.map(([id, label]) => (
             <a

@@ -112,6 +112,8 @@ type ChatProps = {
    * production only.
    */
   showDetails: boolean;
+  /** A developer's own row of controls above the messages. */
+  developerAction?: ReactNode;
 };
 
 const emptyReplyMessage = "The AI sent no answer. Try again.";
@@ -131,6 +133,7 @@ export function Chat({
   minutes,
   dailyLimit: initialDailyLimit,
   showDetails,
+  developerAction,
 }: ChatProps) {
   const chatId = chat.id;
   const [inputError, setInputError] = useState<string | null>(null);
@@ -298,6 +301,7 @@ export function Chat({
   return (
     <WithSourcePane courseId={chat.courseId}>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 px-4 pb-4">
+        {developerAction}
         {/* Once the first message is sent, the Chat's session can be ended. */}
         {messages.length > 0 && (strip !== null || !ended) && (
           <div className="mx-auto -mb-2 flex min-h-10 w-full max-w-3xl items-center justify-between gap-2 pt-2">
