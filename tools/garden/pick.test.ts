@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { changeOf, isGardenCommit, parseLog, pickAreas } from "./pick";
+import {
+  changeOf,
+  isGardenCommit,
+  parseLog,
+  pickAreas,
+  sinceLastGarden,
+} from "./pick";
 
 const log = [
   "@aaa\tfeat(study): ask more",
@@ -31,6 +37,32 @@ describe("changeOf", () => {
   it("recognises garden commits by scope", () => {
     expect(isGardenCommit("docs(garden): ledger")).toBe(true);
     expect(isGardenCommit("fix: garden")).toBe(false);
+  });
+});
+
+describe("sinceLastGarden", () => {
+  // main after a squash merge: the garden branch's commits are gone, one
+  // commit with the garden scope stands in their place.
+  const main = parseLog(
+    [
+      "@d4\tfeat(study): newest",
+      "4\t0\tsrc/features/study/a.ts",
+      "@d3\trefactor(garden): garden 2026-11-23 (#401)",
+      "9\t9\tsrc/features/study/a.ts",
+      "@d2\tfix(study): older",
+      "1\t1\tsrc/features/study/a.ts",
+    ].join("\n"),
+  );
+
+  it("starts after the newest garden commit on main", () => {
+    const since = sinceLastGarden(main);
+    expect(since.neverGardened).toBe(false);
+    expect(since.commits.map((c) => c.sha)).toEqual(["d4"]);
+  });
+
+  it("counts every commit when no garden commit exists", () => {
+    const since = sinceLastGarden(main.slice(2));
+    expect(since).toEqual({ commits: main.slice(2), neverGardened: true });
   });
 });
 

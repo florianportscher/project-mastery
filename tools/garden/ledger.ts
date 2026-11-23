@@ -23,12 +23,13 @@ export type Rejected = {
   reason: string;
   /** Files the change touched: it is proposed again once one of them changes. */
   files: string[];
-  /** Commit the rejection was recorded at. */
+  /** When it was recorded (ISO time): a closed PR's commits are gone, so time is the boundary. */
   at: string;
   /** The closed garden PR it came from: a recorded PR is not read again. */
   pr: number;
 };
 
+/** `commit` is information only: a squash merge removes it from main. */
 export type AreaEntry = { commit: string; date: string; measure: Measure };
 
 /**
@@ -72,7 +73,7 @@ export function recordedPrs(ledger: Ledger): Set<number> {
 export function activeRejections(
   ledger: Ledger,
   area: string,
-  changedSince: (file: string, sha: string) => boolean,
+  changedSince: (file: string, since: string) => boolean,
 ): Rejected[] {
   return ledger.rejected.filter(
     (r) => r.area === area && !r.files.some((file) => changedSince(file, r.at)),

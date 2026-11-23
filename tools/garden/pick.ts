@@ -44,6 +44,22 @@ export function parseLog(text: string): Commit[] {
   return commits;
 }
 
+/**
+ * The commits since the last garden, from a log newest first: those above the
+ * newest garden commit. A squash merge leaves that commit on main, where the
+ * garden branch's own commits are gone, so the boundary comes from the history
+ * and not from a recorded sha.
+ */
+export function sinceLastGarden(commits: Commit[]): {
+  commits: Commit[];
+  neverGardened: boolean;
+} {
+  const at = commits.findIndex((c) => isGardenCommit(c.subject));
+  return at < 0
+    ? { commits, neverGardened: true }
+    : { commits: commits.slice(0, at), neverGardened: false };
+}
+
 /** The change of one area: what its commits touched, but code only. */
 export function changeOf(
   name: string,

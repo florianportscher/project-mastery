@@ -23,7 +23,6 @@ import {
   readLedger,
   recordRun,
   writeLedger,
-  type Ledger,
   type Measure,
 } from "./ledger";
 import { measureAreas } from "./measure";
@@ -33,6 +32,7 @@ import {
   LOG_FORMAT,
   parseLog,
   pickAreas,
+  sinceLastGarden,
   type AreaStat,
 } from "./pick";
 import { reportSkeleton } from "./report";
@@ -48,31 +48,24 @@ function git(...args: string[]): string {
   });
 }
 
-const changedSince = (file: string, sha: string) =>
-  git("log", "--format=%H", `${sha}..HEAD`, "--", file).trim() !== "";
+const changedSince = (file: string, since: string) =>
+  git("log", "--format=%H", `--since=${since}`, "--", file).trim() !== "";
 
-function statOf(area: Area, commit: string | undefined, loc: number) {
-  let log = "";
-  try {
-    log = git(
-      "log",
-      "--no-renames",
-      "--numstat",
-      `--format=${LOG_FORMAT}`,
-      ...(commit ? [`${commit}..HEAD`] : []),
-      "--",
-      ...area.paths,
-    );
-  } catch {
-    commit = undefined;
-  }
-  return changeOf(area.name, parseLog(log), !commit, loc);
+function statOf(area: Area, loc: number) {
+  const log = git(
+    "log",
+    "--no-renames",
+    "--numstat",
+    `--format=${LOG_FORMAT}`,
+    "--",
+    ...area.paths,
+  );
+  const since = sinceLastGarden(parseLog(log));
+  return changeOf(area.name, since.commits, since.neverGardened, loc);
 }
 
-function stats(ledger: Ledger, sizes: Record<string, SizeMetrics>): AreaStat[] {
-  return areas.map((a) =>
-    statOf(a, ledger.areas[a.name]?.commit, sizes[a.name]!.loc),
-  );
+function stats(sizes: Record<string, SizeMetrics>): AreaStat[] {
+  return areas.map((a) => statOf(a, sizes[a.name]!.loc));
 }
 
 function areaCount(args: string[]): number {
@@ -85,7 +78,7 @@ function areaCount(args: string[]): number {
 function list(n: number) {
   const ledger = readLedger(root);
   const sizes = computeSizes(root, areas);
-  const all = stats(ledger, sizes);
+  const all = stats(sizes);
   const picked = new Set(pickAreas(all, n).map((s) => s.name));
   for (const s of all) {
     const size = sizes[s.name]!;
@@ -97,7 +90,7 @@ function list(n: number) {
         s.name.padEnd(14),
         s.neverGardened
           ? "never gardened"
-          : `since ${entry!.commit.slice(0, 7)}`,
+          : `since the last garden${entry ? ` (${entry.date})` : ""}`,
         `change ${s.lines} lines in ${s.commits} commits`,
         `${size.files} files, ${size.loc} loc`,
         `${size.exports} exports (${size.usedOutside} used outside)`,
@@ -116,7 +109,7 @@ async function main([command, ...args]: string[]) {
   if (command === undefined || command === "--areas") {
     list(areaCount(command ? [command, ...args] : args));
   } else if (command === "pick") {
-    const all = stats(readLedger(root), computeSizes(root, areas));
+    const all = stats(computeSizes(root, areas));
     for (const s of pickAreas(all, areaCount(args))) console.log(s.name);
   } else if (command === "measure") {
     const out = args.indexOf("--out");
@@ -165,7 +158,7 @@ async function main([command, ...args]: string[]) {
       throw new Error("Usage: reject <pr> <area> <change> <reason> <file>...");
     if (!areas.some((a) => a.name === area))
       throw new Error(`No area ${area}.`);
-    const at = git("rev-parse", "HEAD").trim();
+    const at = new Date().toISOString();
     writeLedger(
       root,
       addRejection(readLedger(root), {
