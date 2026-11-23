@@ -71,8 +71,9 @@ export function MockResultView({
   return (
     <>
       <p className="text-base font-medium">
-        We predicted {result.predictedPercent}%, you scored{" "}
-        {result.scorePercent}%
+        {result.scorePercent === null
+          ? "No task could be graded, so this mock has no score."
+          : `We predicted ${result.predictedPercent}%, you scored ${result.scorePercent}%`}
       </p>
       {result.sure && (
         <p>

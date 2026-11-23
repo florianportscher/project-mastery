@@ -371,8 +371,8 @@ export type MockExamView = {
 
 /** A graded Mock exam's score, over the tasks that could be graded. */
 export type MockResult = {
-  /** The share of points awarded, from 0 to 100. */
-  scorePercent: number;
+  /** The share of points awarded, from 0 to 100; null when no task could be graded. */
+  scorePercent: number | null;
   /** The share Readiness predicted, from 0 to 100. */
   predictedPercent: number;
   /** Points per Topic, in task order; "Other" for tasks without a Topic. */

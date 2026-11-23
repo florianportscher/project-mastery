@@ -78,10 +78,10 @@ export type ResultItem = ScoredItem & { topic: string | null };
 
 /**
  * The score and the prediction as percentages, and the points per Topic in
- * task order, all over the graded items.
+ * task order, all over the graded items; the score is null without one.
  */
 export function mockResultShares(items: ResultItem[]): {
-  scorePercent: number;
+  scorePercent: number | null;
   predictedPercent: number;
   topics: Array<{ name: string; awarded: number; points: number }>;
 } {
@@ -98,7 +98,7 @@ export function mockResultShares(items: ResultItem[]): {
     topics.set(name, topic);
   }
   return {
-    scorePercent: percent(mockScore(graded).score),
+    scorePercent: graded.length === 0 ? null : percent(mockScore(graded).score),
     predictedPercent: percent(
       graded.reduce(
         (sum, item) => sum + item.points * item.predictedSuccess,

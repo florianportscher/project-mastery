@@ -187,7 +187,8 @@ async function loadLastSessionMinutes(
 
 /**
  * The score of the Course's latest graded Mock exam, 0 to 100, over the
- * items grading did not fail, read with `supabase`; null without one.
+ * items grading did not fail, read with `supabase`; null without one, or
+ * when grading failed on all its items.
  */
 async function loadLastMockPercent(
   supabase: Supabase,
