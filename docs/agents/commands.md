@@ -90,12 +90,13 @@ Started in a Claude Code session. They live in `.claude/skills/`.
 
 ## Scripts the skills call
 
-| Command                              | Owner                                                 |
-| ------------------------------------ | ----------------------------------------------------- |
-| `tools/build/setup.sh <issue>`       | `/build`: prepares the worktree and branch            |
-| `tools/build/ready.sh <pr> <body>`   | `/build`: marks a PR ready and arms auto-merge        |
-| `tools/build/cleanup.sh [issue ...]` | `/build`: removes finished worktrees                  |
-| `tools/sitting/waiting.sh [pr ...]`  | `/sitting`: what stands in the way of each waiting PR |
-| `pnpm -s retro`                      | `/retro`: digests recent Claude Code runs. Parked     |
+| Command                              | Owner                                                                                                          |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `tools/build/setup.sh <issue>`       | `/build`: prepares the worktree and branch                                                                     |
+| `tools/build/ready.sh <pr> <body>`   | `/build`: marks a PR ready and arms auto-merge                                                                 |
+| `tools/build/cleanup.sh [issue ...]` | `/build`: removes finished worktrees                                                                           |
+| `tools/sitting/waiting.sh [pr ...]`  | `/sitting`: what stands in the way of each waiting PR                                                          |
+| `pnpm -s retro`                      | `/retro`: digests recent Claude Code runs. Parked                                                              |
+| `pnpm -s garden`                     | `/garden`: areas with change counts and numbers; `pick`, `measure`, `write` for the ledger and report skeleton |
 
 `pnpm prepare` installs the Git hooks and runs by itself on `pnpm install`.

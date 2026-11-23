@@ -14,6 +14,8 @@
   "ignoreDependencies": [
     // Run as a binary by tools/agent (ADR 0015).
     "agent-browser",
+    // Run as a binary by tools/garden.
+    "jscpd",
     // Resolved through react-pdf's own pin, hoisted on purpose
     // (pnpm-workspace.yaml).
     "pdfjs-dist",
