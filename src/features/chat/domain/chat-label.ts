@@ -12,7 +12,20 @@ function shortenAtWord(text: string, max: number): string {
 
   const head = line.slice(0, max + 1);
   const wordEnd = head.lastIndexOf(" ");
-  return `${head.slice(0, wordEnd > 0 ? wordEnd : max).replace(/[\s,;:.-]+$/, "")}…`;
+  const cut =
+    wordEnd > 0
+      ? head.slice(0, wordEnd)
+      : withoutHalfCharacter(head.slice(0, max));
+  return `${cut.replace(/[\s,;:.-]+$/, "")}…`;
+}
+
+/**
+ * `text` without a trailing high surrogate, the first half of a character
+ * a cut went through, which shows as a broken glyph and which the database
+ * refuses to store.
+ */
+function withoutHalfCharacter(text: string): string {
+  return /[\uD800-\uDBFF]$/.test(text) ? text.slice(0, -1) : text;
 }
 
 /**
