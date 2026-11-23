@@ -131,16 +131,15 @@ export async function loadStudy(
   courseId: string,
   now: Date,
 ) {
-  const [map, priorities, exam, topics, attempts, choices, pace] =
-    await Promise.all([
-      loadStoredMap(supabase, courseId),
-      loadKcPriorities(supabase, courseId),
-      getExamFacts(supabase, courseId),
-      loadStoredTopics(supabase, courseId),
-      loadCourseAttempts(supabase, courseId),
-      loadTopicChoices(supabase, courseId),
-      loadPace(supabase, courseId),
-    ]);
+  const [map, priorities, exam, topics, attempts, choices] = await Promise.all([
+    loadStoredMap(supabase, courseId),
+    loadKcPriorities(supabase, courseId),
+    getExamFacts(supabase, courseId),
+    loadStoredTopics(supabase, courseId),
+    loadCourseAttempts(supabase, courseId),
+    loadTopicChoices(supabase, courseId),
+  ]);
+  const pace = await loadPace(supabase, attempts);
   const recall = replayCourse(attempts, { ...exam, now });
   const scope = planScope({ topics, priorities, goal: exam.goal, choices });
   const ranked = rankNext({
