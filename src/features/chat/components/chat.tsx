@@ -29,11 +29,11 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { AttachmentChips } from "@/features/chat/components/attachment-chips";
 import { QuickReplies } from "@/features/chat/components/quick-replies";
 import { ReplyError } from "@/features/chat/components/reply-error";
-import { AttachedMaterials } from "@/features/chat/components/attached-materials";
-import { ContextAction } from "@/features/chat/components/context-action";
+import {
+  AiReply,
+  StudentMessage,
+} from "@/features/chat/components/chat-message";
 import { MessageActionRow } from "@/features/chat/components/message-action-row";
-import { ReplyFooter } from "@/features/chat/components/reply-footer";
-import { ReplyParts } from "@/features/chat/components/reply-parts";
 import { replyIsEmpty } from "@/features/chat/domain/reply-steps";
 import { chatLabel } from "@/features/chat/domain/chat-label";
 import { SessionStrip } from "@/features/chat/components/session-strip";
@@ -45,13 +45,8 @@ import {
   QUICK_REPLIES,
   sessionEndedMessage,
 } from "@/features/study";
-import { messageText } from "@/lib/ai/reply";
 import { cn } from "@/lib/utils";
-import {
-  BUSY,
-  replyActivity,
-  THINKING,
-} from "@/features/chat/domain/reply-activity";
+import { BUSY, THINKING } from "@/features/chat/domain/reply-activity";
 import { useChatList } from "@/features/chat/hooks/use-chat-list";
 import { useMessageAttachments } from "@/features/chat/hooks/use-message-attachments";
 import {
@@ -331,75 +326,41 @@ export function Chat({
             ) : (
               messages.map((message) => {
                 const isLast = message === lastMessage;
-                if (isLast && emptyReply) return null;
-                const isStreaming = isBusy && isLast;
-                // Until the reply has text, a line says what the AI is doing in
-                // its place, in the same box the text then fills.
-                const activity =
-                  isStreaming && message.role === "assistant"
-                    ? replyActivity(message.parts)
-                    : null;
-                return (
-                  <Message from={message.role} key={message.id}>
-                    <MessageContent data-testid="message-text">
-                      {message.role === "assistant" ? (
-                        <>
-                          <ReplyParts
-                            parts={message.parts}
-                            streaming={status === "streaming" && isLast}
-                            inProgress={isStreaming}
-                            arrived={!storedIds.has(message.id)}
-                            showSteps={showDetails}
-                            problemFlags={chat.problemFlags}
-                          />
-                          {activity !== null && (
-                            <Shimmer className="text-sm">{activity}</Shimmer>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <AttachedMaterials
-                            parts={message.parts}
-                            materialsById={materialsById}
-                            onOpen={setOpened}
-                          />
-                          {messageText(message.parts) !== "" && (
-                            <p className="whitespace-pre-wrap">
-                              {messageText(message.parts)}
-                            </p>
-                          )}
-                        </>
-                      )}
-                    </MessageContent>
-                    <MessageActionRow
-                      from={message.role === "user" ? "user" : "assistant"}
-                      text={messageText(message.parts)}
-                      stopped={message.metadata?.stopped}
-                      hidden={isStreaming && message.role === "assistant"}
-                      onRegenerate={
-                        message.role === "assistant" &&
-                        isLast &&
-                        !limitReached &&
-                        !ended
-                          ? () => {
-                              clearError();
-                              void regenerate();
-                            }
-                          : undefined
-                      }
-                    >
-                      {message.role === "assistant" && (
-                        <>
-                          {showDetails && (
-                            <ContextAction
-                              context={message.metadata?.tutorContext}
-                            />
-                          )}
-                          <ReplyFooter metadata={message.metadata} />
-                        </>
-                      )}
-                    </MessageActionRow>
-                  </Message>
+                // A reply that ended, failed or not, with nothing to show is
+                // left out; the last one's error shows below.
+                if (
+                  message.role === "assistant" &&
+                  !(isBusy && isLast) &&
+                  !message.metadata?.stopped &&
+                  replyIsEmpty(message.parts)
+                ) {
+                  return null;
+                }
+                return message.role === "assistant" ? (
+                  <AiReply
+                    key={message.id}
+                    message={message}
+                    streaming={status === "streaming" && isLast}
+                    inProgress={isBusy && isLast}
+                    arrived={!storedIds.has(message.id)}
+                    showDetails={showDetails}
+                    problemFlags={chat.problemFlags}
+                    onRegenerate={
+                      isLast && !limitReached && !ended
+                        ? () => {
+                            clearError();
+                            void regenerate();
+                          }
+                        : undefined
+                    }
+                  />
+                ) : (
+                  <StudentMessage
+                    key={message.id}
+                    message={message}
+                    materialsById={materialsById}
+                    onOpenMaterial={setOpened}
+                  />
                 );
               })
             )}
@@ -455,7 +416,6 @@ export function Chat({
                 event.target.value = "";
               }}
             />
-            {/* Controlled, so a refused message stays in the input. */}
             <QuickReplies
               replies={QUICK_REPLIES}
               visible={
@@ -467,6 +427,7 @@ export function Chat({
                 void sendMessage({ parts: [{ type: "text", text }] })
               }
             />
+            {/* Controlled, so a refused message stays in the input. */}
             <PromptInputProvider>
               <PromptInput onSubmit={handleSubmit}>
                 <AttachmentChips

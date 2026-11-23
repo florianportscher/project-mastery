@@ -132,8 +132,10 @@ export async function respondInChat({
   const { chatId, courseId, mockId, minutes, message } = parsed.data;
 
   const existing = await findChat(supabase, chatId);
-  if (!existing && !courseId) return refuse(404, chatNotFoundMessage);
-  if (!existing && !(await getCourseWith(supabase, courseId!))) {
+  // A stored Chat stays in its Course; a new one is created in the request's.
+  const chatCourseId = existing?.courseId ?? courseId;
+  if (!chatCourseId) return refuse(404, chatNotFoundMessage);
+  if (!existing && !(await getCourseWith(supabase, chatCourseId))) {
     return refuse(404, courseNotFoundMessage);
   }
   // An ended session's Chat is read-only; one gone idle ends now.
@@ -144,11 +146,7 @@ export async function respondInChat({
   // A stored message, as when retrying, is answered as stored: its
   // Materials may have been deleted since.
   if (!existing || !(await hasMessage(supabase, existing.id, message.id))) {
-    const refusal = await attachmentRefusal(
-      supabase,
-      message,
-      existing?.courseId ?? courseId!,
-    );
+    const refusal = await attachmentRefusal(supabase, message, chatCourseId);
     if (refusal) return refuse(400, refusal);
   }
 
@@ -169,7 +167,7 @@ export async function respondInChat({
   const replyId = randomUUID();
   const chat =
     existing ??
-    (await createChat(supabase, chatId, { courseId: courseId!, replyId }));
+    (await createChat(supabase, chatId, { courseId: chatCourseId, replyId }));
   if (chat === "taken") return refuse(404, chatNotFoundMessage);
   // The Course was deleted since it was checked.
   if (chat === "no course") return refuse(404, courseNotFoundMessage);
@@ -181,24 +179,24 @@ export async function respondInChat({
     if (minutes) await setSessionMinutes(supabase, chat.id, minutes);
   }
 
-  const history =
-    resent ??
-    ((await saveStudentMessage(supabase, chat, message, !existing)) && [
-      ...stored,
-      message,
-    ]);
+  // A resent message is stored and recorded already.
+  let history = resent;
   if (!history) {
-    if (existing) {
-      await cancelReply(supabase, chat.id, {
-        replyId,
-        previousReplyId: existing.latestReplyId,
-      });
+    // Its id is taken elsewhere: undo the reply's start, and delete a new
+    // Chat so none is left empty.
+    if (!(await saveMessage(supabase, chat.id, message))) {
+      if (existing) {
+        await cancelReply(supabase, chat.id, {
+          replyId,
+          previousReplyId: existing.latestReplyId,
+        });
+      } else {
+        await deleteChat(supabase, chat.id);
+      }
+      return refuse(409, alreadySentMessage);
     }
-    return refuse(409, alreadySentMessage);
-  }
-  // A new message is part of the answer to the open Question; a resent one
-  // is recorded already.
-  if (!resent) {
+    history = [...stored, message];
+    // A new message is part of the answer to the open Question.
     await recordAnswer(supabase, chat.id, {
       messageId: message.id,
       text: messageText(message.parts),
@@ -252,21 +250,6 @@ function resentHistory(
   const later = stored.slice(index + 1);
   if (later.some((m) => m.role === "user")) return "refused";
   return stored.slice(0, index + 1);
-}
-
-/**
- * Stores the Student's new message. Returns false if its id is taken
- * elsewhere, deleting a new Chat so none is left empty.
- */
-async function saveStudentMessage(
-  supabase: Supabase,
-  chat: StoredChat,
-  message: ChatUIMessage,
-  isNewChat: boolean,
-): Promise<boolean> {
-  const saved = await saveMessage(supabase, chat.id, message);
-  if (!saved && isNewChat) await deleteChat(supabase, chat.id);
-  return saved;
 }
 
 async function streamReply({
@@ -360,7 +343,6 @@ async function streamReply({
         // content is tried once more.
         stream: retryRateLimited(
           async () => (await startReply()).stream,
-          undefined,
           () => announceBusy(),
         ),
         originalMessages: messages,
@@ -373,13 +355,7 @@ async function streamReply({
             : part.type === "finish-step"
               ? { modelId }
               : part.type === "finish"
-                ? {
-                    usage: replyUsage(
-                      modelId,
-                      tokenUsage(part.totalUsage),
-                      false,
-                    ),
-                  }
+                ? { usage: replyUsage(modelId, tokenUsage(part.totalUsage)) }
                 : undefined,
         onError: chatReplyErrorMessage,
         // Runs before the response ends, so the client sees the recorded usage

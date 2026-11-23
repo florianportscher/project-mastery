@@ -15,7 +15,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { goalLabel } from "@/features/chat/domain/goal-label";
+import { goalLabel } from "@/features/brief";
 import { renderTutorContext, type TutorContext } from "@/features/study";
 
 /**

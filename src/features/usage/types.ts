@@ -1,3 +1,14 @@
+/** The tokens and cost of the AI call that wrote a reply. */
+export type ReplyUsage = {
+  /** All input tokens, cached ones included. */
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+  /** Whether the tokens were estimated, as for a stopped reply. */
+  estimated: boolean;
+};
+
 /** What Settings shows of today's Daily limit: the amounts, in US dollars. */
 export type DailyUsage = {
   /** Today's AI spend in US dollars, since 00:00 UTC. */

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Markdown } from "@/components/markdown";
+import { goalLabel } from "@/features/brief/domain/goal-label";
 import type { BriefFields } from "@/features/brief/domain/intake";
 import type { BriefWithMessages } from "@/features/brief/types";
 
@@ -12,12 +13,6 @@ const dayFormat = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
   timeZone: "UTC",
 });
-
-const GOAL_NAMES = {
-  pass: "Pass",
-  good_grade: "A good grade",
-  master_everything: "Master everything",
-} as const;
 
 const yesNo = (value: boolean) => (value ? "Yes" : "No");
 
@@ -161,7 +156,7 @@ function ExamFacts({
       fields.examDate &&
         dayFormat.format(new Date(`${fields.examDate}T00:00Z`)),
     ],
-    ["Goal", fields.goal && GOAL_NAMES[fields.goal]],
+    ["Goal", fields.goal && goalLabel(fields.goal)],
     ["Open book", fields.openBook === null ? null : yesNo(fields.openBook)],
     [
       "Formula sheet",

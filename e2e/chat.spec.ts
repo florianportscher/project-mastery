@@ -56,6 +56,23 @@ test.describe("signed in", () => {
     ).toBeVisible();
   });
 
+  test("a formula without spaces wraps inside the message and the reply", async ({
+    page,
+    course,
+  }) => {
+    await page.goto(course.chatPath);
+    await sendMessage(page, `f(x)=${"x^2+".repeat(40)}1`);
+
+    const log = page.getByRole("log");
+    await expect(log.getByText(REPLY_END, { exact: false })).toBeVisible();
+    // Nothing is cut off at the edge of either box.
+    for (const box of await log.getByTestId("message-text").all()) {
+      expect(await box.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
+        true,
+      );
+    }
+  });
+
   test("a first message creates a Chat, streams the reply and keeps the history", async ({
     page,
     course,

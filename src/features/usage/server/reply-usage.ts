@@ -4,17 +4,8 @@ import { estimatedUsage, tokenUsage, type SentFile } from "@/lib/ai/cost";
 import type { AiTask } from "@/lib/ai/models";
 import type { Supabase, SessionSupabase } from "@/lib/supabase/types";
 import { failed } from "@/lib/supabase/failed";
+import type { ReplyUsage } from "@/features/usage/types";
 import { recordAiUsage } from "./usage-store";
-
-export type StoredReplyUsage = {
-  /** All input tokens, cached ones included. */
-  inputTokens: number;
-  cachedInputTokens: number;
-  outputTokens: number;
-  costUsd: number;
-  /** Whether the tokens were estimated, as for a stopped reply. */
-  estimated: boolean;
-};
 
 /**
  * The recorded usage of the replies among `replyIds`, by reply id. A reply
@@ -23,8 +14,8 @@ export type StoredReplyUsage = {
 export async function loadReplyUsage(
   supabase: Supabase,
   replyIds: string[],
-): Promise<Map<string, StoredReplyUsage>> {
-  const usage = new Map<string, StoredReplyUsage>();
+): Promise<Map<string, ReplyUsage>> {
+  const usage = new Map<string, ReplyUsage>();
   if (replyIds.length === 0) return usage;
   const { data, error } = await supabase
     .from("ai_usage")

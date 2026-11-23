@@ -33,12 +33,12 @@ describe("reply usage text", () => {
   });
 
   test("prices usage with the model", () => {
-    const usage = replyUsage(
-      "google/gemini-3.5-flash-lite",
-      { inputTokens: 1_000_000, cachedInputTokens: 0, outputTokens: 0 },
-      true,
-    );
-    expect(usage.estimated).toBe(true);
+    const usage = replyUsage("google/gemini-3.5-flash-lite", {
+      inputTokens: 1_000_000,
+      cachedInputTokens: 0,
+      outputTokens: 0,
+    });
+    expect(usage.estimated).toBe(false);
     expect(usage.costUsd).toBeCloseTo(0.3, 6);
   });
 });

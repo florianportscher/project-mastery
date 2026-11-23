@@ -12,10 +12,8 @@ const PREAMBLE = new Set(["start", "start-step"]);
  */
 export function retryRateLimited<Part extends { type: string }>(
   startReply: () => Promise<ReadableStream<Part>>,
-  wait: (ms: number) => Promise<void> = (ms) =>
-    new Promise((resolve) => setTimeout(resolve, ms)),
-  /** Called before each wait, so the Student can be told. */
-  onWait?: () => void,
+  /** Called before the wait, so the Student can be told. */
+  onWait: () => void,
 ): ReadableStream<Part> {
   let reader: ReadableStreamDefaultReader<Part> | undefined;
   let retried = false;
@@ -52,8 +50,10 @@ export function retryRateLimited<Part extends { type: string }>(
           retried = true;
           buffered = [];
           await reader.cancel().catch(() => {});
-          onWait?.();
-          await wait(Math.min(waitMs, 60_000));
+          onWait();
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.min(waitMs, 60_000)),
+          );
           reader = (await startReply()).getReader();
           continue;
         }
