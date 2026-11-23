@@ -7,7 +7,6 @@ import {
   type BatchPage,
 } from "@/features/ingestion/ai/page-units";
 import type { PageAnswer } from "@/features/ingestion/domain/language";
-import { missingPages } from "@/features/ingestion/domain/missing-pages";
 import {
   PAGES_PER_BATCH,
   pageBatches,
@@ -15,7 +14,7 @@ import {
   unitsOnPages,
   type PageUnit,
 } from "@/features/ingestion/domain/page-batches";
-import { overlayPages } from "@/features/ingestion/domain/pages";
+import { missingPages, overlayPages } from "@/features/ingestion/domain/pages";
 import type { PageSkip } from "@/features/ingestion/types";
 import {
   openMaterialPdf,
