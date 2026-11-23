@@ -36,7 +36,7 @@ Schema changes are SQL migrations in `supabase/migrations/`:
 
 ```bash
 pnpm db:migration:new add_courses  # create an empty migration file
-pnpm db:reset                      # rebuild the local database from migrations and seed.sql
+pnpm db:reset                      # rebuild the local database from migrations
 pnpm db:types                      # regenerate src/lib/supabase/database.types.ts
 pnpm db:test                       # run the Row Level Security tests in supabase/tests/
 ```
