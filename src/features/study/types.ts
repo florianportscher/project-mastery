@@ -1,6 +1,7 @@
 import type {
   AttemptHelp,
   AttemptResult,
+  Goal,
 } from "@/features/study/domain/replay";
 import type { MockStatus } from "@/features/study/domain/mock-exam";
 import type { Pace } from "@/features/study/domain/pace";
@@ -27,7 +28,7 @@ export type TutorContext = {
   /** From today to the exam date; null without one. */
   daysLeft: number | null;
   /** The Student's goal from the Brief; null until answered. */
-  goal: "pass" | "good_grade" | "master_everything" | null;
+  goal: Goal;
   session: SessionFacts;
   proposal: Proposal;
   /** The first 8 refreshes of the ranking. */
