@@ -11,18 +11,23 @@ import type { Supabase } from "@/lib/supabase/types";
 
 type ChatSession = {
   id: string;
+  courseId: string;
   endedAt: string | null;
   newestMessageAt: string | null;
+  /** 1 to 5; null until rated. */
+  rating: number | null;
+  ratingNote: string | null;
 };
 
-async function loadChatSession(
+/** The Chat's Study session with its Chat's newest message; null without one. */
+export async function loadChatSession(
   supabase: Supabase,
   chatId: string,
 ): Promise<ChatSession | null> {
   const [session, chat] = await Promise.all([
     supabase
       .from("study_sessions")
-      .select("id, ended_at")
+      .select("id, course_id, ended_at, rating, rating_note")
       .eq("chat_id", chatId)
       .maybeSingle(),
     supabase
@@ -36,8 +41,11 @@ async function loadChatSession(
   if (!session.data) return null;
   return {
     id: session.data.id,
+    courseId: session.data.course_id,
     endedAt: session.data.ended_at,
     newestMessageAt: chat.data?.last_message_at ?? null,
+    rating: session.data.rating,
+    ratingNote: session.data.rating_note,
   };
 }
 

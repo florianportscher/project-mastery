@@ -4,6 +4,7 @@ import { loadStoredMap } from "@/features/knowledge-map/server";
 import { replayCourse } from "@/features/study/domain/replay";
 import { sessionEnd } from "@/features/study/domain/session-end";
 import { loadCourseAttempts } from "@/features/study/server/attempts";
+import { loadChatSession } from "@/features/study/server/sessions";
 import type {
   AttemptHelp,
   AttemptResult,
@@ -22,22 +23,9 @@ export async function loadSessionSummary(
   chatId: string,
   now: Date = new Date(),
 ): Promise<SessionSummary | null> {
-  const [{ data: session, error }, chat] = await Promise.all([
-    supabase
-      .from("study_sessions")
-      .select("id, course_id, ended_at, rating, rating_note")
-      .eq("chat_id", chatId)
-      .maybeSingle(),
-    supabase
-      .from("chats")
-      .select("last_message_at")
-      .eq("id", chatId)
-      .maybeSingle(),
-  ]);
-  if (error) failed("Loading the Study session", error);
-  if (chat.error) failed("Loading the Chat", chat.error);
+  const session = await loadChatSession(supabase, chatId);
   if (!session) return null;
-  const courseId = session.course_id;
+  const { courseId } = session;
   const [exam, attempts, map] = await Promise.all([
     getExamFacts(supabase, courseId),
     loadCourseAttempts(supabase, courseId),
@@ -67,16 +55,9 @@ export async function loadSessionSummary(
       help,
       nextReview: recall.get(id)?.nextReview ?? null,
     })),
-    ended:
-      sessionEnd(
-        {
-          endedAt: session.ended_at,
-          newestMessageAt: chat.data?.last_message_at ?? null,
-        },
-        now,
-      ) !== null,
+    ended: sessionEnd(session, now) !== null,
     rating: session.rating,
-    ratingNote: session.rating_note,
+    ratingNote: session.ratingNote,
   };
 }
 
