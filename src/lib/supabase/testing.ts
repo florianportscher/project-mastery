@@ -5,11 +5,11 @@ import { fakeStorage } from "./testing-storage";
  * An in-memory stand-in for the Supabase server client in unit tests, so
  * tests check the rows a module stores instead of mocking query chains. It
  * supports the query builder calls the app uses (select, insert, upsert,
- * update, delete, eq, is, not, in, contains, lt, gt, gte, order, limit, range, single,
- * maybeSingle, and
- * `rpc` through the test's `functions`) and emulates Row Level
- * Security with `canAccess`: rows it rejects are invisible to reads, updates
- * and deletes, and inserting one fails with `42501`, as with real policies.
+ * update, delete, eq, neq, is, not, in, contains, lt, gt, gte, order, limit,
+ * range, single, maybeSingle, and `rpc` through the test's `functions`) and
+ * emulates Row Level Security with `canAccess`: rows it rejects are invisible
+ * to reads, updates and deletes, and inserting one fails with `42501`, as
+ * with real policies.
  * Real policies are tested with pgTAP (supabase/tests/database/).
  *
  *   const db = fakeSupabase({ tables: { chats: [] }, canAccess: (table, row) => row.owner === me });
