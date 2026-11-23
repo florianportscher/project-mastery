@@ -144,6 +144,11 @@ export function fakeSupabase<Table extends string>(
   const rowsOf = (table: Table) => (tables[table] ??= []);
   const visible = (table: Table, row: FakeRow) =>
     options.canAccess?.(table, row, tables) ?? true;
+  /** The column of `table` whose declared foreign key points at `target`. */
+  const foreignKey = (table: Table, target: string) =>
+    Object.entries(options.foreignKeys?.[table] ?? {}).find(
+      ([, referenced]) => referenced === target,
+    )?.[0];
 
   function from(table: Table) {
     type Action =
@@ -179,10 +184,7 @@ export function fakeSupabase<Table extends string>(
 
     /** The row `row` references in `parent` through a declared foreign key. */
     function parentOf(row: FakeRow, parent: string): FakeRow | undefined {
-      const [column] =
-        Object.entries(options.foreignKeys?.[table] ?? {}).find(
-          ([, referenced]) => referenced === parent,
-        ) ?? [];
+      const column = foreignKey(table, parent);
       if (column === undefined) {
         throw new Error(`${table} declares no foreign key to ${parent}`);
       }
@@ -213,10 +215,7 @@ export function fakeSupabase<Table extends string>(
         embedded[parent] = parentOf(row, parent) ?? null;
       }
       for (const [child, { orders: childOrders, limit, count }] of embeds) {
-        const [column] =
-          Object.entries(options.foreignKeys?.[child] ?? {}).find(
-            ([, referenced]) => referenced === table,
-          ) ?? [];
+        const column = foreignKey(child, table);
         const children = rowsOf(child).filter(
           (other) => visible(child, other) && other[column!] === row.id,
         );
@@ -339,18 +338,15 @@ export function fakeSupabase<Table extends string>(
         for (const [, child, isInner, inner] of columns.matchAll(
           /(\w+)(!inner)?\(([^)]*)\)/g,
         )) {
-          const fks = options.foreignKeys?.[child as Table] ?? {};
-          const own = options.foreignKeys?.[table] ?? {};
-          if (Object.values(own).includes(child as Table)) {
+          const key = foreignKey(table, child!);
+          if (key !== undefined) {
             parents.add(child as Table);
-            const [key] =
-              Object.entries(own).find(([, ref]) => ref === child) ?? [];
             filters.push(
               (row) =>
-                (!isInner && (row[key!] ?? null) === null) ||
+                (!isInner && (row[key] ?? null) === null) ||
                 parentOf(row, child!) !== undefined,
             );
-          } else if (Object.values(fks).includes(table)) {
+          } else if (foreignKey(child as Table, table) !== undefined) {
             embeds.set(child as Table, {
               orders: [],
               limit: Infinity,
