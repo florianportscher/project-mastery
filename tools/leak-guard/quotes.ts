@@ -9,11 +9,11 @@ import path from "node:path";
  * A text that contains such a window quotes a real Material.
  */
 
-export const WINDOW = 8;
+const WINDOW = 8;
 
 type Env = Record<string, string | undefined>;
 
-export const casesDir = (env: Env = process.env) =>
+const casesDir = (env: Env = process.env) =>
   env.MASTERY_CASES_DIR ?? path.join(homedir(), "project-mastery-cases");
 
 export const fingerprintsFile = (env: Env = process.env) =>
@@ -77,7 +77,7 @@ export function matchingLines(text: string, known: Set<string>): number[] {
   return [...lines].sort((a, b) => a - b);
 }
 
-export const FINGERPRINTS_MISSING =
+const FINGERPRINTS_MISSING =
   "The fingerprints of the real Materials are missing, so the quote check cannot run. Make them with `pnpm leak-guard fingerprints` (reads staging, writes to the private cases repo).";
 
 /** The stored fingerprints; throws, so the check fails closed, when they are missing. */

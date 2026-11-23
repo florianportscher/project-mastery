@@ -14,7 +14,7 @@ export const ALLOWLIST_FILE = path.join(import.meta.dirname, "allowlist.txt");
 
 export type Allowlist = { entries: Set<string>; hashes: Set<string> };
 
-export const isDocument = (file: string) => DOCUMENT.test(file);
+const isDocument = (file: string) => DOCUMENT.test(file);
 
 export const sha256 = (bytes: Uint8Array) =>
   createHash("sha256").update(bytes).digest("hex");
