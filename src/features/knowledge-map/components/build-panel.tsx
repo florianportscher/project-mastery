@@ -55,7 +55,7 @@ export function BuildPanel({
               className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
             >
               <div
-                className="h-full rounded-full bg-primary transition-[width] duration-500"
+                className="h-full rounded-full bg-primary"
                 style={{ width: `${stage.fill * 100}%` }}
               />
             </div>
@@ -156,7 +156,7 @@ export function UpdateLine({ progress }: { progress: BuildProgress | null }) {
         className="h-1 w-48 overflow-hidden rounded-full bg-muted"
       >
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-500"
+          className="h-full rounded-full bg-primary"
           style={{ width: `${(fill / stages.length) * 100}%` }}
         />
       </div>
@@ -169,7 +169,6 @@ export function UpdateLine({ progress }: { progress: BuildProgress | null }) {
   );
 }
 
-/** The time now, ticking each second. */
 function useNow(): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {

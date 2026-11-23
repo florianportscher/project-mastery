@@ -71,9 +71,8 @@ export function CourseMap({
 }) {
   const { kcs } = map;
   const building = map.build?.status === "building";
-  // No map to show yet: the build's panel takes its place.
   const failed = map.build?.status === "failed";
-  const firstBuild =
+  const showsBuildPanel =
     (building && (kcs.length === 0 || topics.length === 0)) ||
     (failed && map.build?.finishedAt == null);
   useBuildPolling(building);
@@ -104,7 +103,7 @@ export function CourseMap({
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm text-muted-foreground">
           <BuildStatus
             build={map.build}
-            panel={firstBuild}
+            panel={showsBuildPanel}
             tryAgain={tryAgain}
           />
           {kcs.length > 0 && (
@@ -147,7 +146,7 @@ export function CourseMap({
         )}
       </div>
 
-      {firstBuild && map.build ? (
+      {showsBuildPanel && map.build ? (
         <div className="flex min-h-0 flex-1">
           <BuildPanel
             startedAt={map.build.startedAt}
@@ -155,7 +154,10 @@ export function CourseMap({
             found={kcs.length}
             failure={
               failed
-                ? { reason: map.build.failureReason ?? "", action: tryAgain }
+                ? {
+                    reason: map.build.failureReason ?? "The build stopped.",
+                    action: tryAgain,
+                  }
                 : undefined
             }
           />
