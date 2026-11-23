@@ -3,7 +3,8 @@ import type {
   AttemptResult,
 } from "@/features/study/domain/replay";
 import type { MockStatus } from "@/features/study/domain/mock-paths";
-import type { Pace, Progress, TopicScope } from "@/features/study/domain/plan";
+import type { Pace } from "@/features/study/domain/pace";
+import type { Progress, TopicScope } from "@/features/study/domain/plan";
 import type { ProblemSource } from "@/features/study/domain/exercises";
 import type { RecallBand } from "@/features/study/domain/recall-band";
 import type { TopicFacts } from "@/features/study/domain/topic-facts";

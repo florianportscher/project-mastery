@@ -3,7 +3,8 @@
  * Course, read on every request from the map, Priority, the replayed cards,
  * the pace and the plan scope. Pure, on UTC days.
  */
-import type { Pace, PlanTopic, TopicScope } from "@/features/study/domain/plan";
+import type { Pace } from "@/features/study/domain/pace";
+import type { PlanTopic, TopicScope } from "@/features/study/domain/plan";
 import {
   daysBetween,
   type KcRecall,

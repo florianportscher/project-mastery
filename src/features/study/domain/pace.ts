@@ -3,8 +3,11 @@
  * review, read from their sessions' messages and their questions. Pure; the
  * active time is computed on every read, not stored.
  */
-import { DEFAULT_PACE, type Pace } from "@/features/study/domain/plan";
 import { kcDays, type ReplayAttempt } from "@/features/study/domain/replay";
+
+export type Pace = { minutesPerKc: number; minutesPerReview: number };
+
+export const DEFAULT_PACE: Pace = { minutesPerKc: 30, minutesPerReview: 2 };
 
 /** The longest gap between messages that counts as active, in seconds. */
 const GAP_CAP_SECONDS = 5 * 60;

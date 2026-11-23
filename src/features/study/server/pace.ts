@@ -3,9 +3,9 @@ import {
   activeSeconds,
   measurePace,
   paceEvidence,
+  type Pace,
   type PaceMessage,
 } from "@/features/study/domain/pace";
-import type { Pace } from "@/features/study/domain/plan";
 import { loadCourseAttempts } from "@/features/study/server/attempts";
 import { allRows } from "@/lib/supabase/all-rows";
 import { failed } from "@/lib/supabase/failed";

@@ -7,11 +7,8 @@ import {
 } from "@/features/knowledge-map/server";
 import { loadKcPriorities } from "@/features/priorities/server";
 import { mockResultShares } from "@/features/study/domain/mock-grading";
-import {
-  DEFAULT_PACE,
-  planProgress,
-  planScope,
-} from "@/features/study/domain/plan";
+import { DEFAULT_PACE } from "@/features/study/domain/pace";
+import { planProgress, planScope } from "@/features/study/domain/plan";
 import { inFinalStretch, rankNext } from "@/features/study/domain/ranking";
 import { readiness } from "@/features/study/domain/readiness";
 import { replayCourse, utcDay } from "@/features/study/domain/replay";

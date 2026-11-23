@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { DEFAULT_PACE, type TopicScope } from "./plan";
+import { DEFAULT_PACE } from "./pace";
+import type { TopicScope } from "./plan";
 import { inFinalStretch, rankNext, type RankedItem } from "./ranking";
 import type { KcRecall } from "./replay";
 
