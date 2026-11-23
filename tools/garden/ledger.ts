@@ -1,6 +1,6 @@
 /**
- * docs/garden/ledger.json: per area the last gardened commit, its numbers and
- * the changes the maintainer rejected.
+ * docs/garden/ledger.json: per area the last gardened commit and its numbers,
+ * and the changes the maintainer rejected, each with its area.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -17,6 +17,7 @@ export type Measure = SizeMetrics & {
 };
 
 export type Rejected = {
+  area: string;
   change: string;
   /** The maintainer's reason, from the PR comments. */
   reason: string;
@@ -24,22 +25,23 @@ export type Rejected = {
   files: string[];
   /** Commit the rejection was recorded at. */
   at: string;
+  /** The closed garden PR it came from: a recorded PR is not read again. */
+  pr: number;
 };
 
-export type AreaEntry = {
-  commit: string;
-  date: string;
-  measure: Measure;
-  rejected: Rejected[];
-};
+export type AreaEntry = { commit: string; date: string; measure: Measure };
 
-export type Ledger = { areas: Record<string, AreaEntry> };
+/**
+ * Rejections live beside the areas, not in them: a rejected PR's own ledger
+ * update never merged, so its areas can still be ungardened.
+ */
+export type Ledger = { areas: Record<string, AreaEntry>; rejected: Rejected[] };
 
 const LEDGER_FILE = "docs/garden/ledger.json";
 
 export function readLedger(root: string): Ledger {
   const file = path.join(root, LEDGER_FILE);
-  if (!existsSync(file)) return { areas: {} };
+  if (!existsSync(file)) return { areas: {}, rejected: [] };
   return JSON.parse(readFileSync(file, "utf8")) as Ledger;
 }
 
@@ -49,22 +51,30 @@ export function writeLedger(root: string, ledger: Ledger) {
   writeFileSync(file, `${JSON.stringify(ledger, null, 2)}\n`);
 }
 
-/** A run's result for one area; its rejected changes carry over. */
 export function recordRun(
   ledger: Ledger,
   area: string,
-  run: { commit: string; date: string; measure: Measure },
+  run: AreaEntry,
 ): Ledger {
-  const rejected = ledger.areas[area]?.rejected ?? [];
-  return { areas: { ...ledger.areas, [area]: { ...run, rejected } } };
+  return { ...ledger, areas: { ...ledger.areas, [area]: run } };
 }
 
-/** Rejected changes whose files are untouched since `at`. */
+export function addRejection(ledger: Ledger, rejected: Rejected): Ledger {
+  return { ...ledger, rejected: [...ledger.rejected, rejected] };
+}
+
+/** PRs whose rejections the ledger holds. */
+export function recordedPrs(ledger: Ledger): Set<number> {
+  return new Set(ledger.rejected.map((r) => r.pr));
+}
+
+/** An area's rejected changes whose files are untouched since `at`. */
 export function activeRejections(
-  entry: AreaEntry | undefined,
+  ledger: Ledger,
+  area: string,
   changedSince: (file: string, sha: string) => boolean,
 ): Rejected[] {
-  return (entry?.rejected ?? []).filter(
-    (r) => !r.files.some((file) => changedSince(file, r.at)),
+  return ledger.rejected.filter(
+    (r) => r.area === area && !r.files.some((file) => changedSince(file, r.at)),
   );
 }

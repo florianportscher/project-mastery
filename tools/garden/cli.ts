@@ -1,13 +1,17 @@
 /**
- * What /garden asks of the repo:
+ * What /garden asks of the repo (`pnpm garden` starts the routine itself):
  *
- *   pnpm -s garden [--areas N]           areas with their change and numbers; * marks the N it picks
- *   pnpm -s garden pick [--areas N]      the picked area names, one per line
- *   pnpm -s garden measure <area>... [--out file]
+ *   pnpm -s garden:areas [--areas N]     areas with their change and numbers; * marks the N it picks
+ *   pnpm -s garden:areas pick [--areas N]
+ *                                        the picked area names, one per line
+ *   pnpm -s garden:areas measure <area>... [--out file]
  *                                        all numbers of the areas as JSON
- *   pnpm -s garden write <before.json> <area>...
+ *   pnpm -s garden:areas write <before.json> <area>...
  *                                        measures again, records the run in docs/garden/ledger.json
  *                                        and writes the report skeleton docs/garden/<date>.md
+ *   pnpm -s garden:areas reject <pr> <area> <change> <reason> <file>...
+ *                                        records a change the maintainer rejected in a closed garden PR
+ *   pnpm -s garden:areas rejected <area> the area's rejected changes whose files are unchanged
  */
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -15,6 +19,7 @@ import path from "node:path";
 import { listAreas, type Area } from "./areas";
 import {
   activeRejections,
+  addRejection,
   readLedger,
   recordRun,
   writeLedger,
@@ -42,6 +47,9 @@ function git(...args: string[]): string {
     maxBuffer: 1 << 28,
   });
 }
+
+const changedSince = (file: string, sha: string) =>
+  git("log", "--format=%H", `${sha}..HEAD`, "--", file).trim() !== "";
 
 function statOf(area: Area, commit: string | undefined, loc: number) {
   let log = "";
@@ -79,12 +87,10 @@ function list(n: number) {
   const sizes = computeSizes(root, areas);
   const all = stats(ledger, sizes);
   const picked = new Set(pickAreas(all, n).map((s) => s.name));
-  const changedSince = (file: string, sha: string) =>
-    git("log", "--format=%H", `${sha}..HEAD`, "--", file).trim() !== "";
   for (const s of all) {
     const size = sizes[s.name]!;
     const entry = ledger.areas[s.name];
-    const rejected = activeRejections(entry, changedSince).length;
+    const rejected = activeRejections(ledger, s.name, changedSince).length;
     console.log(
       [
         picked.has(s.name) ? "*" : " ",
@@ -153,8 +159,36 @@ async function main([command, ...args]: string[]) {
       ),
     );
     console.log(`docs/garden/ledger.json and docs/garden/${date}.md written`);
+  } else if (command === "reject") {
+    const [pr, area, change, reason, ...files] = args;
+    if (!Number(pr) || !area || !change || !reason || !files.length)
+      throw new Error("Usage: reject <pr> <area> <change> <reason> <file>...");
+    if (!areas.some((a) => a.name === area))
+      throw new Error(`No area ${area}.`);
+    const at = git("rev-parse", "HEAD").trim();
+    writeLedger(
+      root,
+      addRejection(readLedger(root), {
+        area,
+        change,
+        reason,
+        files,
+        at,
+        pr: Number(pr),
+      }),
+    );
+    console.log(`Recorded in docs/garden/ledger.json: ${area}: ${change}`);
+  } else if (command === "rejected") {
+    const [area] = args;
+    if (!area) throw new Error("Usage: rejected <area>");
+    const active = activeRejections(readLedger(root), area, changedSince);
+    if (!active.length) console.log(`No rejected changes in ${area}.`);
+    for (const r of active)
+      console.log(`- ${r.change} (${r.files.join(", ")}): ${r.reason}`);
   } else {
-    console.error("Usage: pnpm -s garden [--areas N] | pick | measure | write");
+    console.error(
+      "Usage: pnpm -s garden:areas [--areas N] | pick | measure | write | reject | rejected",
+    );
     process.exit(1);
   }
 }

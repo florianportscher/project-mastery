@@ -4,15 +4,16 @@ Every command and slash skill of this repo, one line each, for the maintainer an
 
 ## Daily work
 
-| Command               | What it does                                                             |
-| --------------------- | ------------------------------------------------------------------------ |
-| `pnpm sitting`        | Starts a `/sitting` session (Sonnet): PRs and inbox, then the next shift |
-| `pnpm shift <issues>` | Starts a `/build` session (Haiku) on the given spec issues               |
-| `pnpm nit "<title>"`  | Files a one-line inbox issue                                             |
-| `pnpm check`          | Lint, typecheck, format check and unit tests: what a PR must pass        |
-| `pnpm dev`            | Starts the dev server                                                    |
-| `pnpm build`          | Production build                                                         |
-| `pnpm start`          | Serves the production build                                              |
+| Command                   | What it does                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| `pnpm sitting`            | Starts a `/sitting` session (Sonnet): PRs and inbox, then the next shift        |
+| `pnpm shift <issues>`     | Starts a `/build` session (Haiku) on the given spec issues                      |
+| `pnpm garden [--areas N]` | Starts a `/garden` session (Haiku) on the N areas that changed most (default 2) |
+| `pnpm nit "<title>"`      | Files a one-line inbox issue                                                    |
+| `pnpm check`              | Lint, typecheck, format check and unit tests: what a PR must pass               |
+| `pnpm dev`                | Starts the dev server                                                           |
+| `pnpm build`              | Production build                                                                |
+| `pnpm start`              | Serves the production build                                                     |
 
 ## Checks and tests
 
@@ -80,6 +81,7 @@ Started in a Claude Code session. They live in `.claude/skills/`.
 | `/sitting`            | Goes through the PRs and the inbox with you and lines up the next shift            |
 | `/to-spec`            | Turns a grilling session's decisions into a one-page spec issue                    |
 | `/build`              | Builds queued issues end to end, one worktree each, and opens PRs                  |
+| `/garden`             | Simplifies the most changed areas, tries to break the app on mock AI, opens one PR |
 | `/grilling`           | Stress-tests a plan or decision by questioning you                                 |
 | `/wait-what`          | Re-pitches the last message when it did not land                                   |
 | `/reality-check`      | Tests the product and `ROADMAP.md` against evidence, writes `docs/reality-checks/` |
@@ -92,13 +94,14 @@ Started in a Claude Code session. They live in `.claude/skills/`.
 
 ## Scripts the skills call
 
-| Command                              | Owner                                                                                                          |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `tools/build/setup.sh <issue>`       | `/build`: prepares the worktree and branch                                                                     |
-| `tools/build/ready.sh <pr> <body>`   | `/build`: marks a PR ready and arms auto-merge                                                                 |
-| `tools/build/cleanup.sh [issue ...]` | `/build`: removes finished worktrees                                                                           |
-| `tools/sitting/waiting.sh [pr ...]`  | `/sitting`: what stands in the way of each waiting PR                                                          |
-| `pnpm -s retro`                      | `/retro`: digests recent Claude Code runs. Parked                                                              |
-| `pnpm -s garden`                     | `/garden`: areas with change counts and numbers; `pick`, `measure`, `write` for the ledger and report skeleton |
+| Command                              | Owner                                                                                                                       |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `tools/build/setup.sh <issue>`       | `/build`: prepares the worktree and branch                                                                                  |
+| `tools/build/ready.sh <pr> <body>`   | `/build`: marks a PR ready and arms auto-merge                                                                              |
+| `tools/build/cleanup.sh [issue ...]` | `/build`: removes finished worktrees                                                                                        |
+| `tools/sitting/waiting.sh [pr ...]`  | `/sitting`: what stands in the way of each waiting PR                                                                       |
+| `pnpm -s retro`                      | `/retro`: digests recent Claude Code runs. Parked                                                                           |
+| `tools/garden/setup.sh [areas]`      | `/garden`: prepares the worktree, lists closed garden PRs to record and the areas                                           |
+| `pnpm -s garden:areas`               | `/garden`: areas with change counts and numbers; `pick`, `measure`, `write`, `reject`, `rejected` for the ledger and report |
 
 `pnpm prepare` installs the Git hooks and runs by itself on `pnpm install`.
