@@ -99,24 +99,27 @@ export async function extractInCourseOrder(
   for (const attempt of attempts.slice(0, UNITS_PER_STEP)) {
     if (!callFits(startedAt, BUILD_CALL_TIMEOUT_MS)) break;
     const known = await loadKnownKcs(supabase, courseId, [...stale.values()]);
-    const outcome = await extractAttempts(
+    const outcome = await extractAttempt(
       supabase,
       { owner, courseId },
-      [attempt],
-      (unit, chunks) => callPiece(unit, chunks, { language, known }),
+      attempt,
+      (chunks) => callPiece(attempt.unit, chunks, { language, known }),
       startedAt,
     );
     if (outcome.limit) return { ok: false, reason: dailyLimitReason };
-    failedKeys.push(...outcome.failedKeys);
-    done += outcome.done;
-    if (outcome.done > 0) {
+    if (outcome.failed) failedKeys.push(unitKey(attempt.unit));
+    if (outcome.done) {
+      done += 1;
       stale.delete(unitKey(attempt.unit));
       const after = await storeComplete(supabase, owner, courseId, plan.units);
       if (after === "limit") return { ok: false, reason: dailyLimitReason };
       if (after === "stopped") return { ok: true, left: null };
     }
-    if (outcome.done > 0 || outcome.waitMs !== undefined) {
-      progress = { ...progress, done: (progress.done ?? 0) + outcome.done };
+    if (outcome.done || outcome.waitMs !== undefined) {
+      progress = {
+        ...progress,
+        done: (progress.done ?? 0) + (outcome.done ? 1 : 0),
+      };
       await recordProgress(supabase, courseId, progress, outcome.waitMs);
     }
     if (outcome.waitMs !== undefined) {
@@ -124,7 +127,7 @@ export async function extractInCourseOrder(
         ok: true,
         left: attempts.length - done,
         failed: failedKeys,
-        deferred: outcome.done > 0 ? [] : [unitKey(attempt.unit)],
+        deferred: outcome.done ? [] : [unitKey(attempt.unit)],
         waitMs: outcome.waitMs,
       };
     }
@@ -288,43 +291,37 @@ export type UnitAttempt = {
 };
 
 /**
- * Calls the pieces of up to UNITS_PER_STEP attempts, as one round
- * (`runCalls`), and stores each unit's extraction: whole once every piece
- * is answered, else partial with the pieces answered so far. A unit with a
- * failed piece is in `failedKeys`; `limit` when the Daily limit stopped a
- * call. A piece the rate limit turned away is neither answered nor failed,
- * and no further call starts: `waitMs` is the longest wait it named.
+ * Calls an attempt's pieces as one round (`runCalls`) and stores its
+ * unit's extraction: whole once every piece is answered (`done`), else
+ * partial with the pieces answered so far. `failed` when a piece's call
+ * failed; `limit` when the Daily limit stopped a call. A piece the rate
+ * limit turned away is neither answered nor failed, and no further call
+ * starts: `waitMs` is the longest wait it named.
  */
-export async function extractAttempts(
+async function extractAttempt(
   supabase: AdminSupabase,
   scope: { owner: string; courseId: string },
-  attempts: readonly UnitAttempt[],
+  attempt: UnitAttempt,
   callPiece: (
-    unit: CourseUnit,
     chunks: CourseUnit["chunks"],
   ) => Promise<StoredExtraction | "limit" | "failed" | RateLimited>,
   startedAt: number,
 ): Promise<{
-  done: number;
-  failedKeys: string[];
+  done: boolean;
+  failed: boolean;
   limit: boolean;
   waitMs?: number;
 }> {
-  const batch = attempts.slice(0, UNITS_PER_STEP);
-  const answered = batch.map(
-    () => [] as Array<{ start: number; extraction: StoredExtraction }>,
-  );
-  const failedUnits = new Set<number>();
+  const { unit } = attempt;
+  const answered: Array<{ start: number; extraction: StoredExtraction }> = [];
+  let pieceFailed = false;
   let limit = false;
   let waitMs: number | undefined;
   await runCalls(
-    batch.flatMap((attempt, index) =>
-      attempt.pieces.map((piece) => ({ index, piece })),
-    ),
-    async ({ index, piece }) => {
-      const { unit } = batch[index]!;
+    attempt.pieces,
+    async (piece) => {
       const chunks = unit.chunks.slice(piece.start, piece.end);
-      const extraction = await callPiece(unit, chunks);
+      const extraction = await callPiece(chunks);
       if (extraction === "limit") {
         limit = true;
         return "stop";
@@ -334,10 +331,10 @@ export async function extractAttempts(
         return "stop";
       }
       if (extraction === "failed") {
-        failedUnits.add(index);
+        pieceFailed = true;
         return;
       }
-      answered[index]!.push({
+      answered.push({
         start: piece.start,
         extraction: {
           ...extraction,
@@ -348,35 +345,19 @@ export async function extractAttempts(
     startedAt,
   );
 
-  let done = 0;
-  for (const [index, attempt] of batch.entries()) {
-    const fresh = answered[index]!.toSorted((a, b) => a.start - b.start);
-    const complete = fresh.length === attempt.pieces.length;
-    if (fresh.length === 0 && !complete) continue;
+  const fresh = answered.toSorted((a, b) => a.start - b.start);
+  const complete = fresh.length === attempt.pieces.length;
+  if (fresh.length > 0 || complete) {
     const joined = joinExtractions([
       ...(attempt.kept ? [attempt.kept] : []),
       ...fresh.map((part) => part.extraction),
     ]);
-    if (complete) {
-      await storeExtraction(
-        supabase,
-        { ...scope, unit: attempt.unit },
-        { ...joined, readChunkIds: undefined },
-      );
-      done += 1;
-    } else {
-      await storeExtraction(
-        supabase,
-        { ...scope, unit: attempt.unit },
-        joined,
-        true,
-      );
-    }
+    await storeExtraction(
+      supabase,
+      { ...scope, unit },
+      complete ? { ...joined, readChunkIds: undefined } : joined,
+      !complete,
+    );
   }
-  return {
-    done,
-    failedKeys: [...failedUnits].map((index) => unitKey(batch[index]!.unit)),
-    limit,
-    waitMs,
-  };
+  return { done: complete, failed: pieceFailed, limit, waitMs };
 }
