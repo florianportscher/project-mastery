@@ -1,0 +1,49 @@
+{
+  "areas": {},
+  "rejected": [
+    {
+      "area": "knowledge-map",
+      "change": "removed export from file-local types",
+      "reason": "mechanical cleanup, not a simplification; do not propose again",
+      "files": [
+        "src/features/knowledge-map/ai/prerequisite-check.ts",
+        "src/features/knowledge-map/domain/build-progress.ts",
+        "src/features/knowledge-map/domain/chapter-extraction.ts",
+        "src/features/knowledge-map/domain/encodings.ts",
+        "src/features/knowledge-map/domain/exercise-extraction.ts",
+        "src/features/knowledge-map/domain/exercise-groups.ts",
+        "src/features/knowledge-map/domain/teaching-batches.ts",
+        "src/features/knowledge-map/domain/topic-graph.ts",
+        "src/features/knowledge-map/domain/topic-reading.ts",
+        "src/features/knowledge-map/domain/topic-tree.ts",
+        "src/features/knowledge-map/server/course-topics.ts",
+        "src/features/knowledge-map/server/stored-topics.ts",
+        "src/features/knowledge-map/workflows/extraction-attempts.ts",
+        "src/features/knowledge-map/workflows/prerequisite-steps.ts",
+        "src/features/knowledge-map/workflows/topic-steps.ts"
+      ],
+      "at": "2026-11-23T15:12:51.968Z",
+      "pr": 397
+    },
+    {
+      "area": "study",
+      "change": "removed export from file-local types",
+      "reason": "mechanical cleanup, not a simplification; do not propose again",
+      "files": [
+        "src/features/study/domain/exam-profile.ts",
+        "src/features/study/domain/mock-grading.ts",
+        "src/features/study/domain/mock-plan.ts",
+        "src/features/study/domain/problem-stock.ts",
+        "src/features/study/domain/recall-band.ts",
+        "src/features/study/server/attempts.ts",
+        "src/features/study/server/mock-sheet.ts",
+        "src/features/study/workflows/close-steps.ts",
+        "src/features/study/workflows/generate-steps.ts",
+        "src/features/study/workflows/mock-steps.ts",
+        "src/features/study/workflows/stock-steps.ts"
+      ],
+      "at": "2026-11-23T15:12:52.329Z",
+      "pr": 397
+    }
+  ]
+}
