@@ -54,6 +54,13 @@ describe("chatLabel", () => {
     );
   });
 
+  test("cuts a long word between characters, never inside one", () => {
+    // Math letters pasted from a PDF take two UTF-16 units each.
+    expect(
+      chatLabel({ title: null, firstMessage: said(`f${"𝑥".repeat(30)}`) }),
+    ).toBe(`f${"𝑥".repeat(19)}…`);
+  });
+
   test("falls back to New chat without a title or text", () => {
     expect(chatLabel({ title: null, firstMessage: null })).toBe("New chat");
     expect(chatLabel({ title: "  ", firstMessage: said(" ") })).toBe(
