@@ -168,20 +168,18 @@ export async function preparePages(
     if (!kept) return null;
     stored.push(pageNumber);
   }
-  const toRead = missingPages(pageCount, stored).filter(selected);
+  const missing = missingPages(pageCount, stored);
 
   const { data, error } = await supabase
     .from("materials")
     .update({
-      parse_status: "parsing",
       pages_total: pageCount,
-      pages_done: pageCount - missingPages(pageCount, stored).length,
-      parse_failure: null,
+      pages_done: pageCount - missing.length,
     })
     .eq("id", materialId)
     .select("id");
   if (error) failed("Starting the parse", error);
-  return data.length === 0 ? null : toRead;
+  return data.length === 0 ? null : missing.filter(selected);
 }
 
 /** A page call that failed for good, after the AI SDK's retries. */
