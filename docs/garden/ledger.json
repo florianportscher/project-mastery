@@ -29,6 +29,36 @@
         "tests": 285,
         "coverage": 79
       }
+    },
+    "supabase": {
+      "commit": "04c1d4bd6fbe434e63fc934d90fcb52396093c93",
+      "date": "2026-11-23",
+      "measure": {
+        "files": 92,
+        "loc": 8601,
+        "exports": 0,
+        "usedOutside": 0,
+        "knip": 0,
+        "clones": 0,
+        "complex": 0,
+        "tests": 0,
+        "coverage": null
+      }
+    },
+    "chat": {
+      "commit": "04c1d4bd6fbe434e63fc934d90fcb52396093c93",
+      "date": "2026-11-23",
+      "measure": {
+        "files": 48,
+        "loc": 3669,
+        "exports": 13,
+        "usedOutside": 12,
+        "knip": 0,
+        "clones": 0,
+        "complex": 8,
+        "tests": 200,
+        "coverage": 64
+      }
     }
   },
   "rejected": [
