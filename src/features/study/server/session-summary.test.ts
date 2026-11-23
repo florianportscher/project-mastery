@@ -13,16 +13,6 @@ const [THRUST, NOZZLE] = [1, 2].map(
   (n) => `aaaaaaaa-0000-4000-8000-00000000000${n}`,
 ) as [string, string];
 
-// The map holds Thrust only: a rebuild retired Nozzle after the session,
-// keeping its Attempts.
-vi.mock("@/features/knowledge-map/server", () => ({
-  loadStoredMap: async () => ({
-    kcs: [{ id: THRUST, name: "Thrust equation" }],
-    prerequisites: [],
-    exercises: [],
-  }),
-}));
-
 const { loadSessionSummary } = await import("./session-summary");
 
 test("names a KC the session checked that a rebuild retired since", async () => {
@@ -42,6 +32,7 @@ test("names a KC the session checked that a rebuild retired since", async () => 
       chats: [{ id: CHAT, last_message_at: new Date().toISOString() }],
       questions: [{ id: QUESTION, session_id: SESSION, exercise_id: null }],
       attempts: [attempt(THRUST), attempt(NOZZLE)],
+      // A rebuild retired Nozzle after the session, keeping its Attempts.
       kcs: [
         { id: THRUST, course_id: COURSE, name: "Thrust equation" },
         {

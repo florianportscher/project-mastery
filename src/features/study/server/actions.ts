@@ -258,8 +258,8 @@ export async function submitMockExam(input: {
 }
 
 /**
- * The session summary reads, imported on first use: they load the
- * knowledge-map feature's server code, which client modules that import
+ * The session summary reads, imported on first use: they load the Brief's
+ * server code, which client modules that import
  * these actions (the close card) must not pull in when they load, as their
  * tests do.
  */

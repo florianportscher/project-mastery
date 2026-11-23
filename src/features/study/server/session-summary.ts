@@ -1,6 +1,5 @@
 import "server-only";
 import { getExamFacts } from "@/features/brief/server";
-import { loadStoredMap } from "@/features/knowledge-map/server";
 import { replayCourse } from "@/features/study/domain/replay";
 import { sessionEnd } from "@/features/study/domain/session-end";
 import { loadCourseAttempts } from "@/features/study/server/attempts";
@@ -26,17 +25,15 @@ export async function loadSessionSummary(
   const session = await loadChatSession(supabase, chatId);
   if (!session) return null;
   const { courseId } = session;
-  const [exam, attempts, map] = await Promise.all([
+  const [exam, attempts] = await Promise.all([
     getExamFacts(supabase, courseId),
     loadCourseAttempts(supabase, courseId),
-    loadStoredMap(supabase, courseId),
   ]);
   const recall = replayCourse(attempts, {
     examDate: exam.examDate,
     goal: exam.goal,
     now,
   });
-  const kcName = new Map(map.kcs.map((kc) => [kc.id, kc.name]));
   // Each KC's latest result in the session, in the order first checked.
   const results = new Map<
     string,
@@ -47,6 +44,7 @@ export async function loadSessionSummary(
     .toSorted((a, b) => a.createdAt.localeCompare(b.createdAt))) {
     results.set(attempt.kcId, { result: attempt.result, help: attempt.help });
   }
+  const kcName = await loadKcNames(supabase, [...results.keys()]);
   return {
     kcs: [...results].map(([id, { result, help }]) => ({
       id,
@@ -59,6 +57,23 @@ export async function loadSessionSummary(
     rating: session.rating,
     ratingNote: session.ratingNote,
   };
+}
+
+/**
+ * The names of KCs by id, retired ones included: a rebuild after the
+ * session may have taken a KC it checked out of the map.
+ */
+async function loadKcNames(
+  supabase: Supabase,
+  ids: string[],
+): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from("kcs")
+    .select("id, name")
+    .in("id", ids);
+  if (error) failed("Loading the session's KCs", error);
+  return new Map(data.map(({ id, name }) => [id, name]));
 }
 
 /**
