@@ -4,6 +4,7 @@ import {
   NoSuchToolError,
   RetryError,
 } from "ai";
+import { gatewayRateLimitWaitMs } from "./rate-limit";
 
 /**
  * Pieces every streamed reply shares, in a Chat and in the Brief: the text of
@@ -21,13 +22,14 @@ export function messageText(
 }
 
 /**
- * The HTTP status of a failed model call, read from the `APICallError`
- * inside a `RetryError` when the call was retried.
+ * Whether a failed model call met a rate limit: a 429 `APICallError`, also
+ * inside a `RetryError` when the call was retried, or AI Gateway's own
+ * per-minute limit, which is no `APICallError`.
  */
-function statusCode(error: unknown): number | undefined {
-  if (RetryError.isInstance(error)) return statusCode(error.lastError);
-  if (APICallError.isInstance(error)) return error.statusCode;
-  return undefined;
+function isRateLimited(error: unknown): boolean {
+  if (RetryError.isInstance(error)) return isRateLimited(error.lastError);
+  if (APICallError.isInstance(error)) return error.statusCode === 429;
+  return gatewayRateLimitWaitMs(error) !== null;
 }
 
 /** A tool call the model got wrong, as the AI SDK names it in a string. */
@@ -44,7 +46,7 @@ export function replyErrorMessage(error: unknown): string {
   // The AI SDK hands an invalid call's error to `onError` a second time as a
   // string, for the call's own part (`tool-error` from `streamText`).
   if (typeof error === "string" && TOOL_CALL_ERROR.test(error)) return error;
-  return statusCode(error) === 429
+  return isRateLimited(error)
     ? "The AI is busy right now. Please try again in a moment."
     : "The AI could not reply. Please try again.";
 }
