@@ -13,9 +13,14 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { gzipSync } from "node:zlib";
-import { type ArchivedMaterial, mapBundle, nextCaseId } from "./archive-bundle";
+import {
+  type ArchivedMaterial,
+  chatBundle,
+  mapBundle,
+  nextCaseId,
+} from "./archive-bundle";
 import { AgentError } from "./config";
-import { fetchSnapshot, noKeys, observations, type Raw } from "./inspect";
+import { fetchSnapshot, noKeys, observations, type Raw, UUID } from "./inspect";
 import { queryStaging, stagingEnv } from "./staging";
 
 /**
@@ -173,8 +178,8 @@ async function copyMaterials(
   return materials;
 }
 
-/** Every model call of the Course in Langfuse, with input and output. */
-async function courseObservations(courseId: string, env: Env): Promise<Raw[]> {
+/** Every model call in Langfuse that `filter` selects, with input and output. */
+async function allObservations(filter: object, env: Env): Promise<Raw[]> {
   const raws: Raw[] = [];
   let cursor: string | undefined;
   do {
@@ -187,13 +192,7 @@ async function courseObservations(courseId: string, env: Env): Promise<Raw[]> {
           operator: "any of",
           value: ["GENERATION", "EMBEDDING"],
         },
-        {
-          type: "stringObject",
-          column: "metadata",
-          key: "courseId",
-          operator: "=",
-          value: courseId,
-        },
+        filter,
       ],
       "core,basic,usage,model,metadata,io",
       cursor,
@@ -226,14 +225,21 @@ function refreshFingerprints(): string {
   return "fingerprints refreshed";
 }
 
+type Bundle = ReturnType<typeof mapBundle>;
+
 /**
- * Archives a Course's current map build as a case, commits and pushes it to
- * the cases repo, and returns the case id with the bundle's files and sizes.
+ * Checks the cases repo, reads what `collect` needs, then writes the bundle
+ * it assembles as a case, commits and pushes it to the cases repo, and
+ * returns the case id with the bundle's files and sizes.
  */
-export async function archiveCourse(
-  courseId: string,
-  note: string | null,
-  env: Env = process.env,
+async function archiveCase(
+  kind: "map" | "chat",
+  env: Env,
+  collect: (dirs: { materials: string }) => Promise<{
+    courseName: string;
+    materials: number;
+    assemble: (caseId: string, archivedAt: string) => Bundle;
+  }>,
 ): Promise<string> {
   const dirs = {
     cases: real(casesDir(env)),
@@ -244,30 +250,16 @@ export async function archiveCourse(
     dirs,
     repoRoots(),
   );
-  const snapshot = await fetchSnapshot(courseId, env);
-  const chunks = await allRows<{ id: string; markdown: string }>(
-    `chunks?course_id=eq.${courseId}&select=id,markdown&order=id`,
-    env,
-  );
-  const materials = await copyMaterials(courseId, dirs.materials, env);
-  const raws = await courseObservations(courseId, env);
+  const { courseName, materials, assemble } = await collect(dirs);
 
   const now = new Date();
   const root = path.join(dirs.cases, "cases");
   const caseId = nextCaseId(
     existsSync(root) ? readdirSync(root) : [],
     now.toISOString().slice(0, 10),
-    "map",
+    kind,
   );
-  const bundle = mapBundle({
-    caseId,
-    note,
-    archivedAt: now.toISOString(),
-    snapshot,
-    chunks,
-    materials,
-    observations: raws,
-  });
+  const bundle = assemble(caseId, now.toISOString());
   const dir = path.join(root, caseId);
   mkdirSync(dir, { recursive: true });
   const files = {
@@ -286,7 +278,7 @@ export async function archiveCourse(
     "commit",
     "--quiet",
     "-m",
-    `case ${caseId}: ${snapshot.course.name}`,
+    `case ${caseId}: ${courseName}`,
     "--",
     relative,
   ]);
@@ -294,7 +286,7 @@ export async function archiveCourse(
 
   const { calls } = bundle.manifest;
   return [
-    `case ${caseId} pushed to the cases repo · ${calls.archived} calls${calls.missing ? `, ${calls.missing} missing` : ""} · ${materials.length} Materials in ${dirs.materials}`,
+    `case ${caseId} pushed to the cases repo · ${calls.archived} calls${calls.missing ? `, ${calls.missing} missing` : ""} · ${materials} Materials in ${dirs.materials}`,
     ...Object.keys(files).map(
       (name) =>
         `  ${relative}/${name} ${statSync(path.join(dir, name)).size} bytes`,
@@ -303,7 +295,96 @@ export async function archiveCourse(
   ].join("\n");
 }
 
-/** `pnpm archive course <courseId> [--note "…"]`. */
+/** Archives a Course's current map build as a case. */
+export function archiveCourse(
+  courseId: string,
+  note: string | null,
+  env: Env = process.env,
+): Promise<string> {
+  return archiveCase("map", env, async (dirs) => {
+    const snapshot = await fetchSnapshot(courseId, env);
+    const chunks = await allRows<{ id: string; markdown: string }>(
+      `chunks?course_id=eq.${courseId}&select=id,markdown&order=id`,
+      env,
+    );
+    const materials = await copyMaterials(courseId, dirs.materials, env);
+    const observations = await allObservations(
+      {
+        type: "stringObject",
+        column: "metadata",
+        key: "courseId",
+        operator: "=",
+        value: courseId,
+      },
+      env,
+    );
+    return {
+      courseName: snapshot.course.name,
+      materials: materials.length,
+      assemble: (caseId, archivedAt) =>
+        mapBundle({
+          caseId,
+          note,
+          archivedAt,
+          snapshot,
+          chunks,
+          materials,
+          observations,
+        }),
+    };
+  });
+}
+
+/** Archives a Chat as a case: its messages, its Course's build and the calls of its session. */
+export function archiveChat(
+  chatId: string,
+  note: string | null,
+  env: Env = process.env,
+): Promise<string> {
+  if (!UUID.test(chatId))
+    throw new AgentError(`"${chatId}" is not a Chat id (a UUID).`);
+  return archiveCase("chat", env, async (dirs) => {
+    const [chat] = await allRows<{ id: string; course_id: string }>(
+      `chats?id=eq.${chatId}&select=*`,
+      env,
+    );
+    if (!chat) throw new AgentError(`No Chat ${chatId} on staging.`);
+    const messages = await allRows<{ created_at: string }>(
+      `chat_messages?chat_id=eq.${chatId}&select=*&order=created_at`,
+      env,
+    );
+    const snapshot = await fetchSnapshot(chat.course_id, env);
+    const materials = await copyMaterials(chat.course_id, dirs.materials, env);
+    const observations = await allObservations(
+      {
+        type: "string",
+        column: "sessionId",
+        operator: "=",
+        value: chatId,
+      },
+      env,
+    );
+    return {
+      courseName: snapshot.course.name,
+      materials: materials.length,
+      assemble: (caseId, archivedAt) =>
+        chatBundle({
+          caseId,
+          note,
+          archivedAt,
+          snapshot,
+          chat,
+          messages,
+          materials,
+          observations,
+        }),
+    };
+  });
+}
+
+const USAGE = 'Usage: pnpm archive <course|chat> <id> [--note "…"]';
+
+/** `pnpm archive course <courseId> [--note "…"]`, `pnpm archive chat <chatId> [--note "…"]`. */
 export async function archive(
   args: string[],
   env: Env = process.env,
@@ -314,7 +395,9 @@ export async function archive(
     options: { note: { type: "string" } },
   });
   const [kind, id] = positionals;
-  if (kind !== "course" || !id)
-    throw new AgentError('Usage: pnpm archive course <courseId> [--note "…"]');
-  return archiveCourse(id, values.note ?? null, env);
+  if (!id) throw new AgentError(USAGE);
+  const note = values.note ?? null;
+  if (kind === "course") return archiveCourse(id, note, env);
+  if (kind === "chat") return archiveChat(id, note, env);
+  throw new AgentError(USAGE);
 }

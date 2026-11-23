@@ -114,7 +114,8 @@ export type Call = {
   metadata: Record<string, string>;
 };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Reads the Course's snapshot through the read-only staging role. */
 export async function fetchSnapshot(

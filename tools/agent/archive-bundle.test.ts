@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapBundle, nextCaseId } from "./archive-bundle";
+import { chatBundle, mapBundle, nextCaseId } from "./archive-bundle";
 import type { Raw, Snapshot } from "./inspect";
 
 const MATERIAL = "m1";
@@ -133,6 +133,50 @@ describe("mapBundle", () => {
     expect(bundle.run).toEqual({
       snapshot,
       chunks: [{ id: "k1", markdown: "# Heading" }],
+    });
+  });
+});
+
+describe("chatBundle", () => {
+  const chat = (firstMessage: string) =>
+    chatBundle({
+      caseId: "2026-11-23-chat-1",
+      note: null,
+      archivedAt: "2026-11-23T18:00:00.000Z",
+      snapshot,
+      chat: { id: "chat1" },
+      messages: [
+        { created_at: firstMessage },
+        { created_at: "2026-11-22T18:00:00Z" },
+      ],
+      materials: [],
+      observations: [
+        call("late", "2026-11-22T18:00:02Z", {}),
+        call("early", "2026-11-22T18:00:01Z", {}),
+      ],
+    });
+
+  it("keeps the Chat, its messages and the Course's build, calls oldest first", () => {
+    const { manifest, run, calls } = chat("2026-11-22T17:00:00Z");
+    expect(calls.map((c) => c.id)).toEqual(["early", "late"]);
+    expect(run).toMatchObject({
+      chat: { id: "chat1" },
+      messages: [{}, {}],
+      snapshot: { course: { id: "c1" } },
+    });
+    expect(manifest).toMatchObject({
+      kind: "chat",
+      chat: { id: "chat1", messages: 2 },
+      calls: { archived: 2, missing: 0 },
+    });
+  });
+
+  it("flags a Chat whose map was rebuilt after its first message", () => {
+    expect(chat("2026-11-22T17:00:00Z").manifest.chat).toMatchObject({
+      mapRebuiltAfterFirstMessage: true,
+    });
+    expect(chat("2026-11-22T18:00:00Z").manifest.chat).toMatchObject({
+      mapRebuiltAfterFirstMessage: false,
     });
   });
 });

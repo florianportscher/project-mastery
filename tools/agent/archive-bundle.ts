@@ -17,7 +17,7 @@ export type ArchivedMaterial = {
 
 export type Manifest = {
   caseId: string;
-  kind: "map";
+  kind: "map" | "chat";
   note: string | null;
   archivedAt: string;
   course: { id: string; name: string };
@@ -41,6 +41,8 @@ export type Manifest = {
   cost: number;
   calls: { archived: number; missing: number };
   observations: string[];
+  /** A Chat's case: the Chat, and whether the map was rebuilt after its first message. */
+  chat?: { id: string; messages: number; mapRebuiltAfterFirstMessage: boolean };
 };
 
 /** One archived model call, a line of `calls.jsonl.gz`. */
@@ -157,41 +159,44 @@ function missingCalls(snapshot: Snapshot, calls: ArchivedCall[]): number {
 const distinct = (values: Array<string | null | undefined>) =>
   [...new Set(values.filter((v): v is string => !!v))].toSorted();
 
-/** The manifest, `run.json` and `calls.jsonl` of a Course's map build. */
-export function mapBundle(input: MapBundleInput): {
-  manifest: Manifest;
-  run: object;
-  calls: ArchivedCall[];
-} {
+/** One Langfuse observation as an archived call, its page images named by Material sha256. */
+function archivedCall(o: Raw, sha: Map<string, string>): ArchivedCall {
+  const call = toCall(o);
+  const materialId = o.metadata?.materialId;
+  const material =
+    typeof materialId === "string" ? (sha.get(materialId) ?? null) : null;
+  return {
+    id: o.id,
+    traceName: call.name,
+    model: call.model,
+    startTime: o.startTime,
+    endTime: call.endTime,
+    level: call.level,
+    statusMessage: call.statusMessage,
+    metadata: o.metadata ?? {},
+    usage: o.usageDetails ?? {},
+    cost: call.cost,
+    input: replacePageImages(o.input, material),
+    output: o.output,
+  };
+}
+
+type Common = Pick<
+  MapBundleInput,
+  "caseId" | "note" | "archivedAt" | "snapshot" | "materials"
+>;
+
+/** The manifest fields both kinds share. */
+function manifestOf(
+  input: Common,
+  kind: Manifest["kind"],
+  calls: ArchivedCall[],
+  missing: number,
+): Manifest {
   const { snapshot } = input;
-  const sha = new Map(input.materials.map((m) => [m.id, m.sha256]));
-  const calls = runCalls(
-    input.observations,
-    snapshot,
-    new Set(input.materials.map((m) => m.id)),
-  ).map((o): ArchivedCall => {
-    const call = toCall(o);
-    const materialId = o.metadata?.materialId;
-    const material =
-      typeof materialId === "string" ? (sha.get(materialId) ?? null) : null;
-    return {
-      id: o.id,
-      traceName: call.name,
-      model: call.model,
-      startTime: o.startTime,
-      endTime: call.endTime,
-      level: call.level,
-      statusMessage: call.statusMessage,
-      metadata: o.metadata ?? {},
-      usage: o.usageDetails ?? {},
-      cost: call.cost,
-      input: replacePageImages(o.input, material),
-      output: o.output,
-    };
-  });
-  const manifest: Manifest = {
+  return {
     caseId: input.caseId,
-    kind: "map",
+    kind,
     note: input.note,
     archivedAt: input.archivedAt,
     course: { id: snapshot.course.id, name: snapshot.course.name },
@@ -215,10 +220,71 @@ export function mapBundle(input: MapBundleInput): {
     ),
     models: distinct(calls.map((c) => c.model)),
     cost: Number(calls.reduce((sum, c) => sum + (c.cost ?? 0), 0).toFixed(6)),
-    calls: { archived: calls.length, missing: missingCalls(snapshot, calls) },
+    calls: { archived: calls.length, missing },
     observations: [],
   };
-  return { manifest, run: { snapshot, chunks: input.chunks }, calls };
+}
+
+/** The manifest, `run.json` and `calls.jsonl` of a Course's map build. */
+export function mapBundle(input: MapBundleInput): {
+  manifest: Manifest;
+  run: object;
+  calls: ArchivedCall[];
+} {
+  const { snapshot } = input;
+  const sha = new Map(input.materials.map((m) => [m.id, m.sha256]));
+  const calls = runCalls(
+    input.observations,
+    snapshot,
+    new Set(input.materials.map((m) => m.id)),
+  ).map((o) => archivedCall(o, sha));
+  return {
+    manifest: manifestOf(input, "map", calls, missingCalls(snapshot, calls)),
+    run: { snapshot, chunks: input.chunks },
+    calls,
+  };
+}
+
+export type ChatBundleInput = Common & {
+  chat: { id: string };
+  /** The Chat's messages, oldest first, as stored (each reply with its tutor context). */
+  messages: Array<{ created_at: string }>;
+  observations: Raw[];
+};
+
+/**
+ * The manifest, `run.json` and `calls.jsonl` of a Chat: the Chat, its
+ * messages and its Course's build snapshot, and every model call of the
+ * Chat's session. The manifest flags a Chat whose map was rebuilt after its
+ * first message.
+ */
+export function chatBundle(input: ChatBundleInput): {
+  manifest: Manifest;
+  run: object;
+  calls: ArchivedCall[];
+} {
+  const { snapshot, chat, messages } = input;
+  const sha = new Map(input.materials.map((m) => [m.id, m.sha256]));
+  const parents = new Set(input.observations.map((o) => o.parentObservationId));
+  const calls = input.observations
+    .filter((o) => !parents.has(o.id))
+    .toSorted((a, b) => a.startTime.localeCompare(b.startTime))
+    .map((o) => archivedCall(o, sha));
+  const first = messages[0]?.created_at;
+  const built = snapshot.build?.startedAt;
+  return {
+    manifest: {
+      ...manifestOf(input, "chat", calls, 0),
+      chat: {
+        id: chat.id,
+        messages: messages.length,
+        mapRebuiltAfterFirstMessage:
+          !!first && !!built && Date.parse(built) > Date.parse(first),
+      },
+    },
+    run: { chat, messages, snapshot },
+    calls,
+  };
 }
 
 /** The next case id of a kind on a day: `<date>-<kind>-<n>`, after the ones that exist. */

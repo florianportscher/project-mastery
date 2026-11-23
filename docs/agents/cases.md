@@ -5,6 +5,7 @@ A case keeps one map build or Chat from staging with everything needed to unders
 ## Commands
 
 - `pnpm archive course <courseId> [--note "…"]`: archives the Course's current map build on staging, commits it to the cases repo's `main` and pushes. It prints the case id and the bundle's files with their sizes.
+- `pnpm archive chat <chatId> [--note "…"]`: the same for a Chat on staging. `run.json.gz` is `{ chat, messages, snapshot }`: the Chat row, its messages with each reply's `tutor_context`, and its Course's build snapshot. `calls.jsonl.gz` holds every call of the Chat's Langfuse session (`sessionId` = the Chat id). The manifest has `chat: { id, messages, mapRebuiltAfterFirstMessage }`; `true` means the Course's map was rebuilt after the Chat's first message, so the snapshot is not the map the Chat saw. The Course's Materials are copied as for a map case.
 - `pnpm -s agent staging-reset-map <courseId>` archives the build the same way first, with the note `before staging-reset-map`, and deletes nothing when the archive fails.
 
 The archive reads staging (`.env.local`'s `STAGING_*` variables) and Langfuse (`LANGFUSE_*`), and makes no model calls. It refuses to write unless the cases repo's `origin` is private (`gh repo view`) and both folders below lie outside this repo.

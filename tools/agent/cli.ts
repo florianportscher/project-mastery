@@ -102,6 +102,8 @@ Staging (real data; reads, and REST writes for testing; from .env.local, ADR 002
   archive course <courseId> [--note "…"]
                          keep a Course's current map build as a case in the private
                          cases repo and push it (also \`pnpm archive\`; docs/agents/cases.md)
+  archive chat <chatId> [--note "…"]
+                         keep a Chat, its Course's build and its model calls the same way
   inspect <courseId> [materials|chunks|units|kcs|exercises|topics|build|calls]
                          a Course's stored map build and its model calls as text, suspect
                          spots first; the first stop when diagnosing a map
