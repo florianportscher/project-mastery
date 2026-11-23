@@ -1,0 +1,35 @@
+{
+  "areas": {
+    "knowledge-map": {
+      "commit": "4530bb86e317b3cf35d15e58e15c04701a6f2a6b",
+      "date": "2026-11-23",
+      "measure": {
+        "files": 77,
+        "loc": 7880,
+        "exports": 42,
+        "usedOutside": 38,
+        "knip": 0,
+        "clones": 0,
+        "complex": 19,
+        "tests": 238,
+        "coverage": 96
+      }
+    },
+    "study": {
+      "commit": "4530bb86e317b3cf35d15e58e15c04701a6f2a6b",
+      "date": "2026-11-23",
+      "measure": {
+        "files": 83,
+        "loc": 8393,
+        "exports": 52,
+        "usedOutside": 45,
+        "knip": 0,
+        "clones": 0,
+        "complex": 10,
+        "tests": 278,
+        "coverage": 78
+      }
+    }
+  },
+  "rejected": []
+}
