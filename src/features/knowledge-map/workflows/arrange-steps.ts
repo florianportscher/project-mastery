@@ -1,7 +1,7 @@
 import "server-only";
 import { loadChunkSources } from "@/features/ingestion/server";
 import { uncitedPages } from "@/features/knowledge-map/domain/check-report";
-import { SAME_KC_SIMILARITY } from "@/features/knowledge-map/domain/kc-clusters";
+import { SAME_KC_SIMILARITY } from "@/features/knowledge-map/domain/kc-similarity";
 import { exerciseLabel } from "@/features/knowledge-map/domain/exercise-label";
 import { redundantLinks } from "@/features/knowledge-map/domain/prerequisite-cycles";
 import {

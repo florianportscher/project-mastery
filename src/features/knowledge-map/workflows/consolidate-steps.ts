@@ -1,5 +1,5 @@
 import "server-only";
-import { REVIVE_SIMILARITY } from "@/features/knowledge-map/domain/kc-clusters";
+import { REVIVE_SIMILARITY } from "@/features/knowledge-map/domain/kc-similarity";
 import { exerciseDifficulty } from "@/features/knowledge-map/domain/exercise-extraction";
 import { acyclicLinks } from "@/features/knowledge-map/domain/prerequisite-cycles";
 import {
