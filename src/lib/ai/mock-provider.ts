@@ -62,6 +62,14 @@ function lastUserParts(prompt: Prompt): Part[] {
   return lastUserContent(prompt).filter((part) => !isContext(part));
 }
 
+/** The text parts of `parts`, joined with spaces. */
+function textOf(parts: Part[]): string {
+  return parts
+    .filter((part) => part.type === "text")
+    .map((part) => part.text ?? "")
+    .join(" ");
+}
+
 /** The tutor context in front of the newest Student message, or "". */
 function tutorContextText(prompt: Prompt): string {
   return lastUserContent(prompt).find(isContext)?.text ?? "";
@@ -80,10 +88,7 @@ export function isMockReply(text: string): boolean {
  */
 export function mockReply(prompt: Prompt): string {
   const parts = lastUserParts(prompt);
-  const text = parts
-    .filter((part) => part.type === "text")
-    .map((part) => part.text ?? "")
-    .join(" ");
+  const text = textOf(parts);
   const files = parts
     .filter((part) => part.type === "file")
     .map((part) => `${part.filename ?? "file"} (${part.mediaType})`);
@@ -325,10 +330,7 @@ function mockTutorQuestions(
       input,
     );
   if (prompt.at(-1)?.role !== "user") return null;
-  const text = lastUserParts(prompt)
-    .filter((part) => part.type === "text")
-    .map((part) => part.text ?? "")
-    .join(" ");
+  const text = textOf(lastUserParts(prompt));
   const answered =
     !text.startsWith(MOCK_QUIZ_REQUEST) &&
     !text.startsWith(MOCK_READING_REQUEST) &&
