@@ -1,10 +1,5 @@
 import { APICallError, RetryError } from "ai";
 
-/**
- * The two rate limits a model call can meet: a provider's daily quota, which
- * stops a workflow, and AI Gateway's per-minute limit, which a wait clears.
- */
-
 const DEFAULT_WAIT_MS = 60_000;
 
 /**

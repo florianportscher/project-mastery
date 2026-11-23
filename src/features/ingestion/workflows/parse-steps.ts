@@ -281,23 +281,19 @@ export async function readPages(
 readPages.maxRetries = RATE_LIMITED_STEP_RETRIES;
 
 /**
- * What a batch read gives: the results of its pages read so far, whether
- * the Student's Daily limit stopped it, and the pages left for the next step
- * because no call fits the step any more.
- */
-type BatchRead = { pages: PageRow[]; limit: boolean; left: number[] };
-
-/**
  * Reads one batch. A batch whose call fails is read again page by page
  * (`readEach`). A page of an answered batch that no unit covers is read
- * again alone once; a page still uncovered is stored so.
+ * again alone once; a page still uncovered is stored so. It gives the
+ * results of its pages read so far, whether the Student's Daily limit
+ * stopped it, and the pages left for the next step because no call fits
+ * the step any more.
  */
 async function readBatch(
   supabase: AdminSupabase,
   material: ParseMaterialRow,
   batch: BatchPage[],
   stepStartedAt: number,
-): Promise<BatchRead> {
+): Promise<{ pages: PageRow[]; limit: boolean; left: number[] }> {
   let context = await lastUnitBefore(
     supabase,
     material.id,
@@ -371,7 +367,7 @@ async function readEach(
   batch: BatchPage[],
   context: PageUnit | null,
   stepStartedAt: number,
-): Promise<BatchRead> {
+): Promise<{ pages: PageRow[]; limit: boolean; left: number[] }> {
   const pages: PageRow[] = [];
   for (const [index, page] of batch.entries()) {
     const single = await callBatch(

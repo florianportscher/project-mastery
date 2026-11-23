@@ -4,7 +4,7 @@ import {
   NoSuchToolError,
   RetryError,
 } from "ai";
-import { gatewayRateLimitWaitMs } from "./rate-limit";
+import { gatewayRateLimitWaitMs } from "@/lib/ai/rate-limit";
 
 /**
  * Pieces every streamed reply shares, in a Chat and in the Brief: the text of
