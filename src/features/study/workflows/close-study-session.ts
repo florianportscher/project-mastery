@@ -19,7 +19,8 @@ export async function closeStudySession(sessionId: string): Promise<void> {
     const close = await writeSessionClose(sessionId);
     if (close) await storeSessionClose(sessionId, close);
   } catch (error) {
-    await releaseSessionClose(sessionId);
+    // A failed release must not replace the error the workflow reports.
+    await releaseSessionClose(sessionId).catch(() => {});
     throw error;
   }
 }
