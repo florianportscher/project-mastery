@@ -1,1 +1,2 @@
+pnpm -s leak-guard staged
 pnpm exec lint-staged

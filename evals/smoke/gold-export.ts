@@ -8,6 +8,7 @@ import {
   SNAPSHOT_TABLES,
   type Snapshot,
 } from "../gold-snapshot";
+import { assertMaterialsListed } from "../../tools/leak-guard/allowlist";
 import { GOLD_DIR, table } from "./gold-seed";
 
 /**
@@ -70,18 +71,24 @@ export async function exportCourse(
     tables,
   };
 
-  const dir = path.join(GOLD_DIR, slug);
-  await mkdir(path.join(dir, "materials"), { recursive: true });
+  const files: { name: string; bytes: Buffer }[] = [];
   for (const material of tables.materials ?? []) {
     const { data, error: downloadError } = await supabase.storage
       .from(MATERIALS_BUCKET)
       .download(material.storage_path as string);
     if (downloadError) throw new Error(downloadError.message);
-    const file = `${material.id as string}.${extensionOf(material.media_type as string)}`;
-    await writeFile(
-      path.join(dir, "materials", file),
-      Buffer.from(await data.arrayBuffer()),
-    );
+    files.push({
+      name: `${material.id as string}.${extensionOf(material.media_type as string)}`,
+      bytes: Buffer.from(await data.arrayBuffer()),
+    });
+  }
+  // Real course Materials never reach the repo: refuse before writing anything.
+  assertMaterialsListed(files);
+
+  const dir = path.join(GOLD_DIR, slug);
+  await mkdir(path.join(dir, "materials"), { recursive: true });
+  for (const file of files) {
+    await writeFile(path.join(dir, "materials", file.name), file.bytes);
   }
   await writeFile(path.join(dir, "snapshot.json.gz"), encodeSnapshot(snapshot));
   console.info(

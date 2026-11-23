@@ -43,7 +43,8 @@
     "shift": "sh -c 'exec claude --model haiku \"/build $*\"' --",
     "retro": "tsx tools/retro/cli.ts",
     "garden": "sh -c 'exec claude --model sonnet \"/garden $*\"' --",
-    "garden:areas": "tsx tools/garden/cli.ts"
+    "garden:areas": "tsx tools/garden/cli.ts",
+    "leak-guard": "tsx tools/leak-guard/cli.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.120",
