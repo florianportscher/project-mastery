@@ -83,8 +83,6 @@ export function MockTaskSheet({
     }
     const before = stored.current[questionId];
     stored.current[questionId] = answer;
-    // A save that does not reach the server is one to make again, and must
-    // not keep submit from running.
     const result = await saveMockTaskAnswer({
       questionId,
       answer: answer.text,
@@ -107,10 +105,8 @@ export function MockTaskSheet({
     await Promise.all(
       tasks.map((task) => save(task.questionId, answers[task.questionId]!)),
     );
-    try {
-      await submitMockExam({ mockId: mock.id });
-    } catch {
-      // Not reached: Submit works again.
+    const result = await submitMockExam({ mockId: mock.id }).catch(() => null);
+    if (!result?.ok) {
       setSubmitting(false);
       return;
     }

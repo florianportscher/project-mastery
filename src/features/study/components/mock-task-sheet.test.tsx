@@ -174,6 +174,17 @@ test("Submit works again after a submit that did not reach the server", async ()
   expect(screen.getByRole("button", { name: "Submit" })).toBeEnabled();
 });
 
+test("Submit works again after a submit the server refused", async () => {
+  submitMockExam.mockResolvedValueOnce({ ok: false, message: "Sign in" });
+  sheet(30);
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  await act(async () => {});
+
+  expect(screen.getByRole("button", { name: "Submit" })).toBeEnabled();
+  expect(refresh).not.toHaveBeenCalled();
+});
+
 test("Submit asks first", async () => {
   sheet(30);
   fireEvent.click(screen.getByRole("button", { name: "Submit" }));
