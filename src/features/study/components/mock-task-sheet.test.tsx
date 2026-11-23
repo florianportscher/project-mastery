@@ -164,6 +164,16 @@ test("submits at 0 when the open answer's save does not reach the server", async
   expect(submitMockExam).toHaveBeenCalledExactlyOnceWith({ mockId: MOCK });
 });
 
+test("Submit works again after a submit that did not reach the server", async () => {
+  submitMockExam.mockRejectedValueOnce(new Error("Failed to fetch"));
+  sheet(30);
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  await act(async () => {});
+
+  expect(screen.getByRole("button", { name: "Submit" })).toBeEnabled();
+});
+
 test("Submit asks first", async () => {
   sheet(30);
   fireEvent.click(screen.getByRole("button", { name: "Submit" }));
