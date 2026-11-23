@@ -4,15 +4,16 @@ Every command and slash skill of this repo, one line each, for the maintainer an
 
 ## Daily work
 
-| Command               | What it does                                                             |
-| --------------------- | ------------------------------------------------------------------------ |
-| `pnpm sitting`        | Starts a `/sitting` session (Sonnet): PRs and inbox, then the next shift |
-| `pnpm shift <issues>` | Starts a `/build` session (Haiku) on the given spec issues               |
-| `pnpm nit "<title>"`  | Files a one-line inbox issue                                             |
-| `pnpm check`          | Lint, typecheck, format check and unit tests: what a PR must pass        |
-| `pnpm dev`            | Starts the dev server                                                    |
-| `pnpm build`          | Production build                                                         |
-| `pnpm start`          | Serves the production build                                              |
+| Command                   | What it does                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| `pnpm sitting`            | Starts a `/sitting` session (Sonnet): PRs and inbox, then the next shift        |
+| `pnpm shift <issues>`     | Starts a `/build` session (Haiku) on the given spec issues                      |
+| `pnpm garden [--areas N]` | Starts a `/garden` session (Haiku) on the N areas that changed most (default 2) |
+| `pnpm nit "<title>"`      | Files a one-line inbox issue                                                    |
+| `pnpm check`              | Lint, typecheck, format check and unit tests: what a PR must pass               |
+| `pnpm dev`                | Starts the dev server                                                           |
+| `pnpm build`              | Production build                                                                |
+| `pnpm start`              | Serves the production build                                                     |
 
 ## Checks and tests
 
@@ -47,14 +48,16 @@ In an agent worktree the local database is shared: see [worktrees.md](worktrees.
 
 `pnpm -s agent help` is the full, current list and the only place that explains each subcommand. In short:
 
-| Command                                | What it does                                                                                               |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `pnpm -s agent up` · `down` · `status` | Start and stop the local stack and dev server                                                              |
-| `pnpm -s agent login` · `open` · `act` | Drive the app in a browser as a test user, with compact page snapshots                                     |
-| `pnpm -s agent check` · `sql` · `mail` | Compile and runtime errors, SQL with Row Level Security, the latest email                                  |
-| `pnpm -s agent staging*`               | Read the staging project, and write to it for testing ([ADR 0029](../adr/0029-agent-writes-to-staging.md)) |
-| `pnpm -s agent staging-reset-map <id>` | Delete a Course's whole map build on staging; Materials and chunks stay                                    |
-| `pnpm -s agent inspect <courseId>`     | A Course's stored map build and its model calls as text: the first stop for a wrong map                    |
+| Command                                                            | What it does                                                                                                                |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm -s agent up` · `down` · `status`                             | Start and stop the local stack and dev server                                                                               |
+| `pnpm -s agent up --mock-fault <error\|timeout\|empty\|malformed>` | Restart the dev server so every mock model call fails that way; `up` alone turns it off                                     |
+| `pnpm -s agent login` · `open` · `act`                             | Drive the app in a browser as a test user, with compact page snapshots                                                      |
+| `pnpm -s agent check` · `sql` · `mail`                             | Compile and runtime errors, SQL with Row Level Security, the latest email                                                   |
+| `pnpm -s agent staging*`                                           | Read the staging project, and write to it for testing ([ADR 0029](../adr/0029-agent-writes-to-staging.md))                  |
+| `pnpm -s agent staging-reset-map <id>`                             | Delete a Course's whole map build on staging; Materials and chunks stay                                                     |
+| `pnpm -s agent inspect <courseId>`                                 | A Course's stored map build and its model calls as text: the first stop for a wrong map                                     |
+| `pnpm -s agent walk <dir>` · `walk diff <a> <b>`                   | Seed data, snapshot every page as `student` (main pages as `classmate`); `diff` prints `same: N pages` or each changed page |
 
 ## Live AI and evals
 
@@ -78,6 +81,7 @@ Started in a Claude Code session. They live in `.claude/skills/`.
 | `/sitting`            | Goes through the PRs and the inbox with you and lines up the next shift            |
 | `/to-spec`            | Turns a grilling session's decisions into a one-page spec issue                    |
 | `/build`              | Builds queued issues end to end, one worktree each, and opens PRs                  |
+| `/garden`             | Simplifies the most changed areas, tries to break the app on mock AI, opens one PR |
 | `/grilling`           | Stress-tests a plan or decision by questioning you                                 |
 | `/wait-what`          | Re-pitches the last message when it did not land                                   |
 | `/reality-check`      | Tests the product and `ROADMAP.md` against evidence, writes `docs/reality-checks/` |
@@ -90,12 +94,14 @@ Started in a Claude Code session. They live in `.claude/skills/`.
 
 ## Scripts the skills call
 
-| Command                              | Owner                                                 |
-| ------------------------------------ | ----------------------------------------------------- |
-| `tools/build/setup.sh <issue>`       | `/build`: prepares the worktree and branch            |
-| `tools/build/ready.sh <pr> <body>`   | `/build`: marks a PR ready and arms auto-merge        |
-| `tools/build/cleanup.sh [issue ...]` | `/build`: removes finished worktrees                  |
-| `tools/sitting/waiting.sh [pr ...]`  | `/sitting`: what stands in the way of each waiting PR |
-| `pnpm -s retro`                      | `/retro`: digests recent Claude Code runs. Parked     |
+| Command                              | Owner                                                                                                                       |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `tools/build/setup.sh <issue>`       | `/build`: prepares the worktree and branch                                                                                  |
+| `tools/build/ready.sh <pr> <body>`   | `/build`: marks a PR ready and arms auto-merge                                                                              |
+| `tools/build/cleanup.sh [issue ...]` | `/build`: removes finished worktrees                                                                                        |
+| `tools/sitting/waiting.sh [pr ...]`  | `/sitting`: what stands in the way of each waiting PR                                                                       |
+| `pnpm -s retro`                      | `/retro`: digests recent Claude Code runs. Parked                                                                           |
+| `tools/garden/setup.sh [areas]`      | `/garden`: prepares the worktree, lists closed garden PRs to record and the areas                                           |
+| `pnpm -s garden:areas`               | `/garden`: areas with change counts and numbers; `pick`, `measure`, `write`, `reject`, `rejected` for the ledger and report |
 
 `pnpm prepare` installs the Git hooks and runs by itself on `pnpm install`.

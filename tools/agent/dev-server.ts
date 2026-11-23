@@ -75,27 +75,34 @@ function isRunning(pid: number) {
 export function devServerEnv<T extends Record<string, string | undefined>>(
   env: T,
   live = false,
-): T & { AI_PROVIDER?: string } {
+  mockFault?: string,
+): T & { AI_PROVIDER?: string; MOCK_AI_FAULT?: string } {
   if (live) return env;
-  return { ...env, AI_PROVIDER: "mock" };
+  return { ...env, AI_PROVIDER: "mock", MOCK_AI_FAULT: mockFault };
 }
 
 /** Starts `next dev` in the background and waits until it answers. */
-export async function startDevServer(live = false) {
+export async function startDevServer(live = false, mockFault?: string) {
   const port = await freePort();
   mkdirSync(CACHE_DIR, { recursive: true });
   // Read back through the same descriptor if the server fails to start.
   const log = openSync(DEV_LOG, "w+");
   const child = spawn(BIN("next"), ["dev", "--port", String(port)], {
     cwd: ROOT,
-    env: devServerEnv(process.env, live),
+    env: devServerEnv(process.env, live, mockFault),
     detached: true,
     stdio: ["ignore", log, log],
   });
   child.unref();
   if (child.pid === undefined)
     throw new AgentError("Could not start next dev.");
-  writeState({ port, pid: child.pid, logOffset: 0, seenErrors: [] });
+  writeState({
+    port,
+    pid: child.pid,
+    logOffset: 0,
+    seenErrors: [],
+    mockFault,
+  });
 
   try {
     const deadline = Date.now() + START_TIMEOUT_MS;

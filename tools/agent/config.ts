@@ -79,6 +79,8 @@ export type State = {
   logOffset?: number;
   /** Runtime errors already reported in full. */
   seenErrors?: string[];
+  /** The `--mock-fault` the dev server started with. */
+  mockFault?: string;
 };
 
 const STATE_FILE = path.join(CACHE_DIR, "state.json");

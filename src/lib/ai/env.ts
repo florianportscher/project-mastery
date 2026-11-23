@@ -16,6 +16,8 @@ const schema = z
     // Where model ids resolve: AI Gateway (locally too, ADR 0006), or
     // deterministic mock models for end-to-end tests of the running app.
     AI_PROVIDER: optional(z.enum(["gateway", "mock"])).default("gateway"),
+    // Set by `agent up --mock-fault`: every mock model call fails this way.
+    MOCK_AI_FAULT: optional(z.enum(["error", "timeout", "empty", "malformed"])),
     // Local development authenticates with an AI Gateway API key. Deployments
     // on Vercel (VERCEL=1) authenticate through OIDC automatically, and
     // `vercel env pull` provides VERCEL_OIDC_TOKEN locally (valid for 12h).

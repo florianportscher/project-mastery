@@ -171,3 +171,48 @@ describe("tutor tool calls on AI_PROVIDER=mock", () => {
     vi.unstubAllEnvs();
   });
 });
+
+describe("a mock fault", () => {
+  async function ask(fault: string) {
+    vi.stubEnv("AI_PROVIDER", "mock");
+    vi.stubEnv("MOCK_AI_FAULT", fault);
+    const { generateText, Output } = await import("ai");
+    const { z } = await import("zod");
+    const { aiTask } = await import("./models");
+    return {
+      text: () => generateText({ ...aiTask("chat"), prompt: "Hi" }),
+      object: () =>
+        generateText({
+          ...aiTask("ingest"),
+          output: Output.object({ schema: z.object({ a: z.string() }) }),
+          prompt: "Read.",
+        }),
+    };
+  }
+
+  test("error fails the call", async () => {
+    await expect((await ask("error")).text()).rejects.toThrow(/Mock AI fault/);
+    vi.unstubAllEnvs();
+  });
+
+  test("timeout fails the call once it is aborted", async () => {
+    vi.useFakeTimers();
+    const call = expect((await ask("timeout")).text()).rejects.toThrow(
+      /timed out/,
+    );
+    await vi.advanceTimersByTimeAsync(31_000);
+    await call;
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+  });
+
+  test("empty answers no text", async () => {
+    expect((await (await ask("empty")).text()).text).toBe("");
+    vi.unstubAllEnvs();
+  });
+
+  test("malformed answers JSON that does not parse", async () => {
+    await expect((await ask("malformed")).object()).rejects.toThrow();
+    vi.unstubAllEnvs();
+  });
+});

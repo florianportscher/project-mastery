@@ -11,7 +11,13 @@ import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { browser, react, settle, SHOT_DIR, snapshot } from "./browser";
-import { AgentError, BROWSER_SESSION, supabaseEnv, writeState } from "./config";
+import {
+  AgentError,
+  BROWSER_SESSION,
+  readState,
+  supabaseEnv,
+  writeState,
+} from "./config";
 import {
   DEV_LOG,
   findDevServer,
@@ -39,11 +45,15 @@ import {
   runSql,
   startSupabase,
 } from "./supabase";
+import { walk } from "./walk";
+import { diffWalks } from "./walk-diff";
 
 const HELP = `pnpm -s agent <command>   (local stack, except \`staging\`)
 
 Setup
   up [--live]            start Supabase and next dev if needed, create test users; the app runs on the mock unless --live keeps the provider of .env.local
+  up --mock-fault <error|timeout|empty|malformed>
+                         restart the app so every mock model call fails that way; \`up\` alone turns it off
   down                   stop the dev server that \`up\` started
   status                 what is running, with URLs
   reset                  recreate the database from migrations and the test users
@@ -62,6 +72,10 @@ Browser (one session per checkout, login survives restarts)
 Diagnostics
   check                  compile issues (all routes), runtime and server errors
   routes                 the app's routes
+
+Walk (replaces the test users' data with seeded data; needs the app on the mock AI)
+  walk <dir>             open every page as student, the main pages as classmate; write one normalized text snapshot each
+  walk diff <a> <b>      \`same: N pages\` when two walks match, else each changed page's diff
 
 Data
   sql "<query>" [--as student|classmate|anon|<email>] [--all]
@@ -100,7 +114,19 @@ async function look(port: number) {
   return problems.length === 0 ? page : `${page}\n\n${problems.join("\n")}`;
 }
 
-async function up(live: boolean) {
+const MOCK_FAULTS = ["error", "timeout", "empty", "malformed"];
+
+function mockFaultArg(args: string[]) {
+  const at = args.indexOf("--mock-fault");
+  if (at === -1) return undefined;
+  const kind = args[at + 1];
+  if (kind === undefined || !MOCK_FAULTS.includes(kind)) {
+    throw new AgentError(`--mock-fault takes ${MOCK_FAULTS.join(", ")}.`);
+  }
+  return kind;
+}
+
+async function up(live: boolean, mockFault?: string) {
   const lines: string[] = [];
   const supabase = supabaseEnv();
   if (await isSupabaseUp()) {
@@ -117,11 +143,24 @@ async function up(live: boolean) {
   lines.push(
     `users     ${Object.keys(PERSONAS).join(", ")} (\`agent login <name>\`)`,
   );
-  const running = await findDevServer();
+  let running = await findDevServer();
+  // The fault is part of the server's environment: a change restarts it.
+  if (running !== null && !live && readState().mockFault !== mockFault) {
+    if (!ownsDevServer()) {
+      throw new AgentError(
+        "The running app was not started by `agent up`: stop it before changing --mock-fault.",
+      );
+    }
+    await stopDevServer();
+    for (let i = 0; i < 40 && running !== null; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      running = await findDevServer();
+    }
+  }
   if (running !== null) {
     lines.push(`app       running · http://localhost:${running}`);
   } else {
-    const { port, pid } = await startDevServer(live);
+    const { port, pid } = await startDevServer(live, mockFault);
     lines.push(
       `app       started · http://localhost:${port} (pid ${pid}, log ${path.relative(process.cwd(), DEV_LOG)})`,
     );
@@ -219,7 +258,7 @@ async function run(
 ): Promise<string> {
   switch (command) {
     case "up":
-      return up(args.includes("--live"));
+      return up(args.includes("--live"), mockFaultArg(args));
     case "down":
       return stopDevServer();
     case "status":
@@ -295,6 +334,15 @@ async function run(
       return resetStagingMap(args[0]);
     case "inspect":
       return inspect(args);
+    case "walk": {
+      if (args[0] === "diff") {
+        if (!args[1] || !args[2])
+          throw new AgentError("Usage: agent walk diff <dirA> <dirB>");
+        return diffWalks(path.resolve(args[1]), path.resolve(args[2]));
+      }
+      if (!args[0]) throw new AgentError("Usage: agent walk <dir>");
+      return walk(path.resolve(args[0]), await requireDevServer(), login);
+    }
     case "users":
       return Object.entries(PERSONAS)
         .map(([name, { email }]) => `${name.padEnd(10)}${email}`)
