@@ -17,6 +17,7 @@ import {
   unitCoverage,
 } from "@/features/knowledge-map/domain/unit-coverage";
 import {
+  isCurrent,
   loadCourseUnits,
   loadStoredUnits,
   retireUnsourcedKcs,
@@ -110,11 +111,11 @@ async function checkReport(
     ]);
   if (alike.error) failed("Finding alike KCs", alike.error);
   // A unit without an extraction of its content was given up on.
-  const hashOf = new Map(stored.map((row) => [row.key, row.contentHash]));
+  const storedOf = new Map(stored.map((row) => [row.key, row]));
   const unitsNotExtracted = [
     ...new Set(
       [...units, ...exerciseUnits]
-        .filter((unit) => hashOf.get(unitKey(unit)) !== unit.contentHash)
+        .filter((unit) => !isCurrent(storedOf.get(unitKey(unit)), unit))
         .map((unit) => unit.title),
     ),
   ];

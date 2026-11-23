@@ -3,6 +3,7 @@ import {
   GROUPING_TEXT_CHARS,
   groupingAnswerSchema,
   groupingCallSettings,
+  groupingDigest,
   groupingMessages,
   type GroupingExam,
   type GroupingItem,
@@ -49,7 +50,8 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * chunk of the Course in Course order, with its Material, heading and
  * first characters, and answers the Exercises; a Course of more than 400
  * such chunks goes in calls of at most 400. It runs only when the Course's
- * exercise and solution chunks changed since the last grouping
+ * exercise and solution chunks or the grouping prompt changed since the
+ * last grouping
  * (`exercise_grouping_hash`), and stores the Exercises on the build row
  * (`exercise_groups`) for the exercise extraction.
  */
@@ -78,7 +80,7 @@ export async function groupExercises(
     loadGroupingChunks(supabase, courseId),
     loadStoredGroups(supabase, courseId),
   ]);
-  const hash = groupingHash(chunks);
+  const hash = groupingHash(chunks, groupingDigest());
   if (stored.groups && stored.hash === hash) return { ok: true, left: 0 };
 
   const runs = groupingRuns(chunks);

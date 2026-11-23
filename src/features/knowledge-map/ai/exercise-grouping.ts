@@ -3,6 +3,7 @@ import { Output } from "ai";
 import { z } from "zod";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { aiTask } from "@/lib/ai/models";
+import { promptDigest } from "@/lib/ai/prompt-digest";
 
 export type GroupingItem = {
   /** Short and only for the call, such as e1 or s1. */
@@ -83,6 +84,9 @@ const GROUPING_INSTRUCTIONS = `You group the exercise and solution texts of one 
 - Put each text in at most one exercise. A solution whose exercise is not among the given texts goes in none. Do not guess.
 - List every old exam among the texts: a past exam, resit, class test or mock exam of the course, whether it is a material of its own, one of several exams in one material, or the end of a script. Exercise sheets and the exercises of lecture notes are no exams. Name each exam as printed, with its term or date, so that two exams never share a name. When it is one of the exams found earlier, give that exam's id in continues.
 - Give each exercise of an exam that exam's name; every other exercise gets null.`;
+
+export const groupingDigest = () =>
+  promptDigest(GROUPING_INSTRUCTIONS, groupingAnswerSchema());
 
 /**
  * Call settings for a grouping call (task `ingest`), streamed so a long

@@ -96,6 +96,23 @@ export function createBuildDb() {
         for (const kc of retired) kc.retired_at = now();
         return retired.length;
       },
+      clear_unit_sources: (args, tables) => {
+        if (!building(tables, args.p_course_id)) return false;
+        const chunks = new Set(args.p_chunk_ids as string[]);
+        tables.kc_sources = tables.kc_sources.filter(
+          (source) => !chunks.has(source.chunk_id as string),
+        );
+        for (const kc of tables.kcs) {
+          if (
+            kc.course_id === args.p_course_id &&
+            !kc.retired_at &&
+            !tables.kc_sources.some((source) => source.kc_id === kc.id)
+          ) {
+            kc.retired_at = now();
+          }
+        }
+        return true;
+      },
       match_kcs: (args, tables) => {
         const embedding = vectorOf(args.p_embedding);
         return tables.kcs

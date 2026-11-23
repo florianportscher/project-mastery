@@ -4,6 +4,7 @@ import { z } from "zod";
 import { KC_DEFINITION } from "@/features/knowledge-map/ai/kc-definition";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { aiTask } from "@/lib/ai/models";
+import { promptDigest } from "@/lib/ai/prompt-digest";
 
 export type OfferedChunk = {
   /** Short and only for the call, such as c1. */
@@ -100,6 +101,9 @@ ${KC_DEFINITION}
 - Choose from every listed KC, also from far earlier in the course or from other materials. List each KC that is used, not only the most important one. You need not repeat what its Prerequisites build on in turn.
 - outside: up to 3 things it uses that no listed KC teaches, as short names, each with a one-line description. Leave out everyday knowledge that a university student of this subject cannot lack. Usually empty.
 - Write every name and description in the course language. Formulas in LaTeX ($...$).`;
+
+export const chapterExtractionDigest = () =>
+  promptDigest(EXTRACTION_INSTRUCTIONS, chapterExtractionSchema());
 
 /**
  * Call settings for the extraction of one teaching unit (task `map`), with

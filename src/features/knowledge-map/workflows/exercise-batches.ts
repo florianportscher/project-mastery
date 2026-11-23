@@ -1,4 +1,5 @@
 import "server-only";
+import { exerciseExtractionDigest } from "@/features/knowledge-map/ai/exercise-extraction";
 import {
   batchTitle,
   UNIT_CHARS,
@@ -127,6 +128,7 @@ export async function loadExerciseBatches(
             [...e.questionChunkIds, "|", ...e.solutionChunkIds].join(","),
           ),
         ),
+        promptDigest: exerciseExtractionDigest(),
         materialName: material.name,
         chunks: items.map(({ exercise: e, heading }) => ({
           id: e.id,

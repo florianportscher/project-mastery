@@ -183,8 +183,14 @@ export function courseExams(
   return { exams, groups };
 }
 
-export function groupingHash(chunks: readonly GroupingChunk[]): string {
+/** The hash of the grouped chunks and the grouping call's prompt digest. */
+export function groupingHash(
+  chunks: readonly GroupingChunk[],
+  promptDigest: string,
+): string {
   return createHash("sha256")
+    .update(promptDigest)
+    .update("\n")
     .update(chunks.map((chunk) => `${chunk.label}:${chunk.id}`).join("\n"))
     .digest("hex");
 }

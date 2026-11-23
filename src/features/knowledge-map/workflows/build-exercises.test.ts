@@ -127,6 +127,63 @@ describe("Update map's Exercises", () => {
     expect(again.exercises).toEqual([]);
   });
 
+  test("calls again for answers from another prompt, and replaces their KCs in place", async () => {
+    seedMaterial(db, { sections: [{ title: "Rank" }] });
+    seedExam();
+    const answers = {
+      groupsOf: wholeTask,
+      subtaskOf: () => ({ kcs: ["Dimension"], newKcs: ["Basis"] }),
+    };
+    useBuildModels(answers);
+    await update();
+    const live = () =>
+      db.tables.kcs
+        .filter((kc) => !kc.retired_at)
+        .map((kc) => `${kc.id} ${kc.name}`)
+        .toSorted();
+    const sources = () =>
+      db.tables.kc_sources.map((s) => `${s.kc_id} ${s.chunk_id}`).toSorted();
+    const before = { kcs: live(), sources: sources() };
+    expect(before.kcs).toHaveLength(3);
+
+    // An older preview's prompts answered what is stored.
+    for (const row of db.tables.unit_extractions) row.prompt_digest = "older";
+    Object.assign(db.tables.knowledge_map_builds[0]!, {
+      exercise_grouping_hash: "older",
+      topic_tree_hash: "older",
+    });
+    const again = useBuildModels(answers);
+    await update();
+
+    expect(again.groupings).toHaveLength(1);
+    expect(again.trees).toHaveLength(1);
+    expect(again.exercises).toHaveLength(1);
+    // A batch is not offered the KCs it gave itself.
+    expect(again.exercises[0]!.kcs.map((kc) => kc.name)).toEqual([
+      "Dimension",
+      "Rank",
+    ]);
+    expect(
+      again.extractions.map((unit) => [
+        unit.chunks[0]!.heading,
+        unit.knownKcs.map((kc) => kc.name),
+      ]),
+    ).toEqual([
+      ["Dimension", ["Basis"]],
+      ["Rank", ["Dimension", "Basis"]],
+    ]);
+    expect({ kcs: live(), sources: sources() }).toEqual(before);
+
+    const third = useBuildModels(answers);
+    await update();
+    expect([
+      third.extractions,
+      third.exercises,
+      third.groupings,
+      third.trees,
+    ]).toEqual([[], [], [], []]);
+  });
+
   test("keeps every chunk when the grouping leaves some out, and drops what is no exercise", async () => {
     seedExam();
     const { exercises } = useBuildModels({

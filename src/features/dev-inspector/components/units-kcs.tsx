@@ -67,6 +67,9 @@ export function UnitsSection({
                 <Flag>coverage {percent(below)}, below the bar</Flag>
               )}
               {!unit.extraction && <Flag>no extraction</Flag>}
+              {unit.extraction && !unit.promptCurrent && (
+                <Flag>from another prompt</Flag>
+              )}
               {report.map((note) => (
                 <Flag key={note}>check report: {note}</Flag>
               ))}

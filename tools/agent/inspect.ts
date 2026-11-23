@@ -51,6 +51,7 @@ export type Snapshot = {
     materialId: string;
     kind: string;
     batch: number;
+    promptDigest: string | null;
     kcIds: string[] | null;
   }>;
   kcs: Array<{
@@ -435,7 +436,7 @@ export function formatSection(
         const key = `${e.materialId}/${e.kind}/${e.batch}`;
         const own = (calls ?? []).filter((c) => c.metadata.unitKey === key);
         lines.push(
-          `${key} ${materialName.get(e.materialId) ?? "?"} ${e.kind} ${e.batch}: ${(e.kcIds ?? []).map(name).join("; ") || "no KCs"}${own.length ? ` · calls ${own.map((c) => short(c.id)).join(" ")}` : ""}`,
+          `${key} ${materialName.get(e.materialId) ?? "?"} ${e.kind} ${e.batch} prompt ${e.promptDigest?.slice(0, 8) ?? "none"}: ${(e.kcIds ?? []).map(name).join("; ") || "no KCs"}${own.length ? ` · calls ${own.map((c) => short(c.id)).join(" ")}` : ""}`,
         );
       }
       break;

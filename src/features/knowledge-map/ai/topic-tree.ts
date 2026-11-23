@@ -4,6 +4,7 @@ import { z } from "zod";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { MAX_TOPIC_NAME } from "@/features/knowledge-map/domain/topic-tree";
 import { aiTask } from "@/lib/ai/models";
+import { promptDigest } from "@/lib/ai/prompt-digest";
 
 type OfferedKc = {
   /** Short and only for the call, such as k1. */
@@ -86,6 +87,9 @@ const TREE_INSTRUCTIONS = `You get the knowledge components (KCs) of a universit
 - Name each Topic after its subject, without numbering, so that it is understood without its parent: "Vector spaces: definition and examples", not "Definition and examples". Never name a Topic after a single slide or page. Give a Topic that holds KCs the one question its KCs together answer.
 - When a Topic is a stored one, kept or changed, give that stored Topic's id under continues, so the student's notes on it stay. Use each stored id at most once.
 - Write in the course language. Formulas in LaTeX ($...$).`;
+
+export const topicTreeDigest = () =>
+  promptDigest(TREE_INSTRUCTIONS, topicTreeSchema());
 
 /**
  * Call settings for the tree call of a Course (task `topic`), with

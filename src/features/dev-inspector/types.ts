@@ -82,6 +82,7 @@ type SnapshotExtraction = {
   kind: string;
   batch: number;
   contentHash: string;
+  promptDigest: string | null;
   kcIds: string[] | null;
   assumesMatched: boolean;
   createdAt: string;
@@ -113,6 +114,8 @@ export type DevUnit = {
   /** A teaching batch's chunks; an exercise batch's question chunks. */
   chunkIds: string[];
   extraction: SnapshotExtraction | null;
+  /** Whether its extraction was answered with the current prompt. */
+  promptCurrent: boolean;
 };
 
 /**

@@ -5,6 +5,7 @@ import {
   MIN_UNIT_COVERAGE,
   UNIT_CHARS,
   batchTitle,
+  extractionDigest,
   exerciseBatches,
   teachingBatches,
   unitKey,
@@ -60,6 +61,7 @@ function courseUnits(snapshot: Snapshot): DevUnit[] {
     chunkIds: string[],
   ): DevUnit => {
     const key = unitKey({ materialId, kind, batch });
+    const extraction = extractionOf.get(key) ?? null;
     return {
       key,
       kind,
@@ -70,7 +72,8 @@ function courseUnits(snapshot: Snapshot): DevUnit[] {
         chunkIds.map((id) => chunkOf.get(id)!),
       ),
       chunkIds,
-      extraction: extractionOf.get(key) ?? null,
+      extraction,
+      promptCurrent: extraction?.promptDigest === extractionDigest(kind),
     };
   };
   const teaching = snapshot.materials.flatMap((material) =>
