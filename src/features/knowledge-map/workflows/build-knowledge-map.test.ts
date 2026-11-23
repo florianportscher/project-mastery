@@ -3,8 +3,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { nothingToMapReason } from "@/features/knowledge-map/domain/build-failure";
 import { UNIT_CHARS } from "@/features/knowledge-map/domain/teaching-batches";
 import { silenceLogs } from "@/lib/log-testing";
-import { markAdminClient } from "@/lib/supabase/admin-brand";
-import type { Supabase } from "@/lib/supabase/types";
+import { markAdminClient, type Supabase } from "@/lib/supabase/types";
 import {
   COURSE,
   createBuildDb,

@@ -13,8 +13,7 @@ import {
   useMockModels,
 } from "@/features/ingestion/workflows/parse-testing";
 import { mockEmbeddingModel } from "@/lib/ai/testing";
-import { markAdminClient } from "@/lib/supabase/admin-brand";
-import type { Supabase } from "@/lib/supabase/types";
+import { markAdminClient, type Supabase } from "@/lib/supabase/types";
 
 vi.mock("server-only", () => ({}));
 

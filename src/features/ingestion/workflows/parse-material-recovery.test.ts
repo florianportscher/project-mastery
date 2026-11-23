@@ -12,8 +12,7 @@ import {
   useMockModels,
 } from "@/features/ingestion/workflows/parse-testing";
 import { silenceLogs } from "@/lib/log-testing";
-import { markAdminClient } from "@/lib/supabase/admin-brand";
-import type { Supabase } from "@/lib/supabase/types";
+import { markAdminClient, type Supabase } from "@/lib/supabase/types";
 
 /**
  * How a parse fails, resumes and stops: the parse workflow in-process on

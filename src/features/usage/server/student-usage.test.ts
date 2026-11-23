@@ -1,11 +1,11 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { fakeSupabase, type FakeRow } from "@/lib/supabase/testing";
-import { markAdminClient } from "@/lib/supabase/admin-brand";
-import type {
-  AdminSupabase,
-  SessionSupabase,
-  Supabase,
+import {
+  markAdminClient,
+  type AdminSupabase,
+  type SessionSupabase,
+  type Supabase,
 } from "@/lib/supabase/types";
 
 vi.mock("server-only", () => ({}));

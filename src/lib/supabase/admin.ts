@@ -1,10 +1,13 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
-import { markAdminClient, type AdminSupabase } from "./admin-brand";
 import type { Database } from "./database.types";
 import { getSupabasePublicEnv, getSupabaseSecretEnv } from "./env";
-import type { SessionSupabase } from "./types";
+import {
+  markAdminClient,
+  type AdminSupabase,
+  type SessionSupabase,
+} from "./types";
 import { fetchWithoutNul } from "./without-nul";
 
 const noSession = {
@@ -21,7 +24,7 @@ const noSession = {
  * code with no signed-in user, such as background jobs. Never use it to handle
  * a user's request; use the client from `server.ts` instead.
  *
- * The client is marked as `AdminSupabase` (see `admin-brand.ts`), so code
+ * The client is marked as `AdminSupabase` (see `types.ts`), so code
  * that relies on Row Level Security can demand an explicit user.
  */
 export function createAdminClient() {
