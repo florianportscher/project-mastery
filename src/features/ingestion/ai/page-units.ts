@@ -2,11 +2,7 @@ import "server-only";
 import { Output } from "ai";
 import { z } from "zod";
 import type { PageUnit } from "@/features/ingestion/domain/page-batches";
-import {
-  HEADING_STYLES,
-  PAGE_SKIP_REASONS,
-  UNIT_LABELS,
-} from "@/features/ingestion/types";
+import { HEADING_STYLES, UNIT_LABELS } from "@/features/ingestion/types";
 import { aiTask } from "@/lib/ai/models";
 
 const batchUnitSchema = z.object({
@@ -52,7 +48,7 @@ export const batchResultSchema = z.object({
     .array(
       z.object({
         pageNumber: z.number().int(),
-        reason: z.enum(PAGE_SKIP_REASONS),
+        reason: z.enum(["nothing_to_learn"]),
       }),
     )
     .describe(

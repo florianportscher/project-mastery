@@ -18,9 +18,6 @@ export const HEADING_STYLES = ["title", "large", "bold"] as const;
 export type PageSkip =
   "blank" | "overlay" | "unreadable" | "uncovered" | "titles";
 
-/** The reasons a page batch answer gives for a page without units. */
-export const PAGE_SKIP_REASONS = ["nothing_to_learn"] as const;
-
 export type ParseStatus =
   "not_parsed" | "queued" | "parsing" | "parsed" | "failed";
 
