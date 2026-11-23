@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { deployedCommit } from "@/lib/app-commit-env";
+import { deployedCommit } from "@/lib/deployment-env";
 
 let commit: string | undefined;
 
