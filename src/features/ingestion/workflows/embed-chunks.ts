@@ -26,10 +26,14 @@ const DEFAULT_RETRY_MS = 60_000;
  * A failed embedding call, other than a used-up daily quota: the step's
  * error, so that the Workflow runtime is the one layer that retries: after
  * the delay the provider asks for when the call can succeed later (a
- * per-minute 429, a 503), and not at all when it cannot.
+ * per-minute 429, a 503), and not at all when it cannot. AI Gateway's errors
+ * are no `APICallError`: their cause, the HTTP call's, tells.
  */
 function embedCallFailed(error: unknown): never {
-  const cause = RetryError.isInstance(error) ? error.lastError : error;
+  const lastError = RetryError.isInstance(error) ? error.lastError : error;
+  const cause = APICallError.isInstance(lastError)
+    ? lastError
+    : (lastError as { cause?: unknown } | null)?.cause;
   if (!APICallError.isInstance(cause)) throw error;
   if (!cause.isRetryable) throw new FatalError(cause.message);
   throw new RetryableError(cause.message, {
