@@ -90,7 +90,7 @@
     "zod": "^4.6.6"
   },
   "devDependencies": {
-    "@playwright/test": "^1.65.0",
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
@@ -121,7 +121,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^6",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [
