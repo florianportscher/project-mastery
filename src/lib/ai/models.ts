@@ -211,10 +211,7 @@ function routeModels(env: AiEnv) {
  *   embed({ ...aiTask("embed"), value })
  */
 export function aiTask(task: AiTask) {
-  return taskSettings(task, modelIdFor(task));
-}
-
-function taskSettings(task: AiTask, model: string) {
+  const model = modelIdFor(task);
   const env = getAiEnv();
   if (
     env.AI_PROVIDER !== "mock" &&
