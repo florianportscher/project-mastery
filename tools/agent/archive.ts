@@ -413,9 +413,6 @@ export function flagAction(
   | { action: "stale"; reason: string } {
   if (!flag.course_id) return { action: "lost" };
   if (flag.chat_id) return { action: "chat", chatId: flag.chat_id };
-  // A Chat flag whose Chat was deleted has neither build field.
-  if (flag.app_commit === null && flag.finished_at === null)
-    return { action: "lost" };
   const time = (value: string | null) =>
     value === null ? null : Date.parse(value);
   const same =
@@ -446,7 +443,7 @@ async function archiveFlag(flag: Flag, env: Env): Promise<string> {
     ? `Chat ${flag.chat_id}`
     : `build of Course ${flag.course_id ?? "(deleted)"}`;
   const snapshot = flag.course_id
-    ? await fetchSnapshot(flag.course_id, env).catch(() => null)
+    ? await fetchSnapshot(flag.course_id, env)
     : null;
   const build = snapshot?.build;
   const todo = flagAction(
@@ -456,8 +453,7 @@ async function archiveFlag(flag: Flag, env: Env): Promise<string> {
       : null,
   );
   if (todo.action === "lost") {
-    await markFlag(flag.id, "lost", env);
-    return `${label}: lost, its Course or Chat was deleted`;
+    return `${label}: lost, its Course was deleted`;
   }
   if (todo.action === "stale") {
     const root = path.join(real(casesDir(env)), "cases");
@@ -473,7 +469,14 @@ async function archiveFlag(flag: Flag, env: Env): Promise<string> {
     todo.action === "chat"
       ? await chatCase(todo.chatId, note, env)
       : await courseCase(todo.courseId, note, env);
-  await markFlag(flag.id, caseId, env);
+  try {
+    await markFlag(flag.id, caseId, env);
+  } catch (error) {
+    // The case is pushed: name it, so the flag can be set by hand.
+    throw new Error(
+      `case ${caseId} was archived but the flag was not marked (${error instanceof Error ? error.message : String(error)}); set developer_flags.case_id by hand`,
+    );
+  }
   return `${label}: case ${caseId}`;
 }
 

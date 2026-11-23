@@ -39,14 +39,18 @@ describe("flagAction", () => {
     ).toEqual({ action: "chat", chatId: "ch1" });
   });
 
-  it("reports a flag whose Course or Chat is gone as lost", () => {
+  it("reports a flag whose Course is gone as lost", () => {
     expect(flagAction({ ...mapFlag, course_id: null }, null).action).toBe(
       "lost",
     );
-    expect(
-      flagAction({ ...mapFlag, app_commit: null, finished_at: null }, null)
-        .action,
-    ).toBe("lost");
+  });
+
+  it("archives a map flag of a build with no commit or finish time while it is current", () => {
+    const flag = { ...mapFlag, app_commit: null, finished_at: null };
+    expect(flagAction(flag, { appCommit: null, finishedAt: null })).toEqual({
+      action: "map",
+      courseId: "c1",
+    });
   });
 });
 
