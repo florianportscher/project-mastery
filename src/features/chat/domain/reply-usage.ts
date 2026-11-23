@@ -1,12 +1,9 @@
 import { costUsd, type TokenUsage } from "@/lib/ai/cost";
 import type { ReplyUsage } from "@/features/chat/types";
 
-export function replyUsage(
-  modelId: string,
-  usage: TokenUsage,
-  estimated: boolean,
-): ReplyUsage {
-  return { ...usage, costUsd: costUsd(modelId, usage), estimated };
+/** A reply's usage as the provider reported it, priced for its model. */
+export function replyUsage(modelId: string, usage: TokenUsage): ReplyUsage {
+  return { ...usage, costUsd: costUsd(modelId, usage), estimated: false };
 }
 
 /** A token count in short form: "640", "12.3k", "1.2M". */

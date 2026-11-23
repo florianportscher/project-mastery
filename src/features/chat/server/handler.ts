@@ -373,13 +373,7 @@ async function streamReply({
             : part.type === "finish-step"
               ? { modelId }
               : part.type === "finish"
-                ? {
-                    usage: replyUsage(
-                      modelId,
-                      tokenUsage(part.totalUsage),
-                      false,
-                    ),
-                  }
+                ? { usage: replyUsage(modelId, tokenUsage(part.totalUsage)) }
                 : undefined,
         onError: chatReplyErrorMessage,
         // Runs before the response ends, so the client sees the recorded usage
