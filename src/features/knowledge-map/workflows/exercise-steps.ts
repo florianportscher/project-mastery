@@ -15,10 +15,12 @@ import {
 } from "@/features/knowledge-map/schemas";
 import {
   extractAttempts,
+  isCurrent,
   loadCourseLanguageName,
   loadCourseUnits,
   loadStoredUnits,
   planAttempts,
+  sourceChunkIds,
   touchBuild,
   unitKey,
   UNITS_PER_STEP,
@@ -74,35 +76,35 @@ export async function extractExercises(
     loadStoredUnits(supabase, courseId),
   ]);
   // A batch's hash covers its Exercises' question and solution chunks.
-  const current = new Set(
+  const storedOf = new Map(
     stored
       .filter((row) => storedExtractionSchema.parse(row.output).exercises)
-      .map((row) => `${row.key} ${row.contentHash}`),
+      .map((row) => [row.key, row]),
   );
   const todo = units.filter(
-    (unit) => !current.has(`${unitKey(unit)} ${unit.contentHash}`),
+    (unit) => !isCurrent(storedOf.get(unitKey(unit)), unit),
   );
   const attempts = planAttempts(todo, stored, failed, deferred);
   if (attempts.length === 0) return { ok: true, left: 0 };
 
   // A complete extraction is stored as KCs and Exercises at once; a partial
   // one waits until its unit is complete or given up.
-  const complete = new Map(
-    units.map((unit) => [unitKey(unit), unit.contentHash]),
-  );
+  const unitOf = new Map(units.map((unit) => [unitKey(unit), unit]));
   const storeComplete = () =>
-    storePendingExtractions(
-      supabase,
-      owner,
-      courseId,
-      (row) => complete.get(row.key) === row.contentHash,
-    );
+    storePendingExtractions(supabase, owner, courseId, (row) => {
+      const unit = unitOf.get(row.key);
+      return unit !== undefined && isCurrent(row, unit);
+    });
   const language = await loadCourseLanguageName(supabase, courseId);
   let done = 0;
   const failedKeys: string[] = [];
   for (const attempt of attempts.slice(0, UNITS_PER_STEP)) {
     if (!callFits(startedAt, BUILD_CALL_TIMEOUT_MS)) break;
-    const known = await loadKnownKcs(supabase, courseId);
+    const known = await loadKnownKcs(
+      supabase,
+      courseId,
+      sourceChunkIds(attempt.unit),
+    );
     const outcome = await extractAttempts(
       supabase,
       { owner, courseId },

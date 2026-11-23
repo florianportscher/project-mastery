@@ -40,6 +40,7 @@ const unit = (key: string, chunkIds: string[], title = key): DevUnit => ({
   title,
   chunkIds,
   extraction: null,
+  promptCurrent: false,
 });
 
 const built = (checkReport: unknown): Snapshot["build"] => ({

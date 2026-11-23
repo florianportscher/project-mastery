@@ -25,7 +25,8 @@ import type { AdminSupabase } from "@/lib/supabase/types";
 
 /**
  * The consolidation of a build: the KCs of stored unit extractions become
- * stored KCs, without a model call. Each new KC gets its vector, and one
+ * stored KCs, without a model call. A unit's KCs replace those it gave
+ * before (`clear_unit_sources`). Each new KC gets its vector, and one
  * within REVIVE_SIMILARITY of a retired KC revives it. A repeat adds its
  * chunks to the sources of the KC it names. What a new KC uses from outside
  * the Course becomes text on it (`kcs.assumes`). An exercise unit's
@@ -101,6 +102,17 @@ export async function storePendingExtractions(
   if (!(await embedMissing(supabase, { owner, courseId }, batch))) {
     return "limit";
   }
+  // A unit's new extraction replaces the KCs it gave before: their sources
+  // on its chunks go, and those left without one retire, to be revived
+  // below when a new KC matches.
+  const cleared = await supabase.rpc("clear_unit_sources", {
+    p_course_id: courseId,
+    p_chunk_ids: pending
+      .slice(0, UNITS_PER_STEP)
+      .flatMap((row) => row.chunkIds),
+  });
+  if (cleared.error) failed("Clearing the units' sources", cleared.error);
+  if (!cleared.data) return "stopped";
   const fresh: FreshKc[] = batch.flatMap((part, p) =>
     part.extraction.kcs.map((kc, k) => ({
       key: `${p}:${k}`,

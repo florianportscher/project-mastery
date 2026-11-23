@@ -45,5 +45,6 @@ export {
   teachingBatches,
   UNIT_CHARS,
 } from "./domain/teaching-batches";
+export { extractionDigest } from "./workflows/build-steps";
 export { exerciseBatches } from "./domain/exercise-groups";
 export { MIN_UNIT_COVERAGE } from "./domain/unit-coverage";

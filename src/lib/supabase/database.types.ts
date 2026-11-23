@@ -2006,6 +2006,7 @@ export type Database = {
           material_id: string;
           output: NonNullable<Json>;
           owner: string;
+          prompt_digest: string | null;
         };
         ComputedFields: never;
         Insert: {
@@ -2020,6 +2021,7 @@ export type Database = {
           material_id: string;
           output: NonNullable<Json>;
           owner: string;
+          prompt_digest?: string | null;
         };
         Update: {
           assumes_matched?: boolean;
@@ -2033,6 +2035,7 @@ export type Database = {
           material_id?: string;
           output?: NonNullable<Json>;
           owner?: string;
+          prompt_digest?: string | null;
         };
         Relationships: [
           {
@@ -2088,6 +2091,10 @@ export type Database = {
           p_topic_tree_hash: string;
           p_topics: Json;
         };
+        Returns: boolean;
+      };
+      clear_unit_sources: {
+        Args: { p_chunk_ids: string[]; p_course_id: string };
         Returns: boolean;
       };
       course_build_snapshot: { Args: { p_course_id: string }; Returns: Json };

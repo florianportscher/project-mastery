@@ -88,6 +88,20 @@ export async function loadMapInput(
   };
 }
 
+/** The map without the KCs whose sources all lie on `chunkIds`. */
+export function withoutOwnKcs(
+  map: MapInput,
+  chunkIds: readonly string[],
+): MapInput {
+  const own = new Set(chunkIds);
+  return {
+    ...map,
+    kcs: map.kcs.filter(
+      (kc) => kc.sources.length === 0 || !kc.sources.every((id) => own.has(id)),
+    ),
+  };
+}
+
 /**
  * Each live KC's place in Course order: its first source's chunk index. A KC
  * whose origin is `exercise` goes right after the earliest KC, other than

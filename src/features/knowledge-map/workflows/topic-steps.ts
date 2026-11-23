@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import {
   topicTreeMessages,
+  topicTreeDigest,
   topicTreeSchema,
   topicTreeSettings,
   type OfferedCourse,
@@ -50,9 +51,9 @@ export type TreeOutcome =
 
 /**
  * What the tree call gets, with short ids for the KCs (`k1…`) and the
- * stored Topics (`t1…`), and the hash of the KCs' ids and names and the
- * language, which leaves out the stored tree so a build after a call makes
- * none.
+ * stored Topics (`t1…`), and the hash of the KCs' ids and names, the
+ * language and the tree prompt's digest, which leaves out the stored tree
+ * so a build after a call makes none.
  */
 function offeredCourse(
   kcs: ReturnType<typeof kcsInCourseOrder>,
@@ -62,7 +63,11 @@ function offeredCourse(
   const kcIds = new Map(kcs.map((kc, index) => [kc.id, `k${index + 1}`]));
   const hash = createHash("sha256")
     .update(
-      JSON.stringify({ language, kcs: kcs.map((kc) => [kc.id, kc.name]) }),
+      JSON.stringify({
+        prompt: topicTreeDigest(),
+        language,
+        kcs: kcs.map((kc) => [kc.id, kc.name]),
+      }),
     )
     .digest("hex");
   const topicIds = new Map(

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { KC_DEFINITION } from "@/features/knowledge-map/ai/kc-definition";
 import { offeredId } from "@/features/knowledge-map/ai/offered-id";
 import { aiTask } from "@/lib/ai/models";
+import { promptDigest } from "@/lib/ai/prompt-digest";
 
 export type OfferedExerciseUnit = {
   material: string;
@@ -92,6 +93,9 @@ ${KC_DEFINITION}
 - Copy each final result that the statement or the solution prints, as printed: a result the statement gives for checking, such as "Result: 12 solutions", or the result the printed solution arrives at, such as "so $\\dim W = 3$". Write it as a mathjs expression: a number with its unit ("12 kg*m/s^2"), a vector ("[2, -3]"), a matrix by rows ("[[1, 2], [0, 1]]"), a complex number ("3 + 4i") or an expression in the statement's symbols ("n + 1"). Mark a list whose order does not matter, such as a set of eigenvalues, as any order. Copy only a result every correct solution states identically: leave out one that depends on a choice the Student makes, such as a representative, an order, a parametrisation, an example or a counterexample. A statement the task asks to show is no result. A value of a parameter that the task asks for, such as the one for which no solution exists, is one. Give none for a result that is not mathematical, such as a proof or a sentence, and none when neither prints one: do not solve anything yourself.
 - Mark an exercise that asks nothing of the Student, such as a heading or an instruction for the whole sheet, as not an exercise.
 - Write every name and description in the course language. Formulas in LaTeX ($...$).`;
+
+export const exerciseExtractionDigest = () =>
+  promptDigest(EXERCISE_INSTRUCTIONS, exerciseExtractionSchema());
 
 /**
  * Call settings for the extraction of one exercise unit (task `exercise`),

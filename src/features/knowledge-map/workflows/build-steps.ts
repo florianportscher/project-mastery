@@ -9,6 +9,8 @@ import {
   type BatchExercise,
 } from "@/features/knowledge-map/workflows/exercise-batches";
 import type { UnitExtraction } from "@/features/knowledge-map/domain/chapter-extraction";
+import { chapterExtractionDigest } from "@/features/knowledge-map/ai/chapter-extraction";
+import { exerciseExtractionDigest } from "@/features/knowledge-map/ai/exercise-extraction";
 import { loadCourseLanguage as loadLanguage } from "@/features/ingestion/server";
 import {
   storedExtractionSchema,
@@ -120,6 +122,8 @@ export type CourseUnit = {
   /** Where it is, for the check report: "Material p. 3–7". */
   title: string;
   contentHash: string;
+  /** The digest of its call's prompt (`promptDigest`). */
+  promptDigest: string;
   materialName: string;
   /**
    * What its calls read: a teaching batch's chunks; an exercise batch's
@@ -179,6 +183,7 @@ export async function loadCourseUnits(
           rows.map((row) => ({ pageFrom: row.page_from, pageTo: row.page_to })),
         ),
         contentHash: unitHash(rows.map((row) => row.markdown)),
+        promptDigest: chapterExtractionDigest(),
         materialName: material.name,
         chunks: rows.map((row) => ({
           id: row.id,
@@ -188,6 +193,13 @@ export async function loadCourseUnits(
       };
     });
   });
+}
+
+/** The prompt digest of a unit kind's extraction call. */
+export function extractionDigest(kind: CourseUnit["kind"]): string {
+  return kind === "content"
+    ? chapterExtractionDigest()
+    : exerciseExtractionDigest();
 }
 
 export const unitKey = (unit: {
@@ -200,6 +212,8 @@ export type StoredUnit = {
   id: string;
   key: string;
   contentHash: string;
+  /** Null for an extraction stored before prompts were keyed (#375). */
+  promptDigest: string | null;
   output: unknown;
   kcIds: string[] | null;
   assumesMatched: boolean;
@@ -213,7 +227,7 @@ export async function loadStoredUnits(
     supabase
       .from("unit_extractions")
       .select(
-        "id, material_id, kind, batch, content_hash, output, kc_ids, assumes_matched",
+        "id, material_id, kind, batch, content_hash, prompt_digest, output, kc_ids, assumes_matched",
       )
       .eq("course_id", courseId)
       .order("id")
@@ -227,10 +241,28 @@ export async function loadStoredUnits(
       batch: row.batch,
     }),
     contentHash: row.content_hash,
+    promptDigest: row.prompt_digest,
     output: row.output,
     kcIds: row.kc_ids,
     assumesMatched: row.assumes_matched,
   }));
+}
+
+/**
+ * Whether a stored extraction answers this unit as it is now: the same
+ * content (or with `partial`, its pieces so far) and the same prompt.
+ */
+export function isCurrent(
+  row: StoredUnit | undefined,
+  unit: CourseUnit,
+  partial = false,
+): boolean {
+  return (
+    row !== undefined &&
+    row.contentHash ===
+      (partial ? partialHash(unit.contentHash) : unit.contentHash) &&
+    row.promptDigest === unit.promptDigest
+  );
 }
 
 /**
@@ -256,6 +288,7 @@ async function storeExtraction(
       owner,
       course_id: courseId,
       content_hash: partial ? partialHash(unit.contentHash) : unit.contentHash,
+      prompt_digest: unit.promptDigest,
       output,
       kc_ids: null,
       assumes_matched: false,
@@ -288,10 +321,9 @@ export function planAttempts(
       const failures = failed.filter((k) => k === key).length;
       const sizes = unit.chunks.map((chunk) => chunk.markdown.length);
       const row = storedOf.get(key);
-      const partial =
-        row && row.contentHash === partialHash(unit.contentHash)
-          ? storedExtractionSchema.parse(row.output)
-          : null;
+      const partial = isCurrent(row, unit, true)
+        ? storedExtractionSchema.parse(row!.output)
+        : null;
       const kept =
         partial && row?.kcIds && !partial.exercises
           ? asRepeats(partial, row.kcIds)
@@ -436,22 +468,32 @@ export async function extractAttempts(
 }
 
 /**
+ * The chunks a unit's KCs are sourced on: a teaching batch's chunks, an
+ * exercise batch's question chunks.
+ */
+export function sourceChunkIds(unit: CourseUnit): string[] {
+  return unit.exercises
+    ? unit.exercises.flatMap((exercise) => exercise.questionChunkIds)
+    : unit.chunks.map((chunk) => chunk.id);
+}
+
+/**
  * The Course's stored extractions of current units, in Course order:
- * teaching units first, then exercise units. Extractions of units that no
- * longer exist are deleted.
+ * teaching units first, then exercise units, each with its unit's source
+ * chunks (`sourceChunkIds`). Extractions of units that no longer exist are
+ * deleted.
  */
 export async function loadCurrentExtractions(
   supabase: AdminSupabase,
   courseId: string,
-): Promise<StoredUnit[]> {
+): Promise<Array<StoredUnit & { chunkIds: string[] }>> {
   const [content, exercise, stored] = await Promise.all([
     loadCourseUnits(supabase, courseId, "content"),
     loadCourseUnits(supabase, courseId, "exercise"),
     loadStoredUnits(supabase, courseId),
   ]);
-  const order = new Map(
-    [...content, ...exercise].map((unit, index) => [unitKey(unit), index]),
-  );
+  const units = [...content, ...exercise];
+  const order = new Map(units.map((unit, index) => [unitKey(unit), index]));
   const gone = stored.filter((row) => !order.has(row.key));
   if (gone.length > 0) {
     const { error } = await supabase
@@ -465,7 +507,11 @@ export async function loadCurrentExtractions(
   }
   return stored
     .filter((row) => order.has(row.key))
-    .toSorted((a, b) => order.get(a.key)! - order.get(b.key)!);
+    .toSorted((a, b) => order.get(a.key)! - order.get(b.key)!)
+    .map((row) => ({
+      ...row,
+      chunkIds: sourceChunkIds(units[order.get(row.key)!]!),
+    }));
 }
 
 /**

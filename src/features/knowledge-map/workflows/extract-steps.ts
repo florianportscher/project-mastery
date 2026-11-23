@@ -17,10 +17,12 @@ import {
 } from "@/features/knowledge-map/domain/unit-coverage";
 import {
   extractAttempts,
+  isCurrent,
   loadCourseLanguageName,
   loadCourseUnits,
   loadStoredUnits,
   planAttempts,
+  sourceChunkIds,
   touchBuild,
   unitKey,
   UNITS_PER_STEP,
@@ -35,6 +37,7 @@ import { storePendingExtractions } from "@/features/knowledge-map/workflows/cons
 import {
   kcsInCourseOrder,
   loadMapInput,
+  withoutOwnKcs,
 } from "@/features/knowledge-map/workflows/map-input";
 import {
   dailyLimitReason,
@@ -83,26 +86,22 @@ export async function extractTeachingBatches(
   if (!owner) return { ok: true, left: null };
 
   const units = await loadCourseUnits(supabase, courseId, "content");
-  const complete = new Map(
-    units.map((unit) => [unitKey(unit), unit.contentHash]),
-  );
+  const unitOf = new Map(units.map((unit) => [unitKey(unit), unit]));
   // A complete extraction is stored as KCs at once; a partial one waits
   // until its unit is complete or given up (`consolidateKcs`).
   const storeComplete = () =>
-    storePendingExtractions(
-      supabase,
-      owner,
-      courseId,
-      (row) => complete.get(row.key) === row.contentHash,
-    );
+    storePendingExtractions(supabase, owner, courseId, (row) => {
+      const unit = unitOf.get(row.key);
+      return unit !== undefined && isCurrent(row, unit);
+    });
   const before = await storeComplete();
   if (before === "limit") return { ok: false, reason: dailyLimitReason };
   if (before === "stopped") return { ok: true, left: null };
 
   const stored = await loadStoredUnits(supabase, courseId);
-  const hashOf = new Map(stored.map((row) => [row.key, row.contentHash]));
+  const storedOf = new Map(stored.map((row) => [row.key, row]));
   const todo = units.filter(
-    (unit) => hashOf.get(unitKey(unit)) !== unit.contentHash,
+    (unit) => !isCurrent(storedOf.get(unitKey(unit)), unit),
   );
   const attempts = planAttempts(todo, stored, failed, deferred);
   if (attempts.length === 0) return { ok: true, left: 0 };
@@ -112,7 +111,11 @@ export async function extractTeachingBatches(
   const failedKeys: string[] = [];
   for (const attempt of attempts.slice(0, UNITS_PER_STEP)) {
     if (!callFits(startedAt, BUILD_CALL_TIMEOUT_MS)) break;
-    const known = await loadKnownKcs(supabase, courseId);
+    const known = await loadKnownKcs(
+      supabase,
+      courseId,
+      sourceChunkIds(attempt.unit),
+    );
     const outcome = await extractAttempts(
       supabase,
       { owner, courseId },
@@ -149,11 +152,19 @@ export async function extractTeachingBatches(
   return { ok: true, left: attempts.length - done, failed: failedKeys };
 }
 
+/**
+ * The live KCs a unit's call is offered, in Course order: not those sourced
+ * only on the unit's own chunks (`ownChunkIds`), so that a unit extracted
+ * again names its KCs anew instead of repeating the ones it gave before.
+ */
 export async function loadKnownKcs(
   supabase: AdminSupabase,
   courseId: string,
+  ownChunkIds: readonly string[],
 ): Promise<{ offered: KnownKc[]; storedId: Map<string, string> }> {
-  const kcs = kcsInCourseOrder(await loadMapInput(supabase, courseId));
+  const kcs = kcsInCourseOrder(
+    withoutOwnKcs(await loadMapInput(supabase, courseId), ownChunkIds),
+  );
   const offered = kcs.map((kc, index) => ({
     id: `k${index + 1}`,
     heading: kc.heading,

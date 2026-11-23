@@ -37,7 +37,13 @@ const snapshot: Snapshot = {
     },
   ],
   extractions: [
-    { materialId: "m1", kind: "content", batch: 0, kcIds: ["kc1"] },
+    {
+      materialId: "m1",
+      kind: "content",
+      batch: 0,
+      promptDigest: "0123456789abcdef",
+      kcIds: ["kc1"],
+    },
   ],
   kcs: [
     {
@@ -90,7 +96,7 @@ describe("agent inspect", () => {
 
   it("prints a unit with its KCs", () => {
     expect(formatSection("units", snapshot, null)).toContain(
-      "m1/content/0 Notes content 0: Limit",
+      "m1/content/0 Notes content 0 prompt 01234567: Limit",
     );
   });
 

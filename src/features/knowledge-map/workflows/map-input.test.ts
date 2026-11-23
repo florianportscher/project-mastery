@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { firstSourcePlaces, type MapInput } from "./map-input";
+import { firstSourcePlaces, withoutOwnKcs, type MapInput } from "./map-input";
 
 const chunk = (id: string) => ({
   id,
@@ -69,5 +69,22 @@ describe("firstSourcePlaces", () => {
       ),
     );
     expect(places.get("x")).toBe(0.5);
+  });
+});
+
+describe("withoutOwnKcs", () => {
+  it("hides a KC sourced only on the unit's chunks and keeps one sourced elsewhere", () => {
+    const kcs = withoutOwnKcs(
+      map(
+        [
+          kc("own", "teaching", ["c1", "c2"]),
+          kc("shared", "teaching", ["c0", "c1"]),
+          kc("other", "teaching", ["c3"]),
+        ],
+        [],
+      ),
+      ["c1", "c2"],
+    ).kcs.map((k) => k.id);
+    expect(kcs).toEqual(["shared", "other"]);
   });
 });
