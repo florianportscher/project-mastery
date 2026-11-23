@@ -19,7 +19,7 @@ import { overlayPages } from "@/features/ingestion/domain/pages";
 import type { PageSkip } from "@/features/ingestion/types";
 import {
   openMaterialPdf,
-  type OpenedPdf,
+  pageSource,
 } from "@/features/ingestion/workflows/page-images";
 import {
   dailyLimitReason,
@@ -30,7 +30,6 @@ import { callFits } from "@/lib/ai/call-timeout";
 import { getAiEnv } from "@/lib/ai/env";
 import { paceCall } from "@/lib/ai/pacing";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { MATERIALS_BUCKET } from "@/lib/supabase/buckets";
 import { failed } from "@/lib/supabase/failed";
 import type { AdminSupabase } from "@/lib/supabase/types";
 
@@ -40,8 +39,6 @@ import type { AdminSupabase } from "@/lib/supabase/types";
  * the Material and its owner itself. Each step starts with `loadMaterial`,
  * which sets the Material's heartbeat, and does nothing when it is gone.
  */
-
-const BUCKET = MATERIALS_BUCKET;
 
 /** Postgres error code of a row that points at a deleted parent. */
 const FOREIGN_KEY_VIOLATION = "23503";
@@ -103,12 +100,6 @@ export async function hasChunks(
     .limit(1);
   if (error) failed("Loading the chunks", error);
   return data.length > 0;
-}
-
-async function download(supabase: AdminSupabase, path: string) {
-  const { data, error } = await supabase.storage.from(BUCKET).download(path);
-  if (error) failed(`Reading ${path}`, error);
-  return new Uint8Array(await data.arrayBuffer());
 }
 
 async function storedPageNumbers(
@@ -213,35 +204,6 @@ export async function preparePages(
 
 /** A page call that failed for good, after the AI SDK's retries. */
 class PageCallFailed extends Error {}
-
-type PageSource = {
-  image(pageNumber: number): Promise<{
-    bytes: Uint8Array;
-    mediaType: string;
-  } | null>;
-  text(pageNumber: number): Promise<string | null>;
-};
-
-async function pageSource(
-  supabase: AdminSupabase,
-  material: ParseMaterialRow,
-): Promise<PageSource> {
-  if (material.media_type !== "application/pdf") {
-    const bytes = await download(supabase, material.storage_path);
-    return {
-      image: async () => ({ bytes, mediaType: material.media_type }),
-      text: async () => null,
-    };
-  }
-  const pdf: OpenedPdf = await openMaterialPdf(supabase, material.storage_path);
-  return {
-    async image(pageNumber) {
-      const page = await pdf.renderPage(pageNumber);
-      return page.blank ? null : { bytes: page.jpeg, mediaType: "image/jpeg" };
-    },
-    text: (pageNumber) => pdf.pageText(pageNumber),
-  };
-}
 
 /**
  * Reads up to PAGES_PER_STEP of the Material's pages, opening the PDF once.
