@@ -5,7 +5,12 @@ import { MockResultView } from "./mock-result";
 test("a mock with no task graded says it has no score", () => {
   render(
     <MockResultView
-      result={{ predictedPercent: 60, scorePercent: null, sure: null } as never}
+      result={{
+        predictedPercent: 60,
+        scorePercent: null,
+        topics: [],
+        sure: null,
+      }}
       tasks={[]}
       tutorHref="/tutor"
     />,
