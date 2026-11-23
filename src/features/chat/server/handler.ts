@@ -360,7 +360,6 @@ async function streamReply({
         // content is tried once more.
         stream: retryRateLimited(
           async () => (await startReply()).stream,
-          undefined,
           () => announceBusy(),
         ),
         originalMessages: messages,
