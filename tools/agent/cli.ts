@@ -104,6 +104,9 @@ Staging (real data; reads, and REST writes for testing; from .env.local, ADR 002
                          cases repo and push it (also \`pnpm archive\`; docs/agents/cases.md)
   archive chat <chatId> [--note "…"]
                          keep a Chat, its Course's build and its model calls the same way
+  archive flagged        archive every Chat and map build the developer sent with
+                         "Send to developer" and set the flag's case id; a build flag
+                         is skipped when the Course was rebuilt since
   inspect <courseId> [materials|chunks|units|kcs|exercises|topics|build|calls]
                          a Course's stored map build and its model calls as text, suspect
                          spots first; the first stop when diagnosing a map
