@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.1.6](https://github.com/florianportscher/project-mastery/compare/project-mastery-v0.1.5...project-mastery-v0.1.6) (2026-11-23)
+
+
+### Features
+
+* an on-demand garden routine that simplifies, breaks and proves ([#392](https://github.com/florianportscher/project-mastery/issues/392)) ([e34cdc2](https://github.com/florianportscher/project-mastery/commit/e34cdc2e54f958e9ba3eff1220288910fe1f5523))
+* case archive with run labels ([#402](https://github.com/florianportscher/project-mastery/issues/402)) ([58c2689](https://github.com/florianportscher/project-mastery/commit/58c268920591932afe10f9ce871bd8ae18f1ae45))
+* commands list with completeness test, staging-reset-map ([#366](https://github.com/florianportscher/project-mastery/issues/366)) ([5496d50](https://github.com/florianportscher/project-mastery/commit/5496d505a8d8c97c6c16025b9ac903df5860ac74))
+* developer view of a Course's map build, for the maintainer and agents ([#340](https://github.com/florianportscher/project-mastery/issues/340)) ([5a0a552](https://github.com/florianportscher/project-mastery/commit/5a0a552ab4b04b6e4145728de635b8aa4b560ee2))
+* dictate messages in the Chat and the Brief ([#338](https://github.com/florianportscher/project-mastery/issues/338)) ([7b14f7b](https://github.com/florianportscher/project-mastery/commit/7b14f7bbf523a85f35b1fbdf9af755c8cb99988b))
+* Exercises as whole tasks (Exercise groups) ([#361](https://github.com/florianportscher/project-mastery/issues/361)) ([345083d](https://github.com/florianportscher/project-mastery/commit/345083d6778621552ae5f9f04de67560b289cc67))
+* make knowledge map building ui feedback more verbose ([#386](https://github.com/florianportscher/project-mastery/issues/386)) ([b6e338b](https://github.com/florianportscher/project-mastery/commit/b6e338bc6d1f6182f8f1a92a7a2041dfbcba20d7))
+* send a Chat or map build to the developer ([#406](https://github.com/florianportscher/project-mastery/issues/406)) ([caef3d0](https://github.com/florianportscher/project-mastery/commit/caef3d09b904be620ef635a8b76ba0b6e5d458c1))
+* Topic tree from KCs, parse without Outline ([#365](https://github.com/florianportscher/project-mastery/issues/365)) ([b1ce9d9](https://github.com/florianportscher/project-mastery/commit/b1ce9d9acc68570856d20fbd6fec11f4e9a49b62))
+
+
+### Bug Fixes
+
+* **brief:** ship the Brief prompt fixes left over from [#279](https://github.com/florianportscher/project-mastery/issues/279) ([#354](https://github.com/florianportscher/project-mastery/issues/354)) ([aeb307d](https://github.com/florianportscher/project-mastery/commit/aeb307d97427f7980d807547b934db7eea29757d))
+* fault states of the tutor reply and the session close ([#404](https://github.com/florianportscher/project-mastery/issues/404)) ([90d6684](https://github.com/florianportscher/project-mastery/commit/90d6684a3422b5449cfbb82b9eee73663e432b81))
+* KCs sized to what a Student masters, Exercise KCs with their subject ([#373](https://github.com/florianportscher/project-mastery/issues/373)) ([b9ce4aa](https://github.com/florianportscher/project-mastery/commit/b9ce4aa5b61e22584860e4c6a4f00e6588fbba52))
+* keep an upload row until its material is listed ([#339](https://github.com/florianportscher/project-mastery/issues/339)) ([bc53266](https://github.com/florianportscher/project-mastery/commit/bc53266e5f56ff3504a9b8c11c98570f8da49d98))
+* reuse a stored model answer only under the prompt it came from ([#387](https://github.com/florianportscher/project-mastery/issues/387)) ([2bb8685](https://github.com/florianportscher/project-mastery/commit/2bb8685b15f4b4da8b420178e10716f73b00602d))
+
 ## [0.1.5](https://github.com/florianportscher/project-mastery/compare/project-mastery-v0.1.4...project-mastery-v0.1.5) (2026-11-19)
 
 
