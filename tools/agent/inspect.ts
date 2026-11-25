@@ -10,7 +10,7 @@ import { queryStagingSql } from "./staging";
 
 type Env = Record<string, string | undefined>;
 
-const SECTIONS = [
+export const SECTIONS = [
   "materials",
   "chunks",
   "units",

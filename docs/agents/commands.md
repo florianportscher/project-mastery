@@ -60,6 +60,8 @@ In an agent worktree the local database is shared: see [worktrees.md](worktrees.
 | `pnpm archive course <courseId> [--note "…"]`                      | Keep a Course's current map build as a case in the private cases repo ([cases.md](cases.md))                                |
 | `pnpm archive chat <chatId> [--note "…"]`                          | Keep a Chat, its Course's build snapshot and its model calls as a case                                                      |
 | `pnpm archive flagged`                                             | Archive every Chat and map build sent with "Send to developer", notes in the manifests; `/sitting` runs it first            |
+| `pnpm -s case list` · `show <caseId>` · `call <caseId> <callId>`   | Read archived cases: a Chat's transcript with its call ids, a map build as `inspect` shows it, one call's prompt and answer |
+| `pnpm -s case cite <caseId> <issue>…`                              | Record the observation issues a case shows in its manifest                                                                  |
 | `pnpm -s agent inspect <courseId>`                                 | A Course's stored map build and its model calls as text: the first stop for a wrong map                                     |
 | `pnpm -s agent walk <dir>` · `walk diff <a> <b>`                   | Seed data, snapshot every page as `student` (main pages as `classmate`); `diff` prints `same: N pages` or each changed page |
 
@@ -67,14 +69,15 @@ In an agent worktree the local database is shared: see [worktrees.md](worktrees.
 
 These call real models and cost money; read [live-ai.md](live-ai.md) first.
 
-| Command                 | What it does                                                     |
-| ----------------------- | ---------------------------------------------------------------- |
-| `pnpm smoke <name>`     | Runs one feature path once on a real model and checks it         |
-| `pnpm gold <command>`   | Pulls, seeds or lists the gold Course snapshots in `evals/gold/` |
-| `pnpm tutor-eval <cmd>` | Runs a tutoring scenario from `evals/tutor/scenarios/`           |
-| `pnpm brief-eval <cmd>` | Runs a Brief scenario from `evals/brief/scenarios/`              |
-| `pnpm metrics`          | Scores Chats in Langfuse                                         |
-| `pnpm langfuse:models`  | Pushes the model prices in `src/lib/ai/prices.ts` to Langfuse    |
+| Command                          | What it does                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------ |
+| `pnpm smoke <name>`              | Runs one feature path once on a real model and checks it                             |
+| `pnpm gold <command>`            | Pulls, seeds or lists the gold Course snapshots in `evals/gold/`                     |
+| `pnpm replay <caseId> <callId>…` | Sends archived calls of a case again with the current prompts ([cases.md](cases.md)) |
+| `pnpm tutor-eval <cmd>`          | Runs a tutoring scenario from `evals/tutor/scenarios/`                               |
+| `pnpm brief-eval <cmd>`          | Runs a Brief scenario from `evals/brief/scenarios/`                                  |
+| `pnpm metrics`                   | Scores Chats in Langfuse                                                             |
+| `pnpm langfuse:models`           | Pushes the model prices in `src/lib/ai/prices.ts` to Langfuse                        |
 
 ## Slash skills
 
@@ -84,6 +87,7 @@ Started in a Claude Code session. They live in `.claude/skills/`.
 | --------------------- | -------------------------------------------------------------------------------------------- |
 | `/sitting`            | Goes through the PRs and the inbox with you and lines up the next shift                      |
 | `/to-spec`            | Turns a grilling session's decisions into a one-page spec issue                              |
+| `/analyze`            | Turns archived cases into observation issues, without fixes                                  |
 | `/build`              | Builds queued issues end to end, one worktree each, and opens PRs                            |
 | `/garden`             | Simplifies the most changed areas structure first, hunts their bugs on mock AI, opens one PR |
 | `/grilling`           | Stress-tests a plan or decision by questioning you                                           |

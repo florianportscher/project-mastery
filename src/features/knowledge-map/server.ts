@@ -48,3 +48,5 @@ export {
 export { extractionDigest } from "./workflows/course-units";
 export { exerciseBatches } from "./domain/exercise-groups";
 export { MIN_UNIT_COVERAGE } from "./domain/unit-coverage";
+// `pnpm replay` rebuilds archived build calls with the current prompts.
+export { MAP_CALL_REPLAYS } from "./ai/replay";

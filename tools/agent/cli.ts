@@ -11,6 +11,7 @@ import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { archive, archiveCourse } from "./archive";
+import { caseCommand } from "./case";
 import { browser, react, settle, SHOT_DIR, snapshot } from "./browser";
 import {
   AgentError,
@@ -107,6 +108,16 @@ Staging (real data; reads, and REST writes for testing; from .env.local, ADR 002
   archive flagged        archive every Chat and map build the developer sent with
                          "Send to developer" and set the flag's case id; a build flag
                          is skipped when the Course was rebuilt since
+  case list              the archived cases, with their notes and observations
+                         (also \`pnpm case\`; reads the cases repo only)
+  case show <caseId> [section|calls]
+                         a case as text: a Chat's transcript with each reply's call ids,
+                         or a map build as inspect shows it
+  case call <caseId> <callId>
+                         one archived model call's prompt and answer
+  case cite <caseId> <issue>…
+                         record the observation issues a case shows in its manifest
+                         and push the cases repo
   inspect <courseId> [materials|chunks|units|kcs|exercises|topics|build|calls]
                          a Course's stored map build and its model calls as text, suspect
                          spots first; the first stop when diagnosing a map
@@ -348,6 +359,8 @@ async function run(
     }
     case "archive":
       return archive(args);
+    case "case":
+      return caseCommand(args);
     case "inspect":
       return inspect(args);
     case "walk": {

@@ -35,7 +35,8 @@ export type Manifest = {
   models: string[];
   cost: number;
   calls: { archived: number; missing: number };
-  observations: string[];
+  /** The observation issues that cite the case (`pnpm case cite`). */
+  observations: number[];
   /** A Chat's case: the Chat, and whether the map was rebuilt after its first message. */
   chat?: { id: string; mapRebuiltAfterFirstMessage: boolean };
 };
