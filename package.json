@@ -35,6 +35,8 @@
     "db:test": "supabase test db",
     "agent": "tsx --env-file-if-exists=.env.local tools/agent/cli.ts",
     "archive": "tsx --env-file-if-exists=.env.local tools/agent/cli.ts archive",
+    "case": "tsx --env-file-if-exists=.env.local tools/agent/cli.ts case",
+    "replay": "tsx --conditions=react-server --env-file-if-exists=.env.local evals/replay.ts",
     "gold": "tsx --conditions=react-server --env-file-if-exists=.env.local evals/smoke/gold-cli.ts",
     "smoke": "tsx --conditions=react-server --env-file-if-exists=.env.local evals/smoke.ts",
     "brief-eval": "tsx --conditions=react-server --env-file-if-exists=.env.local evals/smoke/brief-eval.ts",
