@@ -187,7 +187,7 @@ export function archivedAnswer(output: unknown): Answer {
 }
 
 /** The length of each top-level list in a JSON answer, such as `kcs`. */
-export function listCounts(json: unknown): Record<string, number> {
+function listCounts(json: unknown): Record<string, number> {
   if (!json || typeof json !== "object" || Array.isArray(json)) return {};
   return Object.fromEntries(
     Object.entries(json)

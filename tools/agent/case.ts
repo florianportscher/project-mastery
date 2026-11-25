@@ -57,7 +57,7 @@ const clip = (text: string, max: number) =>
   text.length > max ? `${text.slice(0, max)}… (${text.length} chars)` : text;
 
 /** The manifest's labels in a few lines. */
-export function headerLines(m: Manifest): string[] {
+function headerLines(m: Manifest): string[] {
   const materials = m.shape.materials;
   const pages = materials.reduce((sum, x) => sum + (x.pages ?? 0), 0);
   const languages = [
@@ -195,7 +195,7 @@ function partText(part: GenAiPart): string {
 }
 
 /** One archived call: its labels, prompt (system prompt by length only) and answer. */
-export function callDetail(c: ArchivedCall): string[] {
+function callDetail(c: ArchivedCall): string[] {
   const input = asJson(c.input);
   const messages = (
     Array.isArray(input)
@@ -290,8 +290,12 @@ export function citedObservations(
 /** Records observation issues in a case's manifest and pushes the cases repo. */
 function cite(caseId: string, issues: string[], env: Env): string {
   const file = path.join(casesRoot(env), caseId, "manifest.json");
-  if (!existsSync(file)) throw new AgentError(`No case ${caseId}.`);
-  const manifest = JSON.parse(readFileSync(file, "utf8")) as Manifest;
+  let manifest: Manifest;
+  try {
+    manifest = JSON.parse(readFileSync(file, "utf8")) as Manifest;
+  } catch {
+    throw new AgentError(`No case ${caseId}.`);
+  }
   const observations = citedObservations(manifest.observations, issues);
   if (observations.length === manifest.observations.length)
     return `${caseId} already cites ${observations.map((o) => `#${o}`).join(" ")}.`;
