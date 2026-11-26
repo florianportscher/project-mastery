@@ -72,7 +72,7 @@ Grade B. Gaming went with poorer learning in the Cognitive Tutor ([Baker 2004][b
 Grade B. Knowledge tracing updates this estimate after each step (AM-9; [Corbett 2001][corbett2001]); mastery learning in general raises course results at a cost in time (AM-8). Logistic models over practice counts (performance factors analysis) are a common alternative that handles several skills per step ([Pavlik 2009][pavlik2009]). Boundary: a threshold near 95% is the usual Cognitive Tutor setting (from memory).
 
 **ITS-17. For mastery decisions, which data are used and where the threshold is set matter more than which learner model computes the estimate; model parameters can be unidentifiable from data.**
-Grade B. With simulated and real data, the choice of data sources and the threshold mattered more than the modelling technique, and a simple moving average worked well ([Pelánek 2017][pelanek2017]). Deep models predict little better than well-specified simple ones (AM-10). Different BKT parameters can fit the same data equally well ([Beck 2007][beck2007]), and estimating guess and slip from context improves the model ([Baker 2008][baker2008]). Boundary: well-specified single KCs.
+Grade B. With simulated and real data, the choice of data sources and the threshold mattered more than the modelling technique, and a simple moving average worked well ([Pelánek 2017][pelanek2017]). Deep models predict little better than well-specified simple ones (AM-10; this report did not read the deep knowledge tracing papers). Item response theory estimates a fixed ability per student and suits tests more than practice that changes what the student knows, which knowledge tracing models (from memory). Different BKT parameters can fit the same data equally well ([Beck 2007][beck2007]), and estimating guess and slip from context improves the model ([Baker 2008][baker2008]). Boundary: well-specified single KCs.
 
 **ITS-18. Some learners fail to master a KC within about ten practice opportunities and rarely master it later (wheel-spinning); more of the same practice does not help them.**
 Grade B. Wheel-spinning, defined as not reaching three correct answers in a row within ten opportunities, affected a substantial share of student-skill pairs in ASSISTments and Cognitive Tutor data ([Beck 2013][beck2013]). Boundary: the definition is tied to that mastery rule; the share was not checked here.
@@ -80,27 +80,10 @@ Grade B. Wheel-spinning, defined as not reaching three correct answers in a row 
 **ITS-19. Review scheduled from a model of each learner's memory beats fixed schedules for retention, and models trained on large review logs predict recall better than rule-based schedulers.**
 Grade B. In a semester-long middle-school language course, personalised review gave 16.5% better retention than massed study and 10.0% better than one-size-fits-all spacing ([Lindsey 2014][lindsey2014]). Scheduling as optimal control ([Tabibian 2019][tabibian2019]) and memory models fitted to 220 million review logs cut review cost ([Ye 2022][ye2022]; [Su 2023][su2023]); in an open benchmark on about 350 million Anki reviews, fitted models (FSRS, and recurrent networks best) predict recall far better than a constant-retention baseline ([FSRS benchmark][fsrsbench]). Spacing itself, LS-8 and LS-9; forgetting in learner models, AM-11. Boundary: vocabulary and flashcard facts; better prediction is not yet shown to mean better learning beyond the Lindsey trial.
 
-**ITS-20. Choosing the next activity by reinforcement learning beats simple sequencing in about half of studies, mostly when the policy is constrained by learning theory.**
-Grade B. Over half of empirical comparisons found RL policies significantly better than baselines; RL succeeded most when constrained with ideas from cognitive psychology, and robust offline analyses helped where models were limited ([Doroudi 2019][doroudi2019]). Boundary: most studies sequence short, well-defined tasks.
-
-### Learning engineering
-
-**ITS-21. In online courses, doing interactive practice is associated with far more learning than watching or reading more (the doer effect).**
-Grade B. In a psychology MOOC, a 1 SD increase in activities done was associated with more than six times the learning benefit of extra watching or reading, with causal-inference methods supporting a causal reading ([Koedinger 2015][koedinger2015]). Boundary: observational; one course family. Fits generation (LS-3).
-
-**ITS-22. Tutors work through the people around them: showing teachers live data from the tutor improved learning, and so did showing students their own learner model when combined with self-assessment.**
-Grade C. A mixed-reality tool that showed teachers real-time tutor analytics improved learning and narrowed the gap between students of different prior ability ([Holstein 2018][holstein2018]); college ITS effects point to the role of teachers ([Steenbergen-Hu 2014][steenbergenhu2014]); ASSISTments' teacher reports are part of its effect (ITS-7). An open learner model supporting self-assessment and shared problem selection was tested in two classroom experiments with 302 pupils, with better post-tests reported in secondary sources ([Long 2017][long2017]). Boundary: findings from summaries, not full texts; motivation from being watched may explain the teacher-tool effect.
-
 ### What failed and why
 
-**ITS-23. Large independent trials of commercial tutoring software often found no effect, mainly where use was light or the product sat beside an unchanged curriculum.**
+**ITS-20. Large independent trials of commercial tutoring software often found no effect, mainly where use was light or the product sat beside an unchanged curriculum.**
 Grade A. In a national randomised trial of reading and mathematics software in 132 schools, test scores were not significantly higher in classrooms using the products ([Dynarski 2007][dynarski2007]); a second year found no significant difference overall, with one product positive ([Campuzano 2009][campuzano2009]). Cognitive Tutor showed nothing in its first implementation year (ITS-5). Boundary: products varied in how adaptive they were; usage was often far below plan.
-
-**ITS-24. Hand-built tutors were expensive to author, so they covered few, well-structured domains.**
-Grade C. Model-tracing tutors historically took about 200 to 300 hours of development per hour of instruction (from memory, also cited in secondary sources); example-tracing authoring tools cut this by a factor of 4 to 8 against historical estimates ([Aleven 2009][aleven2009]). Hence the concentration on algebra, geometry, physics and programming, with dialogue tutors (ITS-6) and adaptive practice (ITS-8, ITS-19) the main routes into other subjects. Boundary: cost figures are estimates, not controlled measures.
-
-**ITS-25. Making the tutor look or act more human added little: persona, voice and richer dialogue mattered less than content, the step-level interaction and the learner's preparation.**
-Grade B. Content mattered more than the voice or persona of AutoTutor's agent ([Nye 2014][nye2014]); Cognitive Tutors worked better presented as tools than as humans ([Anderson 1995][anderson1995]); finer interaction than the step gave no gain (ITS-3), and dialogue beat text only for material beyond the learner (ITS-4). Adapting to learning styles was not among what worked (LS-28). Boundary: pre-LLM dialogue systems, whose language ability was limited.
 
 ## Terms
 
@@ -108,7 +91,7 @@ Research name, with the everyday name in brackets where they differ.
 
 - Intelligent tutoring system, ITS (adaptive tutor); computer-assisted instruction, CAI (answer-checking drill software): ITS-1, ITS-3.
 - Step-based vs answer-based tutoring (checking each step vs only the final answer); interaction granularity, interaction plateau: ITS-3.
-- Inner loop (help within a problem) and outer loop (choosing the next problem) ([VanLehn 2006][vanlehn2006]): ITS-11 to ITS-20.
+- Inner loop (help within a problem) and outer loop (choosing the next problem) ([VanLehn 2006][vanlehn2006]): ITS-11 to ITS-19.
 - Model tracing (checking each step against a model of correct and buggy rules); production rule (one if-then skill): ITS-5.
 - Expectation and misconception tailored dialogue (steering the student's explanation): ITS-6.
 - Knowledge component, KC (one skill, fact or principle); Knowledge-Learning-Instruction framework, KLI; learning curve (error rate falling with practice): ITS-9, ITS-10.
@@ -118,8 +101,6 @@ Research name, with the everyday name in brackets where they differ.
 - Knowledge tracing, Bayesian knowledge tracing, BKT; performance factors analysis, PFA; item response theory, IRT; deep knowledge tracing, DKT (what the system thinks you know): ITS-16, ITS-17, AM-9, AM-10.
 - Cognitive mastery, mastery threshold (don't move on until you've got it): ITS-16, ITS-17.
 - Memory model, half-life regression, FSRS (the spaced repetition algorithm in flashcard apps): ITS-19.
-- Instructional sequencing, reinforcement learning (choosing what comes next): ITS-20.
-- Doer effect (learning by doing): ITS-21. Open learner model (showing you your progress map): ITS-22.
 
 ## Contested and open
 
@@ -134,30 +115,28 @@ Research name, with the everyday name in brackets where they differ.
 
 This section alone thinks about tutoring software, an AI tutor included; the synthesis decides what the app does.
 
-1. **Tutor the steps, not only the answer.** The gain of ITS over answer checking comes from responding to each step of the learner's work (ITS-3); a tutor that only grades final answers forgoes most of it. Richer conversation beyond the step adds little by itself (ITS-3, ITS-25).
-2. **Pitch the material at the learner's level.** Dialogue helps most where the material is just beyond the learner (ITS-4); adaptive practice gains most where learners are behind (ITS-8). At the learner's level, a good text or example may be as good as dialogue, and cheaper in the learner's time.
+1. **Tutor the steps, not only the answer.** The gain of ITS over answer checking comes from responding to each step of the Student's work (ITS-3); a tutor that only grades final answers forgoes most of it. Richer conversation beyond the step adds little by itself (ITS-3, ITS-25).
+2. **Pitch the material at the Student's level.** Dialogue helps most where the material is just beyond the Student (ITS-4); adaptive practice gains most where Students are behind (ITS-8). At the Student's level, a good text or example may be as good as dialogue, and cheaper in the Student's time.
 3. **Plan in knowledge components, and do not trust intuition about what is hard.** Expert-written decompositions miss what novices find hard (ITS-10); evidence from the Student's own Attempts should revise the decomposition and the estimate (ITS-9, ITS-16).
-4. **Make mastery decisions from evidence, with a sensible threshold and a stop rule.** Several Attempts per KC, decay over time (AM-11), and a threshold chosen with care matter more than model sophistication (ITS-17). When a Student is not progressing after many attempts, change the instruction, such as a worked example, a prerequisite or an explanation, rather than giving more of the same (ITS-18, ITS-13).
+4. **Decide Progress from evidence, with a sensible threshold and a stop rule.** Several Attempts per KC, decay over time (AM-11), and a threshold chosen with care matter more than model sophistication (ITS-17). When a Student is not progressing after many attempts, change the instruction, such as a worked example, a prerequisite or an explanation, rather than giving more of the same (ITS-18, ITS-13).
 5. **Ask for explanations and use worked examples for novices.** Self-explanation prompts and faded examples are among the cheapest proven additions (ITS-12, ITS-13).
 6. **Design help so it cannot be mined for answers, and notice when it is.** Graded hints ending in a bottom-out hint invite gaming (ITS-14, ITS-15); a tutor that sees rapid help requests or guessing can respond with extra practice on the skipped step rather than with the answer (ITS-15). Teaching help seeking alone does not raise learning (ITS-14).
 7. **Schedule Reviews from a memory model.** Personalised review beats fixed spacing (ITS-19); a fitted model of forgetting is a proven part of the tutoring loop for facts and vocabulary, less tested for skills.
-8. **Expect small effects at scale, and measure against the real exam.** Large gains on tutor-aligned tests shrink on independent ones (ITS-2, ITS-23); effects depend on use and on fitting into the learner's actual course (ITS-5, ITS-23). Showing progress data to the Student, or to a teacher where there is one, can help (ITS-22).
-9. **Do not invest in seeming human.** Persona and voice matter less than content and the step-level loop (ITS-25).
+8. **Expect small effects at scale, and measure against the real exam.** Large gains on tutor-aligned tests shrink on independent ones (ITS-2, ITS-20); effects depend on use and on fitting into the Student's actual course (ITS-5, ITS-20).
 
-**Conflicts with other fields.** Immediate step feedback (ITS-11) pulls against learning science's case for struggle before help (LS-19) and desirable difficulties (LS-23). Mastery loops (ITS-16) pull against interleaving and spacing across topics (LS-8, LS-10), as in report AM. Detecting gaming and wheel-spinning (ITS-15, ITS-18) touches report MOT: both follow boredom and frustration (MOT-15), so the response is also motivational. Pitching dialogue at material beyond the learner (ITS-4) must be weighed against cognitive load (report UX). LLM tutors change the cost of authoring (ITS-24) and the language limits behind ITS-4 and ITS-25; report LLM covers whether the findings carry over.
+**Conflicts with other fields.** Immediate step feedback (ITS-11) pulls against learning science's case for struggle before help (LS-19) and desirable difficulties (LS-23). Practising one KC until a threshold is passed (ITS-16) pulls against interleaving and spacing across topics (LS-8, LS-10), as in report AM. Detecting gaming and wheel-spinning (ITS-15, ITS-18) touches report MOT: both follow boredom and frustration (MOT-15), so the response is also motivational. Pitching dialogue at material beyond the Student (ITS-4) must be weighed against cognitive load (report UX). Report LLM covers whether the findings carry over to LLM tutors.
 
 ## Sources
 
 Links go to the DOI where one exists, else to the page that was read. Statuses rest on the abstracts read when the source was found.
 
-**Verified** (abstract or text checked): [Aleven 2002][aleven2002], [Aleven 2016][aleven2016], [Anderson 1995][anderson1995], [Baker 2006][baker2006] (abstract quoted in a search result), [Campuzano 2009][campuzano2009] (report summary page), [Corbett 2001b][corbett2001c], [Doroudi 2019][doroudi2019], [Dynarski 2007][dynarski2007] (report summary page), [FSRS benchmark][fsrsbench] (repository page; a benchmark, not peer reviewed), [Graesser 2016][graesser2016], [Heffernan 2014][heffernan2014], [Koedinger 2004][koedinger2004], [Koedinger 2012][koedinger2012], [Koedinger 2015][koedinger2015], [Kulik 2016][kulik2016], [Leite 2025][leite2025] (preprint), [Létourneau 2025][letourneau2025], [Lindsey 2014][lindsey2014], [Lyu 2026][lyu2026] (preprint, accepted at AIED 2026), [Ma 2014][ma2014], [Mathan 2005][mathan2005], [Muralidharan 2019][muralidharan2019], [Nathan 2000a][nathan2000a], [Nathan 2000b][nathan2000b], [Nye 2014][nye2014], [Pane 2014][pane2014], [Pavlik 2009][pavlik2009] (that PFA is an alternative to KT; its multi-skill advantage from the abstract's stated aim), [Pelánek 2017][pelanek2017], [Roschelle 2016][roschelle2016], [Steenbergen-Hu 2013][steenbergenhu2013], [Steenbergen-Hu 2014][steenbergenhu2014], [Su 2023][su2023], [Tabibian 2019][tabibian2019], [VanLehn 2007][vanlehn2007], [VanLehn 2011][vanlehn2011], [Ye 2022][ye2022].
+**Verified** (abstract or text checked): [Aleven 2002][aleven2002], [Aleven 2016][aleven2016], [Anderson 1995][anderson1995], [Baker 2006][baker2006] (abstract quoted in a search result), [Campuzano 2009][campuzano2009] (report summary page), [Corbett 2001b][corbett2001c], [Dynarski 2007][dynarski2007] (report summary page), [FSRS benchmark][fsrsbench] (repository page; a benchmark, not peer reviewed), [Graesser 2016][graesser2016], [Heffernan 2014][heffernan2014], [Koedinger 2004][koedinger2004], [Koedinger 2012][koedinger2012], [Kulik 2016][kulik2016], [Leite 2025][leite2025] (preprint), [Létourneau 2025][letourneau2025], [Lindsey 2014][lindsey2014], [Lyu 2026][lyu2026] (preprint, accepted at AIED 2026), [Ma 2014][ma2014], [Mathan 2005][mathan2005], [Muralidharan 2019][muralidharan2019], [Nathan 2000a][nathan2000a], [Nathan 2000b][nathan2000b], [Nye 2014][nye2014], [Pane 2014][pane2014], [Pavlik 2009][pavlik2009] (that PFA is an alternative to KT; its multi-skill advantage from the abstract's stated aim), [Pelánek 2017][pelanek2017], [Roschelle 2016][roschelle2016], [Steenbergen-Hu 2013][steenbergenhu2013], [Steenbergen-Hu 2014][steenbergenhu2014], [Su 2023][su2023], [Tabibian 2019][tabibian2019], [VanLehn 2007][vanlehn2007], [VanLehn 2011][vanlehn2011], [Ye 2022][ye2022].
 
-**Located** (exists, content not checked): [Aleven 2009][aleven2009] (the 4 to 8 factor from citing papers), [Baker 2008][baker2008], [Beck 2007][beck2007], [Beck 2013][beck2013] (definition from citing papers), [Corbett 2001][corbett2001], [Escueta 2020][escueta2020] (abstract does not state the finding), [Feng 2023][feng2023] (study page and funder summary; the paper's venue and effect size not confirmed), [Graesser 2005][graesser2005], [Holstein 2018][holstein2018] (findings from the authors' later summaries), [Koedinger 1997][koedinger1997] (finding from the authors' 2015 retrospective), [Koedinger 2013][koedinger2013] (abstract sentence from a search result only), [Long 2017][long2017] (design from the abstract; outcome from secondary sources), [Ritter 2007][ritter2007], [Roll 2011][roll2011] (its finding through Aleven 2016), [Salden 2010][salden2010], [VanLehn 2006][vanlehn2006].
+**Located** (exists, content not checked): [Baker 2008][baker2008], [Beck 2007][beck2007], [Beck 2013][beck2013] (definition from citing papers), [Corbett 2001][corbett2001], [Escueta 2020][escueta2020] (abstract does not state the finding), [Feng 2023][feng2023] (study page and funder summary; the paper's venue and effect size not confirmed), [Graesser 2005][graesser2005], [Koedinger 1997][koedinger1997] (finding from the authors' 2015 retrospective), [Koedinger 2013][koedinger2013] (abstract sentence from a search result only), [Ritter 2007][ritter2007], [Roll 2011][roll2011] (its finding through Aleven 2016), [Salden 2010][salden2010], [VanLehn 2006][vanlehn2006].
 
-**From memory**: VanLehn 2011's figures for answer-based and substep-based systems (ITS-3), the 95% mastery threshold (ITS-16) and the 200 to 300 hours of authoring per hour of instruction (ITS-24). Sources shared with other reports ([Baker 2004][baker2004], verified in report AM) carry their status there.
+**From memory**: VanLehn 2011's figures for answer-based and substep-based systems (ITS-3), the 95% mastery threshold (ITS-16) and the IRT remark (ITS-17). Sources shared with other reports ([Baker 2004][baker2004], verified in report AM) carry their status there.
 
 [aleven2002]: https://doi.org/10.1207/s15516709cog2602_1
-[aleven2009]: https://content.iospress.com/articles/international-journal-of-artificial-intelligence-in-education/jai19-2-02
 [aleven2016]: https://doi.org/10.1007/s40593-015-0089-1
 [anderson1995]: https://doi.org/10.1207/s15327809jls0402_2
 [baker2004]: https://doi.org/10.1145/985692.985741
@@ -168,7 +147,6 @@ Links go to the DOI where one exists, else to the page that was read. Statuses r
 [campuzano2009]: https://ies.ed.gov/ncee/pubs/20094041
 [corbett2001]: https://doi.org/10.1007/3-540-44566-8_14
 [corbett2001c]: https://doi.org/10.1145/365024.365111
-[doroudi2019]: https://doi.org/10.1007/s40593-019-00187-x
 [dynarski2007]: https://ies.ed.gov/use-work/resource-library/report/evaluation-report/effectiveness-reading-and-mathematics-software-products-findings-first-student-cohort
 [escueta2020]: https://doi.org/10.1257/jel.20191507
 [feng2023]: https://ies.ed.gov/use-work/awards/efficacy-assistments-online-homework-support-middle-school-mathematics-learning-replication-study
@@ -176,17 +154,14 @@ Links go to the DOI where one exists, else to the page that was read. Statuses r
 [graesser2005]: https://doi.org/10.1207/s15326985ep4004_4
 [graesser2016]: https://doi.org/10.1007/s40593-015-0086-4
 [heffernan2014]: https://doi.org/10.1007/s40593-014-0024-x
-[holstein2018]: https://doi.org/10.1007/978-3-319-93843-1_12
 [koedinger1997]: https://kilthub.cmu.edu/articles/journal_contribution/Intelligent_Tutoring_Goes_To_School_in_the_Big_City/6470153/1
 [koedinger2004]: https://doi.org/10.1207/s15327809jls1302_1
 [koedinger2012]: https://doi.org/10.1111/j.1551-6709.2012.01245.x
 [koedinger2013]: https://doi.org/10.1007/978-3-642-39112-5_43
-[koedinger2015]: https://doi.org/10.1145/2724660.2724681
 [kulik2016]: https://doi.org/10.3102/0034654315581420
 [leite2025]: https://arxiv.org/abs/2511.04997
 [letourneau2025]: https://doi.org/10.1038/s41539-025-00320-7
 [lindsey2014]: https://doi.org/10.1177/0956797613504302
-[long2017]: https://doi.org/10.1007/s11257-016-9186-6
 [lyu2026]: https://arxiv.org/abs/2603.29094
 [ma2014]: https://doi.org/10.1037/a0037123
 [mathan2005]: https://doi.org/10.1207/s15326985ep4004_7
