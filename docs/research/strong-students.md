@@ -19,14 +19,14 @@ Evidence grades: **A** meta-analyses or several controlled trials; **B** single 
 | Barbara Oakley and Terrence Sejnowski       | Engineering professor and neuroscientist                                                        | Coursera course _Learning How to Learn_, books | About 4.2 million course enrolments ([Coursera][oakley-course])                                |
 | Andrew Huberman                             | Stanford neuroscientist                                                                         | Podcast, YouTube                               | About 6 million monthly listeners reported for 2024 ([Wikipedia][huberman-wiki])               |
 | Justin Sung                                 | Former doctor, learning coach (iCanStudy)                                                       | YouTube, paid course                           | Passed one million YouTube subscribers ([channel post][sung-subs])                             |
-| Cal Newport                                 | Computer science professor; wrote his study book as a student from interviews with top students | Books, blog, podcast                           | Bestselling books; reach not measured here                                                     |
-| Scott Young                                 | Writer; self-taught the MIT computer science curriculum in a year                               | Blog, book _Ultralearning_                     | Reach not measured here                                                                        |
+| Cal Newport                                 | Computer science professor; wrote his study book as a student from interviews with top students | Books, blog, podcast                           | No reach figure found; book sales and audience not checked in this search                      |
+| Scott Young                                 | Writer; self-taught the MIT computer science curriculum in a year                               | Blog, book _Ultralearning_                     | No reach figure found; book sales and blog audience not checked in this search                 |
 | Thomas Frank                                | Former student blogger (College Info Geek)                                                      | YouTube, podcast, free book                    | About 3,600 ratings of his book on Goodreads ([Goodreads][frank-book]); channel size not found |
 | Gohar Khan                                  | MIT graduate, admissions and study tips                                                         | TikTok, short videos                           | 3.8 million TikTok followers ([Wikipedia][gohar])                                              |
 | r/GetStudying                               | Student forum                                                                                   | Reddit                                         | About 3.3 million members ([Hive Index][getstudying])                                          |
 | "Study with me" videos                      | Students filming themselves studying                                                            | YouTube, Bilibili livestreams                  | Over 520 million views of such videos in 2023 ([YouTube][swm-youtube])                         |
 | Spaced repetition community                 | Piotr Woźniak (SuperMemo), Michael Nielsen (physicist), Anki users                              | Essays, software, forums                       | Anki is the default tool in medical schools surveyed ([Wothe 2023][wothe2023])                 |
-| _Make It Stick_ (Brown, Roediger, McDaniel) | Two memory researchers and a writer                                                             | Book                                           | Widely assigned in universities                                                                |
+| _Make It Stick_ (Brown, Roediger, McDaniel) | Two memory researchers and a writer                                                             | Book                                           | No reach figure found; no sales or course counts checked in this search                        |
 
 Most of these creators are former top students who studied medicine, engineering or computer science, and most of the reach is English-language. Students in other fields and languages read the same advice; it is general in form even when its examples are not.
 
@@ -124,6 +124,18 @@ Grade B (AM-7, LS-34). Young's _Ultralearning_ makes directness and drill two of
 **STU-26. Keep a log of every mistake and why it happened, and review it before the exam.**
 Grade P, partly backed (LS-20). Error notebooks are common advice among Chinese and Korean top scorers and on r/GetStudying (the model's knowledge; the search found only headlines). Errors followed by correction help learning (LS-20); a log of them has not been tested.
 
+**STU-27. Speed reading: apps and courses promise two to three times the reading speed at the same comprehension.**
+Grade B (contradicted). A major review found that speed and comprehension trade off, and that only practice reading gives modest gains ([Rayner 2016][rayner2016]). Boundary: skimming for a known purpose is a different skill from reading to learn.
+
+**STU-28. Prescription stimulants ("study drugs") help learning.**
+Grade B (contradicted in part). Forums discuss them as study aids; in healthy people the effects on memory and inhibition are small to medium, probably modest after publication bias, and may act more through energy and motivation than through learning ([Ilieva 2015][ilieva2015]). Boundary: the studies are laboratory tasks, not course exams.
+
+**STU-29. Background music or lo-fi streams help focus while studying.**
+Grade B (contradicted in part). Background music has a small negative effect on memory on average, larger when it is loud, and may help easy tasks but cost attention on complex ones ([Kämpfe 2011][kampfe2011]); popular sources rarely mention the cost. Boundary: the findings come from citing papers, not the meta-analysis itself, and say nothing about mood or preference.
+
+**STU-30. Study "for your learning style", and always handwrite notes.**
+Grade A (contradicted; LS-28, LS-32). Some study accounts still give both rules; matching instruction to a style does not improve learning, and the handwriting advantage did not replicate. Boundary: the evidence is in LS-28 and LS-32; this report adds no new source.
+
 ## Terms
 
 Research name, with the everyday name in brackets where they differ.
@@ -148,12 +160,12 @@ Research name, with the everyday name in brackets where they differ.
 
 - **Rereading has no value.** Popular sources say so flatly; research finds it weaker than recall but not useless, and it correlates with GPA in surveys ([Hartwig 2012][hartwig2012]; STU-3).
 - **Trust your first instinct.** Research says the opposite for multiple-choice answers (STU-19).
-- **Speed reading.** Apps and courses promise two to three times the reading speed at equal comprehension; a major review found speed and comprehension trade off and that only practice reading gives modest gains ([Rayner 2016][rayner2016]).
-- **Study drugs.** Forums discuss prescription stimulants as study aids; in healthy people their effects on memory and inhibition are small to medium, probably modest after publication bias, and may act more through energy and motivation than learning ([Ilieva 2015][ilieva2015]).
-- **Background music and lo-fi streams.** Lo-fi study streams are among the most watched study content. Background music has a small negative effect on memory on average, larger when it is loud, and may help easy tasks but cost attention on complex ones ([Kämpfe 2011][kampfe2011]); popular sources rarely mention the cost.
+- **Speed reading** (STU-27).
+- **Study drugs** (STU-28).
+- **Background music and lo-fi streams** (STU-29).
 - **Sleep science in popular books.** _Why We Sleep_ spread the importance of sleep (LS-25) but was criticised for errors and exaggerations, including a graph with a contradicting bar removed ([Guzey 2019][guzey2019]).
 - **Podcasts as neuroscience.** Huberman's study episode matches research on testing and sleep, but critics fault the show for building advice on animal and early-stage studies ([Wikipedia][huberman-wiki]); claims such as NSDR (STU-22) belong to that group.
-- **Learning styles and handwriting.** Some study accounts still advise studying "for your learning style" or always handwriting notes; neither holds up (LS-28, LS-32).
+- **Learning styles and handwriting** (STU-30).
 - **The phone's mere presence.** Popular from a 2017 paper that did not replicate (STU-15).
 - **Active recall is overrated.** Sung's critique (STU-10) contradicts the strongest finding of learning science, while his point about encoding agrees with research on transfer; the conflict is mostly in emphasis.
 
@@ -173,12 +185,12 @@ Research name, with the everyday name in brackets where they differ.
 
 This section alone thinks about tutoring software, an AI tutor included; the synthesis decides what the app does.
 
-1. **Students arrive with a vocabulary.** Many have heard "active recall" and "spaced repetition" from creators with millions of viewers (STU-1, STU-2). A tutor that names its methods in these everyday terms (Terms) meets students where they are; one that calls rereading a waste may hear back that the student's favourite creator says the same, or the opposite.
+1. **Students arrive with a vocabulary.** Many have heard "active recall" and "spaced repetition" from creators with millions of viewers (STU-1, STU-2). A tutor that names its methods in these everyday terms (Terms) meets Students where they are; one that calls rereading a waste may hear back that the Student's favourite creator says the same, or the opposite.
 2. **Recall and spacing are common ground.** Popular and research sources agree most strongly here (STU-1, STU-2, STU-3), so a tutor built around them follows what students already believe works, and can say why with LS-6 and LS-8.
 3. **Answer the encoding critique.** Strong students and coaches warn that drilling isolated facts leaves knowledge fragmented (STU-10, STU-11). A tutor that asks only fact recall risks that failure; asking for explanations, links between ideas and applications (STU-4, STU-12, AM-7) answers it.
 4. **Overview before detail.** Practitioners agree on building a map of a topic before memorising (STU-9); research supports the role of prior knowledge (LS-4) but has not tested a priming step, so a tutor that tries one should treat it as an experiment.
-5. **Exam form matters.** Top students practise with past exam papers and mark schemes (STU-8). A tutor that knows the form of the student's exam can practise in that form and supply the external standard students need to judge their own answers (AM-18).
-6. **Correct the folk rules that cost points.** First-instinct answering (STU-19), speed reading, background music with lyrics and sacrificing sleep (Contested) are cases where a short correction is backed by research.
+5. **Exam form matters.** Top students practise with old exams and mark schemes (STU-8). A tutor that knows the form of the Student's exam can practise in that form and supply the external standard Students need to judge their own answers (AM-18).
+6. **Correct the folk rules that cost points.** First-instinct answering (STU-19), speed reading (STU-27), background music (STU-29) and sacrificing sleep (Contested) are cases where a short correction is backed by research.
 7. **Conflicts with other fields.** Streaks and daily habits (STU-17) are popular, while MOT-19 warns that game elements can lose their pull; "study less, more intensely" (STU-5) can sound like permission to stop early, while AM-23 shows overconfident students stop too soon.
 
 ## Sources
@@ -189,7 +201,7 @@ Links go to the DOI where one exists, else to the page found. Creators' content 
 
 **Located** (exists, content checked only through titles, search excerpts or third-party summaries): [Abdaal guide][abdaal-guide] and [Abdaal spreadsheet][abdaal-spreadsheet] (blog refused fetches), [Ahrens 2017][ahrens2017] (book), [Frank book][frank-book], [Guzey 2019][guzey2019], [Kämpfe 2011][kampfe2011] (findings from citing papers), [Leong 2022][leong2022] (abstract excerpt only), [MedSchoolInsiders][msi-anki], [Newport book][newport-book], [Plant 2005][plant2005] (findings from citing papers), [Sung video][sung-ar] (video; content from an AI summary), [Sung priming][sung-priming] (video; content from a summary), [Sung subscribers][sung-subs], [Walker 2017][walker2017] (book), [Ward 2017][ward2017], [Young 2019][young2019] (book; content from summaries).
 
-**From memory** (not searched): [Atomic Habits][clear2018], [Cornell notes][cornell], [Mind map][mindmap], [Moonwalking with Einstein][foer2011], [Pomodoro][pomodoro]. Several statements rest on the model's knowledge of forums and channels without a checked source: past papers as the main late-stage activity (STU-8), exam-day tactics (STU-18), exercise advice by creators (STU-20), error notebooks among Asian top scorers (STU-26) and the claim that lo-fi streams are among the most watched study content.
+**From memory** (not searched): [Atomic Habits][clear2018], [Cornell notes][cornell], [Mind map][mindmap], [Moonwalking with Einstein][foer2011], [Pomodoro][pomodoro]. Several statements rest on the model's knowledge of forums and channels without a checked source: past papers as the main late-stage activity (STU-8), exam-day tactics (STU-18), exercise advice by creators (STU-20), error notebooks among Asian top scorers (STU-26).
 
 [abdaal-guide]: https://aliabdaal.com/studying/the-ultimate-guide-to-studying-for-exams/
 [abdaal-spreadsheet]: https://aliabdaal.com/studying/how-to-study-spaced-repetition-and-my-magic-spreadsheet-system/
