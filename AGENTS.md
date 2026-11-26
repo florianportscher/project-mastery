@@ -32,6 +32,8 @@ Where code goes is defined in [Project structure](docs/ARCHITECTURE.md#project-s
 
 [docs/features/knowledge-map.md](docs/features/knowledge-map.md) and [docs/features/tutoring.md](docs/features/tutoring.md) describe how both systems work: data flow, model calls, how prompts get built. Read them before changing parsing, the map build, the AI's prompt, context or tools, or scheduling, and update them in the same PR.
 
+[docs/features/good-tutoring.md](docs/features/good-tutoring.md) is the standard for how the AI tutors: read it before changing the AI's instructions, tools, context or Chat interface, and when judging a Chat.
+
 ## Library docs
 
 Like Next.js, these packages ship documentation that matches the installed version. Read it before writing code against them instead of relying on memory:
