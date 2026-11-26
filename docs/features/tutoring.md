@@ -1,6 +1,6 @@
 # The tutoring process
 
-How a Chat tutors a Student from the Course's Knowledge map: what is stored, what code derives on every reply, what the AI is given, what it can do with its tools, and what happens when a session ends.
+How a Chat tutors a Student from the Course's Knowledge map: what is stored, what code derives on every reply, what the AI is given, what it can do with its tools, and what happens when a session ends. What the tutoring should do, the standard it is judged by, is [good-tutoring.md](good-tutoring.md).
 
 This is the second half of one system. [The Knowledge map](knowledge-map.md) covers how the map is made, and [how the two connect](knowledge-map.md#how-the-two-connect) lists every point where they touch. Read it first if KCs, Topics or anchors are new to you.
 
