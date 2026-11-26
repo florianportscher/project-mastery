@@ -13,6 +13,8 @@ Effect sizes are standardised mean differences (_d_ or _g_; 0.2 small, 0.5 mediu
 
 ## Claims
 
+Ids are stable and are not reused: AM-4, AM-20 and AM-25 were removed as outside the brief, so the numbering has gaps.
+
 ### Formative assessment and feedback
 
 **AM-1. Checking learning during instruction and adjusting to it (formative assessment, assessment for learning) improves achievement, but by a small amount, well below the 0.4 to 0.7 often quoted.**
@@ -23,9 +25,6 @@ Grade A for the levels, B for grades. Feedback answers where the learner is goin
 
 **AM-3. Feedback changes learning only when the learner engages with it and acts on it, and many students do not, for lack of strategies, of understanding of the feedback's terms, or of a chance to use it.**
 Grade B. Feedback is part of self-regulation: learners interpret it through their own monitoring, and models put monitoring at the centre ([Butler 1995][butler1995]). In higher education students often leave feedback unused; its perceived usefulness drives use, and missing strategies or academic language hinder it ([Jonsson 2012][jonsson2012]). A review of 195 works collects the factors that make learners use feedback and the interventions that promote it, sorted into four recipience processes ([Winstone 2016][winstone2016]). Boundary: mostly surveys and qualitative studies of written coursework feedback.
-
-**AM-4. Having students judge their own or each other's work against criteria (self-assessment, peer assessment) improves performance.**
-Grade A. Peer assessment _g_ = 0.31 against no assessment, across 54 studies ([Double 2019][double2019]); across 175 studies, self-assessment _g_ = 0.59 and peer assessment 0.61 ([Yan 2022][yan2022]). Four further meta-analyses examine self-assessment's effects on self-regulation and self-efficacy ([Panadero 2017b][panadero2017b]). Boundary: repeated-measures designs give larger effects than controlled ones ([Yan 2022][yan2022]); what counts as self-assessment varies widely.
 
 ### Testing and question design
 
@@ -78,9 +77,6 @@ Grade B. Middle-school students gave credit to 73% of their wrong definitions wi
 **AM-19. Training improves monitoring accuracy only a little; checking against the whole task, teaching metacognitive knowledge and giving external standards work, and simply asking for score estimates and returning results improves calibration over time.**
 Grade A. Interventions for monitoring in problem solving _g_ = 0.25 across 35 studies; whole-task, metacognitive-knowledge and external-standard interventions helped, timing interventions hurt, and classroom effects were smaller than laboratory ones ([Janssen 2024][janssen2024]); a meta-analysis of strategy-instruction interventions addressed the same question ([Gutierrez 2022][gutierrez2022]). Secondary pupils who estimated their grade after each exam for a school year became better calibrated, whether or not they also reflected on the gap ([Nederhand 2020][nederhand2020]). Boundary: accuracy measures differ between studies.
 
-**AM-20. Asking learners to rate how well they know something hardly changes what they remember.**
-Grade A. Across studies, making JOLs had no overall effect on memory (_g_ = 0.05), with positive effects for related word pairs and word lists ([Double 2017][double2017]). Boundary: almost no studies with educational material.
-
 ### Self-regulated learning
 
 **AM-21. Self-regulated learning (SRL) is a cycle: planning before a task (goals, strategy, time), monitoring and controlling during it, and evaluating afterwards, which feeds the next plan.**
@@ -95,9 +91,6 @@ Grade B. Better monitoring led to better rereading choices and comprehension ([T
 **AM-24. Training students in self-regulated learning strategies improves achievement, with small to medium effects at university and larger ones at school.**
 Grade A. University SRL training _g_ = 0.38 across 49 studies, ranging from rehearsal (0.23) to attention and concentration (0.61) ([Theobald 2021][theobald2021]); school-level interventions average about 0.69 across outcomes ([Dignath 2008][dignath2008]); prompts and scaffolds for SRL help in computer-based environments ([Zheng 2016][zheng2016]). A strategy course taught first-year students which strategies work, changed their reported use, and narrowed the gap between low and high performers over the year ([Biwer 2022][biwer2022]). Boundary: knowing what works does not mean doing it; effortful strategies feel worse (LS-23).
 
-**AM-25. Concrete plans of when, where and how to act (implementation intentions, if-then plans) help people act on study goals, and time management relates to achievement.**
-Grade B. If-then planning is known to improve goal attainment ([Gollwitzer 2006][gollwitzer2006]); combined with mental contrasting, _g_ = 0.34 across 24 effect sizes, likely smaller after publication bias ([Wang 2021][wang2021]). Time management correlates moderately with academic achievement ([Aeon 2021][aeon2021]). Boundary: planning works only when the goal is held strongly; motivation is report MOT's subject.
-
 **AM-26. Learners use on-demand help badly: some avoid help they need, others use it to get answers without thinking (gaming the system), and both go with less learning.**
 Grade B. Learners in interactive environments often do not use help effectively, and good help seeking needs metacognitive skill ([Aleven 2003][aleven2003]). Students who gamed a tutor by exploiting hints and feedback to advance scored substantially lower on post-tests, controlling for prior knowledge ([Baker 2004][baker2004]). Boundary: mostly mathematics tutors in US schools.
 
@@ -107,14 +100,13 @@ Research name, with the everyday name in brackets where they differ.
 
 - Formative assessment, assessment for learning (checking understanding along the way); summative assessment (the exam that counts): AM-1.
 - Feedback levels: task, process, self-regulation, self (praise): AM-2. Feedback literacy, proactive recipience (using feedback): AM-3.
-- Self-assessment, peer assessment (marking your own or a classmate's work): AM-4.
 - Testing effect, test-enhanced learning (quizzing yourself; practice exams): AM-5. Recall vs recognition (open questions vs multiple choice); lures (wrong options): AM-6. Transfer items, higher-order questions (application questions): AM-7.
 - Mastery learning (don't move on until you've got it): AM-8.
 - Knowledge tracing, learner model, student model (what the system thinks you know); guess and slip: AM-9 to AM-12.
-- Judgment of learning, JOL (how sure you are you'll remember); confidence rating; calibration (being as good as you think); resolution (knowing which items you know): AM-14 to AM-20.
+- Judgment of learning, JOL (how sure you are you'll remember); confidence rating; calibration (being as good as you think); resolution (knowing which items you know): AM-14 to AM-19.
 - Illusion of competence, fluency illusion ("it looked familiar"): AM-15. Stability bias: AM-16. Delayed-JOL effect (checking yourself later): AM-17.
 - Dunning-Kruger effect ("unskilled and unaware"): AM-14.
-- Self-regulated learning (managing your own studying): planning, monitoring, evaluating: AM-21 to AM-25. Implementation intention (if-then plan): AM-25.
+- Self-regulated learning (managing your own studying): planning, monitoring, evaluating: AM-21 to AM-24.
 - Help seeking; gaming the system (clicking through hints to get the answer): AM-26.
 
 ## Contested and open
@@ -136,9 +128,9 @@ This section alone thinks about tutoring software, an AI tutor included; the syn
 2. **Feedback about the work, never the person, and with a next step.** Say what is right or wrong and why, and what to do next (AM-2, LS-22); avoid praise of ability and anything that reads as a grade on the Student (AM-2). Give the Student a chance to act on it at once, by retrying or revising (AM-3).
 3. **Treat one answer as weak evidence and keep the estimate probabilistic.** Combine several Attempts per KC (AM-9), let recall decay between Reviews (AM-11), and count the help a Student needed as evidence (AM-12). Small specialised models predict answers better and cheaper than asking an LLM to guess (AM-10); an LLM is better placed to judge one answer than to forecast a learner.
 4. **Do not trust the Student's sense of knowing, and do not let the tutor rely on it either.** "I've got it" after rereading or right after an explanation is a fluency cue (AM-15, AM-16). Check with a delayed attempt instead, after other material or in a later session (AM-17). Questions like "does that make sense?" collect exactly the immediate judgment that is least accurate.
-5. **Make the Student's self-evaluation honest by giving a standard.** After a recall attempt, show the model answer idea by idea and let the Student compare (AM-18). Asking for a confidence or a predicted score and then showing the result is cheap and improves calibration over time (AM-19); it does not by itself change memory (AM-20). A high-confidence error is worth extra attention (LS-20).
+5. **Make the Student's self-evaluation honest by giving a standard.** After a recall attempt, show the model answer idea by idea and let the Student compare (AM-18). Asking for a confidence or a predicted score and then showing the result is cheap and improves calibration over time (AM-19). A high-confidence error is worth extra attention (LS-20).
 6. **Expect the Student to stop too early and to choose weak strategies.** Students drop material they think they know, cram and reread (AM-22, AM-23). A tutor that decides when a KC is learned from evidence, schedules Reviews and asks for recall makes the decisions students make badly. Mastery criteria per unit help, at a cost in time (AM-8); with an exam date the cost must be weighed against coverage.
-7. **Build self-regulation, not only knowledge.** Planning, monitoring and evaluating can be taught and help (AM-21, AM-24); concrete if-then plans help a Student act on a study goal (AM-25). Showing the Student why a strategy works is worth little unless they then use it (AM-24, Contested).
+7. **Build self-regulation, not only knowledge.** Planning, monitoring and evaluating can be taught and help (AM-21, AM-24). Showing the Student why a strategy works is worth little unless they then use it (AM-24, Contested).
 8. **Design help so that it cannot be clicked through.** Some students avoid help, others mine it for answers (AM-26). Help that asks for an attempt before giving more, and a tutor that notices rapid help requests, address both; the ITS and tutoring reports cover how.
 
 **Conflicts with other fields.** Honest self-evaluation and frequent checking show the Student their gaps, which can hurt confidence and motivation (report MOT), and AM-2's harm from grades touches the same question. Learning science favours struggle before help (LS-19) while AM-26 shows that students under-use help; the tutoring reports weigh how much to wait. Mastery learning (AM-8) and spacing across topics (LS-8, LS-10) pull in opposite directions on whether to finish a unit before moving on. Asking for confidence ratings adds steps that interface design (report UX) may want to keep few.
@@ -147,13 +139,12 @@ This section alone thinks about tutoring software, an AI tutor included; the syn
 
 Links go to the DOI where one exists, else to the arXiv page. Statuses rest on the abstracts read when the source was found.
 
-**Verified** (abstract or text checked): [Aeon 2021][aeon2021], [Agarwal 2019][agarwal2019], [Aleven 2003][aleven2003], [Baker 2004][baker2004], [Bangert-Drowns 1991][bangertdrowns1991t] (frequent testing; not the feedback review of the same year in report LS), [Bennett 2011][bennett2011], [Bhattacharyya 2026][bhattacharyya2026], [Biwer 2022][biwer2022], [Bjork 2013][bjork2013], [Black 1998][black1998], [Bloom 1984][bloom1984], [Butler 1988][butler1988], [Butler 1995][butler1995], [Corral 2025][corral2025], [Dignath 2008][dignath2008] (overall 0.69 confirmed; the outcome it covers was not), [Double 2017][double2017], [Double 2019][double2019], [Dunlosky 2011][dunlosky2011], [Feng 2009][feng2009], [Guskey 1987][guskey1987], [Hartwig 2012][hartwig2012], [Hartwig 2012b][hartwig2012b], [Janssen 2024][janssen2024], [Jonsson 2012][jonsson2012], [Kelemen 1997][kelemen1997], [Khajah 2016][khajah2016], [Kingston 2011][kingston2011], [Koriat 1997][koriat1997], [Koriat 2005][koriat2005], [Kornell 2008][kornell2008], [Kornell 2009][kornell2009], [Kruger 1999][kruger1999], [Kulik 1990][kulik1990], [Lipko 2009][lipko2009], [Little 2012][little2012], [Magnus 2022][magnus2022], [Nederhand 2020][nederhand2020], [Ober 2022][ober2022], [Panadero 2017][panadero2017], [Pavlik 2005][pavlik2005], [Piech 2015][piech2015], [Rhodes 2008][rhodes2008], [Rhodes 2011][rhodes2011], [Roediger 2005][roediger2005], [Settles 2016][settles2016], [Slavin 1990][slavin1990], [Sortwell 2024][sortwell2024], [Theobald 2021][theobald2021], [Thiede 2003][thiede2003], [van Wijk 2024][vanwijk2024], [Vie 2023][vie2023], [Wang 2021][wang2021], [Weaver 1997][weaver1997], [Winstone 2016][winstone2016], [Xuan 2022][xuan2022], [Yan 2022][yan2022], [Yang 2022][yang2022].
+**Verified** (abstract or text checked): [Agarwal 2019][agarwal2019], [Aleven 2003][aleven2003], [Baker 2004][baker2004], [Bangert-Drowns 1991][bangertdrowns1991t] (frequent testing; not the feedback review of the same year in report LS), [Bennett 2011][bennett2011], [Bhattacharyya 2026][bhattacharyya2026], [Biwer 2022][biwer2022], [Bjork 2013][bjork2013], [Black 1998][black1998], [Bloom 1984][bloom1984], [Butler 1988][butler1988], [Butler 1995][butler1995], [Corral 2025][corral2025], [Dignath 2008][dignath2008] (overall 0.69 confirmed; the outcome it covers was not), [Dunlosky 2011][dunlosky2011], [Feng 2009][feng2009], [Guskey 1987][guskey1987], [Hartwig 2012][hartwig2012], [Hartwig 2012b][hartwig2012b], [Janssen 2024][janssen2024], [Jonsson 2012][jonsson2012], [Kelemen 1997][kelemen1997], [Khajah 2016][khajah2016], [Kingston 2011][kingston2011], [Koriat 1997][koriat1997], [Koriat 2005][koriat2005], [Kornell 2008][kornell2008], [Kornell 2009][kornell2009], [Kruger 1999][kruger1999], [Kulik 1990][kulik1990], [Lipko 2009][lipko2009], [Little 2012][little2012], [Magnus 2022][magnus2022], [Nederhand 2020][nederhand2020], [Ober 2022][ober2022], [Panadero 2017][panadero2017], [Pavlik 2005][pavlik2005], [Piech 2015][piech2015], [Rhodes 2008][rhodes2008], [Rhodes 2011][rhodes2011], [Roediger 2005][roediger2005], [Settles 2016][settles2016], [Slavin 1990][slavin1990], [Sortwell 2024][sortwell2024], [Theobald 2021][theobald2021], [Thiede 2003][thiede2003], [van Wijk 2024][vanwijk2024], [Vie 2023][vie2023], [Weaver 1997][weaver1997], [Winstone 2016][winstone2016], [Xuan 2022][xuan2022], [Yang 2022][yang2022].
 
-**Located** (exists, content not checked): [Butler 2008][butler2008], [Corbett 1995][corbett1995], [Desmarais 2011][desmarais2011], [Dunlosky 2012][dunlosky2012] (finding from citing papers), [Gignac 2020][gignac2020], [Gollwitzer 2006][gollwitzer2006], [Gutierrez 2022][gutierrez2022], [Hacker 2000][hacker2000] (findings from secondary summaries), [Karpicke 2009][karpicke2009] (abstract read only in part), [Kornell 2007][kornell2007] (abstract too general to check the survey finding), [Mazor 2021][mazor2021], [Metcalfe 2005][metcalfe2005], [Panadero 2017b][panadero2017b], [Pelánek 2017][pelanek2017], [Prinz 2020][prinz2020], [Zheng 2016][zheng2016], [Zimmerman 2002][zimmerman2002].
+**Located** (exists, content not checked): [Butler 2008][butler2008], [Corbett 1995][corbett1995], [Desmarais 2011][desmarais2011], [Dunlosky 2012][dunlosky2012] (finding from citing papers), [Gignac 2020][gignac2020], [Gutierrez 2022][gutierrez2022], [Hacker 2000][hacker2000] (findings from secondary summaries), [Karpicke 2009][karpicke2009] (abstract read only in part), [Kornell 2007][kornell2007] (abstract too general to check the survey finding), [Mazor 2021][mazor2021], [Metcalfe 2005][metcalfe2005], [Pelánek 2017][pelanek2017], [Prinz 2020][prinz2020], [Zheng 2016][zheng2016], [Zimmerman 2002][zimmerman2002].
 
-**From memory**: none. Sources shared with the learning science report ([Hattie 2007][hattie2007], [Kluger 1996][kluger1996]) carry their status there (verified). The guess and slip parameters in AM-9 and the cold-start remark rest on the model's knowledge of the located sources.
+**From memory**: no source. Sources shared with the learning science report ([Hattie 2007][hattie2007], [Kluger 1996][kluger1996]) carry their status there (verified). The guess and slip parameters in AM-9 and the cold-start remark rest on the model's knowledge of the located sources.
 
-[aeon2021]: https://doi.org/10.1371/journal.pone.0245066
 [agarwal2019]: https://doi.org/10.1037/edu0000282
 [aleven2003]: https://doi.org/10.3102/00346543073003277
 [baker2004]: https://doi.org/10.1145/985692.985741
@@ -171,13 +162,10 @@ Links go to the DOI where one exists, else to the arXiv page. Statuses rest on t
 [corral2025]: https://doi.org/10.1016/j.learninstruc.2025.102219
 [desmarais2011]: https://doi.org/10.1007/s11257-011-9106-8
 [dignath2008]: https://doi.org/10.1007/s11409-008-9029-x
-[double2017]: https://doi.org/10.1080/09658211.2017.1404111
-[double2019]: https://doi.org/10.1007/s10648-019-09510-3
 [dunlosky2011]: https://doi.org/10.1080/17470218.2010.502239
 [dunlosky2012]: https://doi.org/10.1016/j.learninstruc.2011.08.003
 [feng2009]: https://doi.org/10.1007/s11257-009-9063-7
 [gignac2020]: https://doi.org/10.1016/j.intell.2020.101449
-[gollwitzer2006]: https://doi.org/10.1016/S0065-2601(06)38002-1
 [gutierrez2022]: https://doi.org/10.1037/edu0000674
 [guskey1987]: https://doi.org/10.3102/00346543057002225
 [hacker2000]: https://doi.org/10.1037/0022-0663.92.1.160
@@ -206,7 +194,6 @@ Links go to the DOI where one exists, else to the arXiv page. Statuses rest on t
 [nederhand2020]: https://doi.org/10.1007/s11409-020-09233-9
 [ober2022]: https://doi.org/10.1080/0969594X.2022.2037508
 [panadero2017]: https://doi.org/10.3389/fpsyg.2017.00422
-[panadero2017b]: https://doi.org/10.1016/j.edurev.2017.08.004
 [pavlik2005]: https://doi.org/10.1207/s15516709cog0000_14
 [pelanek2017]: https://doi.org/10.1007/s11257-017-9193-2
 [piech2015]: https://arxiv.org/abs/1506.05908
@@ -221,11 +208,9 @@ Links go to the DOI where one exists, else to the arXiv page. Statuses rest on t
 [thiede2003]: https://doi.org/10.1037/0022-0663.95.1.66
 [vanwijk2024]: https://doi.org/10.1186/s12909-024-06538-0
 [vie2023]: https://arxiv.org/abs/2309.12334
-[wang2021]: https://doi.org/10.3389/fpsyg.2021.565202
 [weaver1997]: https://doi.org/10.1111/j.1467-9280.1997.tb00445.x
 [winstone2016]: https://doi.org/10.1080/00461520.2016.1207538
 [xuan2022]: https://doi.org/10.3389/fpsyg.2022.990196
-[yan2022]: https://doi.org/10.1016/j.edurev.2022.100484
 [yang2022]: https://doi.org/10.3102/00346543221094083
 [zheng2016]: https://doi.org/10.1007/s12564-016-9426-9
 [zimmerman2002]: https://doi.org/10.1207/s15430421tip4102_2
