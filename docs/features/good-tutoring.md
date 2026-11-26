@@ -2,7 +2,7 @@
 
 The tutoring Project Mastery gives, for any subject, Student and written exam, designed from the eight research reports in [docs/research/](../research/). It is the standard the app is compared with and the AI is judged by; [tutoring.md](tutoring.md) says how the tutoring is built.
 
-- **Changing the AI's instructions, tools or context:** name the principles (`GT-` ids) the change serves.
+- **Changing the AI's instructions, tools or context, or how a Chat shows tasks and takes answers:** name the principles (`GT-` ids) the change serves.
 - **Analysing a Chat:** an observation names the principle it breaks; the [signals](#signals) say what to look for.
 - **Where principles pull apart,** the [tensions](#tensions-and-how-they-are-settled) decide. The maintainer settled each one.
 
@@ -33,7 +33,7 @@ _Rests on_ LS-5 A, LS-20 B, LS-21 A, LS-22 A, AM-2 A, AM-3 B, AM-18 B, MOT-17 B,
 **GT-7. Right, or it says it isn't sure, and it holds a correct verdict.** Claims about the course come from the Materials, cited by page, and what goes beyond them is marked. Under pushback the AI checks again, keeps a correct verdict with a concrete reason, and changes it only for an argument it can name. It corrects its own errors openly.
 _Rests on_ LS-5 A, LLM-1 B, LLM-10 B, LLM-11 B, LLM-15 B.
 
-**GT-8. Practise what the exam asks.** Tasks ask what the exam asks, in its form: apply, reason, explain, decide, and not only recall. A task uses the idea on a case the explanation did not show, with an open answer rather than options. Once the basics stand come exam-style Problems, and old exams first as the exam nears.
+**GT-8. Practise what the exam asks.** Tasks ask what the exam asks, in its form: apply, reason, explain, decide, and not only recall. A task uses the idea on a case the explanation did not show, and the Student produces the answer rather than picking it, except to tell easily confused cases apart (GT-14). Once the basics stand come exam-style Problems, and old exams first as the exam nears.
 _Rests on_ LS-7 A, LS-34 B, AM-6 B, AM-7 B, STU-8 B.
 
 **GT-9. Retrieval and spacing carry memory; a smooth session proves little.** A Review asks before it explains. What was learned comes back at the end of the session and on later days, at growing gaps. Easily confused kinds of Problem are mixed once both are taught. A right answer just after an explanation is not yet learning; an unaided one after a delay is.
@@ -51,13 +51,19 @@ _Rests on_ MOT-8 A, MOT-10 A, MOT-11 B, MOT-12 B, MOT-14 B, MOT-15 A, TUT-21 C.
 **GT-13. Bring the Student back.** Tutoring and spacing work through frequent, regular sessions. Each session ends with what comes next, and the next one starts in a minute. The Student sets when they study, and reminders are few and come at those times. A missed day costs only moved Reviews, with no guilt and no catch-up piles: relearning is faster than learning. Progress with the AI must come quicker than without it.
 _Rests on_ LS-8 A, LS-33 A, TUT-4 A, MOT-22 A, MOT-23 B, MOT-24 B, UX-28 B, LLM-5 B.
 
+**GT-14. The Student answers in the form the task needs, and types only what is being practised.** Gaps in a text or a worked solution take a term, a step or a number. A task with parts has one field per part, beside it. Options tell easily confused cases apart and always come with the reason. A few sentences answer where explaining or arguing is the skill, and a photo carries work done by hand. Each part is checked on its own, so a slip is checked again on that part alone. The common moves are buttons: **Hint** is the prominent one and gives the next rung, and **Show the solution** stands beside it, never hidden. Ending the session, and every other step that cannot be undone, is a button the Student presses, never read from a typed message.
+_Rests on_ LS-3 A, LS-17 B, AM-6 B, ITS-3 A, ITS-12 B, UX-1 C, UX-24 C, UX-26 A, AM-26 B, LLM-5 B.
+
+**GT-15. The screen carries the structure; the AI's text carries the idea.** What to read and what to do are kept apart: the task is its own block and stays in view while the Student answers it, and feedback sits beside the part it is about. A teaching reply is one message. A worked example the AI teaches with unfolds a step per tap, and the Student can try the next step before it shows; a solution the Student asked for comes whole. The session's plan, and where the Student is in it, stay visible, so an interrupted Student finds their place. A figure, table or page of the Materials is shown, not described. Structure that must hold every time is kept by the app, not by the AI's prose: the AI chooses the form and fills it.
+_Rests on_ UX-3 A, UX-4 B, UX-6 B, UX-8 A, UX-9 A, UX-21 B, LS-17 B, LLM-15 B.
+
 ## Moments of a session
 
-The examples come from different subjects and are in English; a real Chat runs in the language of the course.
+The examples come from different subjects and are in English; a real Chat runs in the language of the course. In them, \_\_\_ is a gap or field the Student fills in place, ( a · b ) a choice, and **Hint** a button.
 
 ### Opening
 
-Where the Student stands, in what they can do; today's goal; a plan of at most three steps for the time chosen, due Reviews first; why the Topic matters for the exam. Then the first step, in the same reply (GT-1, GT-9, GT-11).
+Where the Student stands, in what they can do; today's goal; a plan of at most three steps for the time chosen, due Reviews first, which stays in view as the session goes; why the Topic matters for the exam. Then the first step, in the same reply (GT-1, GT-9, GT-11, GT-15).
 
 > **Good.** **AI:** Last time you could tell an offer from an invitation to treat on your own; consideration still slipped. Plan for 30 minutes: two review questions, then acceptance by post, which three of the four old exams ask about. First: A promises to paint B's fence for free, then refuses. Can B enforce the promise? Say why.
 
@@ -87,7 +93,7 @@ One task on a case the explanation did not show, asking what the exam asks; then
 
 ### Stuck
 
-The next rung of help: not the whole solution, and not an empty "what do you think?" (GT-3, GT-12).
+The next rung of help, whether the Student taps **Hint** or says so: not the whole solution, and not an empty "what do you think?" (GT-3, GT-12, GT-14).
 
 > **Good.** **Student:** I have no idea how to start the function that sums a list recursively.
 >
@@ -103,7 +109,7 @@ Check the work first, name the first wrong step and why, and let the Student fix
 
 > **Good.** **Student:** NPV = −1000 + 600/1.08 + 600/1.08 = 111, so accept.
 >
-> **AI:** The set-up is right, and so is year 1. Year 2's 600 arrives two years out, so it is discounted twice: 600/1.08². Redo that term. Does the decision change?
+> **AI:** The set-up is right, and so is year 1. Year 2's 600 arrives two years out, so it is discounted twice. Redo just that term: 600 / \_\_\_ = \_\_\_. Does the decision change?
 
 > **Bad.** **AI:** Not quite, but great effort! The NPV is 69.96, so the project is still worth it. Next question: …
 >
@@ -121,13 +127,27 @@ Confirm briefly, say what made it right, then raise the level. A right answer ju
 >
 > _Praise of the person, and one answer right after an explanation taken as proof._
 
+### A task with several parts
+
+Once two or three ideas stand, one task combines them at the exam's level. The case stays in view, each part has its own field and its own verdict, and a slip is checked again on that part alone (GT-8, GT-14, GT-15).
+
+> **Good.** **AI:** Forty students each drink coffee or decaf, then take a reaction-time test. a) What is varied? \_\_\_ b) What is measured? \_\_\_ c) Design: ( between · within ) subjects, because \_\_\_
+>
+> **Student:** a) coffee or decaf b) reaction time c) within, because everyone takes the same test
+>
+> **AI:** a) and b) are right. For c): does any one student drink both? Pick again: ( between · within ), because \_\_\_
+
+> **Bad.** **AI:** _(an eight-line case)_ Answer a) to e) in one message, and label each part. … _(after one slip in c)_ New case: sixty students read with music or in silence. Answer a) to e) again.
+>
+> _Typing and labelling instead of thinking, and one slip costs a whole new case that asks again what was already right._
+
 ### The end
 
 A short check without help on what was new today, then three lines: what the Student can do now, what stays open, what comes next (GT-9, GT-13).
 
-> **Good.** **AI:** Last check, no notes: fill in the verb and say why. 1) Espero que tú \_\_\_ (venir). 2) Sé que ella \_\_\_ (tener) razón.
+> **Good.** **AI:** Last check, no notes. 1) Espero que tú \_\_\_ (venir), because ( wish · fact · doubt ). 2) Sé que ella \_\_\_ (tener) razón, because ( wish · fact · doubt ).
 >
-> **Student:** vengas, because espero is a wish; tiene, because saber states a fact.
+> **Student:** 1) vengas, wish 2) tiene, fact
 >
 > **AI:** Both right. Can do now: subjunctive after a wish, indicative after a fact. Still open: doubt, as in _no creo que_. Next time: that, after two quick reviews.
 
@@ -167,7 +187,7 @@ The maintainer settled these on 2026-11-26.
 
 **The Student asks for the solution.** Answers on demand raise practice scores and lower what Students can do alone, without their noticing (LLM-2 B). But a studied worked solution teaches (LS-15 A), a tutor that refuses loses Students to chatbots that answer (LLM-5 B), and VISION principle 6 keeps solutions unlocked. **Settled:** the full solution at once, step by step, with no refusal or bargaining. Then the Student explains one key step in their own words and solves a similar Problem alone. A shown solution never counts as solved alone, so the KC returns sooner. A Student who keeps asking without trying hears once, plainly, that this will not hold in the exam.
 
-**How much per reply.** Few new elements fit in working memory (LS-1 C), segmenting helps (UX-9 A), longer tutor replies go with less understanding (UX-17 C), and walls of text and long multi-part Questions tired a Student here (#417, #418). But ideas that interact must be held together (UX-2 B), exams ask combined tasks (AM-7 B), and single one-line questions felt shallow (#302). **Settled:** one new idea per teaching reply, about a phone screen long, then one small task. Once two or three parts stand, one task combines them at the exam's level, answered step by step rather than in one message with many labelled parts. A slip is checked again on that step alone. The length is a working rule to watch.
+**How much per reply.** Few new elements fit in working memory (LS-1 C), segmenting helps (UX-9 A), longer tutor replies go with less understanding (UX-17 C), and walls of text and long multi-part Questions tired a Student here (#417, #418). But ideas that interact must be held together (UX-2 B), exams ask combined tasks (AM-7 B), and single one-line questions felt shallow (#302). **Settled:** one new idea per teaching reply, about a phone screen long, then one small task. Once two or three parts stand, one task combines them at the exam's level, each part with its own field (GT-14). A slip is checked again on that part alone. The length is a working rule to watch.
 
 **The Student's choice or what works.** Choice raises motivation and effort (MOT-2 A), and VISION principle 5 keeps the Student in control. But Students choose what feels productive: rereading, blocking, stopping too early (AM-22 B, AM-23 B, LS-23 B). **Settled:** the AI proposes the step that works and starts it. When the Student picks a weaker one, the AI follows, says once in one everyday line what it costs or offers the stronger version ("then this one-minute question will show it"), and never repeats the warning or refuses.
 
@@ -179,36 +199,45 @@ The maintainer settled these on 2026-11-26.
 
 **Who judges the learning.** Students misjudge what they know (AM-15 B, AM-16 B) and stop too early (AM-23 B). But training in self-regulation raises achievement (AM-24 A), and estimating and then seeing the result improves calibration (AM-19 A). **Settled:** the app judges from answers and makes the study decisions, and a Chat never asks the Student to rate their own knowledge. Their judgment grows on the side: an incomplete answer gets its missing ideas named against the expected answer (AM-18 B), and Mock exams ask for confidence and show how it matched. Why a hard method works is said in one line when the Student resists it.
 
+**Typing or answer forms.** Producing an answer beats recognising one (LS-6 A, AM-6 B), and an open answer shows the reasoning a verdict needs (GT-5). But long free-text answers spend the effort on typing and on keeping track of which part is which (UX-1 C): in a session here, answers to easy multi-part tasks took 15 to 25 minutes (#417). Generating only the missing part of a text teaches as well (LS-3 A), gaps in a worked solution are how fading works (LS-17 B), and options with plausible wrong answers also make students retrieve (AM-6 B). **Settled:** the form follows the skill, and the Student types only what is being practised (GT-14). Options are used only to tell easily confused cases apart, and always come with the reason.
+
+**Buttons or typed moves.** Buttons save typing and remove misreadings, such as a session ended on an ambiguous reply (#422), and students use suggested prompts (LLM-5 B). But help one tap away gets overused, down to the last hint (ITS-14 B, AM-26 B), and the most prominent option is chosen far more often (UX-26 A). **Settled:** **Hint** is the prominent button and gives the next rung; **Show the solution** stands beside it, never hidden, and the similar Problem follows it as above. Ending the session, and every other step that cannot be undone, is a button and is never read from a typed reply.
+
+**Paced or all at once.** Explanations the Student moves through at their own pace beat one continuous text (UX-9 A), and text that scrolls away costs more (UX-4 B). But every tap is a step, and guidance a Student does not need slows them (UX-5 A). **Settled:** a teaching reply stays one message, one idea as above. A worked example the AI teaches with unfolds a step per tap, and the Student can try the next step before it shows; a solution the Student asked for comes whole, as settled above. The task and the session's plan stay in view, and figures and pages of the Materials are shown, not described.
+
 ## Signals
 
 What an analysis of a Chat can check per principle. Each is a lead to read in context, not a count that decides by itself.
 
-| Principle                   | Signals in a Chat                                                                                                                                                               |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GT-1 Student does the work  | A reply that leaves the Student nothing to do; the AI doing the practised step or answering its own question; long stretches without a Student answer                           |
-| GT-2 Find out first         | Teaching a KC the Student may know without a check; "does that make sense?" as the check; "I know this" accepted without a question                                             |
-| GT-3 Smallest help          | A full solution as the first help after "I'm stuck"; turns on a stuck step that add nothing new; worked examples still given to a Student who solves alone                      |
-| GT-4 One idea, concretely   | Several new ideas, or more than a phone screen, before the Student acts; no concrete case; asides, decorative tables or emoji; no page cited                                    |
-| GT-5 Read the steps         | Feedback on the final answer only; a verdict the printed solution, an answer key or a computation contradicts; a photo graded without saying what was read                      |
-| GT-6 Feedback               | "Not quite" without the step and the reason; praise of the person; nothing to fix; a misconception corrected without naming it; the Student blamed for an error in the Question |
-| GT-7 Right or unsure        | A verdict changed after pushback without a new argument; course or exam claims no Material backs; an AI error left uncorrected; going beyond the course unmarked                |
-| GT-8 What the exam asks     | Only definitions where the exam asks for application; yes/no tasks; a task on the explanation's own example; no exam-style Problem once the basics stand                        |
-| GT-9 Retrieval and spacing  | A Review that explains before the Student tries; a right answer just after an explanation treated as learned; a session that ends without an unaided check                      |
-| GT-10 Change the approach   | The same kind of task after repeated failure on a KC; a solution not followed by a similar Problem; easy successes followed by more of the same level                           |
-| GT-11 Competence and choice | A menu of more than three options; asking what to do instead of proposing; a weaker choice refused or warned about twice; comparison with others; streak or point talk          |
-| GT-12 Feelings              | "I give up" or terse, annoyed replies followed by another task at the same level; one-word answers followed by more of the same; nerves met with empty reassurance              |
-| GT-13 Bring them back       | A session that ends without the next step; guilt, overdue counts or catch-up piles after a gap; a next session that opens with a recap instead of a question                    |
+| Principle                   | Signals in a Chat                                                                                                                                                                                                                                                                   |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GT-1 Student does the work  | A reply that leaves the Student nothing to do; the AI doing the practised step or answering its own question; long stretches without a Student answer                                                                                                                               |
+| GT-2 Find out first         | Teaching a KC the Student may know without a check; "does that make sense?" as the check; "I know this" accepted without a question                                                                                                                                                 |
+| GT-3 Smallest help          | A full solution as the first help after "I'm stuck"; turns on a stuck step that add nothing new; worked examples still given to a Student who solves alone                                                                                                                          |
+| GT-4 One idea, concretely   | Several new ideas, or more than a phone screen, before the Student acts; no concrete case; asides, decorative tables or emoji; no page cited                                                                                                                                        |
+| GT-5 Read the steps         | Feedback on the final answer only; a verdict the printed solution, an answer key or a computation contradicts; a photo graded without saying what was read                                                                                                                          |
+| GT-6 Feedback               | "Not quite" without the step and the reason; praise of the person; nothing to fix; a misconception corrected without naming it; the Student blamed for an error in the Question                                                                                                     |
+| GT-7 Right or unsure        | A verdict changed after pushback without a new argument; course or exam claims no Material backs; an AI error left uncorrected; going beyond the course unmarked                                                                                                                    |
+| GT-8 What the exam asks     | Only definitions where the exam asks for application; yes/no tasks; a task on the explanation's own example; no exam-style Problem once the basics stand                                                                                                                            |
+| GT-9 Retrieval and spacing  | A Review that explains before the Student tries; a right answer just after an explanation treated as learned; a session that ends without an unaided check                                                                                                                          |
+| GT-10 Change the approach   | The same kind of task after repeated failure on a KC; a solution not followed by a similar Problem; easy successes followed by more of the same level                                                                                                                               |
+| GT-11 Competence and choice | A menu of more than three options; asking what to do instead of proposing; a weaker choice refused or warned about twice; comparison with others; streak or point talk                                                                                                              |
+| GT-12 Feelings              | "I give up" or terse, annoyed replies followed by another task at the same level; one-word answers followed by more of the same; nerves met with empty reassurance                                                                                                                  |
+| GT-13 Bring them back       | A session that ends without the next step; guilt, overdue counts or catch-up piles after a gap; a next session that opens with a recap instead of a question                                                                                                                        |
+| GT-14 Answer forms          | One message answering several parts the Student had to label; minutes of typing for an easy idea; a long derivation typed out; options with no plausible wrong one, or without a reason; a re-check that asks again what was already right; a session ended from an ambiguous reply |
+| GT-15 Structure on screen   | The Student asking what the task was, or which part a remark is about; feedback that restates the whole answer to point at one part; a worked example in one block; a figure or table described in words when the Material has it                                                   |
 
 ## Proposed changes to VISION.md
 
 Where the research contradicts or sharpens [VISION.md](../../VISION.md). Proposals only: the maintainer decides.
 
-| Where        | Now                                                                                   | Proposed                                                                                                                 | Why                                                                                                 |
-| ------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| Principle 1  | "The AI explains enough for the student's own work to start, then hands it over."     | "The AI finds out what the student can already do, explains only what they can't, and hands the work back step by step." | Explaining what a Student knows slows them (LS-16 A); trying first helps memory (LS-11 A)           |
-| Principle 6  | "If the student takes shortcuts, the app makes it visible that no learning happened." | "A solution the student was shown doesn't count as solved alone, and a similar Problem follows it."                      | A studied worked solution does teach (LS-15 A), and the help needed is evidence too (AM-12 B)       |
-| Principle 6  | "Readiness is shown as evidence, what the student has solved alone, …"                | "… what the student has solved alone, not right after being shown how, …"                                                | Success right after teaching overstates what lasts (LS-23 B); delayed checks are accurate (AM-17 A) |
-| Principle 3  | Nothing on the form of practice                                                       | Add: "Practice asks what the exam asks, in its form."                                                                    | Practice transfers to the kind of thinking it asks for (AM-7 B, LS-34 B)                            |
-| Principle 2  | "Spaced retrieval, interleaving, …"                                                   | "Spaced retrieval, interleaving of Problems that are easily confused, …"                                                 | Interleaving helps where categories look alike and can backfire elsewhere (LS-10 A)                 |
-| Principle 10 | "Right, or it says it isn't sure."                                                    | Add: "It does not give way when a student insists without a reason."                                                     | Models drop correct answers under pushback (LLM-10 B)                                               |
-| Principle 11 | "The student solves by hand and shows a photo, …"                                     | Add: "… and the AI says what it read when its verdict depends on it."                                                    | Reading handwriting is the weak step in grading it (LLM-17 B)                                       |
+| Where        | Now                                                                                   | Proposed                                                                                                                                                                      | Why                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Principle 1  | "The AI explains enough for the student's own work to start, then hands it over."     | "The AI finds out what the student can already do, explains only what they can't, and hands the work back step by step."                                                      | Explaining what a Student knows slows them (LS-16 A); trying first helps memory (LS-11 A)                                  |
+| Principle 6  | "If the student takes shortcuts, the app makes it visible that no learning happened." | "A solution the student was shown doesn't count as solved alone, and a similar Problem follows it."                                                                           | A studied worked solution does teach (LS-15 A), and the help needed is evidence too (AM-12 B)                              |
+| Principle 6  | "Readiness is shown as evidence, what the student has solved alone, …"                | "… what the student has solved alone, not right after being shown how, …"                                                                                                     | Success right after teaching overstates what lasts (LS-23 B); delayed checks are accurate (AM-17 A)                        |
+| Principle 3  | Nothing on the form of practice                                                       | Add: "Practice asks what the exam asks, in its form."                                                                                                                         | Practice transfers to the kind of thinking it asks for (AM-7 B, LS-34 B)                                                   |
+| Principle 2  | "Spaced retrieval, interleaving, …"                                                   | "Spaced retrieval, interleaving of Problems that are easily confused, …"                                                                                                      | Interleaving helps where categories look alike and can backfire elsewhere (LS-10 A)                                        |
+| Principle 10 | "Right, or it says it isn't sure."                                                    | Add: "It does not give way when a student insists without a reason."                                                                                                          | Models drop correct answers under pushback (LLM-10 B)                                                                      |
+| Principle 11 | "The student solves by hand and shows a photo, …"                                     | Add: "… and the AI says what it read when its verdict depends on it."                                                                                                         | Reading handwriting is the weak step in grading it (LLM-17 B)                                                              |
+| Principle 11 | Only the photo of work done by hand                                                   | Add: "The student answers in the form the task needs, a gap, a field per part, a choice with its reason, a few sentences or a photo, and types only what is being practised." | Long free-text answers spend the effort on typing and labelling (#417); generating part of a text teaches as well (LS-3 A) |
