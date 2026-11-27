@@ -82,6 +82,8 @@ type SessionFacts = {
   openQuestion: {
     prompt: string;
     kcs: Array<{ id: string; name: string }>;
+    /** Its parts in order; empty for a Question without parts. */
+    parts: Array<{ position: number; prompt: string }>;
     answered: boolean;
   } | null;
   /** Since the session's last graded Question; null without one. */
@@ -269,6 +271,33 @@ export type ProblemView = {
     /** Null when the Course has no solution for it. */
     markdown: string | null;
   };
+};
+
+/**
+ * The field a part of a Question is answered in: a term or number, a few
+ * sentences, or a choice between options.
+ */
+export type PartForm = "short" | "long" | "choice";
+
+/** A part's grade: an Attempt's result, or none for a part left empty. */
+export type PartResult = AttemptResult | "unanswered";
+
+/** A part of a graded Question as `grade` returns it. */
+export type GradedPart = {
+  /** 1 to 6, in the card's order. */
+  position: number;
+  result: PartResult;
+  /** One line on this part, at most 300 characters. */
+  note: string;
+};
+
+/** The Student's answer to a part, as a Submit sends it. */
+export type PartAnswer = {
+  position: number;
+  /** The field's text; empty when left empty. */
+  text: string;
+  /** The chosen option's index for a choice part; null for none. */
+  choice: number | null;
 };
 
 /**

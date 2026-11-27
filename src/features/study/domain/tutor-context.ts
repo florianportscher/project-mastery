@@ -73,6 +73,8 @@ export type TutorContextInput = {
     questions: Array<{
       prompt: string;
       kcIds: string[];
+      /** Its parts in order; empty for a Question without parts. */
+      parts: Array<{ position: number; prompt: string }>;
       answered: boolean;
       gradedAt: string | null;
     }>;
@@ -140,6 +142,7 @@ export function tutorContext(input: TutorContextInput): TutorContext {
           ? {
               prompt: open.prompt,
               kcs: open.kcIds.map((id) => ({ id, name: nameOf(id) })),
+              parts: open.parts,
               answered: open.answered,
             }
           : null,

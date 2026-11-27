@@ -9,12 +9,31 @@ export const messageTooLongMessage = `Your message is too long. Keep it under ${
 
 export const chatNotFoundMessage = "This chat does not exist.";
 
+/** The longest answer to one part of a Question, in characters. */
+export const MAX_PART_ANSWER_LENGTH = 1500;
+
+/** What a Submit sends: the Student's answer to each part of a Question. */
+const submittedAnswerSchema = z.object({
+  questionId: z.uuid(),
+  parts: z
+    .array(
+      z.object({
+        position: z.number().int().min(1).max(6),
+        text: z.string().max(MAX_PART_ANSWER_LENGTH),
+        choice: z.number().int().min(0).max(3).nullable(),
+      }),
+    )
+    .min(1)
+    .max(6),
+});
+
 /**
  * A message's metadata (see `ChatMessageMetadata`): what the server attaches
- * to AI messages.
+ * to AI messages, and a Submit's answer on a Student message.
  */
 export const chatMessageMetadataSchema = z
   .object({
+    answer: submittedAnswerSchema.optional(),
     modelId: z.string().optional(),
     stopped: z.boolean().optional(),
     // Built by the server and only displayed, so only its shape is checked.
@@ -75,6 +94,7 @@ const studentMessageSchema = z.object({
         MAX_ATTACHED_MATERIALS,
       tooManyMaterialsMessage,
     ),
+  metadata: z.object({ answer: submittedAnswerSchema }).optional(),
 });
 
 /**

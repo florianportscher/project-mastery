@@ -1,6 +1,6 @@
 import type { UIMessage } from "ai";
 import type { MaterialReference } from "@/features/courses";
-import type { ProblemFlag, TutorContext } from "@/features/study";
+import type { PartAnswer, ProblemFlag, TutorContext } from "@/features/study";
 import type { ReplyUsage } from "@/features/usage";
 
 /** What the server attaches to an AI message besides its parts. */
@@ -19,7 +19,14 @@ export type ChatMessageMetadata = {
    * loaded from the reply's `ai_usage` record; missing on older replies.
    */
   usage?: ReplyUsage;
+  /**
+   * On a Student message sent by a Question card's Submit: the answer to
+   * each of its parts. The Chat shows it in the card, not as a message.
+   */
+  answer?: SubmittedAnswer;
 };
+
+export type SubmittedAnswer = { questionId: string; parts: PartAnswer[] };
 
 /** The custom data parts of Chat messages, by name without `data-`. */
 type ChatDataParts = {

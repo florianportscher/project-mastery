@@ -62,36 +62,63 @@ test("a message to a session idle for over 2 hours ends it at its newest message
 const sessionOf = (chatId: string) =>
   db.tables.study_sessions.find((row) => row.chat_id === chatId)!;
 
-test("the Student's messages after a question are its answer, until it is graded", async () => {
+test("a message with a photo answers the whole open Question; a typed one doesn't", async () => {
   seedMap();
   const chatId = randomUUID();
+  const part = {
+    prompt: "Why?",
+    kcId: MAP.thrust,
+    form: "short",
+    options: null,
+  };
   useMockModels({
     chat: mockToolModel(
-      [[{ toolName: "ask", input: { prompt: "Why?", kcIds: [MAP.thrust] } }]],
+      [[{ toolName: "ask", input: { prompt: "A jet.", parts: [part] } }]],
       "",
     ),
   });
   await send({ chatId, courseId: COURSE, message: userMessage("Quiz me") });
 
   useMockModels({ chat: mockTextModel("Go on.") });
-  const answerId = randomUUID();
-  await send({ chatId, message: userMessage("Mass flow.", answerId) });
-  await send({ chatId, message: userMessage("Times velocity.") });
+  await send({ chatId, message: userMessage("What is thrust?") });
+  expect(db.tables.questions[0]!.answered_at).toBeNull();
 
-  expect(db.tables.questions).toEqual([
-    expect.objectContaining({
-      prompt: "Why?",
-      answer_text: "Mass flow.\n\nTimes velocity.",
-      answer_message_id: answerId,
-      answered_at: expect.any(String),
-    }),
-  ]);
+  const photo = { id: randomUUID(), name: "Photo", mediaType: "image/png" };
+  const storagePath = `${STUDENT}/${COURSE}/${photo.id}`;
+  db.files.seed("course-files", storagePath, {
+    body: "png",
+    contentType: photo.mediaType,
+  });
+  db.tables.materials.push({
+    id: photo.id,
+    owner: STUDENT,
+    course_id: COURSE,
+    name: photo.name,
+    media_type: photo.mediaType,
+    size_bytes: 3,
+    storage_path: storagePath,
+  });
+  const answer = {
+    ...userMessage("My working."),
+    parts: [
+      { type: "text", text: "My working." },
+      {
+        type: "data-material",
+        data: {
+          materialId: photo.id,
+          name: photo.name,
+          mediaType: "image/png",
+        },
+      },
+    ],
+  };
+  await send({ chatId, message: answer });
 
-  db.tables.questions[0]!.graded_at = new Date().toISOString();
-  await send({ chatId, message: userMessage("Next one?") });
-  expect(db.tables.questions[0]!.answer_text).toBe(
-    "Mass flow.\n\nTimes velocity.",
-  );
+  expect(db.tables.questions[0]).toMatchObject({
+    answer_text: "My working.",
+    answer_message_id: answer.id,
+    answered_at: expect.any(String),
+  });
 });
 
 test("a session's first reply ends and closes the Course's idle sessions, not a running one", async () => {

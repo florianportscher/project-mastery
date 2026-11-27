@@ -34,6 +34,8 @@ import {
   StudentMessage,
 } from "@/features/chat/components/chat-message";
 import { MessageActionRow } from "@/features/chat/components/message-action-row";
+import type { QuestionAnswering } from "@/features/chat/components/question-card";
+import { questionStates } from "@/features/chat/domain/question-states";
 import { replyIsEmpty } from "@/features/chat/domain/reply-steps";
 import { chatLabel } from "@/features/chat/domain/chat-label";
 import { SessionStrip } from "@/features/chat/components/session-strip";
@@ -269,6 +271,20 @@ export function Chat({
     [chat.messages],
   );
 
+  const questions = useMemo(() => questionStates(messages), [messages]);
+  const answering: QuestionAnswering = {
+    states: questions,
+    disabled: isBusy || limitReached || ended,
+    onSubmit: (questionId, parts, text) => {
+      setInputError(null);
+      clearError();
+      void sendMessage({
+        text,
+        metadata: { answer: { questionId, parts } },
+      });
+    },
+  };
+
   async function handleSubmit({ text }: { text: string }) {
     if (
       (text.trim() === "" && attached.length === 0) ||
@@ -346,6 +362,7 @@ export function Chat({
                     arrived={!storedIds.has(message.id)}
                     showDetails={showDetails}
                     problemFlags={chat.problemFlags}
+                    answering={answering}
                     onRegenerate={
                       isLast && !limitReached && !ended
                         ? () => {
@@ -355,7 +372,8 @@ export function Chat({
                         : undefined
                     }
                   />
-                ) : (
+                ) : message.metadata?.answer ? null : (
+                  // A Submit shows in its Question card.
                   <StudentMessage
                     key={message.id}
                     message={message}

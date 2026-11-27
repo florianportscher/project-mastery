@@ -191,10 +191,17 @@ test("a Student who redirected: today's checks touch another Topic, whose notes 
         {
           prompt: "Why k3?",
           kcIds: ["k3"],
+          parts: [],
           answered: true,
           gradedAt: "2026-11-07T09:55:00Z",
         },
-        { prompt: "And k1?", kcIds: ["k1"], answered: false, gradedAt: null },
+        {
+          prompt: "And k1?",
+          kcIds: ["k1"],
+          parts: [{ position: 1, prompt: "Name it." }],
+          answered: false,
+          gradedAt: null,
+        },
       ],
       readings: [],
     },
@@ -202,7 +209,7 @@ test("a Student who redirected: today's checks touch another Topic, whose notes 
   expect(text).toContain("Shown without help today: KC k3 (KC id k3).");
   expect(text).toContain("Last graded Question 5 minutes ago.");
   expect(text).toContain(
-    "Open Question, not answered, on KC k1 (KC id k1):\n> And k1?",
+    "Open Question, not answered, on KC k1 (KC id k1):\n> And k1?\nPart 1: Name it.",
   );
   expect(text).toContain("## Topic notes: Topic t2\nNever shown.");
   expect(text).toContain(
@@ -270,7 +277,13 @@ describe("the session's length and Topic", () => {
     });
     const asked = build({
       session: session(null, [
-        { prompt: "?", kcIds: ["k3"], answered: false, gradedAt: null },
+        {
+          prompt: "?",
+          kcIds: ["k3"],
+          parts: [],
+          answered: false,
+          gradedAt: null,
+        },
       ]),
     });
     expect(asked.session.topic?.id).toBe("t2");

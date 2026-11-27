@@ -2,7 +2,7 @@ import { expect, seedKc, test } from "./fixtures";
 
 /** Ending a Study session in a Chat, with the mock AI (AI_PROVIDER=mock). */
 
-test("a session from the Today card: a question answered in the input is graded, and the close card lists its KC", async ({
+test("a session from the Today card: a question answered in its card is graded per part, and the close card lists its KC", async ({
   page,
   student,
   course,
@@ -20,21 +20,31 @@ test("a session from the Today card: a question answered in the input is graded,
   await expect(page.getByRole("button", { name: "Regenerate" })).toBeVisible();
   await expect(page.getByTestId("session-strip")).toContainText("0 of 15 min");
 
-  // The mock asks on the first KC id of the tutor context.
+  // The mock asks two parts on the KC ids of the tutor context.
   const message = page.getByRole("textbox", { name: "Message" });
   await message.fill("Quiz me");
   await message.press("Enter");
-  await expect(page.getByTestId("question")).toContainText("what is");
-  // The composer sends nothing while a reply streams: wait for its end.
+  const question = page.getByTestId("question");
+  await expect(question).toContainText("two plus two");
+  // The card sends nothing while a reply streams: wait for its end.
   await expect(page.getByRole("button", { name: "Regenerate" })).toBeVisible();
-  await message.fill("4");
-  await message.press("Enter");
+  // One part filled, one left empty.
+  await question.getByRole("textbox", { name: "Part 1" }).fill("4");
+  await question.getByRole("button", { name: "Submit" }).click();
+
+  const parts = question.getByTestId("question-part");
+  await expect(parts.nth(0)).toContainText("Right");
+  await expect(parts.nth(0)).toContainText("Mock note: right.");
+  await expect(parts.nth(1)).toContainText("Not answered");
+  // The card keeps the answer; the Submit shows no message of its own.
+  await expect(question.getByRole("textbox", { name: "Part 1" })).toHaveValue(
+    "4",
+  );
   await expect(
-    page.getByTestId("message-text").filter({ hasText: /^4$/ }),
-  ).toBeVisible();
-  await expect(
-    page.getByText('Mock reply to "4"', { exact: false }),
-  ).toBeVisible();
+    question.getByRole("textbox", { name: "Part 1" }),
+  ).toBeDisabled();
+  await expect(question.getByRole("button", { name: "Submit" })).toBeHidden();
+  await expect(page.getByText("Part 1: 4")).toBeHidden();
   await expect(
     page
       .getByTestId("session-strip")

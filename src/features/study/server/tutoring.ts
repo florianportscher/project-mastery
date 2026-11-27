@@ -140,8 +140,8 @@ function tutorToolActions(
       requireKnown(kcIds);
       return findProblems(supabase, courseId, map, kcIds);
     },
-    async ask({ kcIds, problemId, ...question }) {
-      requireKnown(kcIds);
+    async ask({ problemId, ...question }) {
+      requireKnown(question.parts.map(({ kcId }) => kcId));
       const problem = problemId === null ? null : await posedProblem(problemId);
       if (problemId !== null && !problem) {
         throw new TutorToolError(
@@ -151,7 +151,6 @@ function tutorToolActions(
       const questionId = await insertQuestion(supabase, {
         ...question,
         sessionId: session(),
-        kcIds,
         exerciseId: problem?.generatedProblemId === null ? problemId : null,
         problemId: problem?.generatedProblemId ?? null,
       });
@@ -171,11 +170,12 @@ function tutorToolActions(
         sessionEnded: end !== null,
       };
     },
-    async saveGrade({ questionId, help, results, check }) {
+    async saveGrade({ questionId, help, parts, results, check }) {
       const saved = await saveAttempts(supabase, {
         questionId,
         sessionId: session(),
         help,
+        parts,
         results,
         check,
       });

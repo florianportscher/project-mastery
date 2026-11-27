@@ -26,6 +26,10 @@ export { sessionEndedMessage } from "./schemas";
 export type {
   AskedProblem,
   GradedKc,
+  GradedPart,
+  PartAnswer,
+  PartForm,
+  PartResult,
   ProblemFlag,
   ProblemView,
   TopicView,

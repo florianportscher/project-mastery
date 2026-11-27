@@ -81,6 +81,7 @@ function createDb() {
       study_sessions: [],
       questions: [],
       question_kcs: [],
+      question_parts: [],
       attempts: [],
       memories: [],
       topics: [],
@@ -104,6 +105,7 @@ function createDb() {
       problem_kcs: { problem_id: "problems" },
       mock_items: { question_id: "questions" },
       question_kcs: { question_id: "questions" },
+      question_parts: { question_id: "questions" },
       attempts: { question_id: "questions", session_id: "study_sessions" },
     },
     // Every new Chat starts a Study session in its Course.
@@ -208,6 +210,13 @@ function createDb() {
         answered_at: null,
         graded_at: null,
       }),
+      question_parts: () => ({
+        owner: signedIn,
+        answer_text: null,
+        choice: null,
+        result: null,
+        note: null,
+      }),
       // Recorded now, as in the database, so the FSRS replay reads it today.
       attempts: () => ({
         owner: signedIn,
@@ -237,6 +246,7 @@ function createDb() {
         table === "materials" ||
         table === "study_sessions" ||
         table === "questions" ||
+        table === "question_parts" ||
         table === "attempts" ||
         table === "topic_notes" ||
         table === "mock_exams" ||
@@ -309,6 +319,27 @@ beforeEach(() => {
 
 export function userMessage(text: string, id: string = randomUUID()) {
   return { id, role: "user", parts: [{ type: "text", text }] };
+}
+
+/** A Question card's Submit of `texts`, one per part from position 1. */
+export function submitMessage(
+  questionId: unknown,
+  texts: string[],
+  choices: Array<number | null> = [],
+) {
+  const parts = texts.map((text, index) => ({
+    position: index + 1,
+    text,
+    choice: choices[index] ?? null,
+  }));
+  return {
+    ...userMessage(
+      parts
+        .map(({ position, text }) => `Part ${position}: ${text}`)
+        .join("\n\n"),
+    ),
+    metadata: { answer: { questionId, parts } },
+  };
 }
 
 /**

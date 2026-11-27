@@ -2,20 +2,21 @@
 
 import { Markdown } from "@/components/markdown";
 import { chatMarkdownComponents } from "@/features/chat/components/citation-link";
+import {
+  QuestionCard,
+  type QuestionAnswering,
+} from "@/features/chat/components/question-card";
 import { StepCard } from "@/features/chat/components/step-card";
 import { ReadingCard } from "@/features/chat/components/reading-card";
-import {
-  replySegments,
-  type ReplySegment,
-} from "@/features/chat/domain/reply-steps";
+import { replySegments } from "@/features/chat/domain/reply-steps";
 import type { ChatUIMessage } from "@/features/chat/types";
-import { ProblemFlagControl, type ProblemFlag } from "@/features/study";
+import type { ProblemFlag } from "@/features/study";
 
 /**
  * An AI reply's text and tool calls in the order they came: text as
- * Markdown, a question it asked inline as the AI's question, a reading it
- * opened as a reading card, and, with `showSteps`, each other tool call as
- * a step card.
+ * Markdown, a question it asked as a Question card, a reading it opened as
+ * a reading card, and, with `showSteps`, each other tool call as a step
+ * card.
  */
 export function ReplyParts({
   parts,
@@ -24,6 +25,7 @@ export function ReplyParts({
   arrived,
   showSteps,
   problemFlags,
+  answering,
 }: {
   parts: ChatUIMessage["parts"];
   streaming: boolean;
@@ -38,6 +40,7 @@ export function ReplyParts({
   showSteps: boolean;
   /** The stored flags of the generated Problems posed, by Problem id. */
   problemFlags: Record<string, ProblemFlag>;
+  answering: QuestionAnswering;
 }) {
   const segments = replySegments(parts, { inProgress });
   return segments.map((segment, i) => {
@@ -54,10 +57,11 @@ export function ReplyParts({
         );
       case "question":
         return (
-          <QuestionView
+          <QuestionCard
             key={segment.question.id}
             question={segment.question}
             problemFlags={problemFlags}
+            answering={answering}
           />
         );
       case "reading":
@@ -74,39 +78,4 @@ export function ReplyParts({
         ) : null;
     }
   });
-}
-
-type Question = Extract<ReplySegment, { kind: "question" }>["question"];
-
-/**
- * A question as part of the reply, answered in the normal input: its
- * prompt, or the Problem it poses, with an Exercise's page link, which
- * opens in the source pane, and a generated Problem's flag control.
- */
-function QuestionView({
-  question,
-  problemFlags,
-}: {
-  question: Question;
-  problemFlags: Record<string, ProblemFlag>;
-}) {
-  const { problem } = question;
-  return (
-    <div data-testid="question" className="flex flex-col gap-2">
-      <Markdown components={chatMarkdownComponents}>
-        {problem?.statement ?? question.prompt}
-      </Markdown>
-      {problem?.page && (
-        <Markdown components={chatMarkdownComponents}>
-          {`[${problem.page.label}](${problem.page.link})`}
-        </Markdown>
-      )}
-      {problem?.generatedProblemId && (
-        <ProblemFlagControl
-          problemId={problem.generatedProblemId}
-          flag={problemFlags[problem.generatedProblemId]}
-        />
-      )}
-    </div>
-  );
 }

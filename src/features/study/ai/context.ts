@@ -118,7 +118,9 @@ function session({ session: s }: TutorContext): string {
       ? [
           `Open Question, ${s.openQuestion.answered ? "answered, to grade" : "not answered"}, on ${s.openQuestion.kcs
             .map((kc) => `${kc.name} (KC id ${kc.id})`)
-            .join(", ")}:\n${quote(s.openQuestion.prompt)}`,
+            .join(", ")}:\n${quote(s.openQuestion.prompt)}${s.openQuestion.parts
+            .map(({ position, prompt }) => `\nPart ${position}: ${prompt}`)
+            .join("")}`,
         ]
       : []),
     ...(s.readings.length > 0

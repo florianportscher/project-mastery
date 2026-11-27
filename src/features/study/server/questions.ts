@@ -5,11 +5,11 @@ import type {
   FinalValueCheck,
   QuestionToGrade,
 } from "@/features/study/ai/tools";
-import { joinAnswer } from "@/features/study/domain/answers";
 import type {
   AttemptHelp,
   AttemptResult,
 } from "@/features/study/domain/replay";
+import type { GradedPart, PartAnswer, PartForm } from "@/features/study/types";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
@@ -54,13 +54,16 @@ export async function loadSessionQuestions(
   Array<{
     prompt: string;
     kcIds: string[];
+    parts: Array<{ position: number; prompt: string }>;
     answered: boolean;
     gradedAt: string | null;
   }>
 > {
   const { data, error } = await supabase
     .from("questions")
-    .select("prompt, answered_at, graded_at, question_kcs(kc_id)")
+    .select(
+      "prompt, answered_at, graded_at, question_kcs(kc_id), question_parts(position, prompt)",
+    )
     .eq("session_id", sessionId)
     .order("asked_at")
     .order("id");
@@ -68,17 +71,27 @@ export async function loadSessionQuestions(
   return data.map((row) => ({
     prompt: row.prompt,
     kcIds: row.question_kcs.map(({ kc_id }) => kc_id),
+    parts: row.question_parts.toSorted((a, b) => a.position - b.position),
     answered: row.answered_at !== null,
     gradedAt: row.graded_at,
   }));
 }
 
+/**
+ * Stores a Question with its parts, positions from 1 in order, and the KCs
+ * they test.
+ */
 export async function insertQuestion(
   supabase: Supabase,
   question: {
     sessionId: string;
     prompt: string;
-    kcIds: string[];
+    parts: Array<{
+      prompt: string;
+      kcId: string;
+      form: PartForm;
+      options: string[] | null;
+    }>;
     exerciseId: string | null;
     /** The generated Problem it poses, or null; never with an Exercise. */
     problemId: string | null;
@@ -96,12 +109,23 @@ export async function insertQuestion(
     .single();
   if (error) failed("Saving the question", error);
   const { error: kcsError } = await supabase.from("question_kcs").insert(
-    [...new Set(question.kcIds)].map((kcId) => ({
+    [...new Set(question.parts.map(({ kcId }) => kcId))].map((kcId) => ({
       question_id: data.id,
       kc_id: kcId,
     })),
   );
   if (kcsError) failed("Saving the question's KCs", kcsError);
+  const { error: partsError } = await supabase.from("question_parts").insert(
+    question.parts.map((part, index) => ({
+      question_id: data.id,
+      position: index + 1,
+      prompt: part.prompt,
+      kc_id: part.kcId,
+      form: part.form,
+      options: part.options,
+    })),
+  );
+  if (partsError) failed("Saving the question's parts", partsError);
   return data.id;
 }
 
@@ -117,7 +141,7 @@ export async function findNewestQuestion(
   const { data, error } = await supabase
     .from("questions")
     .select(
-      "id, answered_at, graded_at, question_kcs(kc_id), exercises(final_answers), problems(final_answers)",
+      "id, answered_at, graded_at, question_kcs(kc_id), question_parts(position, kc_id), exercises(final_answers), problems(final_answers)",
     )
     .eq("session_id", sessionId)
     .order("asked_at", { ascending: false })
@@ -136,6 +160,9 @@ export async function findNewestQuestion(
   return {
     id: data.id,
     kcIds: data.question_kcs.map(({ kc_id }) => kc_id),
+    parts: data.question_parts
+      .map(({ position, kc_id }) => ({ position, kcId: kc_id }))
+      .toSorted((a, b) => a.position - b.position),
     answered: data.answered_at !== null,
     graded: data.graded_at !== null,
     finalAnswers: finalAnswers.success ? finalAnswers.data : null,
@@ -143,9 +170,9 @@ export async function findNewestQuestion(
 }
 
 /**
- * Marks an answered, ungraded question graded and stores one `learn`
- * attempt per KC. False when it was graded in the meantime, storing
- * nothing.
+ * Marks an answered, ungraded question graded, stores each part's result
+ * and note, and one attempt per KC of `results`. False when it was graded
+ * in the meantime, storing nothing.
  */
 export async function saveAttempts(
   supabase: Supabase,
@@ -153,6 +180,7 @@ export async function saveAttempts(
     questionId: string;
     sessionId: string;
     help: AttemptHelp;
+    parts: GradedPart[];
     results: Array<{ kcId: string; result: AttemptResult }>;
     /** The worst answer check, stored on every attempt; null without keys. */
     check: FinalValueCheck;
@@ -169,6 +197,27 @@ export async function saveAttempts(
   if (error) failed("Grading the question", error);
   if (claimed.length === 0) return false;
 
+  const unclaim = () =>
+    supabase
+      .from("questions")
+      .update({ graded_at: null })
+      .eq("id", grade.questionId);
+  const partErrors = await Promise.all(
+    grade.parts.map(async ({ position, result, note }) => {
+      const { error } = await supabase
+        .from("question_parts")
+        .update({ result, note })
+        .eq("question_id", grade.questionId)
+        .eq("position", position);
+      return error;
+    }),
+  );
+  const partError = partErrors.find((e) => e !== null);
+  if (partError) {
+    await unclaim();
+    failed("Saving the parts' grades", partError);
+  }
+  if (grade.results.length === 0) return true;
   const { error: attemptsError } = await supabase.from("attempts").insert(
     grade.results.map(({ kcId, result }) => ({
       question_id: grade.questionId,
@@ -180,10 +229,7 @@ export async function saveAttempts(
     })),
   );
   if (attemptsError) {
-    await supabase
-      .from("questions")
-      .update({ graded_at: null })
-      .eq("id", grade.questionId);
+    await unclaim();
     failed("Saving the attempts", attemptsError);
   }
   return true;
@@ -207,40 +253,134 @@ export async function closeQuestion(
   return data.length > 0;
 }
 
+/** The newest Question of the Chat's session, with its parts; null for none. */
+async function newestChatQuestion(supabase: Supabase, chatId: string) {
+  const { data, error } = await supabase
+    .from("questions")
+    .select(
+      "id, answered_at, graded_at, question_parts(position, options), study_sessions!inner(chat_id)",
+    )
+    .eq("study_sessions.chat_id", chatId)
+    .order("asked_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) failed("Loading the open question", error);
+  return data;
+}
+
 /**
- * Adds the Student's Chat message `messageId` to the answer of the open
- * Question: the newest Question of the Chat's session, while it is
- * ungraded. Every message until its grade is part of the answer, joined in
- * order, and the first is its `answer_message_id`. Nothing is stored when
- * the newest Question is graded or there is none.
+ * Stores `answer` as the answer to the open Question: the newest Question
+ * of the Chat's session, while it is unanswered and ungraded. Nothing is
+ * stored otherwise.
+ */
+async function storeAnswer(
+  supabase: Supabase,
+  questionId: string,
+  answer: { messageId: string; text: string },
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("questions")
+    .update({
+      answer_text: answer.text || null,
+      answer_message_id: answer.messageId,
+      answered_at: new Date().toISOString(),
+    })
+    .eq("id", questionId)
+    .is("answered_at", null)
+    .is("graded_at", null)
+    .select("id");
+  if (error) failed("Saving the answer", error);
+  return data.length > 0;
+}
+
+/**
+ * Records the Student's Chat message `messageId` that sends a photo, or
+ * another attached Material, as the answer to the whole open Question.
+ * Nothing is stored when there is no open, unanswered Question.
  */
 export async function recordAnswer(
   supabase: Supabase,
   chatId: string,
   answer: { messageId: string; text: string },
 ): Promise<void> {
-  if (answer.text.trim() === "") return;
-  const { data: newest, error } = await supabase
-    .from("questions")
-    .select("id, answer_text, graded_at, study_sessions!inner(chat_id)")
-    .eq("study_sessions.chat_id", chatId)
-    .order("asked_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) failed("Loading the open question", error);
-  if (!newest || newest.graded_at !== null) return;
-  const { error: saveError } = await supabase
-    .from("questions")
-    .update(
-      newest.answer_text === null
-        ? {
-            answer_text: joinAnswer(null, answer.text),
-            answer_message_id: answer.messageId,
-            answered_at: new Date().toISOString(),
-          }
-        : { answer_text: joinAnswer(newest.answer_text, answer.text) },
-    )
-    .eq("id", newest.id)
-    .is("graded_at", null);
-  if (saveError) failed("Saving the answer", saveError);
+  const newest = await newestChatQuestion(supabase, chatId);
+  if (!newest || newest.answered_at !== null || newest.graded_at !== null) {
+    return;
+  }
+  await storeAnswer(supabase, newest.id, answer);
+}
+
+export const answerRefusedMessage =
+  "This question is no longer open, so its answer can't be sent.";
+
+/**
+ * Why a Submit of `answer` is refused, or null when it may be stored: it
+ * must answer the newest Question of the Chat's session, unanswered and
+ * ungraded, with one answer for each of its parts.
+ */
+export async function submitRefusal(
+  supabase: Supabase,
+  chatId: string,
+  answer: { questionId: string; parts: PartAnswer[] },
+): Promise<string | null> {
+  const newest = await newestChatQuestion(supabase, chatId);
+  if (
+    !newest ||
+    newest.id !== answer.questionId ||
+    newest.answered_at !== null ||
+    newest.graded_at !== null
+  ) {
+    return answerRefusedMessage;
+  }
+  const expected = newest.question_parts.map(({ position }) => position);
+  const given = answer.parts.map(({ position }) => position);
+  if (
+    expected.length === 0 ||
+    new Set(given).size !== given.length ||
+    given.length !== expected.length ||
+    given.some((position) => !expected.includes(position))
+  ) {
+    return "This answer doesn't match the question's parts.";
+  }
+  // A choice must be one of the part's options; no other part has one.
+  const options = new Map(
+    newest.question_parts.map((part) => [part.position, part.options]),
+  );
+  const badChoice = answer.parts.some(({ position, choice }) => {
+    const count = options.get(position)?.length ?? 0;
+    return choice !== null && choice >= count;
+  });
+  if (badChoice) return "This answer doesn't match the question's parts.";
+  return null;
+}
+
+/**
+ * Stores a Submit: the Question's answer, as the message `messageId` and its
+ * text, and each part's answer, an empty field as null. False, storing
+ * nothing, when the Question was answered or graded in the meantime.
+ */
+export async function submitAnswer(
+  supabase: Supabase,
+  answer: {
+    questionId: string;
+    messageId: string;
+    text: string;
+    parts: PartAnswer[];
+  },
+): Promise<boolean> {
+  if (!(await storeAnswer(supabase, answer.questionId, answer))) return false;
+  const errors = await Promise.all(
+    answer.parts.map(async ({ position, text, choice }) => {
+      const { error } = await supabase
+        .from("question_parts")
+        .update({ answer_text: text.trim() === "" ? null : text, choice })
+        .eq("question_id", answer.questionId)
+        .eq("position", position);
+      return error;
+    }),
+  );
+  const error = errors.find((e) => e !== null);
+  if (error) failed("Saving the answers to the parts", error);
+  return true;
 }

@@ -125,8 +125,12 @@ The Student's verdict on a Study session at its close: 1 to 5, with an optional 
 _Avoid_: Feedback, score, review (a Review asks about a due KC)
 
 **Question**:
-One graded ask the AI puts to a Student in a Study session, such as a recall question or a Problem, with the KCs it tests. It shows inline in the Chat. The Student's messages after it, until it is graded, are its answer. Grading its answer gives Attempts.
+One graded ask the AI puts to a Student in a Study session, such as a recall question or a Problem, with the KCs it tests. It shows inline in the Chat as a case with its Parts. What the Student submits, or a photo they send, is its answer. Grading its answer gives Attempts.
 _Avoid_: Quiz, prompt, task
+
+**Part**:
+One piece of a Question with its own answer field (short, long, or a choice with a "Why?" field), its own KC and its own verdict: Right, Partly right, Not right or Not answered, with a one-line note. A Part not right or not answered comes back alone as a new Question with the same case.
+_Avoid_: Sub-question, item
 
 **Mock exam**:
 A timed Study session without help, assembled from old exams or from Problems in the exam's style, and graded afterwards per Problem.
