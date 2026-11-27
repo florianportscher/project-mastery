@@ -3,6 +3,11 @@ name: Migrate
 # Applies a PR's supabase/migrations to staging when the PR is ready for review
 # (ADR 0030). Production is migrated by release-please.yml on a release. Agents
 # have no key that can change a production schema.
+#
+# Other PRs' migrations may already be on staging. The script writes an empty
+# placeholder file for each version staging holds that the checkout lacks and
+# pushes with --include-all, so each PR applies only its own migrations. The
+# placeholders exist only in the job's checkout.
 
 on:
   pull_request:
@@ -10,6 +15,7 @@ on:
     paths:
       - supabase/migrations/**
       - .github/workflows/migrate.yml
+      - .github/workflows/migrate-staging.sh
 
 permissions:
   contents: read
@@ -37,16 +43,4 @@ jobs:
       - name: Apply migrations to staging
         env:
           SUPABASE_DB_URL: ${{ secrets.STAGING_DB_URL }}
-        run: |
-          status=0
-          supabase db push --remote="$SUPABASE_DB_URL" --yes > push.log 2>&1 || status=$?
-          cat push.log
-          if [ "$status" -ne 0 ]; then
-            if grep -q DbPushMissingLocalError push.log; then
-              version=$(grep -oE 'reverted [0-9]{14}' push.log | head -1 | cut -d' ' -f2)
-              echo "::error::Staging holds migration ${version:-<see log>} that this branch lacks. It belongs to another PR that was tried on staging. Merge main into the branch once that PR is merged."
-            else
-              echo "::error::supabase db push failed (exit $status), see the log above."
-            fi
-            exit "$status"
-          fi
+        run: bash .github/workflows/migrate-staging.sh "$SUPABASE_DB_URL"
