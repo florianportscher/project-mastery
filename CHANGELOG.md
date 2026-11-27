@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.1.7](https://github.com/florianportscher/project-mastery/compare/project-mastery-v0.1.6...project-mastery-v0.1.7) (2026-11-27)
+
+
+### Features
+
+* answer forms, a task in parts with a field and a verdict per part ([#462](https://github.com/florianportscher/project-mastery/issues/462)) ([a173fc3](https://github.com/florianportscher/project-mastery/commit/a173fc397dfd6ef53278798861dce76cc732832a))
+* Hint and Show the solution on each part of an open Question ([#464](https://github.com/florianportscher/project-mastery/issues/464)) ([186cd3d](https://github.com/florianportscher/project-mastery/commit/186cd3dfb84e8a198996e76b4c67f04a781a0ab3))
+* read cases, replay their calls, and turn them into observations with /analyze ([#424](https://github.com/florianportscher/project-mastery/issues/424)) ([6fed0e8](https://github.com/florianportscher/project-mastery/commit/6fed0e8625c917628d6ae759426598e80053130d))
+* remove the time estimates from the today card ([#456](https://github.com/florianportscher/project-mastery/issues/456)) ([fa14b6c](https://github.com/florianportscher/project-mastery/commit/fa14b6ca21da2fbac078df502d5844c819f39df0))
+* reserve several old exams for the final Mock exams ([#461](https://github.com/florianportscher/project-mastery/issues/461)) ([d6c5898](https://github.com/florianportscher/project-mastery/commit/d6c5898632c8d5089876a5c81e404936a7598bee))
+* rewrite tutor instruction lines to match good tutoring ([#454](https://github.com/florianportscher/project-mastery/issues/454)) ([2442252](https://github.com/florianportscher/project-mastery/commit/2442252d1c9cd3753278dda1c0b4f29da9daa8e5))
+* tell the Student that working earns points in a Mock exam ([#463](https://github.com/florianportscher/project-mastery/issues/463)) ([4888ad1](https://github.com/florianportscher/project-mastery/commit/4888ad17dc1fe5a3e09d80ff6ea48ee5fc79dfb4)), closes [#460](https://github.com/florianportscher/project-mastery/issues/460)
+* tutor Chats, title and grading in the Course language ([#457](https://github.com/florianportscher/project-mastery/issues/457)) ([3b40165](https://github.com/florianportscher/project-mastery/commit/3b401654f4fa483e06720534dd07e7576fe5702d))
+
+
+### Bug Fixes
+
+* fail a parse that reads no page and re-read unreadable pages on retry ([#455](https://github.com/florianportscher/project-mastery/issues/455)) ([f36bc5a](https://github.com/florianportscher/project-mastery/commit/f36bc5a64ef85e29bc1dd69a08b0fd88b48402ec))
+* study text boxes, dictation at the cursor, theme script, Chat case, vision wording ([#458](https://github.com/florianportscher/project-mastery/issues/458)) ([8b66e90](https://github.com/florianportscher/project-mastery/commit/8b66e90d9c6db4bf141a93780e49949aab90c7f6))
+
 ## [0.1.6](https://github.com/florianportscher/project-mastery/compare/project-mastery-v0.1.5...project-mastery-v0.1.6) (2026-11-23)
 
 
