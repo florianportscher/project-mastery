@@ -240,6 +240,7 @@ function RatingForm({
       </label>
       <Textarea
         id={noteId}
+        spellCheck={false}
         value={note}
         onChange={(event) => {
           setNote(event.target.value);

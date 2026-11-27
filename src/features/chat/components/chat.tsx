@@ -437,6 +437,7 @@ export function Chat({
                 <PromptInputBody>
                   <PromptInputTextarea
                     aria-label="Message"
+                    spellCheck={false}
                     aria-invalid={inputError !== null}
                     aria-describedby={
                       inputError ? "chat-input-error" : undefined

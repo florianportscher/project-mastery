@@ -161,6 +161,7 @@ export function Brief({ brief, dailyLimit: initialDailyLimit }: BriefProps) {
             <PromptInputBody>
               <PromptInputTextarea
                 aria-label="Message"
+                spellCheck={false}
                 aria-invalid={inputError !== null}
                 aria-describedby={inputError ? "brief-input-error" : undefined}
                 placeholder="Tell the AI about your exam…"
