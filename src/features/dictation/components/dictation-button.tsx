@@ -48,8 +48,8 @@ function formatTime(seconds: number) {
 
 /**
  * Dictation: records the Student's voice and inserts the transcript at the
- * cursor of the message box. Nothing is sent by itself. Renders nothing where the browser
- * cannot record.
+ * cursor of the message box. Nothing is sent by itself. Renders nothing where
+ * the browser cannot record.
  */
 export function DictationButton({
   disabled,

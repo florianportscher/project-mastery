@@ -204,8 +204,7 @@ function manifestOf(
     appCommits: distinct(
       calls.map((c) => c.metadata.appCommit as string | undefined),
     ),
-    // The id `pnpm replay --model` accepts: a stream call's `model` is the
-    // provider's name for it, which doubled the list.
+    // `pnpm replay --model` takes the requested id (docs/agents/cases.md).
     models: distinct(
       calls.map((c) => {
         const requested = c.metadata["attributes.gen_ai.request.model"];
