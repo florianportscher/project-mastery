@@ -174,6 +174,46 @@ describe("chatBundle", () => {
     });
   });
 
+  it("runs from the first to the last message and lists each model once", () => {
+    const { manifest } = chatBundle({
+      caseId: "2026-11-23-chat-1",
+      note: null,
+      archivedAt: "2026-11-23T18:00:00.000Z",
+      snapshot,
+      chat: { id: "chat1" },
+      messages: [
+        { created_at: "2026-11-22T17:00:00Z" },
+        { created_at: "2026-11-22T18:00:00Z" },
+      ],
+      materials: [],
+      observations: [
+        call("a", "2026-11-22T18:00:01Z", {
+          "attributes.gen_ai.request.model": "meta/muse-ember",
+        }),
+        call("b", "2026-11-22T18:00:02Z", {}),
+      ],
+    });
+    expect(manifest.run).toEqual({
+      startedAt: "2026-11-22T17:00:00.000Z",
+      finishedAt: "2026-11-22T18:00:00.000Z",
+    });
+    expect(manifest.models).toEqual(["meta/muse-ember", "muse-ember-1.0"]);
+  });
+
+  it("has no run without messages", () => {
+    const { manifest } = chatBundle({
+      caseId: "c",
+      note: null,
+      archivedAt: "2026-11-23T18:00:00.000Z",
+      snapshot,
+      chat: { id: "chat1" },
+      messages: [],
+      materials: [],
+      observations: [],
+    });
+    expect(manifest.run).toEqual({ startedAt: null, finishedAt: null });
+  });
+
   it("flags a Chat whose map was rebuilt after its first message", () => {
     expect(chat("2026-11-22T17:00:00Z").manifest.chat).toMatchObject({
       mapRebuiltAfterFirstMessage: true,

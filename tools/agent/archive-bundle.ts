@@ -204,7 +204,14 @@ function manifestOf(
     appCommits: distinct(
       calls.map((c) => c.metadata.appCommit as string | undefined),
     ),
-    models: distinct(calls.map((c) => c.model)),
+    // The id `pnpm replay --model` accepts: a stream call's `model` is the
+    // provider's name for it, which doubled the list.
+    models: distinct(
+      calls.map((c) => {
+        const requested = c.metadata["attributes.gen_ai.request.model"];
+        return typeof requested === "string" ? requested : c.model;
+      }),
+    ),
     cost: Number(calls.reduce((sum, c) => sum + (c.cost ?? 0), 0).toFixed(6)),
     calls: { archived: calls.length, missing },
     observations: [],
@@ -257,10 +264,13 @@ export function chatBundle(input: ChatBundleInput): {
     .toSorted((a, b) => a.startTime.localeCompare(b.startTime))
     .map((o) => archivedCall(o, sha));
   const first = messages[0]?.created_at;
+  const last = messages.at(-1)?.created_at;
   const built = snapshot.build?.startedAt;
   return {
     manifest: {
       ...manifestOf(input, "chat", calls, 0),
+      // The Chat's own run, which outlives Langfuse's 30 days.
+      run: { startedAt: utc(first), finishedAt: utc(last) },
       chat: {
         id: chat.id,
         mapRebuiltAfterFirstMessage:
