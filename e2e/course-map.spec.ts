@@ -127,7 +127,9 @@ test("the Today card names the next Topic, and Let's start. opens a Chat that se
   await page.goto(`/courses/${course.id}/map`);
 
   const today = page.getByRole("region", { name: "Today" });
-  await expect(today.getByText(/Next Topic · about \d+ min/)).toBeVisible();
+  await expect(today.getByText("Next Topic")).toBeVisible();
+  await expect(today.getByRole("link", { name: "Propulsion" })).toBeVisible();
+  await expect(today).not.toContainText("about");
   await today.getByRole("link", { name: "Let's start." }).click();
 
   // The message is sent as the Student, and the Chat gets its own address.

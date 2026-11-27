@@ -27,8 +27,6 @@ export type ReplayAttempt = {
   createdAt: string;
   result: AttemptResult;
   help: AttemptHelp;
-  /** Seconds from asking to answering its question; null if unanswered. */
-  seconds: number | null;
 };
 
 export type KcRecall = {

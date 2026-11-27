@@ -79,11 +79,9 @@ flowchart LR
   priority --> cards
   cards --> band["Recall band<br/>per KC"]
   priority --> scope["Plan scope"]
-  log --> pace["Pace"]
   cards --> rank["Ranking"]
   priority --> rank
   scope --> rank
-  pace --> rank
   rank --> today["Today card"]
   rank --> proposal["Proposal in the<br/>tutor context"]
   cards --> ready["Readiness, Progress"]
@@ -116,19 +114,17 @@ Replay gives each KC `taught` (it has a card), `learned` (a `full` Attempt witho
 
 **Plan scope** (`study/domain/plan.ts`): _to pass_ takes the highest-Priority Topics up to 80% of the total, _a good grade_ every Topic above 0, _master everything_ all of them. A pin always adds one, a skip always removes one, and the rest are _if time allows_.
 
-**Pace** (`study/domain/pace.ts`) starts at 30 minutes per KC and 2 per review, then is measured from the Student's own Attempts. Minutes per KC: the active time of each session that holds a KC's first Attempt, from the gaps between its messages, less its Reviews, over the KCs it taught. Minutes per review: the time to answer each Review (a KC's first Attempt on a later day), from its Question's `asked_at` and `answered_at`.
+**Ranking** (`rankNext` in `study/domain/ranking.ts`, [ADR 0027](../adr/0027-per-day-scheduling-and-one-ranking.md)): one list of what is worth doing next, over the Topics in the plan or _if time allows_. Each candidate's value is Priority × (1 − recall), over a fixed effort (the app does not estimate how long things take):
 
-**Ranking** (`rankNext` in `study/domain/ranking.ts`, [ADR 0027](../adr/0027-per-day-scheduling-and-one-ranking.md)): one list of what is worth doing next, over the Topics in the plan or _if time allows_. Each candidate's value is Priority × (1 − recall), with minutes from pace:
+| Candidate                               | Recall            | Effort                |
+| --------------------------------------- | ----------------- | --------------------- |
+| A due KC (a Review)                     | `recallToday`     | 1                     |
+| A Topic with untaught KCs               | 0, summed         | 15 × the untaught KCs |
+| A taught KC that is not due (a refresh) | `recallOnExamDay` | 1                     |
 
-| Candidate                               | Recall            | Minutes                   |
-| --------------------------------------- | ----------------- | ------------------------- |
-| A due KC (a Review)                     | `recallToday`     | Per Review                |
-| A Topic with untaught KCs               | 0, summed         | Per KC × the untaught KCs |
-| A taught KC that is not due (a refresh) | `recallOnExamDay` | Per Review                |
+Value 0 drops a candidate, except a due Review; ties go in Course order. Normally: due Reviews by value, then in-plan Topics (a started one, then pinned ones by pin time, then by value per effort), then refreshes once no in-plan Topic has untaught KCs, then _if time allows_ Topics. In the final stretch (the exam day and the 7 days before it) everything ranks by value per effort. A Topic never comes before an untaught Topic it builds on; that anchor moves just before it.
 
-Value 0 drops a candidate, except a due Review; ties go in Course order. Normally: due Reviews by value, then in-plan Topics (a started one, then pinned ones by pin time, then by value per minute), then refreshes once no in-plan Topic has untaught KCs, then _if time allows_ Topics. In the final stretch (the exam day and the 7 days before it) everything ranks by value per minute. A Topic never comes before an untaught Topic it builds on; that anchor moves just before it.
-
-**Study state** (`getStudyState` in `study/server/study-state.ts`): the Ranking with names and minutes, the plan scope, each Topic's learned count and Readiness, Progress (in-plan KCs that are `learned`; days in since the first Attempt, days left to the exam), Course Readiness and the latest graded mock score. The Course map, the Topic page, the Brief panel and the new Chat read it; `loadStudy` in the same file is the shared read behind it and the tutor context. Nothing is stored.
+**Study state** (`getStudyState` in `study/server/study-state.ts`): the Ranking with names, the plan scope, each Topic's learned count and Readiness, Progress (in-plan KCs that are `learned`; days in since the first Attempt, days left to the exam), Course Readiness and the latest graded mock score. The Course map, the Topic page, the Brief panel and the new Chat read it; `loadStudy` in the same file is the shared read behind it and the tutor context. Nothing is stored.
 
 **Readiness** is the Priority-weighted mean of each KC's recall on the exam day, with 0 for an untaught KC.
 

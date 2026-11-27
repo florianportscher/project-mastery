@@ -21,14 +21,12 @@ const review = (id: string): NextItem => ({
   id,
   name: `KC ${id}`,
   centralQuestion: null,
-  minutes: 2.4,
 });
 const topic: NextItem = {
   kind: "topic",
   id: "t1",
   name: "Nozzles",
   centralQuestion: "How does a nozzle speed up its gas?",
-  minutes: 60,
 };
 
 type CardState = Parameters<typeof TodayCard>[0]["state"];
@@ -62,15 +60,16 @@ const buttons = () =>
     .filter((link) => link.getAttribute("href")?.includes("?say="))
     .map((link) => [link.textContent, link.getAttribute("href")]);
 
-test("shows the due Reviews with their minutes, then the next Topic with its link and minutes", () => {
+test("shows the due Reviews, then the next Topic with its link, without minutes", () => {
   renderCard({ ranking: [review("k1"), review("k2"), topic], taught: true });
 
-  expect(card()).toHaveTextContent("2 reviews due, about 5 min");
+  expect(card()).toHaveTextContent("2 reviews due");
+  expect(card()).not.toHaveTextContent("about");
   expect(within(card()).getByRole("link", { name: "Nozzles" })).toHaveAttribute(
     "href",
     "/courses/c1/map/t1",
   );
-  expect(card()).toHaveTextContent("Next Topic · about 60 min");
+  expect(card()).toHaveTextContent("Next Topic");
   expect(card()).toHaveTextContent("How does a nozzle speed up its gas?");
   expect(buttons()).toEqual([
     ["Let's start.", "/courses/c1/chat?say=Let's%20start.&minutes=30"],
@@ -108,8 +107,8 @@ test("lists the first 5 items in the final stretch", () => {
   });
   const items = within(card()).getAllByRole("listitem");
   expect(items).toHaveLength(5);
-  expect(items[0]).toHaveTextContent("Topic · about 60 min");
-  expect(items[1]).toHaveTextContent("Review · about 2 minKC a");
+  expect(items[0]).toHaveTextContent("TopicNozzles");
+  expect(items[1]).toHaveTextContent("ReviewKC a");
 });
 
 test("says so with nothing left in the ranking, keeping Exam problems please.", () => {

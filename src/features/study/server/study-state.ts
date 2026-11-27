@@ -7,14 +7,12 @@ import {
 } from "@/features/knowledge-map/server";
 import { loadKcPriorities } from "@/features/priorities/server";
 import { mockResultShares } from "@/features/study/domain/mock-grading";
-import { DEFAULT_PACE } from "@/features/study/domain/pace";
 import { planProgress, planScope } from "@/features/study/domain/plan";
 import { inFinalStretch, rankNext } from "@/features/study/domain/ranking";
 import { readiness } from "@/features/study/domain/readiness";
 import { replayCourse, utcDay } from "@/features/study/domain/replay";
 import { loadCourseAttempts } from "@/features/study/server/attempts";
 import { loadTopicChoices } from "@/features/study/server/choices";
-import { loadPace } from "@/features/study/server/pace";
 import type { NextItem, StudyState } from "@/features/study/types";
 import { getUser } from "@/lib/auth/user";
 import { failed } from "@/lib/supabase/failed";
@@ -33,7 +31,6 @@ const NO_STATE: StudyState = {
   readiness: { course: null, onTheDay: false },
   lastMockPercent: null,
   taught: false,
-  pace: DEFAULT_PACE,
   lastMinutes: null,
 };
 
@@ -55,8 +52,7 @@ export async function getStudyState(courseId: string): Promise<StudyState> {
     loadLastMockPercent(supabase, courseId),
     loadLastSessionMinutes(supabase, courseId),
   ]);
-  const { map, priorities, exam, topics, attempts, pace, recall, scope } =
-    study;
+  const { map, priorities, exam, topics, attempts, recall, scope } = study;
   const { examDate } = exam;
   const ranked = study.ranked;
   const kcName = new Map(map.kcs.map((kc) => [kc.id, kc.name]));
@@ -69,7 +65,6 @@ export async function getStudyState(courseId: string): Promise<StudyState> {
         id: topic.id,
         name: topic.name,
         centralQuestion: topic.centralQuestion,
-        minutes: item.minutes,
       };
     }
     return {
@@ -77,7 +72,6 @@ export async function getStudyState(courseId: string): Promise<StudyState> {
       id: item.kcId,
       name: kcName.get(item.kcId) ?? item.kcId,
       centralQuestion: null,
-      minutes: item.minutes,
     };
   });
   const live = map.kcs.map((kc) => ({ id: kc.id }));
@@ -116,14 +110,13 @@ export async function getStudyState(courseId: string): Promise<StudyState> {
     },
     lastMockPercent: lastMock,
     taught: live.some(({ id }) => recall.get(id)?.taught),
-    pace,
     lastMinutes,
   };
 }
 
 /**
  * What a Course's study derives from, read with `supabase`: its map,
- * Topics, Priorities, exam facts, Attempts, pace and plan scope, with the
+ * Topics, Priorities, exam facts, Attempts and plan scope, with the
  * replayed recall and the ranking at `now`.
  */
 export async function loadStudy(
@@ -139,7 +132,6 @@ export async function loadStudy(
     loadCourseAttempts(supabase, courseId),
     loadTopicChoices(supabase, courseId),
   ]);
-  const pace = await loadPace(supabase, attempts);
   const recall = replayCourse(attempts, { ...exam, now });
   const scope = planScope({ topics, priorities, goal: exam.goal, choices });
   const ranked = rankNext({
@@ -147,7 +139,6 @@ export async function loadStudy(
     prerequisites: map.prerequisites,
     priorities,
     recall,
-    pace,
     scope,
     examDate: exam.examDate,
     now,
@@ -158,7 +149,6 @@ export async function loadStudy(
     exam,
     topics,
     attempts,
-    pace,
     recall,
     scope,
     ranked,
