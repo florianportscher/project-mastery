@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(16);
+select plan(19);
 
 insert into auth.users (id, email)
 values
@@ -95,47 +95,79 @@ select is(
   'add_brief_note refuses notes past the limit'
 );
 
--- The reserved exam: an exam the Student confirmed, one not yet answered,
+-- The reserved exams: two exams the Student confirmed, one not yet answered,
 -- and Bob's confirmed exam.
 reset role;
 insert into public.exams (id, owner, course_id, name, position, confirmed)
 values
   ('aaaaaaaa-0e00-0000-0000-0000000000f1', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', 'Old exam', 0, true),
   ('aaaaaaaa-0e00-0000-0000-0000000000f2', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', 'Klausur 2023', 1, null),
+  ('aaaaaaaa-0e00-0000-0000-0000000000f3', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-c000-0000-0000-000000000001', 'Klausur 2024', 2, true),
   ('bbbbbbbb-0e00-0000-0000-0000000000f1', '22222222-2222-2222-2222-222222222222', 'bbbbbbbb-c000-0000-0000-000000000001', 'Notes', 0, true);
 set local role authenticated;
 
 select ok(
   public.save_brief(
     'aaaaaaaa-c000-0000-0000-000000000001',
-    '{"reserved_exam_id": "aaaaaaaa-0e00-0000-0000-0000000000f1", "reserved_exam_answered": true}'
+    '{"reserved_exam_answered": true}',
+    reserved_exam_ids => array['aaaaaaaa-0e00-0000-0000-0000000000f1', 'aaaaaaaa-0e00-0000-0000-0000000000f3']::uuid[]
   ),
-  'save_brief reserves a confirmed old exam of the Course'
+  'save_brief reserves several confirmed old exams'
+);
+
+select results_eq(
+  $$select name from public.exams where reserved and course_id = 'aaaaaaaa-c000-0000-0000-000000000001' order by position$$,
+  $$values ('Old exam'), ('Klausur 2024')$$,
+  'both exams are reserved'
+);
+
+select public.save_brief(
+  'aaaaaaaa-c000-0000-0000-000000000001',
+  reserved_exam_ids => array['aaaaaaaa-0e00-0000-0000-0000000000f1', 'aaaaaaaa-0e00-0000-0000-0000000000f2']::uuid[]
+);
+
+select results_eq(
+  $$select name from public.exams where reserved and course_id = 'aaaaaaaa-c000-0000-0000-000000000001' order by position$$,
+  $$values ('Old exam')$$,
+  'the set is replaced, and an exam the Student did not confirm is not reserved'
 );
 
 select throws_ok(
-  $$select public.save_brief('aaaaaaaa-c000-0000-0000-000000000001', '{"reserved_exam_id": "aaaaaaaa-0e00-0000-0000-0000000000f2"}')$$,
+  $$update public.exams set reserved = true where id = 'aaaaaaaa-0e00-0000-0000-0000000000f2'$$,
   '23514',
   null,
-  'an exam the Student did not confirm cannot be reserved'
+  'an exam the Student did not confirm cannot be reserved directly'
 );
 
-select throws_ok(
-  $$update public.briefs set reserved_exam_id = 'bbbbbbbb-0e00-0000-0000-0000000000f1' where course_id = 'aaaaaaaa-c000-0000-0000-000000000001'$$,
-  '23514',
-  null,
+select is_empty(
+  $$update public.exams set reserved = true where id = 'bbbbbbbb-0e00-0000-0000-0000000000f1' returning id$$,
   'another Student''s exam cannot be reserved'
 );
 
--- A build no longer finds the exam.
-reset role;
-delete from public.exams where id = 'aaaaaaaa-0e00-0000-0000-0000000000f1';
-set local role authenticated;
+select public.save_brief(
+  'aaaaaaaa-c000-0000-0000-000000000001',
+  reserved_exam_ids => array['aaaaaaaa-0e00-0000-0000-0000000000f1', 'aaaaaaaa-0e00-0000-0000-0000000000f3']::uuid[]
+);
+select public.save_brief(
+  'aaaaaaaa-c000-0000-0000-000000000001',
+  exam_ids => array['aaaaaaaa-0e00-0000-0000-0000000000f1']::uuid[]
+);
 
 select results_eq(
-  $$select reserved_exam_id, reserved_exam_answered from public.briefs where course_id = 'aaaaaaaa-c000-0000-0000-000000000001'$$,
-  $$values (null::uuid, true)$$,
-  'deleting the reserved exam clears the reservation'
+  $$select e.name, b.reserved_exam_answered from public.exams e, public.briefs b where e.reserved and e.course_id = 'aaaaaaaa-c000-0000-0000-000000000001' and b.course_id = e.course_id$$,
+  $$values ('Old exam', true)$$,
+  'an exam that is no longer confirmed loses its reservation, the Brief keeps its answer'
+);
+
+select public.save_brief(
+  'aaaaaaaa-c000-0000-0000-000000000001',
+  exam_ids => array[]::uuid[]
+);
+
+select results_eq(
+  $$select count(*) filter (where e.reserved), bool_or(b.reserved_exam_answered) from public.exams e, public.briefs b where e.course_id = 'aaaaaaaa-c000-0000-0000-000000000001' and b.course_id = e.course_id$$,
+  $$values (0::bigint, false)$$,
+  'dropping the last reservation makes the Brief ask again'
 );
 
 select ok(

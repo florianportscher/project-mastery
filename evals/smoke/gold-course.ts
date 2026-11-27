@@ -91,7 +91,7 @@ async function loadGoldCourse(
   supabase: AdminSupabase,
   courseId: string,
 ): Promise<GoldCourse> {
-  const [kcs, links, topics, exercises, brief] = await Promise.all([
+  const [kcs, links, topics, exercises, reserved] = await Promise.all([
     supabase
       .from("kcs")
       .select("id, name, description")
@@ -115,12 +115,12 @@ async function loadGoldCourse(
       .eq("course_id", courseId)
       .order("position"),
     supabase
-      .from("briefs")
-      .select("reserved_exam_id")
+      .from("exams")
+      .select("id")
       .eq("course_id", courseId)
-      .maybeSingle(),
+      .eq("reserved", true),
   ]);
-  const reservedId = must(brief)?.reserved_exam_id ?? null;
+  const reservedIds = new Set(must(reserved).map(({ id }) => id));
   return {
     courseId,
     kcs: must(kcs),
@@ -150,7 +150,7 @@ async function loadGoldCourse(
         finalAnswers: exercise.final_answers as FinalAnswer[] | null,
         markdown: chunk.markdown,
         label: `${chunk.materials.name} p. ${chunk.page_from}`,
-        reserved: reservedId !== null && exercise.exam_id === reservedId,
+        reserved: reservedIds.has(exercise.exam_id ?? ""),
       };
     }),
   };

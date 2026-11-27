@@ -12,6 +12,7 @@ const exam = (id: string, fields: Partial<BriefExam> = {}): BriefExam => ({
   name: `Klausur ${id}`,
   confirmed: null,
   asked: false,
+  reserved: false,
   ...fields,
 });
 

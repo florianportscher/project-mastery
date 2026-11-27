@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { getExamFacts, getReservedExam } from "@/features/brief/server";
+import { getExamFacts, getReservedExams } from "@/features/brief/server";
 import { loadChunkSources } from "@/features/ingestion/server";
 import {
   loadStoredMap,
@@ -74,7 +74,7 @@ export async function planMockExam(
   if (!mock) return null;
   const { owner, course_id: courseId } = mock;
 
-  const [map, topics, priorities, exam, asked, ready, reservedId] =
+  const [map, topics, priorities, exam, asked, ready, reservedIds] =
     await Promise.all([
       loadStoredMap(supabase, courseId),
       loadStoredTopics(supabase, courseId),
@@ -82,7 +82,7 @@ export async function planMockExam(
       getExamFacts(supabase, courseId),
       loadAskedProblems(supabase, courseId),
       loadReadyProblems(supabase, courseId),
-      getReservedExam(supabase, courseId),
+      getReservedExams(supabase, courseId),
     ]);
   const [kcRecall, choices] = await Promise.all([
     loadRecall(supabase, courseId, exam, now),
@@ -112,15 +112,20 @@ export async function planMockExam(
     points: itemMinutes(fields.difficulty),
     predictedSuccess: predictedSuccess(fields.kcs, recall),
   });
+  // The final mock is the next active reserved exam that has Exercises.
+  const reservedId =
+    reservedIds.find((id) => map.exercises.some((e) => e.examId === id)) ??
+    null;
   const exercises = map.exercises.map((exercise) => ({
     ...exercise,
-    reserved: reservedId !== null && exercise.examId === reservedId,
+    reserved: reservedIds.includes(exercise.examId ?? ""),
+    final: reservedId !== null && exercise.examId === reservedId,
     seen: asked.has(exercise.id),
   }));
 
   if (inFinalStretch(exam.examDate, now) && reservedId !== null) {
-    // The final mock is the reserved exam's Exercises, in order.
-    const final = exercises.filter((e) => e.reserved);
+    // The final mock is that exam's Exercises, in order.
+    const final = exercises.filter((e) => e.final);
     const chunks = await questionChunks(supabase, final);
     await setFinal(supabase, mockId, reservedId);
     return {

@@ -64,7 +64,7 @@ There are four kinds of notes:
 | Topic notes    | What clicked and what kept going wrong, per Topic                      | The close call                                                        |
 | Material notes | Each Material's notation                                               | The parse                                                             |
 
-From the Knowledge map side, the tutoring reads KCs (with the `assumes` texts), Prerequisites, Exercises, Topics and chunks. From the Brief it reads the exam date, goal, excluded Materials, exam scopes, old exams (`exams`, `exercises.exam_id`) and the Reserved exam.
+From the Knowledge map side, the tutoring reads KCs (with the `assumes` texts), Prerequisites, Exercises, Topics and chunks. From the Brief it reads the exam date, goal, excluded Materials, exam scopes, old exams (`exams`, `exercises.exam_id`) and the Reserved exams (`exams.reserved`, any number).
 
 ## Everything derived on every read
 
@@ -176,7 +176,7 @@ Changing the instructions means running `pnpm smoke tutor`, and for a change in 
 | Notes               | The last session's line (date, Topics, KCs checked, how many below `full`, from its Attempts); the Topic notes of the proposed Topic and of the Topics touched today; the Memory; the Brief's notes (the last 4,000 characters, as hints the Student's answers override); the Material notes                                                                                                                                                                                                                                                                                                                                      |
 | A mock session      | The graded mock's tasks with the Student's answers and the reasons for lost points, most points lost first (a graded final mock's tasks do appear)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
-**The Reserved exam stays out of everything.** Before the context is built, `withoutReserved` removes its Exercises from the map and `withoutReservedSections` its Reading sections, and `getTopic` and `searchMaterials` filter its chunks.
+**The Reserved exams stay out of everything.** `getReservedExams` returns the active ones: reserved and used by no submitted mock. Before the context is built, `withoutReserved` removes their Exercises from the map and `withoutReservedSections` their Reading sections, and `getTopic` and `searchMaterials` filter the union of their chunks. A taken exam is an ordinary old exam.
 
 **The context is stored** with each reply in `chat_messages.tutor_context` and sent on the stream's `start` part. Outside production, a reply's Context sheet shows it, rendered by today's code. The mock models read ids from the block and never echo it.
 
@@ -255,7 +255,7 @@ A queued Problem is a variant of an Exercise that tests the KC and has no varian
 
 A Mock exam is a timed session without the AI: the Student answers on the mock page, not in a Chat.
 
-1. **Assemble** (`assembleMock`). A 90-minute blueprint shares its time among in-plan Topics by Priority, split 30/50/20 by difficulty. Unseen Exercises and Problems fill the slots, and at most 6 empty ones are generated. The final mock is the Reserved exam itself.
+1. **Assemble** (`assembleMock`). A 90-minute blueprint shares its time among in-plan Topics by Priority, split 30/50/20 by difficulty. Unseen Exercises and Problems fill the slots, and at most 6 empty ones are generated. In the final stretch the final mock is the first active Reserved exam that has Exercises (in the Brief's order, the latest last), so each reserved exam becomes one mock, and one without Exercises is skipped; the blueprint leaves out the Exercises of every active reserved exam. Once all are taken, mocks are assembled as usual.
 2. **Submit.** `submit_mock_exam`, then the `gradeMock` workflow.
 3. **Grade.** One step per item. A blank answer scores 0 with every KC `wrong` and no call. An answer gets one `grade_exam` call, whose final values, by the labels of the item's keys, go through the answer check, each key on its own (`checkEachAnswer`: a value it can't read is `unchecked` and hides no other key's mismatch): a mismatch also caps the points one below full. Each item stores its points and steps, and an Attempt per KC in the mock's session, which does schedule. An item that still fails after retries is left out of the score; a mock with no item graded has no score, and its result page says so.
 4. **Finish.** The mock stores its score and its Brier score (the mean squared gap between each item's predicted success and its share of points), and the result page links to a Chat that goes through it.

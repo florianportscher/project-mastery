@@ -192,7 +192,7 @@ It answers, per Exercise: the listed KCs its solution uses as a step (usually 1 
 
 Step 2 over the exercise extractions, which also stores their Exercises, keyed by their first question chunk so each keeps its id, and their chunks (`exercise_chunks`). An Exercise marked `notAnExercise` is deleted. `assignExams` then stores the exams the grouping found (`exams`, named as printed) and gives each Exercise its `exam_id` (`set_exercise_exams`). Exams are linked in this separate step because the Exercises exist only after the extraction.
 
-The Brief asks once about each exam found, by name. A confirmed exam's Exercises count for Priority and Mock exams; a rejected exam's are ordinary Exercises. Priority, Mock exams and the Reserved exam read `exams` and `exercises.exam_id` when read, so an answer changes no map and does not mark it for update.
+The Brief asks once about each exam found, by name. A confirmed exam's Exercises count for Priority and Mock exams; a rejected exam's are ordinary Exercises. Priority, Mock exams and the Reserved exams read `exams` and `exercises.exam_id` when read, so an answer changes no map and does not mark it for update.
 
 ### 5. Ask earlier text against the new KCs
 
@@ -298,7 +298,7 @@ What happens to the map when the Student changes the Materials and presses Updat
 
 - **A Material is added.** Its units are new, so they are extracted. Other units keep their hash and make no call. Its units are offered the stored KCs: what they teach again adds sources to them, and their new KCs link to them. Text that KCs of earlier builds assume is asked once against its new KCs. The tree call runs again because the KCs changed.
 - **A Material is deleted.** Its chunks go, and with them their `kc_sources` and the Exercises they pose. The next build groups the remaining chunks again (the hash changed) and retires each KC with no sources left.
-- **An old exam is confirmed or rejected.** Nothing is rebuilt: Priority, Mock exams and the Reserved exam read the answer when read.
+- **An old exam is confirmed or rejected.** Nothing is rebuilt: Priority, Mock exams and the Reserved exams read the answer when read.
 - **A build prompt changed** (a deploy). Every batch answered under another prompt is extracted again, and the grouping and tree calls run again (their hashes include their prompt's digest). A re-extracted batch's KCs replace its old ones: a new KC at 0.90 similarity or more revives the old KC's id, the others stay retired with their Attempts. Two previews with different prompts that build the same Course one after the other each extract again.
 - **Nothing changed.** No model calls: every hash and digest matches, and the stored tree is arranged again.
 

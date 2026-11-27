@@ -133,7 +133,7 @@ A timed Study session without help, assembled from old exams or from Problems in
 _Avoid_: Practice exam, test, simulation
 
 **Reserved exam**:
-An old exam the Student chose in the Brief to keep unseen for their final Mock exam. Until a submitted Mock exam has used it, the AI, Problem generation and the other Mock exams leave its Exercises and their chunks out; afterwards it counts as an ordinary old exam.
+An old exam the Student chose in the Brief to keep unseen for a final Mock exam. A Student can reserve several (shown as "Reserved exams"); in the final stretch each becomes a Mock exam of its own, taken one after another in the Brief's order of the old exams. Until a submitted Mock exam has used it, the AI, Problem generation and the other Mock exams leave its Exercises and their chunks out; afterwards it counts as an ordinary old exam.
 _Avoid_: Held-back exam, hidden exam, final exam
 
 **Memory**:

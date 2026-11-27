@@ -11,7 +11,6 @@ import {
   type BriefFieldsUpdate,
 } from "@/features/brief/server/brief-store";
 import { storeExamScope } from "@/features/brief/server/exam-scopes";
-import { getReservedExam } from "@/features/brief/server/queries";
 import type { Supabase } from "@/lib/supabase/types";
 
 /** Null, as the models send for a field they leave out, means "not given". */
@@ -62,36 +61,33 @@ export function briefToolActions(
       const excluded = ofMaterials(given(input.excludedMaterialIds));
       const exams = ofExams(given(input.examIds));
 
-      // Only an old exam of the Course can be reserved; another id is
-      // dropped. Once a submitted mock used the reservation, it stays as it is.
-      const examIds = new Set(exams.kept ?? context.exams.map(({ id }) => id));
-      const reserved = given(input.reservedExamId);
-      const reservable = reserved === "none" || examIds.has(reserved ?? "");
-      const used =
-        reserved !== undefined &&
-        context.reservedExam.examId !== null &&
-        (await getReservedExam(supabase, courseId)) === null;
-      if (reserved !== undefined && reservable && !used) {
-        fields.reserved_exam_id = reserved === "none" ? null : reserved;
-        fields.reserved_exam_answered = true;
-      }
+      // Only old exams of the Course can be reserved; other ids are dropped.
+      const oldExamIds = new Set(
+        exams.kept ?? context.exams.map(({ id }) => id),
+      );
+      const reserved = known(oldExamIds)(given(input.reservedExamIds));
+      // A list of only unknown ids changes nothing: it must not clear the
+      // reservations the Student already has.
+      const reservedKept =
+        reserved.kept?.length === 0 && reserved.unknown.length > 0
+          ? null
+          : reserved.kept;
+      if (reservedKept) fields.reserved_exam_answered = true;
 
       await saveBrief(supabase, courseId, fields, {
         excludedMaterialIds: excluded.kept,
         examIds: exams.kept,
         askedExamIds,
         language: given(input.courseLanguage)?.trim() || null,
+        reservedExamIds: reservedKept,
       });
       const ignored = [
         excluded.unknown.length > 0 &&
           `These are no Material ids of the Course and were ignored: ${excluded.unknown.join(", ")}. Send excludedMaterialIds again with ids from the Course's Materials.`,
         exams.unknown.length > 0 &&
           `These are no ids of the exams found in the Course and were ignored: ${exams.unknown.join(", ")}. Send examIds again with ids from the found exams.`,
-        reserved !== undefined &&
-          !reservable &&
-          `The reserved exam ${reserved} was ignored: it is not among the old exams. If the Student said it is one, send it again together with examIds that list every old exam, this one included; if they keep none, send reservedExamId none.`,
-        used &&
-          "The reserved exam was ignored: the Student has taken it as their final mock exam, so it can no longer change.",
+        reserved.unknown.length > 0 &&
+          `These are no ids of old exams and were left out of the reserved exams: ${reserved.unknown.join(", ")}. If the Student said they are old exams, send reservedExamIds again together with examIds that list every old exam, these included.`,
       ].filter(Boolean);
       return ["Saved.", ...ignored].join(" ");
     },

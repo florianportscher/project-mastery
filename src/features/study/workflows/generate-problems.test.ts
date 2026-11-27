@@ -213,11 +213,6 @@ function seedCourse(kcIds: string[], taught: string[] = []) {
 
 /** A confirmed old exam, e1, holding Exercise x1, kept aside by the Brief. */
 function reservedExam() {
-  db.tables.briefs.push({
-    course_id: COURSE,
-    owner: STUDENT,
-    reserved_exam_id: "e1",
-  });
   db.tables.exams.push({
     id: "e1",
     owner: STUDENT,
@@ -225,6 +220,7 @@ function reservedExam() {
     name: "Klausur 2023",
     position: 0,
     confirmed: true,
+    reserved: true,
   });
   db.tables.exercises[0]!.exam_id = "e1";
 }

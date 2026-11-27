@@ -53,7 +53,6 @@ describe("briefSetup", () => {
       scope_confirmed: true,
       notes: "New to proofs.",
       reserved_exam_answered: true,
-      reserved_exam_id: null,
     });
     expect(plan.exams).toMatchObject({ confirmed: true, asked: true });
   });

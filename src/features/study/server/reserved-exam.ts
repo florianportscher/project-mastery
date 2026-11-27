@@ -1,10 +1,10 @@
 import "server-only";
-import { getReservedExam } from "@/features/brief/server";
+import { getReservedExams } from "@/features/brief/server";
 import { loadExamChunkIds } from "@/features/knowledge-map/server";
 import type { Supabase } from "@/lib/supabase/types";
 
 /**
- * The chunks of the Course's active reserved exam's Exercises, questions
+ * The chunks of the Course's active reserved exams' Exercises, questions
  * and solutions, which the tutor and problem generation leave out: its
  * Exercises (by question chunk), search results, source chunks and Reading
  * sections. Empty without a reservation. Reads on a Student's session
@@ -14,10 +14,11 @@ export async function loadReservedChunks(
   supabase: Supabase,
   courseId: string,
 ): Promise<Set<string>> {
-  const examId = await getReservedExam(supabase, courseId);
-  return new Set(
-    examId === null ? [] : await loadExamChunkIds(supabase, examId),
+  const examIds = await getReservedExams(supabase, courseId);
+  const chunks = await Promise.all(
+    examIds.map((examId) => loadExamChunkIds(supabase, examId)),
   );
+  return new Set(chunks.flatMap((ids) => [...ids]));
 }
 
 export function withoutReserved<Map extends { exercises: Exercise[] }>(

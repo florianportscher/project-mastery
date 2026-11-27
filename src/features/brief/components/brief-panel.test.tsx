@@ -23,7 +23,7 @@ const brief: Props["brief"] = {
   excludedMaterials: [],
   oldExams: [],
   examScopes: [],
-  reservedExam: null,
+  reservedExams: null,
 };
 
 type Plan = ComponentProps<typeof ProgressLine>["state"];
@@ -75,19 +75,23 @@ describe("the Progress section", () => {
   });
 });
 
-test("shows the reserved exam as a row of the exam facts, or None once answered", () => {
+test("shows the reserved exams as a row of the exam facts, marks the taken ones, or None once answered", () => {
   const { unmount } = renderPanel({
-    brief: { reservedExam: { name: "Exam 2024" } },
+    brief: {
+      reservedExams: [
+        { name: "WS 23/24", taken: true },
+        { name: "SS 24", taken: false },
+      ],
+    },
   });
   expect(
-    screen.getByText("Reserved exam").nextElementSibling,
-  ).toHaveTextContent("Exam 2024");
+    screen.getByText("Reserved exams").nextElementSibling,
+  ).toHaveTextContent("WS 23/24 (taken), SS 24");
   unmount();
-  renderPanel({ brief: { reservedExam: "none" } });
-  const label = screen.getByText("Reserved exam");
+  renderPanel({ brief: { reservedExams: "none" } });
+  const label = screen.getByText("Reserved exams");
   expect(label.tagName).toBe("DT");
   expect(label.nextElementSibling).toHaveTextContent("None");
-  expect(screen.queryByText("Reserved exam:")).toBeNull();
 });
 
 describe("BriefPanel", () => {

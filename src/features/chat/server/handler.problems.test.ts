@@ -508,11 +508,7 @@ describe("findProblems", () => {
       kc_id: MAP.thrust,
       chunk_id: chunkOf(1),
     });
-    db.tables.briefs.push({
-      course_id: COURSE,
-      owner: STUDENT,
-      reserved_exam_id: EXAM_ID,
-    });
+    db.tables.exams.find((e) => e.id === EXAM_ID)!.reserved = true;
     const model = mockToolModel(
       [
         [
