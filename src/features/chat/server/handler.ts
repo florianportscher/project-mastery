@@ -60,6 +60,8 @@ import {
   setSessionMinutes,
   setSessionMock,
   startTutoring,
+  submitAnswer,
+  submitRefusal,
   TutorToolError,
 } from "@/features/study/server";
 import {
@@ -86,8 +88,9 @@ import { flushTraces, withTraceAttributes } from "@/lib/tracing";
  * 3. refuse at the Daily limit, before any model call
  * 4. create the Chat on its first message, its session going through the
  *    graded Mock exam the request names, or mark the new reply as the
- *    Chat's latest, then store the Student's message, also as part of the
- *    answer to the session's open Question
+ *    Chat's latest, then store the Student's message; a Question card's
+ *    Submit, refused unless it answers the open Question, or a message
+ *    with a photo is also stored as that Question's answer
  * 5. stream the reply from the full stored history, the tutor context in
  *    front of the newest message
  * 6. on end, record the call's usage and store the reply with its model,
@@ -160,6 +163,12 @@ export async function respondInChat({
   const stored = existing ? await loadMessages(supabase, existing.id) : [];
   const resent = resentHistory(stored, message);
   if (resent === "refused") return refuse(409, alreadySentMessage);
+  // A new Submit answers the open Question, and only that one.
+  const answer = message.metadata?.answer;
+  if (!resent && answer) {
+    const refusal = await submitRefusal(supabase, chatId, answer);
+    if (refusal) return refuse(409, refusal);
+  }
 
   // The reply's id, marked as the Chat's latest before the Student's message
   // is stored, so a stopped reply still ending from an earlier request can
@@ -196,11 +205,13 @@ export async function respondInChat({
       return refuse(409, alreadySentMessage);
     }
     history = [...stored, message];
-    // A new message is part of the answer to the open Question.
-    await recordAnswer(supabase, chat.id, {
-      messageId: message.id,
-      text: messageText(message.parts),
-    });
+    // A Submit, or a message with a photo, answers the open Question; a
+    // typed message is a side question.
+    const sent = { messageId: message.id, text: messageText(message.parts) };
+    if (answer) await submitAnswer(supabase, { ...answer, ...sent });
+    else if (message.parts.some(({ type }) => type === "data-material")) {
+      await recordAnswer(supabase, chat.id, sent);
+    }
   }
 
   // After storing the message, so Retry can send it again.

@@ -15,6 +15,8 @@ import type {
   AttemptResult,
   ProblemView,
   GradedKc,
+  GradedPart,
+  PartForm,
   ReadingView,
   SourceChunkView,
   TopicView,
@@ -52,19 +54,40 @@ const getTopicInputSchema = z.object({
     ),
 });
 
+/** The most parts one Question has. */
+const MAX_PARTS = 6;
+
 const askInputSchema = z.object({
   prompt: z
     .string()
     .min(1)
     .max(20_000)
     .describe(
-      "The question as the Student reads it in the Chat, in Markdown with LaTeX. Complete on its own: give all data the Student needs.",
+      "The case all parts work on, as the Student reads it above the parts, in Markdown with LaTeX. Complete on its own: give all data the Student needs.",
     ),
-  kcIds: z
-    .array(z.string())
+  parts: z
+    .array(
+      z.object({
+        prompt: z
+          .string()
+          .min(1)
+          .max(2000)
+          .describe(
+            "What this part asks, as the Student reads it above its field, in Markdown with LaTeX.",
+          ),
+        kcId: z.string().describe("The id of the KC of this Course it tests."),
+        form: z
+          .enum(["short", "long"])
+          .describe(
+            "The field it is answered in: short for a term, a number or a formula; long for a few sentences.",
+          ),
+      }),
+    )
     .min(1)
-    .max(MAX_QUESTION_KCS)
-    .describe("The ids of the 1 to 12 KCs of this Course the question tests."),
+    .max(MAX_PARTS)
+    .describe(
+      "The 1 to 6 parts the Student answers, each in its own field, in order: position 1 is the first.",
+    ),
   problemId: z
     .string()
     .nullish()
@@ -84,17 +107,26 @@ const gradeInputSchema = z.object({
   results: z
     .array(
       z.object({
-        kcId: z.string(),
+        position: z
+          .number()
+          .int()
+          .describe("The part's position: 1 for the first."),
         result: z
-          .enum(["full", "partial", "wrong"])
+          .enum(["full", "partial", "wrong", "unanswered"])
           .describe(
-            "full: the answer shows this KC right; partial: the right idea with a gap or slip; wrong: missing or wrong.",
+            "full: right; partial: the right idea with a gap or slip; wrong: wrong; unanswered: the Student left it empty.",
+          ),
+        note: z
+          .string()
+          .max(300)
+          .describe(
+            "One line the Student reads beside the part: what was right, or what to look at again.",
           ),
       }),
     )
     .min(1)
-    .max(MAX_QUESTION_KCS)
-    .describe("One result for each of the question's KCs, each KC once."),
+    .max(MAX_PARTS)
+    .describe("One result for each part of the question, each part once."),
   help: z
     .enum(["none", "some", "solution_shown"])
     .describe(
@@ -129,9 +161,15 @@ type GradeInput = z.infer<typeof gradeInputSchema>;
 
 export type QuestionToGrade = {
   id: string;
+  /** The live KCs it tests. */
   kcIds: string[];
-  /** The KCs it tested that were retired since, whose results are dropped. */
+  /** The KCs it tested that were retired since, which get no Attempt. */
   retiredKcIds: string[];
+  /**
+   * Its parts in order, each with the KC it tests (null once deleted);
+   * empty for a Question without parts.
+   */
+  parts: Array<{ position: number; kcId: string | null }>;
   answered: boolean;
   graded: boolean;
   /** Whether its Study session has ended, which closes it for grading. */
@@ -199,18 +237,20 @@ export type TutorToolActions = {
    */
   ask: (question: {
     prompt: string;
-    kcIds: string[];
+    parts: Array<{ prompt: string; kcId: string; form: PartForm }>;
     problemId: string | null;
   }) => Promise<{ questionId: string; problem: AskedProblem | null }>;
   /** The newest Question of the Chat's Study session; null without one. */
   findQuestion: () => Promise<QuestionToGrade | null>;
   /**
-   * Marks the question graded and stores one attempt per KC; returns each
-   * KC's stored result, or null when it was graded in the meantime.
+   * Marks the question graded, stores each part's result and note and one
+   * attempt per KC of `results`; returns each KC's stored result, or null
+   * when it was graded in the meantime.
    */
   saveGrade: (grade: {
     questionId: string;
     help: AttemptHelp;
+    parts: GradedPart[];
     results: Array<{ kcId: string; result: AttemptResult }>;
     check: FinalValueCheck;
   }) => Promise<GradedKc[] | null>;
@@ -281,7 +321,7 @@ export function tutorTools(actions: TutorToolActions) {
     }),
     ask: tool({
       description:
-        "Ask the Student a graded question: it shows in the Chat, and ends your reply. The Student's next messages are their answer, which you grade with grade. With a problemId, the Chat shows the Problem's own statement and page in place of your prompt. Write any lead-in before calling it, and don't repeat the question in your text. Refused while the open Question is answered but not graded: grade it first.",
+        "Ask the Student a graded question in parts: the Chat shows a card with the case and then each part with its own field, and it ends your reply. The Student fills in what they can and submits all parts at once; that Submit, or a photo they send, is their answer, which you grade with grade. Messages they type meanwhile are side questions, and the Question stays open. With a problemId, the card shows the Problem's own statement and page as the case in place of your prompt. Write any lead-in before calling it, and don't repeat the question in your text. Refused while the open Question is answered but not graded: grade it first.",
       inputSchema: askInputSchema,
       execute: async ({ problemId, ...question }) => {
         const open = await actions.findQuestion();
@@ -305,7 +345,7 @@ export function tutorTools(actions: TutorToolActions) {
     }),
     grade: tool({
       description:
-        "Grade the Student's answer to the open Question, the one you asked last with ask, before you give feedback: a result for each of its KCs, how much you helped and, for a question with final results, the Student's final values. When the Student moved on instead of answering, call closeQuestion instead. Code checks each value against its key: numbers and units at 1% tolerance, vectors and matrices element by element, expressions at sample points. On a mismatch every full becomes partial. Returns each KC's id and stored result, the help and the check: match, mismatch, unchecked (a value code doesn't compare, or a result without a value) or null when the question has no final results.",
+        "Grade the Student's answer to the open Question, the one you asked last with ask, before you give feedback: a result and a one-line note for each of its parts, how much you helped and, for a question with final results, the Student's final values. The card shows each part's result and note beside it, so your reply doesn't repeat them. When the Student moved on instead of answering, call closeQuestion instead. Code checks each value against its key: numbers and units at 1% tolerance, vectors and matrices element by element, expressions at sample points. On a mismatch every full part becomes partial. Each KC gets one Attempt, the worst of its answered parts; a KC whose parts are all unanswered gets none. Returns each part's stored result and note, each KC's id and stored result, the help and the check: match, mismatch, unchecked (a value code doesn't compare, or a result without a value) or null when the question has no final results.",
       inputSchema: gradeInputSchema,
       execute: async (input) => grade(actions, input),
     }),
@@ -359,15 +399,17 @@ async function openQuestion(
 
 /**
  * The `grade` call's rules, on the session's open Question: one result for
- * each live KC of an answered Question, results for KCs retired since the
- * ask dropped, and the check of its final values against its keys, which
- * turns every `full` into `partial` on a mismatch. A `full` needs a value
- * for every key, so each check runs.
+ * each part of an answered Question, and the check of its final values
+ * against its keys, which turns every `full` part into `partial` on a
+ * mismatch. A `full` needs a value for every key, so each check runs. Each
+ * live KC gets one Attempt from its parts (`attemptsFromParts`).
  */
 async function grade(
   actions: TutorToolActions,
   input: GradeInput,
 ): Promise<{
+  questionId: string;
+  parts: GradedPart[];
   kcs: GradedKc[];
   help: AttemptHelp;
   check: FinalValueCheck;
@@ -378,49 +420,83 @@ async function grade(
       "The Student has not answered this question yet: wait for their answer.",
     );
   }
-  // Every KC it tested was retired since the ask: nothing to record.
-  if (question.kcIds.length === 0) {
-    if (!(await actions.closeQuestion(question.id))) {
-      throw new TutorToolError(alreadyGraded);
-    }
-    return { kcs: [], help: input.help, check: null };
+  if (question.parts.length === 0) {
+    throw new TutorToolError(
+      "This question has no parts, so it can't be graded: close it with closeQuestion, and ask again with parts.",
+    );
   }
   const help = input.help;
-  const results = input.results.filter(
-    ({ kcId }) => !question.retiredKcIds.includes(kcId),
-  );
-  const kcIds = results.map(({ kcId }) => kcId);
-  if (new Set(kcIds).size < kcIds.length) {
-    throw new TutorToolError("Give each KC once.");
-  }
-  const foreign = kcIds.filter((id) => !question.kcIds.includes(id));
-  const missing = question.kcIds.filter((id) => !kcIds.includes(id));
-  if (foreign.length > 0 || missing.length > 0) {
+  const positions = input.results.map(({ position }) => position);
+  const expected = question.parts.map(({ position }) => position);
+  if (
+    new Set(positions).size < positions.length ||
+    positions.length !== expected.length ||
+    positions.some((position) => !expected.includes(position))
+  ) {
     throw new TutorToolError(
-      `Give one result for each KC the question tests, and no others: ${question.kcIds.join(", ")}.`,
+      `Give one result for each part of the question, by its position, each once: ${expected.join(", ")}.`,
     );
   }
   const keys = question.finalAnswers ?? [];
   const checked = checkAnswers(keys, input.finalValues ?? []);
   if (!checked.ok) throw new TutorToolError(checked.error);
   const unvalued = keys.filter((_, index) => checked.checks[index] === null);
-  if (unvalued.length > 0 && results.some(({ result }) => result === "full")) {
+  if (
+    unvalued.length > 0 &&
+    input.results.some(({ result }) => result === "full")
+  ) {
     throw new TutorToolError(
-      `A full needs the Student's value for each final result, for the check: give it in finalValues for ${unvalued.map(({ label }) => `"${label}"`).join(", ")}, as the Student wrote it, and keep your results. Only when the answer has no value for it is no KC full.`,
+      `A full needs the Student's value for each final result, for the check: give it in finalValues for ${unvalued.map(({ label }) => `"${label}"`).join(", ")}, as the Student wrote it, and keep your results. Only when the answer has no value for it is no part full.`,
     );
   }
   const check = worstCheck(checked.checks);
+  const parts = input.results
+    .map(({ position, result, note }) => ({
+      position,
+      result:
+        check === "mismatch" && result === "full"
+          ? ("partial" as const)
+          : result,
+      note,
+    }))
+    .toSorted((a, b) => a.position - b.position);
   const kcs = await actions.saveGrade({
     questionId: question.id,
     help,
-    results: results.map(({ kcId, result }) => ({
-      kcId,
-      result: check === "mismatch" && result === "full" ? "partial" : result,
-    })),
+    parts,
+    results: attemptsFromParts(question, parts),
     check,
   });
   if (!kcs) throw new TutorToolError(alreadyGraded);
-  return { kcs, help, check };
+  return { questionId: question.id, parts, kcs, help, check };
+}
+
+const SEVERITY: Record<AttemptResult, number> = {
+  wrong: 0,
+  partial: 1,
+  full: 2,
+};
+
+/**
+ * One Attempt per live KC of the question: the worst result of its answered
+ * parts. A KC with only unanswered parts, a retired KC and a deleted one get
+ * none.
+ */
+function attemptsFromParts(
+  question: QuestionToGrade,
+  graded: GradedPart[],
+): Array<{ kcId: string; result: AttemptResult }> {
+  const worst = new Map<string, AttemptResult>();
+  for (const { position, kcId } of question.parts) {
+    const result = graded.find((part) => part.position === position)?.result;
+    if (!kcId || !question.kcIds.includes(kcId)) continue;
+    if (result === undefined || result === "unanswered") continue;
+    const before = worst.get(kcId);
+    if (before === undefined || SEVERITY[result] < SEVERITY[before]) {
+      worst.set(kcId, result);
+    }
+  }
+  return [...worst].map(([kcId, result]) => ({ kcId, result }));
 }
 
 export type TutorTools = ReturnType<typeof tutorTools>;

@@ -5,6 +5,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { AttachedMaterials } from "@/features/chat/components/attached-materials";
 import { ContextAction } from "@/features/chat/components/context-action";
 import { MessageActionRow } from "@/features/chat/components/message-action-row";
+import type { QuestionAnswering } from "@/features/chat/components/question-card";
 import { ReplyFooter } from "@/features/chat/components/reply-footer";
 import { ReplyParts } from "@/features/chat/components/reply-parts";
 import { replyActivity } from "@/features/chat/domain/reply-activity";
@@ -52,6 +53,7 @@ export function AiReply({
   arrived,
   showDetails,
   problemFlags,
+  answering,
   onRegenerate,
 }: {
   message: ChatUIMessage;
@@ -64,6 +66,8 @@ export function AiReply({
   /** Whether its step cards and Context sheet show: outside production. */
   showDetails: boolean;
   problemFlags: Record<string, ProblemFlag>;
+  /** What its Question cards answer with. */
+  answering: QuestionAnswering;
   /** Shown as Regenerate when given. */
   onRegenerate?: () => void;
 }) {
@@ -78,6 +82,7 @@ export function AiReply({
           arrived={arrived}
           showSteps={showDetails}
           problemFlags={problemFlags}
+          answering={answering}
         />
         {activity !== null && <Shimmer className="text-sm">{activity}</Shimmer>}
       </MessageContent>

@@ -147,7 +147,9 @@ describe("tutor tool calls on AI_PROVIDER=mock", () => {
     const ask = tool({
       inputSchema: z.object({
         prompt: z.string().nullish(),
-        kcIds: z.array(z.string()),
+        parts: z.array(
+          z.object({ prompt: z.string().nullish(), kcId: z.string() }),
+        ),
       }),
     });
 
@@ -166,7 +168,7 @@ describe("tutor tool calls on AI_PROVIDER=mock", () => {
     });
 
     expect((await result.toolCalls).map((call) => call.input)).toEqual([
-      { kcIds: [kcId] },
+      { parts: [{ kcId }, { kcId }] },
     ]);
     vi.unstubAllEnvs();
   });

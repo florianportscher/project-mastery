@@ -18,7 +18,7 @@ export { mathRunner } from "./server/math-runner";
 export { getMemory } from "./server/memory";
 export { getMockExam, getOpenMockExam } from "./server/mock-exams";
 export { loadProblemFlags } from "./server/problems";
-export { recordAnswer } from "./server/questions";
+export { recordAnswer, submitAnswer, submitRefusal } from "./server/questions";
 export { sessionEndedMessage } from "./schemas";
 export {
   closeIdleSession,

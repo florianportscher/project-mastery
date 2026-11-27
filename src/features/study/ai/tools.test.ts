@@ -36,15 +36,10 @@ const kcIds = (n: number) => Array.from({ length: n }, (_, i) => `kc-${i}`);
 
 describe.each([
   ["findProblems", 8],
-  ["ask", 12],
   ["getTopic", 12],
 ] as const)("%s", (name, max) => {
   const input = (ids: string[]) =>
-    name === "ask"
-      ? { prompt: "Why?", kcIds: ids }
-      : name === "getTopic"
-        ? { topicId: "t-1", kcIds: ids }
-        : { kcIds: ids };
+    name === "getTopic" ? { topicId: "t-1", kcIds: ids } : { kcIds: ids };
   test(`takes 1 to ${max} KCs`, () => {
     expect(accepts(name, input(kcIds(1)))).toBe(true);
     expect(accepts(name, input(kcIds(max)))).toBe(true);
@@ -128,6 +123,10 @@ const openQuestion: QuestionToGrade = {
   id: "q-1",
   kcIds: ["kc-a", "kc-b"],
   retiredKcIds: [],
+  parts: [
+    { position: 1, kcId: "kc-a" },
+    { position: 2, kcId: "kc-b" },
+  ],
   answered: true,
   graded: false,
   sessionEnded: false,
@@ -159,25 +158,58 @@ describe("grade", () => {
 
   const options = { toolCallId: "1", messages: [] } as never;
 
+  /** Results for parts 1, 2, … in order. */
+  const results = (...verdicts: string[]) =>
+    verdicts.map((result, index) => ({
+      position: index + 1,
+      result,
+      note: `Note ${index + 1}`,
+    }));
+
   /** Grades with `results` the session's newest question `question`. */
   async function grade(
     question: QuestionToGrade | null,
-    results: Array<{ kcId: string; result: string }> = [
-      { kcId: "kc-a", result: "full" },
-      { kcId: "kc-b", result: "wrong" },
-    ],
+    given: Array<{ position: number; result: string }> = results(
+      "full",
+      "wrong",
+    ),
     finalValues?: Array<{ label?: string; value: string }>,
   ) {
     return toolsOn(question).grade.execute!(
-      { results, help: "some", finalValues } as never,
+      { results: given, help: "some", finalValues } as never,
       options,
     );
   }
 
-  test("stores the results of the open, answered question", async () => {
-    await grade(open);
+  test("stores each part's result and note, and one Attempt per KC", async () => {
+    await expect(grade(open)).resolves.toMatchObject({
+      questionId: "q-1",
+      parts: results("full", "wrong"),
+    });
     expect(saved).toEqual([
-      expect.objectContaining({ questionId: "q-1", help: "some" }),
+      expect.objectContaining({
+        questionId: "q-1",
+        help: "some",
+        parts: results("full", "wrong"),
+        results: [
+          { kcId: "kc-a", result: "full" },
+          { kcId: "kc-b", result: "wrong" },
+        ],
+      }),
+    ]);
+  });
+
+  test("a KC's Attempt is its worst answered part; a KC with only unanswered parts gets none", async () => {
+    const parts = [1, 2, 3].map((position) => ({
+      position,
+      kcId: position < 3 ? "kc-a" : "kc-b",
+    }));
+    await grade({ ...open, parts }, results("full", "partial", "unanswered"));
+    expect(saved[0]?.results).toEqual([{ kcId: "kc-a", result: "partial" }]);
+    await grade({ ...open, parts }, results("unanswered", "wrong", "full"));
+    expect(saved[0]?.results).toEqual([
+      { kcId: "kc-a", result: "wrong" },
+      { kcId: "kc-b", result: "full" },
     ]);
   });
 
@@ -221,12 +253,14 @@ describe("grade", () => {
     expect(schema).toMatchObject({ required: ["results", "help"] });
   });
 
-  test("drops the results of KCs retired since the ask", async () => {
+  test("grades the parts of KCs retired since the ask, without Attempts", async () => {
     await grade({ ...open, kcIds: ["kc-a"], retiredKcIds: ["kc-b"] });
     expect(saved[0]?.results).toEqual([{ kcId: "kc-a", result: "full" }]);
     await grade({ ...open, kcIds: [], retiredKcIds: ["kc-a", "kc-b"] });
-    expect(saved).toEqual([]);
-    expect(closed).toEqual(["q-1"]);
+    expect(saved[0]).toMatchObject({
+      parts: results("full", "wrong"),
+      results: [],
+    });
   });
 
   test.each([
@@ -245,32 +279,29 @@ describe("grade", () => {
       "session has ended",
     ],
     [
-      "a KC the question does not test",
+      "a part the question doesn't have",
+      open,
+      results("full", "full", "full"),
+      "each part of the question, by its position, each once: 1, 2",
+    ],
+    ["a missing part", open, results("full"), "each part of the question"],
+    [
+      "a part twice",
       open,
       [
-        { kcId: "kc-a", result: "full" },
-        { kcId: "kc-b", result: "full" },
-        { kcId: "kc-c", result: "full" },
+        { position: 1, result: "full", note: "" },
+        { position: 1, result: "wrong", note: "" },
       ],
-      "each KC the question tests, and no others",
+      "each once",
     ],
     [
-      "a missing KC",
-      open,
-      [{ kcId: "kc-a", result: "full" }],
-      "each KC the question tests",
+      "a question without parts",
+      { ...open, parts: [] },
+      undefined,
+      "close it with closeQuestion",
     ],
-    [
-      "a KC twice",
-      open,
-      [
-        { kcId: "kc-a", result: "full" },
-        { kcId: "kc-a", result: "wrong" },
-      ],
-      "each KC once",
-    ],
-  ])("refuses %s", async (_, question, results, message) => {
-    await expect(grade(question, results)).rejects.toThrow(message);
+  ])("refuses %s", async (_, question, given, message) => {
+    await expect(grade(question, given)).rejects.toThrow(message);
     expect(saved).toEqual([]);
   });
 
@@ -288,10 +319,7 @@ describe("grade", () => {
       ...open,
       finalAnswers: [key("A", "[[1, 2], [0, 1]]"), key("b", "n + 1")],
     };
-    const partial = [
-      { kcId: "kc-a", result: "partial" },
-      { kcId: "kc-b", result: "wrong" },
-    ];
+    const partial = results("partial", "wrong");
 
     test.each([
       ["one unlabelled value", thrust, [{ value: "17500 N" }], "match"],
@@ -324,13 +352,13 @@ describe("grade", () => {
       expect(saved[0]?.check).toBe(check);
     });
 
-    test("a mismatch turns full into partial; a match keeps the verdict", async () => {
-      const results = (value: string) =>
+    test("a mismatch turns a full part into partial; a match keeps the verdict", async () => {
+      const stored = (value: string) =>
         grade(thrust, undefined, [{ value }]).then(() =>
-          saved[0]?.results.map(({ result }) => result),
+          saved[0]?.parts.map(({ result }) => result),
         );
-      expect(await results("20 kN")).toEqual(["partial", "wrong"]);
-      expect(await results("17.5 kN")).toEqual(["full", "wrong"]);
+      expect(await stored("20 kN")).toEqual(["partial", "wrong"]);
+      expect(await stored("17.5 kN")).toEqual(["full", "wrong"]);
     });
 
     test("is null without keys, and unchecked for a key without a value", async () => {
@@ -411,10 +439,28 @@ describe("ask", () => {
       ...noActions,
       findQuestion: async () => newest,
       ask: async () => ({ questionId: "q-2", problem: posed }),
-    }).ask.execute!({ prompt: "Go.", kcIds: ["k1"], problemId: "p-1" }, {
-      toolCallId: "1",
-      messages: [],
-    } as never);
+    }).ask.execute!(
+      {
+        prompt: "Go.",
+        parts: [{ prompt: "Name it.", kcId: "k1", form: "short" }],
+        problemId: "p-1",
+      },
+      { toolCallId: "1", messages: [] } as never,
+    );
+
+  test("takes 1 to 6 parts, each short or long", () => {
+    const part = { prompt: "Name it.", kcId: "k1", form: "short" };
+    const parts = (n: number, form = "short") =>
+      accepts("ask", {
+        prompt: "Case.",
+        parts: Array.from({ length: n }, () => ({ ...part, form })),
+      });
+    expect(parts(1)).toBe(true);
+    expect(parts(6, "long")).toBe(true);
+    expect(parts(0)).toBe(false);
+    expect(parts(7)).toBe(false);
+    expect(parts(1, "essay")).toBe(false);
+  });
 
   test("returns the Problem it poses", async () => {
     expect(await askWith(problem)).toEqual({ questionId: "q-2", problem });

@@ -3,6 +3,7 @@ import type { ChatUIMessage } from "@/features/chat/types";
 import type {
   AskedProblem,
   GradedKc,
+  PartForm,
   ProblemView,
   TopicView,
 } from "@/features/study";
@@ -31,12 +32,22 @@ export type ReplyStep = {
   detail: StepDetail | null;
 };
 
-type AskedQuestion = {
-  id: string;
+export type AskedPart = {
+  /** 1 to 6, in order. */
+  position: number;
   /** Markdown with LaTeX. */
+  prompt: string;
+  form: PartForm;
+};
+
+export type AskedQuestion = {
+  id: string;
+  /** The case, in Markdown with LaTeX. */
   prompt: string;
   /** The Problem it poses, shown in place of the prompt; null for none. */
   problem: AskedProblem | null;
+  /** Its parts in order; empty for a Question asked before parts. */
+  parts: AskedPart[];
 };
 
 export type ShownReading = {
@@ -133,6 +144,16 @@ function askedQuestion(part: ToolPart): AskedQuestion | null {
       typeof problem.statement === "string"
         ? (problem as unknown as AskedProblem)
         : null,
+    parts: (Array.isArray(input.parts) ? input.parts : []).map(
+      (value, index) => {
+        const part = asRecord(value);
+        return {
+          position: index + 1,
+          prompt: typeof part.prompt === "string" ? part.prompt : "",
+          form: part.form === "long" ? "long" : "short",
+        };
+      },
+    ),
   };
 }
 

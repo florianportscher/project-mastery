@@ -15,6 +15,7 @@ import {
   CLASSMATE_COURSE,
   db,
   signInAs,
+  submitMessage,
   userMessage,
   send,
   storedMessages,
@@ -408,7 +409,7 @@ describe("the Chat title", () => {
 });
 
 describe("a question", () => {
-  test("is asked, answered by the next message, and graded into attempts", async () => {
+  test("is asked, answered by a Submit, and graded into attempts", async () => {
     seedMap();
     const chatId = randomUUID();
     useMockModels({
@@ -419,7 +420,7 @@ describe("a question", () => {
               toolName: "ask",
               input: {
                 prompt: "State the thrust equation.",
-                kcIds: [MAP.thrust],
+                parts: [{ prompt: "F?", kcId: MAP.thrust, form: "short" }],
               },
             },
           ],
@@ -450,8 +451,7 @@ describe("a question", () => {
           {
             toolName: "grade",
             input: {
-              questionId: question!.id,
-              results: [{ kcId: MAP.thrust, result: "partial" }],
+              results: [{ position: 1, result: "partial", note: "Sign." }],
               help: "none",
             },
           },
@@ -460,13 +460,13 @@ describe("a question", () => {
       "Close: mind the sign.",
     );
     useMockModels({ chat: model });
-    const answer = userMessage("$F = \\dot m (v_0 - v_e)$");
+    const answer = submitMessage(question!.id, ["$F = \\dot m (v_0 - v_e)$"]);
 
     const graded = await send({ chatId, message: answer });
 
     expect(graded.text).toBe("Close: mind the sign.");
     expect(question).toMatchObject({
-      answer_text: "$F = \\dot m (v_0 - v_e)$",
+      answer_text: "Part 1: $F = \\dot m (v_0 - v_e)$",
       answer_message_id: answer.id,
       graded_at: expect.any(String),
     });

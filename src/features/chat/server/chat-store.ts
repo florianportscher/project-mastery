@@ -2,7 +2,7 @@ import "server-only";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
-import type { ChatUIMessage } from "@/features/chat/types";
+import type { ChatUIMessage, SubmittedAnswer } from "@/features/chat/types";
 import type { TutorContext } from "@/features/study";
 import type { ReplyUsage } from "@/features/usage";
 import { loadReplyUsage } from "@/features/usage/server";
@@ -211,19 +211,25 @@ function toUIMessage(
     role: row.role as ChatUIMessage["role"],
     parts: row.parts as unknown as ChatUIMessage["parts"],
   };
-  return row.role === "assistant"
-    ? {
-        ...message,
-        metadata: {
-          ...(row.model_id && { modelId: row.model_id }),
-          ...(row.stopped && { stopped: true }),
-          ...(row.tutor_context && {
-            tutorContext: row.tutor_context as unknown as TutorContext,
-          }),
-          ...(usage && { usage }),
-        },
-      }
-    : message;
+  if (row.role !== "assistant") {
+    return row.answer
+      ? {
+          ...message,
+          metadata: { answer: row.answer as unknown as SubmittedAnswer },
+        }
+      : message;
+  }
+  return {
+    ...message,
+    metadata: {
+      ...(row.model_id && { modelId: row.model_id }),
+      ...(row.stopped && { stopped: true }),
+      ...(row.tutor_context && {
+        tutorContext: row.tutor_context as unknown as TutorContext,
+      }),
+      ...(usage && { usage }),
+    },
+  };
 }
 
 /**
@@ -237,7 +243,7 @@ export async function loadMessages(
   const { data, error } = await supabase
     .from("chat_messages")
     .select(
-      "id, chat_id, role, parts, model_id, stopped, tutor_context, created_at",
+      "id, chat_id, role, parts, model_id, stopped, tutor_context, answer, created_at",
     )
     .eq("chat_id", chatId)
     .order("created_at", { ascending: true });
@@ -295,6 +301,7 @@ function messageRow(chatId: string, message: ChatUIMessage) {
     stopped: message.metadata?.stopped ?? false,
     tutor_context:
       (message.metadata?.tutorContext as unknown as Json | undefined) ?? null,
+    answer: (message.metadata?.answer as unknown as Json | undefined) ?? null,
   };
 }
 

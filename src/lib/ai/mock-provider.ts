@@ -200,7 +200,16 @@ const MOCK_READING_REQUEST = "Read with me";
 
 const MOCK_READING_PURPOSE = "Mock purpose: what makes thrust?";
 
-const MOCK_QUESTION = "Mock question: what is $2 + 2$?";
+const MOCK_QUESTION = "Mock question: two plus two.";
+
+/** The mock Question's parts: a short one, then a long one. */
+const MOCK_PARTS = [
+  { prompt: "What is $2 + 2$?", form: "short" },
+  { prompt: "Explain how you got it.", form: "long" },
+] as const;
+
+/** A part a Submit's text leaves empty (`answerText`). */
+const NOT_ANSWERED = "(not answered)";
 
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 
@@ -277,40 +286,47 @@ type ToolPart = {
 };
 
 /**
- * The KCs of the question the reply before the Student's last message
- * asked, when the ask succeeded and no grade followed: the one that message
- * answers.
+ * Whether the reply before the Student's last message asked a question that
+ * succeeded and no grade followed: the one that message answers.
  */
-function openQuestion(prompt: Prompt): { kcIds: string[] } | undefined {
+function openQuestion(prompt: Prompt): boolean {
   let asked = false;
   for (const message of prompt.toReversed().slice(1)) {
-    if (message.role === "user") return undefined;
+    if (message.role === "user") return false;
     if (!Array.isArray(message.content)) continue;
     for (const part of (message.content as ToolPart[]).toReversed()) {
       if (part.type === "tool-result" && part.toolName === "grade") {
-        return undefined;
+        return false;
       }
       if (part.type === "tool-result" && part.toolName === "ask") {
         asked = part.output?.type !== "error-text";
       }
-      if (part.type === "tool-call" && part.toolName === "ask") {
-        const input = (
-          typeof part.input === "string" ? JSON.parse(part.input) : part.input
-        ) as { kcIds?: string[] };
-        return asked ? { kcIds: input.kcIds ?? [] } : undefined;
-      }
+      if (part.type === "tool-call" && part.toolName === "ask") return asked;
     }
   }
-  return undefined;
+  return false;
+}
+
+/**
+ * A Submit's answers, from its text (`answerText`): each part's position
+ * and whether it was answered. Empty for any other message.
+ */
+function submittedParts(
+  text: string,
+): Array<{ position: number; answered: boolean }> {
+  return [...text.matchAll(/^Part (\d+): (.*)$/gm)].map((match) => ({
+    position: Number(match[1]),
+    answered: match[2] !== NOT_ANSWERED,
+  }));
 }
 
 /**
  * In a Chat, the tutor's questions and readings: a Student message starting
- * with "Quiz me" gets an `ask` call on the first KC id the tutor context
- * names, one starting with "Read with me" a `showReading` call on the first
- * Reading section it names, and any other message right after an `ask` a
- * `grade` call with every KC of the asked question full. Each then ends its
- * step.
+ * with "Quiz me" gets an `ask` call with the two parts of `MOCK_PARTS` on
+ * the first two KC ids the tutor context names, one starting with "Read
+ * with me" a `showReading` call on the first Reading section it names, and
+ * a Submit right after an `ask` a `grade` call with each answered part full
+ * and each empty one unanswered. Each then ends its step.
  */
 function mockTutorQuestions(
   prompt: Prompt,
@@ -329,13 +345,14 @@ function mockTutorQuestions(
     .filter((part) => part.type === "text")
     .map((part) => part.text ?? "")
     .join(" ");
-  const answered =
-    !text.startsWith(MOCK_QUIZ_REQUEST) &&
-    !text.startsWith(MOCK_READING_REQUEST) &&
-    openQuestion(prompt);
-  if (answered) {
+  const submitted = submittedParts(text);
+  if (submitted.length > 0 && openQuestion(prompt)) {
     return call("mock-grade", "grade", {
-      results: answered.kcIds.map((kcId) => ({ kcId, result: "full" })),
+      results: submitted.map(({ position, answered }) => ({
+        position,
+        result: answered ? "full" : "unanswered",
+        note: answered ? "Mock note: right." : "Mock note: left empty.",
+      })),
       help: "none",
     });
   }
@@ -349,11 +366,20 @@ function mockTutorQuestions(
     });
   }
   if (!text.startsWith(MOCK_QUIZ_REQUEST)) return null;
-  const kcId = new RegExp(`KC id (${UUID})`).exec(context)?.[1];
-  if (!kcId) return null;
+  const kcIds = [
+    ...new Set(
+      [...context.matchAll(new RegExp(`KC id (${UUID})`, "g"))].map(
+        (match) => match[1]!,
+      ),
+    ),
+  ];
+  if (kcIds.length === 0) return null;
   return call("mock-ask", "ask", {
     prompt: MOCK_QUESTION,
-    kcIds: [kcId],
+    parts: MOCK_PARTS.map((part, index) => ({
+      ...part,
+      kcId: kcIds[index] ?? kcIds[0],
+    })),
   });
 }
 

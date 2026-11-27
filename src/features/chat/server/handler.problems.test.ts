@@ -11,6 +11,7 @@ import {
   db,
   seedMap,
   send,
+  submitMessage,
   userMessage,
 } from "./handler-testing";
 
@@ -220,6 +221,8 @@ describe("findProblems ranking", () => {
   });
 });
 
+const thrustPart = [{ prompt: "The thrust?", kcId: MAP.thrust, form: "short" }];
+
 describe("ask with a problemId", () => {
   const ask = (problemId: string) =>
     mockToolModel(
@@ -228,9 +231,8 @@ describe("ask with a problemId", () => {
           {
             toolName: "ask",
             input: {
-              kind: "problem",
               prompt: "Compute the thrust.",
-              kcIds: [MAP.thrust],
+              parts: thrustPart,
               problemId,
             },
           },
@@ -359,9 +361,8 @@ describe("ask and grade on a generated Problem", () => {
           {
             toolName: "ask",
             input: {
-              kind: "problem",
               prompt: "Compute the thrust.",
-              kcIds: [MAP.thrust],
+              parts: thrustPart,
               problemId: id,
             },
           },
@@ -417,8 +418,7 @@ describe("ask and grade on a generated Problem", () => {
             {
               toolName: "grade",
               input: {
-                questionId: question!.id,
-                results: [{ kcId: MAP.thrust, result: "full" }],
+                results: [{ position: 1, result: "full", note: "Right." }],
                 help: "none",
                 finalValues: [{ value: "30 kN" }],
               },
@@ -428,17 +428,12 @@ describe("ask and grade on a generated Problem", () => {
         "Check your numbers.",
       ),
     });
-    await send({
-      chatId,
-      message: {
-        ...userMessage("F = 30 kN"),
-        metadata: { questionId: question!.id },
-      },
-    });
+    await send({ chatId, message: submitMessage(question!.id, ["30 kN"]) });
 
     expect(db.tables.attempts).toEqual([
       expect.objectContaining({ result: "partial", check: "mismatch" }),
     ]);
+    expect(db.tables.question_parts[0]).toMatchObject({ result: "partial" });
   });
 });
 

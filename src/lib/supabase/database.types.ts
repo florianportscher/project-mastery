@@ -299,6 +299,7 @@ export type Database = {
       };
       chat_messages: {
         Row: {
+          answer: Json | null;
           chat_id: string;
           created_at: string;
           id: string;
@@ -310,6 +311,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          answer?: Json | null;
           chat_id: string;
           created_at?: string;
           id?: string;
@@ -320,6 +322,7 @@ export type Database = {
           tutor_context?: Json | null;
         };
         Update: {
+          answer?: Json | null;
           chat_id?: string;
           created_at?: string;
           id?: string;
@@ -1720,6 +1723,71 @@ export type Database = {
           },
           {
             foreignKeyName: "question_kcs_question_id_fkey";
+            columns: ["question_id"];
+            isOneToOne: false;
+            referencedRelation: "questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      question_parts: {
+        Row: {
+          answer_text: string | null;
+          choice: number | null;
+          form: string;
+          kc_id: string | null;
+          note: string | null;
+          options: string[] | null;
+          owner: string;
+          position: number;
+          prompt: string;
+          question_id: string;
+          result: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          answer_text?: string | null;
+          choice?: number | null;
+          form: string;
+          kc_id?: string | null;
+          note?: string | null;
+          options?: string[] | null;
+          owner?: string;
+          position: number;
+          prompt: string;
+          question_id: string;
+          result?: string | null;
+        };
+        Update: {
+          answer_text?: string | null;
+          choice?: number | null;
+          form?: string;
+          kc_id?: string | null;
+          note?: string | null;
+          options?: string[] | null;
+          owner?: string;
+          position?: number;
+          prompt?: string;
+          question_id?: string;
+          result?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "question_parts_kc_id_fkey";
+            columns: ["kc_id"];
+            isOneToOne: false;
+            referencedRelation: "kcs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "question_parts_owner_fkey";
+            columns: ["owner"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "question_parts_question_id_fkey";
             columns: ["question_id"];
             isOneToOne: false;
             referencedRelation: "questions";
