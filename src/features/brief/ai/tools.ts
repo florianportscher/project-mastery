@@ -50,7 +50,7 @@ export const saveBriefInputSchema = z.object({
     .max(35)
     .nullish()
     .describe(
-      "The language the Student asks their Knowledge map to be in, as an English name such as German. Only when they ask for another than the Course language.",
+      "The language the Student wants to study in (Knowledge map and Chats), as an English name such as German. Only when they ask for another than the Course language. A wish about the language of this conversation is not one.",
     ),
 });
 

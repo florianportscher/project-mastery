@@ -59,4 +59,13 @@ describe("briefReplySettings", () => {
       "Batches fully answered, never to ask again: 1 (date and goal), 3 (scope).",
     );
   });
+
+  test("says the Course language is unknown until a Material is parsed", () => {
+    const { instructions } = briefReplySettings(
+      { ...context, language: { name: "English", source: "fallback" } },
+      "/courses/course-1/map",
+    );
+    expect(instructions).toContain("not known until a Material is parsed");
+    expect(instructions).not.toContain("the Materials' own");
+  });
 });

@@ -20,6 +20,8 @@ export type GradeExamInput = {
   kcs: Array<{ id: string; name: string; description: string }>;
   /** The labels of the item's final results, which code checks. */
   finalResults: string[];
+  /** The Course language, for the reasons when the answer has no language. */
+  courseLanguage: string;
 };
 
 export type ExamGrading = {
@@ -32,7 +34,7 @@ export type ExamGrading = {
 const INSTRUCTIONS = `You grade one task of a Student's mock exam for a university course, as its examiner would. You get JSON: the task, the points it is worth, a reference solution (or null), the Student's answer, the knowledge components (KCs) it tests, each under a label, and the labels of its final results.
 
 1. Split the task into the steps the examiner would give points for, and award each step's points in steps of 0.5. The steps' points add up to at most the task's points.
-2. Give each step a one-sentence reason the Student can learn from: what was right, or what was missing or wrong. Address the Student as "you".
+2. Give each step a one-sentence reason the Student can learn from: what was right, or what was missing or wrong. Address the Student as "you". Write the reasons in the language of the Student's answer, and in the Course language (given in the JSON) when the answer has no language, such as only formulas.
 3. Grade from the reference solution when there is one; an equally valid other approach earns the same points. Without one, grade from the task statement and your own solution.
 4. Follow-on errors: a step that correctly uses a wrong earlier result loses no further points.
 5. For each KC label, give full when the answer shows the KC applied correctly, partial when partly, wrong when not or not at all.
@@ -94,6 +96,7 @@ export function gradeExamCall(input: GradeExamInput) {
                 answer: input.answer,
                 kcs,
                 finalResults: input.finalResults,
+                courseLanguage: input.courseLanguage,
               }),
             },
           ],
