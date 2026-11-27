@@ -4,6 +4,14 @@ import { MemoryCard } from "./memory-card";
 
 vi.mock("@/features/study/server/actions", () => ({ saveMemory: vi.fn() }));
 
+test("MemoryCard turns spellcheck off", () => {
+  render(<MemoryCard courseId="c1" text="Old." />);
+  expect(screen.getByRole("textbox", { name: "Memory" })).toHaveAttribute(
+    "spellcheck",
+    "false",
+  );
+});
+
 describe("MemoryCard on a refresh", () => {
   test("shows the refreshed text when the Student has not edited it", () => {
     const { rerender } = render(<MemoryCard courseId="c1" text="Old." />);

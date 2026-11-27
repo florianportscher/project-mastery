@@ -37,6 +37,7 @@ export function AnswerField({
       </label>
       <Textarea
         id={id}
+        spellCheck={false}
         value={text}
         onChange={(event) => onTextChange(event.target.value)}
         onBlur={onBlur}

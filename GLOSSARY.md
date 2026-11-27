@@ -109,7 +109,7 @@ One ongoing conversation between a Student and the AI within one Course, kept un
 _Avoid_: Conversation, thread
 
 **Dictation**:
-Speaking a message instead of typing it, in a Chat or the Brief. A microphone button records up to 2 minutes, the recording is turned into text and added after what is already in the message box; the Student checks and edits it, and sends it like a typed message. The recording is not stored.
+Speaking a message instead of typing it, in a Chat or the Brief. A microphone button records up to 2 minutes, the recording is turned into text and inserted at the cursor of the message box (at the end in a box never clicked, replacing selected text); the Student checks and edits it, and sends it like a typed message. The recording is not stored.
 _Avoid_: Voice input, speech input, voice message
 
 **Source pane**:
