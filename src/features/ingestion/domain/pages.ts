@@ -21,6 +21,18 @@ export function missingPages(
   return missing;
 }
 
+/**
+ * Whether a parse read no page: some page is stored `unreadable` and none has
+ * an answer (units, `titles` or `uncovered`). `overlay` and `blank` pages had
+ * no call and count neither way.
+ */
+export function noPageRead(skips: readonly (string | null)[]): boolean {
+  const answered = skips.some(
+    (skip) => skip === null || skip === "titles" || skip === "uncovered",
+  );
+  return skips.includes("unreadable") && !answered;
+}
+
 /** A page's text without any whitespace, so line breaks never matter. */
 function collapse(text: string): string {
   return text.replaceAll(/\s+/g, "");

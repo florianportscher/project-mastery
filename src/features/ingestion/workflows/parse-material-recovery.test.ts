@@ -182,6 +182,72 @@ describe("a batch whose call fails", () => {
   );
 });
 
+describe("a parse that reads no page", () => {
+  const reason = "No page could be read. Try again later.";
+
+  test("fails with the reason and no chunks, and Retry reads both pages again", async () => {
+    await seedLecture();
+    const down = pageModel([...Array(6)].map(() => new Error("down")));
+    useMockModels({ ingest: down.model });
+
+    await parseMaterial(MATERIAL);
+
+    expect(material()).toMatchObject({
+      parse_status: "failed",
+      parse_failure: reason,
+    });
+    expect(storedPages()).toEqual([
+      [1, "unreadable"],
+      [2, "unreadable"],
+    ]);
+    expect(db.tables.chunks).toEqual([]);
+
+    const up = pageModel([pageResult("Page one"), pageResult("Page two", 2)]);
+    useMockModels({ ingest: up.model });
+    await parseMaterial(MATERIAL);
+
+    expect(material()).toMatchObject({ parse_status: "parsed", pages_done: 2 });
+    expect(storedPages()).toEqual([
+      [1, null],
+      [2, null],
+    ]);
+    expect(db.tables.chunks).toHaveLength(2);
+  });
+
+  test("fails an image Material whose call fails", async () => {
+    const png = await readFile(
+      path.join(import.meta.dirname, "test-files", "whiteboard.png"),
+    );
+    db.tables.materials.push({
+      id: MATERIAL,
+      owner: STUDENT,
+      course_id: COURSE,
+      name: "Board",
+      media_type: "image/png",
+      size_bytes: png.byteLength,
+      storage_path: STORAGE_PATH,
+      parse_status: "queued",
+      pages_total: null,
+      pages_done: 0,
+      parse_failure: null,
+    });
+    db.files.seed(BUCKET, STORAGE_PATH, {
+      body: png,
+      contentType: "image/png",
+    });
+    useMockModels({
+      ingest: pageModel([...Array(3)].map(() => new Error("down"))).model,
+    });
+
+    await parseMaterial(MATERIAL);
+
+    expect(material()).toMatchObject({
+      parse_status: "failed",
+      parse_failure: reason,
+    });
+  });
+});
+
 describe("a failure of the app's own services", () => {
   const generic = "The material could not be parsed. Please try again.";
 
@@ -265,6 +331,40 @@ describe("the daily quota of the model provider", () => {
     ).toEqual([
       [1, "Page one"],
       [2, "Page two"],
+    ]);
+  });
+
+  test("a Retry reads an earlier unreadable page again", async () => {
+    await seedLecture();
+    // Page 1 fails in the batch and alone, then the quota ends on page 2.
+    const first = pageModel([
+      new Error("bad output"),
+      new Error("bad output"),
+      dailyQuotaError(),
+    ]);
+    useMockModels({ ingest: first.model });
+    await parseMaterial(MATERIAL);
+    expect(material()).toMatchObject({
+      parse_status: "failed",
+      parse_failure: "Daily limit reached",
+    });
+    expect(storedPages()).toEqual([[1, "unreadable"]]);
+
+    const retried = pageModel([
+      {
+        units: [
+          ...pageResult("Page one").units,
+          ...pageResult("Page two", 2).units,
+        ],
+      },
+    ]);
+    useMockModels({ ingest: retried.model });
+    await parseMaterial(MATERIAL);
+
+    expect(retried.calls()).toBe(1);
+    expect(storedPages()).toEqual([
+      [1, null],
+      [2, null],
     ]);
   });
 });

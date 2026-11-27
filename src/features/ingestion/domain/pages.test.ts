@@ -1,5 +1,23 @@
 import { describe, expect, test } from "vitest";
-import { missingPages, overlayPages } from "./pages";
+import { missingPages, noPageRead, overlayPages } from "./pages";
+
+describe("noPageRead", () => {
+  test("is true when pages are unreadable and none has an answer", () => {
+    expect(noPageRead(["unreadable", "overlay", "blank"])).toBe(true);
+  });
+
+  test.each([null, "titles", "uncovered"])(
+    "is false with a %s page",
+    (skip) => {
+      expect(noPageRead(["unreadable", skip])).toBe(false);
+    },
+  );
+
+  test("is false when no page is unreadable", () => {
+    expect(noPageRead([])).toBe(false);
+    expect(noPageRead(["blank", "blank"])).toBe(false);
+  });
+});
 
 describe("missingPages", () => {
   test("is every page when none is stored", () => {
