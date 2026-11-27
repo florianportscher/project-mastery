@@ -117,7 +117,7 @@ The pane beside a Chat that shows a Material's own pages, at a Reading section o
 _Avoid_: Viewer, reader, side panel
 
 **Study session**:
-One sitting of study with a start and an end: a Chat, or a Mock exam. Every Chat is one kind of session, ended by the Student, a Session rating or 2 idle hours, and then closed by one model call that writes its notes. A Chat's session has a length the Student chose on the Today card, or none (Open), and a shape the AI follows: an opening with a goal and a plan, teaching a few KCs at a time with one larger task, and a final check on everything new with a short recap.
+One sitting of study with a start and an end: a Chat, or a Mock exam. Every Chat is one kind of session, ended by the Student, a Session rating or 2 idle hours, and then closed by one model call that writes its notes. A Chat's session has a length the Student chose on the Today card, or none (Open), and a shape the AI follows: an opening with a goal and a plan, teaching one idea at a time with a small task each, a task combining them once a few stand, and a short final check of at most four parts with a recap.
 _Avoid_: Lesson, sitting, session alone when a Chat is meant
 
 **Session rating**:

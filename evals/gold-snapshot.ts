@@ -174,6 +174,10 @@ function wholeExercises(tables: Snapshot["tables"]): Snapshot["tables"] {
   };
 }
 
+function withoutKey(row: Row, key: string): Row {
+  return Object.fromEntries(Object.entries(row).filter(([k]) => k !== key));
+}
+
 /**
  * The tables of a snapshot from before Chapters went (#351) as the schema
  * has them now, as the migration does it: each chunk's heading is its
@@ -195,6 +199,12 @@ function withoutChapters(tables: Snapshot["tables"]): Snapshot["tables"] {
   );
   return {
     ...rest,
+    briefs: (rest.briefs ?? []).map((brief) =>
+      withoutKey(brief, "reserved_exam_chapter_id"),
+    ),
+    topics: (rest.topics ?? []).map((topic) =>
+      withoutKey(topic, "chapter_ids"),
+    ),
     chunks: (rest.chunks ?? []).map(({ chapter_id, ...chunk }) => ({
       ...chunk,
       heading: titleOf.get(chapter_id) ?? null,
