@@ -174,6 +174,12 @@ function wholeExercises(tables: Snapshot["tables"]): Snapshot["tables"] {
   };
 }
 
+function without(row: Row, column: string): Row {
+  return Object.fromEntries(
+    Object.entries(row).filter(([key]) => key !== column),
+  );
+}
+
 /**
  * The tables of a snapshot from before Chapters went (#351) as the schema
  * has them now, as the migration does it: each chunk's heading is its
@@ -199,6 +205,10 @@ function withoutChapters(tables: Snapshot["tables"]): Snapshot["tables"] {
       ...chunk,
       heading: titleOf.get(chapter_id) ?? null,
     })),
+    topics: (rest.topics ?? []).map((row) => without(row, "chapter_ids")),
+    briefs: (rest.briefs ?? []).map((row) =>
+      without(row, "reserved_exam_chapter_id"),
+    ),
     knowledge_map_builds: (rest.knowledge_map_builds ?? []).map((build) => ({
       ...build,
       needs_update: true,
