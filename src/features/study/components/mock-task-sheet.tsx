@@ -184,6 +184,10 @@ export function MockTaskSheet({
               {task.points === 1 ? "point" : "points"}
             </p>
             <Markdown>{task.prompt}</Markdown>
+            <p className="text-muted-foreground">
+              Show your working: points are given for each step, not only for
+              the final result.
+            </p>
             <AnswerField
               key={task.questionId}
               text={answer.text}
