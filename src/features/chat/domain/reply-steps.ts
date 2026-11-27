@@ -38,6 +38,8 @@ export type AskedPart = {
   /** Markdown with LaTeX. */
   prompt: string;
   form: PartForm;
+  /** The 2 to 4 options of a choice part; null for any other form. */
+  options: string[] | null;
 };
 
 export type AskedQuestion = {
@@ -147,10 +149,15 @@ function askedQuestion(part: ToolPart): AskedQuestion | null {
     parts: (Array.isArray(input.parts) ? input.parts : []).map(
       (value, index) => {
         const part = asRecord(value);
+        const options = Array.isArray(part.options)
+          ? part.options.filter((o): o is string => typeof o === "string")
+          : [];
+        const choice = part.form === "choice" && options.length >= 2;
         return {
           position: index + 1,
           prompt: typeof part.prompt === "string" ? part.prompt : "",
-          form: part.form === "long" ? "long" : "short",
+          form: choice ? "choice" : part.form === "long" ? "long" : "short",
+          options: choice ? options : null,
         };
       },
     ),

@@ -442,14 +442,21 @@ describe("ask", () => {
     }).ask.execute!(
       {
         prompt: "Go.",
-        parts: [{ prompt: "Name it.", kcId: "k1", form: "short" }],
+        parts: [
+          { prompt: "Name it.", kcId: "k1", form: "short", options: null },
+        ],
         problemId: "p-1",
       },
       { toolCallId: "1", messages: [] } as never,
     );
 
   test("takes 1 to 6 parts, each short or long", () => {
-    const part = { prompt: "Name it.", kcId: "k1", form: "short" };
+    const part = {
+      prompt: "Name it.",
+      kcId: "k1",
+      form: "short",
+      options: null,
+    };
     const parts = (n: number, form = "short") =>
       accepts("ask", {
         prompt: "Case.",
@@ -460,6 +467,29 @@ describe("ask", () => {
     expect(parts(0)).toBe(false);
     expect(parts(7)).toBe(false);
     expect(parts(1, "essay")).toBe(false);
+  });
+
+  test("a choice part takes 2 to 4 options, and no other part takes any", async () => {
+    const part = { prompt: "Which?", kcId: "k1" };
+    const choice = (options: string[] | null) =>
+      accepts("ask", {
+        prompt: "Case.",
+        parts: [{ ...part, form: "choice", options }],
+      });
+    expect(choice(["A", "B"])).toBe(true);
+    expect(choice(["A"])).toBe(false);
+    expect(choice(["A", "B", "C", "D", "E"])).toBe(false);
+
+    const run = (form: "short" | "choice", options: string[] | null) =>
+      tutorTools({ ...noActions }).ask.execute!(
+        { prompt: "Go.", parts: [{ ...part, form, options }] },
+        { toolCallId: "1", messages: [] } as never,
+      );
+    await expect(run("choice", null)).rejects.toThrow("give options");
+    await expect(run("short", ["A", "B"])).rejects.toThrow("give options");
+    await expect(run("choice", ["A", "B"])).resolves.toEqual({
+      questionId: "q-1",
+    });
   });
 
   test("returns the Problem it poses", async () => {

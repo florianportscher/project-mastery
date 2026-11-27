@@ -77,9 +77,17 @@ const askInputSchema = z.object({
           ),
         kcId: z.string().describe("The id of the KC of this Course it tests."),
         form: z
-          .enum(["short", "long"])
+          .enum(["short", "long", "choice"])
           .describe(
-            "The field it is answered in: short for a term, a number or a formula; long for a few sentences.",
+            "The field it is answered in: short for a term, a number or a formula; long for a few sentences; choice for a pick among easily confused cases, with a Why? field beside the options.",
+          ),
+        options: z
+          .array(z.string().min(1).max(300))
+          .min(2)
+          .max(4)
+          .nullable()
+          .describe(
+            "For form choice only: the 2 to 4 options, the confusable cases, each a short statement; null for any other form. The Student picks one and says why.",
           ),
       }),
     )
@@ -237,7 +245,12 @@ export type TutorToolActions = {
    */
   ask: (question: {
     prompt: string;
-    parts: Array<{ prompt: string; kcId: string; form: PartForm }>;
+    parts: Array<{
+      prompt: string;
+      kcId: string;
+      form: PartForm;
+      options: string[] | null;
+    }>;
     problemId: string | null;
   }) => Promise<{ questionId: string; problem: AskedProblem | null }>;
   /** The newest Question of the Chat's Study session; null without one. */
@@ -323,7 +336,14 @@ export function tutorTools(actions: TutorToolActions) {
       description:
         "Ask the Student a graded question in parts: the Chat shows a card with the case and then each part with its own field, and it ends your reply. The Student fills in what they can and submits all parts at once; that Submit, or a photo they send, is their answer, which you grade with grade. Messages they type meanwhile are side questions, and the Question stays open. With a problemId, the card shows the Problem's own statement and page as the case in place of your prompt. Write any lead-in before calling it, and don't repeat the question in your text. Refused while the open Question is answered but not graded: grade it first.",
       inputSchema: askInputSchema,
-      execute: async ({ problemId, ...question }) => {
+      execute: async ({ problemId, parts, ...question }) => {
+        parts.forEach(({ form, options }, index) => {
+          if ((form === "choice") !== (options !== null)) {
+            throw new TutorToolError(
+              `Part ${index + 1}: give options (2 to 4) for form choice, and for no other form.`,
+            );
+          }
+        });
         const open = await actions.findQuestion();
         if (open && open.answered && !open.graded) {
           throw new TutorToolError(
@@ -332,6 +352,7 @@ export function tutorTools(actions: TutorToolActions) {
         }
         const { questionId, problem } = await actions.ask({
           ...question,
+          parts,
           problemId: problemId ?? null,
         });
         return problem === null ? { questionId } : { questionId, problem };

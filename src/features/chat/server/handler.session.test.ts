@@ -65,7 +65,12 @@ const sessionOf = (chatId: string) =>
 test("a message with a photo answers the whole open Question; a typed one doesn't", async () => {
   seedMap();
   const chatId = randomUUID();
-  const part = { prompt: "Why?", kcId: MAP.thrust, form: "short" };
+  const part = {
+    prompt: "Why?",
+    kcId: MAP.thrust,
+    form: "short",
+    options: null,
+  };
   useMockModels({
     chat: mockToolModel(
       [[{ toolName: "ask", input: { prompt: "A jet.", parts: [part] } }]],

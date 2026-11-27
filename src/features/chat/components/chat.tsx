@@ -35,10 +35,7 @@ import {
 } from "@/features/chat/components/chat-message";
 import { MessageActionRow } from "@/features/chat/components/message-action-row";
 import type { QuestionAnswering } from "@/features/chat/components/question-card";
-import {
-  answerText,
-  questionStates,
-} from "@/features/chat/domain/question-states";
+import { questionStates } from "@/features/chat/domain/question-states";
 import { replyIsEmpty } from "@/features/chat/domain/reply-steps";
 import { chatLabel } from "@/features/chat/domain/chat-label";
 import { SessionStrip } from "@/features/chat/components/session-strip";
@@ -278,11 +275,11 @@ export function Chat({
   const answering: QuestionAnswering = {
     states: questions,
     disabled: isBusy || limitReached || ended,
-    onSubmit: (questionId, parts) => {
+    onSubmit: (questionId, parts, text) => {
       setInputError(null);
       clearError();
       void sendMessage({
-        text: answerText(parts),
+        text,
         metadata: { answer: { questionId, parts } },
       });
     },

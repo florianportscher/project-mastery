@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { chatMarkdownComponents } from "@/features/chat/components/citation-link";
 import {
+  answerText,
+  optionLetter,
   VERDICT_LABELS,
   type QuestionState,
 } from "@/features/chat/domain/question-states";
@@ -26,7 +28,8 @@ export type QuestionAnswering = {
   states: Map<string, QuestionState>;
   /** While a reply is on its way, or the Chat can't send: no Submit. */
   disabled: boolean;
-  onSubmit: (questionId: string, parts: PartAnswer[]) => void;
+  /** `text` is the Submit's message text, as the model reads it. */
+  onSubmit: (questionId: string, parts: PartAnswer[], text: string) => void;
 };
 
 const VERDICT_STYLES: Record<PartResult, string> = {
@@ -55,9 +58,14 @@ export function QuestionCard({
   const { problem, parts } = question;
   const state = answering.states.get(question.id);
   const [texts, setTexts] = useState<Record<number, string>>({});
+  const [picks, setPicks] = useState<Record<number, number>>({});
   const editable = state?.open === true && !answering.disabled;
   const textOf = (position: number) =>
     state?.answers?.get(position)?.text ?? texts[position] ?? "";
+  const choiceOf = (position: number): number | null =>
+    state?.answers
+      ? (state.answers.get(position)?.choice ?? null)
+      : (picks[position] ?? null);
 
   return (
     <div
@@ -87,18 +95,20 @@ export function QuestionCard({
           onSubmit={(event) => {
             event.preventDefault();
             if (!editable) return;
+            const answers = parts.map(({ position }) => ({
+              position,
+              text: textOf(position),
+              choice: choiceOf(position),
+            }));
             answering.onSubmit(
               question.id,
-              parts.map(({ position }) => ({
-                position,
-                text: textOf(position),
-                choice: null,
-              })),
+              answers,
+              answerText(answers, parts),
             );
           }}
         >
           <ol className="flex flex-col gap-4">
-            {parts.map(({ position, prompt, form }) => {
+            {parts.map(({ position, prompt, form, options }) => {
               const verdict = state?.verdicts?.get(position);
               const field = {
                 "aria-label": `Part ${position}`,
@@ -129,8 +139,44 @@ export function QuestionCard({
                       </Markdown>
                     </div>
                   </div>
-                  {form === "long" ? (
-                    <Textarea {...field} />
+                  {form === "choice" && options && (
+                    <fieldset
+                      className="flex flex-col gap-1.5"
+                      disabled={!editable}
+                      aria-label={`Part ${position} options`}
+                    >
+                      {options.map((option, index) => (
+                        <label
+                          key={index}
+                          className="flex items-start gap-2 text-sm"
+                        >
+                          <input
+                            type="radio"
+                            name={`part-${question.id}-${position}`}
+                            className="mt-1"
+                            checked={choiceOf(position) === index}
+                            onChange={() =>
+                              setPicks((current) => ({
+                                ...current,
+                                [position]: index,
+                              }))
+                            }
+                          />
+                          <span>
+                            {optionLetter(index)}) {option}
+                          </span>
+                        </label>
+                      ))}
+                    </fieldset>
+                  )}
+                  {form === "long" || form === "choice" ? (
+                    <Textarea
+                      {...field}
+                      aria-label={
+                        form === "choice" ? `Part ${position} why` : undefined
+                      }
+                      placeholder={form === "choice" ? "Why?" : undefined}
+                    />
                   ) : (
                     <Input {...field} />
                   )}

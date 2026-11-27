@@ -221,7 +221,9 @@ describe("findProblems ranking", () => {
   });
 });
 
-const thrustPart = [{ prompt: "The thrust?", kcId: MAP.thrust, form: "short" }];
+const thrustPart = [
+  { prompt: "The thrust?", kcId: MAP.thrust, form: "short", options: null },
+];
 
 describe("ask with a problemId", () => {
   const ask = (problemId: string) =>

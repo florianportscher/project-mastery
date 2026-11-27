@@ -420,7 +420,14 @@ describe("a question", () => {
               toolName: "ask",
               input: {
                 prompt: "State the thrust equation.",
-                parts: [{ prompt: "F?", kcId: MAP.thrust, form: "short" }],
+                parts: [
+                  {
+                    prompt: "F?",
+                    kcId: MAP.thrust,
+                    form: "short",
+                    options: null,
+                  },
+                ],
               },
             },
           ],

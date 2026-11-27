@@ -86,7 +86,12 @@ export async function insertQuestion(
   question: {
     sessionId: string;
     prompt: string;
-    parts: Array<{ prompt: string; kcId: string; form: PartForm }>;
+    parts: Array<{
+      prompt: string;
+      kcId: string;
+      form: PartForm;
+      options: string[] | null;
+    }>;
     exerciseId: string | null;
     /** The generated Problem it poses, or null; never with an Exercise. */
     problemId: string | null;
@@ -117,6 +122,7 @@ export async function insertQuestion(
       prompt: part.prompt,
       kc_id: part.kcId,
       form: part.form,
+      options: part.options,
     })),
   );
   if (partsError) failed("Saving the question's parts", partsError);
@@ -252,7 +258,7 @@ async function newestChatQuestion(supabase: Supabase, chatId: string) {
   const { data, error } = await supabase
     .from("questions")
     .select(
-      "id, answered_at, graded_at, question_parts(position), study_sessions!inner(chat_id)",
+      "id, answered_at, graded_at, question_parts(position, options), study_sessions!inner(chat_id)",
     )
     .eq("study_sessions.chat_id", chatId)
     .order("asked_at", { ascending: false })
@@ -339,6 +345,15 @@ export async function submitRefusal(
   ) {
     return "This answer doesn't match the question's parts.";
   }
+  // A choice must be one of the part's options; no other part has one.
+  const options = new Map(
+    newest.question_parts.map((part) => [part.position, part.options]),
+  );
+  const badChoice = answer.parts.some(({ position, choice }) => {
+    const count = options.get(position)?.length ?? 0;
+    return choice !== null && choice >= count;
+  });
+  if (badChoice) return "This answer doesn't match the question's parts.";
   return null;
 }
 

@@ -89,11 +89,29 @@ export function questionStates(
  * its answer: one paragraph per part, "Part 2: …", an empty one as not
  * answered.
  */
-export function answerText(parts: PartAnswer[]): string {
+export function answerText(
+  parts: PartAnswer[],
+  asked: Array<{ position: number; options: string[] | null }>,
+): string {
   return parts
-    .map(
-      ({ position, text }) =>
-        `Part ${position}: ${text.trim() === "" ? "(not answered)" : text.trim()}`,
-    )
+    .map(({ position, text, choice }) => {
+      const option =
+        choice === null
+          ? undefined
+          : asked.find((part) => part.position === position)?.options?.[choice];
+      const why = text.trim();
+      const answer = [
+        option === undefined ? "" : `${optionLetter(choice!)}) ${option}`,
+        why === "" ? "" : option === undefined ? why : `Why: ${why}`,
+      ]
+        .filter((line) => line !== "")
+        .join(" ");
+      return `Part ${position}: ${answer === "" ? "(not answered)" : answer}`;
+    })
     .join("\n\n");
+}
+
+/** An option's letter on the card: A for the first. */
+export function optionLetter(index: number): string {
+  return String.fromCharCode(65 + index);
 }

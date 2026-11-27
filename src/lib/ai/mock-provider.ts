@@ -204,9 +204,18 @@ const MOCK_QUESTION = "Mock question: two plus two.";
 
 /** The mock Question's parts: a short one, then a long one. */
 const MOCK_PARTS = [
-  { prompt: "What is $2 + 2$?", form: "short" },
-  { prompt: "Explain how you got it.", form: "long" },
+  { prompt: "What is $2 + 2$?", form: "short", options: null },
+  { prompt: "Explain how you got it.", form: "long", options: null },
 ] as const;
+
+/** A message starting with this makes the tutor mock ask a choice part. */
+const MOCK_CHOICE_REQUEST = "Quiz me with a choice";
+
+const MOCK_CHOICE_PART = {
+  prompt: "Which is the sum of $2 + 2$?",
+  form: "choice",
+  options: ["Three", "Four", "Five"],
+} as const;
 
 /** A part a Submit's text leaves empty (`answerText`). */
 const NOT_ANSWERED = "(not answered)";
@@ -374,6 +383,12 @@ function mockTutorQuestions(
     ),
   ];
   if (kcIds.length === 0) return null;
+  if (text.startsWith(MOCK_CHOICE_REQUEST)) {
+    return call("mock-ask", "ask", {
+      prompt: MOCK_QUESTION,
+      parts: [{ ...MOCK_CHOICE_PART, kcId: kcIds[0] }],
+    });
+  }
   return call("mock-ask", "ask", {
     prompt: MOCK_QUESTION,
     parts: MOCK_PARTS.map((part, index) => ({

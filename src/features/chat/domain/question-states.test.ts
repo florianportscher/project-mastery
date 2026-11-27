@@ -69,9 +69,25 @@ test("closeQuestion closes the newest Question", () => {
 
 test("a Submit's text names each part, and an empty one as not answered", () => {
   expect(
-    answerText([
-      { position: 1, text: " 4 ", choice: null },
-      { position: 2, text: "", choice: null },
-    ]),
+    answerText(
+      [
+        { position: 1, text: " 4 ", choice: null },
+        { position: 2, text: "", choice: null },
+      ],
+      [],
+    ),
   ).toBe("Part 1: 4\n\nPart 2: (not answered)");
+});
+
+test("a choice part's text names the option and the why", () => {
+  const asked = [{ position: 1, options: ["Mean", "Median"] }];
+  expect(
+    answerText([{ position: 1, text: "outliers", choice: 1 }], asked),
+  ).toBe("Part 1: B) Median Why: outliers");
+  expect(answerText([{ position: 1, text: "", choice: 0 }], asked)).toBe(
+    "Part 1: A) Mean",
+  );
+  expect(answerText([{ position: 1, text: "", choice: null }], asked)).toBe(
+    "Part 1: (not answered)",
+  );
 });

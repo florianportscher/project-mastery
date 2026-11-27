@@ -322,11 +322,15 @@ export function userMessage(text: string, id: string = randomUUID()) {
 }
 
 /** A Question card's Submit of `texts`, one per part from position 1. */
-export function submitMessage(questionId: unknown, texts: string[]) {
+export function submitMessage(
+  questionId: unknown,
+  texts: string[],
+  choices: Array<number | null> = [],
+) {
   const parts = texts.map((text, index) => ({
     position: index + 1,
     text,
-    choice: null,
+    choice: choices[index] ?? null,
   }));
   return {
     ...userMessage(

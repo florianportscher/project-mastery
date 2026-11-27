@@ -35,6 +35,7 @@ const asking = (kcIds: string[] = [MAP.thrust, MAP.efficiency]) =>
               prompt: `Part ${index + 1}?`,
               kcId,
               form: "short",
+              options: null,
             })),
           },
         },
@@ -200,6 +201,61 @@ test("a Submit is refused for a Question that is answered, or isn't the newest",
   expect(missingPart.refusal).toContain("parts");
   expect(db.tables.questions[0]!.answered_at).toBe(answered);
   expect(db.tables.question_parts[0]!.answer_text).toBe("Mass flow.");
+});
+
+test("a choice part stores its options, the picked option and the why; a pick outside the options is refused", async () => {
+  seedMap();
+  const chatId = randomUUID();
+  useMockModels({
+    chat: mockToolModel(
+      [
+        [
+          {
+            toolName: "ask",
+            input: {
+              prompt: "Two cases.",
+              parts: [
+                {
+                  prompt: "Which one?",
+                  kcId: MAP.thrust,
+                  form: "choice",
+                  options: ["Mean", "Median"],
+                },
+              ],
+            },
+          },
+        ],
+      ],
+      "",
+    ),
+  });
+  await send({
+    chatId,
+    courseId: COURSE,
+    message: userMessage("Quiz me"),
+  });
+  expect(toolError("ask")).toBeUndefined();
+  expect(db.tables.question_parts[0]).toMatchObject({
+    form: "choice",
+    options: ["Mean", "Median"],
+  });
+
+  const refused = await send({
+    chatId,
+    message: submitMessage(newestQuestion().id, ["Because."], [2]),
+  });
+  expect(refused.status).toBe(409);
+  expect(newestQuestion().answered_at).toBeNull();
+
+  useMockModels({ chat: mockTextModel("Thanks.") });
+  await send({
+    chatId,
+    message: submitMessage(newestQuestion().id, ["Outliers."], [1]),
+  });
+  expect(db.tables.question_parts[0]).toMatchObject({
+    choice: 1,
+    answer_text: "Outliers.",
+  });
 });
 
 test("a reply that failed after the grade was stored: the next message is told the grade is recorded", async () => {
