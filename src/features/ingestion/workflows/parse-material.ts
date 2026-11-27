@@ -16,11 +16,12 @@ import {
  * the units into chunks, each following its heading, takes the Material's
  * language and notes from the page reads, embeds the chunks and marks the
  * Material parsed. A page that cannot be read is stored unreadable and the
- * parse goes on; a retried parse resumes at the first page without a
- * result. Steps retry on their own; a step that fails for good, or a
- * reached Daily limit, marks the parse failed with a reason: the file's
- * when a step named it, a general one for any other failure. A deleted
- * Material stops it quietly.
+ * parse goes on, unless a step ends with no page read: then it fails. A
+ * retried parse resumes at the first page without a result and reads the
+ * unreadable pages again. Steps retry on their own; a step that fails for
+ * good, or a reached Daily limit, marks the parse failed with a reason: the
+ * file's when a step named it, a general one for any other failure. A
+ * deleted Material stops it quietly.
  *
  * For the smoke checks: `options.pages` reads only those pages.
  */

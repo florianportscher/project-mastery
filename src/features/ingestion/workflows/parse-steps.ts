@@ -14,7 +14,12 @@ import {
   unitsOnPages,
   type PageUnit,
 } from "@/features/ingestion/domain/page-batches";
-import { missingPages, overlayPages } from "@/features/ingestion/domain/pages";
+import { noPageReadReason } from "@/features/ingestion/domain/parse-failure";
+import {
+  missingPages,
+  noPageRead,
+  overlayPages,
+} from "@/features/ingestion/domain/pages";
 import type { PageSkip } from "@/features/ingestion/types";
 import {
   openMaterialPdf,
@@ -147,6 +152,22 @@ export async function preparePages(
     .update({ parse_status: "parsing", parse_failure: null })
     .eq("id", materialId);
   if (started.error) failed("Starting the parse", started.error);
+  // A Retry reads the unreadable pages again, until chunks are stored: they
+  // are fixed once stored, and a parse restarted after a failed embed keeps them.
+  const chunks = await supabase
+    .from("chunks")
+    .select("id")
+    .eq("material_id", materialId)
+    .limit(1);
+  if (chunks.error) failed("Loading the chunks", chunks.error);
+  if (chunks.data.length === 0) {
+    const cleared = await supabase
+      .from("material_pages")
+      .delete()
+      .eq("material_id", materialId)
+      .eq("skipped", "unreadable");
+    if (cleared.error) failed("Clearing the unreadable pages", cleared.error);
+  }
   const stored = await storedPageNumbers(supabase, materialId);
 
   let pageCount = 1;
@@ -198,7 +219,7 @@ class PageCallFailed extends Error {}
  * starts that could run past the step's limit (`callFits`), also after its
  * wait for a slot (`paceCall`); the pages of calls not started are left to
  * the next step. A reached Daily limit stops
- * the parse.
+ * the parse, and so does a Material with unreadable pages and no page read.
  */
 export async function readPages(
   materialId: string,
@@ -269,6 +290,14 @@ export async function readPages(
 
   if (gone) return { ok: true, left: null };
   if (limitReached) return { ok: false, reason: dailyLimitReason };
+  const results = await supabase
+    .from("material_pages")
+    .select("skipped")
+    .eq("material_id", materialId);
+  if (results.error) failed("Loading the page results", results.error);
+  if (noPageRead(results.data.map((row) => row.skipped ?? null))) {
+    return { ok: false, reason: noPageReadReason };
+  }
   return {
     ok: true,
     left: [

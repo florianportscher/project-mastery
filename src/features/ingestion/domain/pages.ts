@@ -21,6 +21,17 @@ export function missingPages(
   return missing;
 }
 
+/**
+ * `overlay` and `blank` pages had no model call, so they count neither as a
+ * read nor as a failure.
+ */
+export function noPageRead(skips: readonly (string | null)[]): boolean {
+  const answered = skips.some(
+    (skip) => skip === null || skip === "titles" || skip === "uncovered",
+  );
+  return skips.includes("unreadable") && !answered;
+}
+
 /** A page's text without any whitespace, so line breaks never matter. */
 function collapse(text: string): string {
   return text.replaceAll(/\s+/g, "");

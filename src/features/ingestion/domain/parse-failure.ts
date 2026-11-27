@@ -12,6 +12,9 @@ export const fileUnreadableReason = "The file could not be opened";
  */
 export const parseStoppedReason = "The parse stopped. Parse again.";
 
+/** Shown when the AI service is down: every page read failed. */
+export const noPageReadReason = "No page could be read. Try again later.";
+
 /** How long a parse may go without a heartbeat before it counts as stopped. */
 export const PARSE_LEASE_MINUTES = 30;
 
