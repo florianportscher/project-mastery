@@ -38,6 +38,7 @@ const MINUTE_MS = 60_000;
 export type TutorContextInput = {
   now: Date;
   exam: { examDate: string | null; goal: Goal };
+  language: NonNullable<TutorContext["language"]>;
   /** The live KCs in map order, with what each assumes. */
   kcs: Array<{
     id: string;
@@ -127,6 +128,7 @@ export function tutorContext(input: TutorContextInput): TutorContext {
     examDate: exam.examDate,
     daysLeft: exam.examDate === null ? null : daysBetween(today, exam.examDate),
     goal: exam.goal,
+    language: input.language,
     session: {
       minutes: minutesSince(input.session.startedAt),
       startedAt: input.session.startedAt,

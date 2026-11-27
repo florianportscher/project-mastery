@@ -1,5 +1,8 @@
 import "server-only";
-import { courseLanguage } from "@/features/ingestion/domain/language";
+import {
+  courseLanguageWithSource,
+  type CourseLanguageSource,
+} from "@/features/ingestion/domain/language";
 import { failed } from "@/lib/supabase/failed";
 import type { Supabase } from "@/lib/supabase/types";
 
@@ -12,7 +15,7 @@ import type { Supabase } from "@/lib/supabase/types";
 export async function loadCourseLanguage(
   supabase: Supabase,
   courseId: string,
-): Promise<{ name: string; chosen: boolean }> {
+): Promise<{ name: string; source: CourseLanguageSource }> {
   const [course, materials] = await Promise.all([
     supabase
       .from("courses")
@@ -29,11 +32,8 @@ export async function loadCourseLanguage(
   if (materials.error) {
     failed("Loading the Materials' languages", materials.error);
   }
-  const chosen = course.data?.language ?? null;
-  return chosen
-    ? { name: chosen, chosen: true }
-    : {
-        name: courseLanguage(materials.data.map(({ language }) => language)),
-        chosen: false,
-      };
+  return courseLanguageWithSource(
+    course.data?.language ?? null,
+    materials.data.map(({ language }) => language),
+  );
 }

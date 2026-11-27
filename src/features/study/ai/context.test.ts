@@ -33,6 +33,7 @@ function build(overrides: Partial<TutorContextInput> = {}) {
   const input: TutorContextInput = {
     now: NOW,
     exam: { examDate: "2026-12-07", goal: "pass" },
+    language: { name: "German", source: "materials" },
     kcs: [kc("k1"), kc("k2"), kc("k3")],
     anchors: () => [],
     topics: [topic("t1", ["k1", "k2"]), topic("t2", ["k3"])],
@@ -110,6 +111,15 @@ test("a first session proposes the next Topic with its sections, stock and notes
   expect(text).toContain("## Topic notes: Topic t1\nMixes up k1 and k2.");
   expect(text).not.toContain("Never shown.");
   expect(text).not.toContain("## Last session");
+});
+
+test("the dates section names the Course language and where it comes from", () => {
+  expect(render()).toContain(
+    "The Course language is German (the Materials' own).",
+  );
+  expect(
+    render({ language: { name: "English", source: "fallback" } }),
+  ).toContain("The Course language is English (no Material is parsed yet");
 });
 
 test("due Reviews come first: 10 named, with their recall, and how many more", () => {

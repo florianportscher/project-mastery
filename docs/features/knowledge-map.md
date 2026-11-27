@@ -281,7 +281,7 @@ All seven calls follow one pattern, so the prompts stay small and the answers ch
 
 The vectors come from task `embed`: chunks as their Markdown, KCs as "name: description". Which model serves each task is set in `src/lib/ai/models.ts`.
 
-**Course language.** KC names, descriptions and Topics are written in the language from `loadCourseLanguage`: the Student's choice in the Brief, otherwise the most common language of the Materials, otherwise English. The Materials themselves are transcribed untranslated.
+**Course language.** KC names, descriptions and Topics are written in the language from `loadCourseLanguage`: the Student's choice in the Brief, otherwise the most common language of the Materials, otherwise English. `loadCourseLanguage` returns the name with its source (`chosen`, `materials` or `fallback`, the last while no Material has a language); the map build reads the name, and the tutor context and the Chat title use both the language the same way. The Materials themselves are transcribed untranslated.
 
 ## Updates and identity
 

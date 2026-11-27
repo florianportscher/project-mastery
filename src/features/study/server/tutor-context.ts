@@ -1,5 +1,6 @@
 import "server-only";
 import { getBriefNotes } from "@/features/brief/server";
+import { loadCourseLanguage } from "@/features/ingestion/server";
 import {
   buildTopicGraph,
   loadKcAssumes,
@@ -62,6 +63,7 @@ export async function loadTutorContext(
     questions,
     mock,
     topicTree,
+    language,
   ] = await Promise.all([
     loadStudy(supabase, courseId, now),
     loadReadingSections(supabase, courseId),
@@ -75,6 +77,7 @@ export async function loadTutorContext(
     session ? loadSessionQuestions(supabase, session.id) : [],
     session?.mockId ? loadMockTasks(supabase, session.mockId) : null,
     loadTopicTree(supabase, courseId),
+    loadCourseLanguage(supabase, courseId),
   ]);
   // The reserved exam stays unseen: the tutor never gets its chunks.
   const map = withoutReserved(study.map, reserved);
@@ -111,6 +114,7 @@ export async function loadTutorContext(
   const context: TutorContext = tutorContext({
     now,
     exam: study.exam,
+    language,
     kcs: map.kcs.map((kc) => ({
       id: kc.id,
       name: kc.name,

@@ -418,6 +418,7 @@ async function streamReply({
               chatId: chat.id,
               userId,
               firstMessage: messageGist(messages[0]?.parts ?? []),
+              courseLanguage: tutoring.context.language?.name,
             });
           }
         },

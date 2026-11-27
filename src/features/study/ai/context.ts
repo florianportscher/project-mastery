@@ -63,7 +63,19 @@ export function renderTutorContext(context: TutorContext): string {
   return `<${CONTEXT_TAG}>\n${sections.join("\n\n")}\n</${CONTEXT_TAG}>`;
 }
 
-function dates({ today, examDate, daysLeft, goal }: TutorContext): string {
+const LANGUAGE_SOURCES = {
+  chosen: "the Student asked for it",
+  materials: "the Materials' own",
+  fallback: "no Material is parsed yet, so it may change",
+};
+
+function dates({
+  today,
+  examDate,
+  daysLeft,
+  goal,
+  language,
+}: TutorContext): string {
   const exam =
     examDate === null
       ? "The exam date is not set."
@@ -74,7 +86,10 @@ function dates({ today, examDate, daysLeft, goal }: TutorContext): string {
     goal === null
       ? "The goal is not set."
       : `The Student's goal is ${GOALS[goal]}.`;
-  return `Today is ${today}. ${exam} ${aim}`;
+  const course = language
+    ? ` The Course language is ${language.name} (${LANGUAGE_SOURCES[language.source]}).`
+    : "";
+  return `Today is ${today}. ${exam} ${aim}${course}`;
 }
 
 function session({ session: s }: TutorContext): string {

@@ -21,7 +21,7 @@ A past exam the build found in the Materials and the Student confirmed in the Br
 _Avoid_: Past paper, Altklausur, exam Material
 
 **Brief**:
-What a Student told the AI about a Course's exam: its date, their goal, format, excluded Materials, which found exams are old exams, the exam scope, the Course language and notes, which the AI writes as short paraphrases and the tutor reads as hints. They tell it in a short conversation on the Course's Brief page, which isn't a Chat: the AI asks each question once, accepts "don't know", and ends by sending the Student to the Course map; they can come back with new information any time. After a build, the AI asks once about each old exam the build found, by its printed name.
+What a Student told the AI about a Course's exam: its date, their goal, format, excluded Materials, which found exams are old exams, the exam scope, the Course language (that of the Knowledge map and the Chats) and notes, which the AI writes as short paraphrases and the tutor reads as hints. They tell it in a short conversation on the Course's Brief page, which isn't a Chat: the AI asks each question once, accepts "don't know", and ends by sending the Student to the Course map; they can come back with new information any time. After a build, the AI asks once about each old exam the build found, by its printed name.
 _Avoid_: Preferences, intake form, onboarding
 
 **Exam scope**:

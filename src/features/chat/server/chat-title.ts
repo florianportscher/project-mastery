@@ -20,13 +20,20 @@ export async function titleChat(
     chatId,
     userId,
     firstMessage,
-  }: { chatId: string; userId: string; firstMessage: string },
+    courseLanguage,
+  }: {
+    chatId: string;
+    userId: string;
+    firstMessage: string;
+    /** The Course language of the reply's tutor context. */
+    courseLanguage?: string;
+  },
 ): Promise<void> {
   try {
     const dailyLimit = await checkDailyLimit(supabase);
     if (dailyLimit.level === "reached") return;
 
-    const settings = chatTitleSettings();
+    const settings = chatTitleSettings(courseLanguage);
     const result = await withTraceAttributes(
       { userId, sessionId: chatId, traceName: "chat-title" },
       () => generateText({ ...settings, prompt: firstMessage }),

@@ -59,3 +59,24 @@ export function courseLanguage(languages: ReadonlyArray<string | null>) {
     "English"
   );
 }
+
+/** Where a Course language comes from. */
+export type CourseLanguageSource = "chosen" | "materials" | "fallback";
+
+/**
+ * The Course language and where it comes from: the `chosen` one from the
+ * Brief, else the Materials' own, else English as the `fallback` while no
+ * Material has a language yet.
+ */
+export function courseLanguageWithSource(
+  chosen: string | null,
+  languages: ReadonlyArray<string | null>,
+): { name: string; source: CourseLanguageSource } {
+  if (chosen) return { name: chosen, source: "chosen" };
+  const name = mostCommon(
+    languages.flatMap((language) => (language ? [language] : [])),
+  );
+  return name
+    ? { name, source: "materials" }
+    : { name: "English", source: "fallback" };
+}

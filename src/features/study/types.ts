@@ -29,6 +29,13 @@ export type TutorContext = {
   daysLeft: number | null;
   /** The Student's goal from the Brief; null until answered. */
   goal: Goal;
+  /** Optional: replies stored before it have none. */
+  language?: {
+    /** An English name, such as German. */
+    name: string;
+    /** The Student's choice, the Materials' own, or English before any Material is parsed. */
+    source: "chosen" | "materials" | "fallback";
+  };
   session: SessionFacts;
   proposal: Proposal;
   /** The first 8 refreshes of the ranking. */

@@ -95,7 +95,7 @@ function describeFoundExams({ foundExams }: BriefContext): string {
 }
 
 function describeLanguage({ language }: BriefContext): string {
-  return language.chosen
+  return language.source === "chosen"
     ? `The Course language, which the Knowledge map is written in: ${language.name}, as the Student asked.`
     : `The Course language, which the Knowledge map is written in: ${language.name}, the Materials' own. The Student may ask for another.`;
 }
