@@ -69,6 +69,11 @@ test("counts down from the server's deadline", () => {
   expect(screen.getByRole("timer")).toHaveTextContent("1:28:59");
 });
 
+test("tells the Student that working earns points", () => {
+  sheet(30);
+  expect(screen.getByText(/Show your working: points are given/)).toBeVisible();
+});
+
 test("saves an answer when the Student leaves its box, once per change", async () => {
   sheet(30);
   const box = screen.getByRole("textbox", { name: "Your answer" });
