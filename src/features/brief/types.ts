@@ -29,8 +29,9 @@ export type BriefWithMessages = {
     words: string;
   }>;
   /**
-   * The Student's answer to the reservation question: the reserved old exam,
-   * or "none"; null before they answered.
+   * The Student's answer to the reservation question: the reserved old
+   * exams in order, each marked when a submitted Mock exam took it, or
+   * "none"; null before they answered.
    */
-  reservedExam: { name: string } | "none" | null;
+  reservedExams: Array<{ name: string; taken: boolean }> | "none" | null;
 };

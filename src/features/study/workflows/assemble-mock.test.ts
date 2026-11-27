@@ -158,6 +158,7 @@ function seedCourse({ exam = false }: { exam?: boolean } = {}) {
       name: "Exam 2025",
       position: 0,
       confirmed: true,
+      reserved: false,
     });
   }
   ["k1", "k2"].forEach((id, position) => {
@@ -311,8 +312,8 @@ test("in the final week with a reservation, the mock is that exam's Exercises in
   db.tables.briefs.push({
     ...owned,
     exam_date: new Date(Date.now() + 3 * DAY_MS).toISOString().slice(0, 10),
-    reserved_exam_id: "e1",
   });
+  db.tables.exams[0]!.reserved = true;
   const model = useGenerateModel(DRAFT);
 
   await assembleMock(MOCK);

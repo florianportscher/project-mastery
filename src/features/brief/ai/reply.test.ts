@@ -18,7 +18,7 @@ const context: BriefContext = {
   materials: [],
   foundExams: [],
   exams: [],
-  reservedExam: { answered: false, examId: null },
+  reservedExam: { answered: false, examIds: [] },
   language: { name: "English", source: "materials" },
   topics: [],
   examScopes: [],

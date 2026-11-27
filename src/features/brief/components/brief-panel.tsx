@@ -76,7 +76,7 @@ export function BriefPanel({
     | "excludedMaterials"
     | "oldExams"
     | "examScopes"
-    | "reservedExam"
+    | "reservedExams"
   >;
   progress: ReactNode;
   memory: ReactNode;
@@ -85,7 +85,7 @@ export function BriefPanel({
     <div className="flex flex-col divide-y px-5">
       <h1 className="sr-only">Brief data</h1>
       <Section title="Exam">
-        <ExamFacts fields={brief.fields} reservedExam={brief.reservedExam} />
+        <ExamFacts fields={brief.fields} reservedExams={brief.reservedExams} />
       </Section>
       <Section title="Excluded Materials">
         <MaterialLinks materials={brief.excludedMaterials} />
@@ -145,10 +145,10 @@ export function BriefPanel({
 
 function ExamFacts({
   fields,
-  reservedExam,
+  reservedExams,
 }: {
   fields: BriefFields;
-  reservedExam: BriefWithMessages["reservedExam"];
+  reservedExams: BriefWithMessages["reservedExams"];
 }) {
   const rows: Array<[string, string | null]> = [
     [
@@ -178,11 +178,15 @@ function ExamFacts({
           </dd>
         </div>
       ))}
-      {reservedExam && (
+      {reservedExams && (
         <div className="contents">
-          <dt className="text-muted-foreground">Reserved exam</dt>
+          <dt className="text-muted-foreground">Reserved exams</dt>
           <dd className="break-words">
-            {reservedExam === "none" ? "None" : reservedExam.name}
+            {reservedExams === "none"
+              ? "None"
+              : reservedExams
+                  .map(({ name, taken }) => (taken ? `${name} (taken)` : name))
+                  .join(", ")}
           </dd>
         </div>
       )}

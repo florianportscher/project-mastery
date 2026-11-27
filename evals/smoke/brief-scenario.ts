@@ -65,7 +65,6 @@ export function briefSetup(
   const row = {
     course_id: course.courseId,
     owner: course.studentId,
-    reserved_exam_id: null,
   };
   const ids = course.examIds;
   const done = setup.answered;

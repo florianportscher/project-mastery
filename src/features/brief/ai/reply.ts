@@ -127,7 +127,7 @@ function describeAdminTexts({ adminTexts }: BriefContext): string | null {
   return `Organizational remarks in the Materials (admin texts), such as what the exam covers:\n${list}`;
 }
 
-const RESERVATION = `The reserved exam: the Student can keep one of the Course's old exams unseen, so that their final Mock exam is that real exam. You and the practice leave it out until then. Right after the old exams are stored, before the open question, ask once whether they want to keep one aside and which, listing each old exam by its name and saying which you suggest, with the reason in a few words, for example "… or none? I'd suggest keeping none, so you can practise with it." Store the answer with saveBrief: reservedExamId with the exam's id, or the word none when they keep none. The reserved exam is one of the old exams, so when the same call sends examIds, include it there.`;
+const RESERVATION = `The reserved exams: the Student can keep any number of the Course's old exams unseen, so that each becomes a final Mock exam of its own in the last stretch. You and the practice leave them out until then. Right after the old exams are stored, before the open question, ask once whether they want to keep some aside and which (several, or none), listing each old exam by its name and saying which you suggest, with the reason in a few words, for example "… or none? I'd suggest keeping none, so you can practise with it." Store the answer with saveBrief: reservedExamIds with the exams' ids, or [] when they keep none. The reserved exams are old exams, so when the same call sends examIds, include them there.`;
 
 function describeReservation(context: BriefContext): string {
   const { exams, reservedExam } = context;
@@ -142,11 +142,13 @@ function describeReservation(context: BriefContext): string {
 
 function reservationAnswer(
   exams: OldExam[],
-  { answered, examId }: BriefContext["reservedExam"],
+  { answered, examIds }: BriefContext["reservedExam"],
 ): string {
   if (answered) {
-    const kept = exams.find(({ id }) => id === examId);
-    return `Answered: keep ${kept ? JSON.stringify(kept.name) : "none"}. When the Student changes their mind, store the new answer.`;
+    const kept = exams
+      .filter(({ id }) => examIds.includes(id))
+      .map(({ name }) => JSON.stringify(name));
+    return `Answered: keep ${kept.length > 0 ? kept.join(", ") : "none"}. When the Student changes their mind, store the new set of all exams they keep.`;
   }
   const suggested = suggestedReservation(exams);
   return suggested

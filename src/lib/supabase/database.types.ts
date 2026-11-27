@@ -236,7 +236,6 @@ export type Database = {
           open_book: boolean | null;
           owner: string;
           reserved_exam_answered: boolean;
-          reserved_exam_id: string | null;
           scope_confirmed: boolean;
           updated_at: string;
         };
@@ -253,7 +252,6 @@ export type Database = {
           open_book?: boolean | null;
           owner?: string;
           reserved_exam_answered?: boolean;
-          reserved_exam_id?: string | null;
           scope_confirmed?: boolean;
           updated_at?: string;
         };
@@ -269,7 +267,6 @@ export type Database = {
           open_book?: boolean | null;
           owner?: string;
           reserved_exam_answered?: boolean;
-          reserved_exam_id?: string | null;
           scope_confirmed?: boolean;
           updated_at?: string;
         };
@@ -286,13 +283,6 @@ export type Database = {
             columns: ["owner"];
             isOneToOne: false;
             referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "briefs_reserved_exam_id_fkey";
-            columns: ["reserved_exam_id"];
-            isOneToOne: false;
-            referencedRelation: "exams";
             referencedColumns: ["id"];
           },
         ];
@@ -684,6 +674,7 @@ export type Database = {
           name: string;
           owner: string;
           position: number;
+          reserved: boolean;
         };
         ComputedFields: never;
         Insert: {
@@ -695,6 +686,7 @@ export type Database = {
           name: string;
           owner: string;
           position: number;
+          reserved?: boolean;
         };
         Update: {
           asked?: boolean;
@@ -705,6 +697,7 @@ export type Database = {
           name?: string;
           owner?: string;
           position?: number;
+          reserved?: boolean;
         };
         Relationships: [
           {
@@ -2226,6 +2219,7 @@ export type Database = {
           exam_ids?: string[];
           excluded_material_ids?: string[];
           fields?: Json;
+          reserved_exam_ids?: string[];
         };
         Returns: boolean;
       };

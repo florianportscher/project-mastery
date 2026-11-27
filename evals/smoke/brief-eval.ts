@@ -187,7 +187,7 @@ async function printBrief(supabase: AdminSupabase, courseId: string) {
     supabase
       .from("briefs")
       .select(
-        "exam_date, goal, open_book, formula_sheet, calculator, scope_confirmed, notes, reserved_exam_answered, reserved_exam_id",
+        "exam_date, goal, open_book, formula_sheet, calculator, scope_confirmed, notes, reserved_exam_answered",
       )
       .eq("course_id", courseId)
       .single(),
@@ -198,7 +198,7 @@ async function printBrief(supabase: AdminSupabase, courseId: string) {
       .eq("course_id", courseId),
     supabase
       .from("exams")
-      .select("id, name, confirmed")
+      .select("id, name, confirmed, reserved")
       .eq("course_id", courseId)
       .not("confirmed", "is", null)
       .order("position"),
@@ -210,7 +210,7 @@ async function printBrief(supabase: AdminSupabase, courseId: string) {
   const b = must(brief);
   const marked = must(exams);
   const name = (exam: (typeof marked)[number]) => exam.name;
-  const reserved = marked.find((e) => e.id === b.reserved_exam_id);
+  const reserved = marked.filter((e) => e.reserved);
   const list = (items: string[]) => (items.length ? items.join("; ") : "none");
   console.info("Stored Brief:");
   console.info(
@@ -221,7 +221,7 @@ async function printBrief(supabase: AdminSupabase, courseId: string) {
       `  excluded Materials: ${list(must(excluded).map((row) => row.materials.name))}`,
       `  old exams: ${list(marked.filter((e) => e.confirmed).map(name))}`,
       `  not old exams: ${list(marked.filter((e) => !e.confirmed).map(name))}`,
-      `  reserved exam: ${b.reserved_exam_answered ? (reserved ? name(reserved) : "none") : "not answered"}`,
+      `  reserved exams: ${b.reserved_exam_answered ? list(reserved.map(name)) : "not answered"}`,
       `  exam scopes: ${list(must(scopes).map((s) => `${s.topics.name} ${s.scope} ("${s.words}")`))}`,
       `  notes: ${b.notes ?? "none"}`,
     ].join("\n"),

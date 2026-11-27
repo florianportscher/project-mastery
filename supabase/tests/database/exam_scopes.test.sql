@@ -100,7 +100,7 @@ select throws_ok(
 update public.briefs set reserved_exam_answered = true where course_id = 'aaaaaaaa-c000-0000-0000-000000000001';
 select public.save_brief(
   'aaaaaaaa-c000-0000-0000-000000000001',
-  '{"reserved_exam_id": "aaaaaaaa-0e00-0000-0000-0000000000e3"}',
+  reserved_exam_ids => array['aaaaaaaa-0e00-0000-0000-0000000000e3']::uuid[],
   exam_ids => array['aaaaaaaa-0e00-0000-0000-0000000000f1', 'aaaaaaaa-0e00-0000-0000-0000000000e3']::uuid[],
   asked_exam_ids => array['aaaaaaaa-0e00-0000-0000-0000000000f1', 'aaaaaaaa-0e00-0000-0000-0000000000f2', 'aaaaaaaa-0e00-0000-0000-0000000000e3']::uuid[]);
 
@@ -110,15 +110,15 @@ select results_eq(
   'save_brief confirms the listed exams, rejects the other asked ones, and marks the asked ones');
 
 select results_eq(
-  $$select reserved_exam_id from public.briefs where course_id = 'aaaaaaaa-c000-0000-0000-000000000001'$$,
+  $$select id from public.exams where reserved and course_id = 'aaaaaaaa-c000-0000-0000-000000000001'$$,
   $$values ('aaaaaaaa-0e00-0000-0000-0000000000e3'::uuid)$$,
   'an exam confirmed in the same call can be reserved');
 
 select public.save_brief('aaaaaaaa-c000-0000-0000-000000000001', exam_ids => array['aaaaaaaa-0e00-0000-0000-0000000000f1']::uuid[]);
 
 select results_eq(
-  $$select b.reserved_exam_id, b.reserved_exam_answered, e.confirmed from public.briefs b, public.exams e where b.course_id = 'aaaaaaaa-c000-0000-0000-000000000001' and e.name = 'Probeklausur'$$,
-  $$values (null::uuid, false, false)$$,
+  $$select e.reserved, b.reserved_exam_answered, e.confirmed from public.briefs b, public.exams e where b.course_id = 'aaaaaaaa-c000-0000-0000-000000000001' and e.name = 'Probeklausur'$$,
+  $$values (false, false, false)$$,
   'a Reserved exam that is no longer an old exam loses its reservation');
 
 -- Another Student ---------------------------------------------------------------

@@ -49,6 +49,7 @@ function createDb() {
     position,
     confirmed: null,
     asked: false,
+    reserved: false,
   });
   return fakeSupabase({
     tables: {
@@ -79,6 +80,7 @@ function createDb() {
         },
       ] as FakeRow[],
       exam_scopes: [] as FakeRow[],
+      mock_exams: [] as FakeRow[],
     },
     primaryKeys: { briefs: ["course_id"] },
     defaults: {
@@ -132,7 +134,8 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => client(),
 }));
 
-const { getBrief, getExamFacts, getIntakeDone } = await import("./queries");
+const { getBrief, getExamFacts, getIntakeDone, getReservedExams } =
+  await import("./queries");
 
 beforeEach(() => {
   signedIn = true;
@@ -170,11 +173,14 @@ describe("getBrief", () => {
     db.tables.briefs.push({
       ...brief({ done: true }),
       reserved_exam_answered: true,
-      reserved_exam_id: "klausur",
     });
     // The Student answered: only the confirmed exam is an old exam.
     for (const exam of db.tables.exams) {
-      Object.assign(exam, { confirmed: exam.id === "klausur", asked: true });
+      Object.assign(exam, {
+        confirmed: exam.id === "klausur",
+        asked: true,
+        reserved: exam.id === "klausur",
+      });
     }
     db.tables.exam_scopes.push({
       owner: STUDENT,
@@ -219,7 +225,7 @@ describe("getBrief", () => {
         },
       ],
       oldExams: [{ id: "klausur", name: "Klausur 2023" }],
-      reservedExam: { name: "Klausur 2023" },
+      reservedExams: [{ name: "Klausur 2023", taken: false }],
       examScopes: [
         {
           name: "Integrals",
@@ -229,6 +235,40 @@ describe("getBrief", () => {
       ],
     });
     expect(view?.messages).toHaveLength(1);
+  });
+});
+
+describe("getReservedExams", () => {
+  test("lists the reserved exams in order, without those a submitted mock took", async () => {
+    for (const exam of db.tables.exams) {
+      Object.assign(exam, { confirmed: true, reserved: true });
+    }
+    expect(await getReservedExams(client(), COURSE)).toEqual([
+      "klausur",
+      "probe",
+    ]);
+
+    db.tables.mock_exams.push(
+      {
+        id: "m1",
+        owner: STUDENT,
+        course_id: COURSE,
+        status: "submitted",
+        reserved_exam_id: "klausur",
+      },
+      {
+        id: "m2",
+        owner: STUDENT,
+        course_id: COURSE,
+        status: "ready",
+        reserved_exam_id: "probe",
+      },
+    );
+    expect(await getReservedExams(client(), COURSE)).toEqual(["probe"]);
+  });
+
+  test("is empty without a reservation", async () => {
+    expect(await getReservedExams(client(), COURSE)).toEqual([]);
   });
 });
 

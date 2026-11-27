@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { getExamFacts, getReservedExam } from "@/features/brief/server";
+import { getExamFacts, getReservedExams } from "@/features/brief/server";
 import { loadChunkSources } from "@/features/ingestion/server";
 import {
   loadStoredMap,
@@ -74,7 +74,7 @@ export async function planMockExam(
   if (!mock) return null;
   const { owner, course_id: courseId } = mock;
 
-  const [map, topics, priorities, exam, asked, ready, reservedId] =
+  const [map, topics, priorities, exam, asked, ready, reservedIds] =
     await Promise.all([
       loadStoredMap(supabase, courseId),
       loadStoredTopics(supabase, courseId),
@@ -82,8 +82,10 @@ export async function planMockExam(
       getExamFacts(supabase, courseId),
       loadAskedProblems(supabase, courseId),
       loadReadyProblems(supabase, courseId),
-      getReservedExam(supabase, courseId),
+      getReservedExams(supabase, courseId),
     ]);
+  // The final mock is the first active reserved exam.
+  const reservedId = reservedIds[0] ?? null;
   const [kcRecall, choices] = await Promise.all([
     loadRecall(supabase, courseId, exam, now),
     loadTopicChoices(supabase, courseId),
@@ -114,13 +116,14 @@ export async function planMockExam(
   });
   const exercises = map.exercises.map((exercise) => ({
     ...exercise,
-    reserved: reservedId !== null && exercise.examId === reservedId,
+    reserved: reservedIds.includes(exercise.examId ?? ""),
+    final: reservedId !== null && exercise.examId === reservedId,
     seen: asked.has(exercise.id),
   }));
 
   if (inFinalStretch(exam.examDate, now) && reservedId !== null) {
     // The final mock is the reserved exam's Exercises, in order.
-    const final = exercises.filter((e) => e.reserved);
+    const final = exercises.filter((e) => e.final);
     const chunks = await questionChunks(supabase, final);
     await setFinal(supabase, mockId, reservedId);
     return {

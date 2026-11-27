@@ -38,11 +38,11 @@ export const saveBriefInputSchema = z.object({
     .describe(
       "True once the Student has answered the scope step: which Materials the exam covers, which are old exams, and whether the exam leaves out or stresses a Topic.",
     ),
-  reservedExamId: z
-    .string()
+  reservedExamIds: z
+    .array(z.string())
     .nullish()
     .describe(
-      "The id of the old exam the Student keeps unseen for their final Mock exam, or the word none when they keep none.",
+      "The ids of the old exams the Student keeps unseen for their final Mock exams. Replaces the stored set; [] when they keep none.",
     ),
   courseLanguage: z
     .string()

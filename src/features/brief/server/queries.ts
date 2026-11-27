@@ -38,11 +38,11 @@ export async function getBrief(
 }
 
 async function loadPanelData(supabase: Supabase, courseId: string) {
-  const [brief, excluded, exams, topics, scopes] = await Promise.all([
+  const [brief, excluded, exams, topics, scopes, reserved] = await Promise.all([
     supabase
       .from("briefs")
       .select(
-        "exam_date, goal, open_book, formula_sheet, calculator, scope_confirmed, notes, notes_updated_at, reserved_exam_answered, reserved_exam_id",
+        "exam_date, goal, open_book, formula_sheet, calculator, scope_confirmed, notes, notes_updated_at, reserved_exam_answered",
       )
       .eq("course_id", courseId)
       .single(),
@@ -53,6 +53,7 @@ async function loadPanelData(supabase: Supabase, courseId: string) {
     loadOldExams(supabase, courseId),
     loadTopics(supabase, courseId),
     loadExamScopes(supabase, courseId),
+    loadReservedExams(supabase, courseId),
   ]);
   if (brief.error) failed("Loading the Brief", brief.error);
   if (excluded.error) failed("Loading the excluded Materials", excluded.error);
@@ -83,26 +84,29 @@ async function loadPanelData(supabase: Supabase, courseId: string) {
       const topic = topics.find(({ id }) => id === topicId);
       return topic ? [{ name: topic.name, scope, words }] : [];
     }),
-    reservedExam: reservedExamName(
+    reservedExams: reservedExamList(
       exams,
       data.reserved_exam_answered,
-      data.reserved_exam_id,
+      reserved,
     ),
   };
 }
 
 /**
- * The panel's reserved exam: null before the Student answered, "none"
- * when they keep none or the exam is gone.
+ * The panel's reserved exams: null before the Student answered, "none"
+ * when they keep none.
  */
-function reservedExamName(
+function reservedExamList(
   exams: Awaited<ReturnType<typeof loadOldExams>>,
   answered: boolean,
-  examId: string | null,
-): BriefWithMessages["reservedExam"] {
+  reserved: Awaited<ReturnType<typeof loadReservedExams>>,
+): BriefWithMessages["reservedExams"] {
   if (!answered) return null;
-  const exam = exams.find(({ id }) => id === examId);
-  return exam ? { name: exam.name } : "none";
+  const list = reserved.flatMap(({ id, taken }) => {
+    const exam = exams.find((e) => e.id === id);
+    return exam ? [{ name: exam.name, taken }] : [];
+  });
+  return list.length > 0 ? list : "none";
 }
 
 /**
@@ -163,33 +167,49 @@ export async function getExamAids(
 }
 
 /**
- * The Course's active reserved exam, read with `supabase`, a Student's
- * session client or the admin client; null when none is reserved, once a
- * submitted Mock exam has used it, or without a Brief. While it is active,
- * the tutor, problem generation and every mock but the final one leave its
- * Exercises and their chunks out.
+ * The Course's reserved exams in order, each with whether a submitted Mock
+ * exam has taken it, read with `supabase`, a Student's session client or
+ * the admin client.
  */
-export async function getReservedExam(
+async function loadReservedExams(
   supabase: Supabase,
   courseId: string,
-): Promise<string | null> {
-  const { data, error } = await supabase
-    .from("briefs")
-    .select("reserved_exam_id")
-    .eq("course_id", courseId)
-    .maybeSingle();
-  if (error) failed("Loading the reserved exam", error);
-  const examId = data?.reserved_exam_id ?? null;
-  if (examId === null) return null;
-  const used = await supabase
-    .from("mock_exams")
-    .select("id")
-    .eq("course_id", courseId)
-    .eq("reserved_exam_id", examId)
-    .eq("status", "submitted")
-    .limit(1);
-  if (used.error) failed("Loading the final mock exam", used.error);
-  return used.data.length > 0 ? null : examId;
+): Promise<Array<{ id: string; taken: boolean }>> {
+  const [reserved, mocks] = await Promise.all([
+    supabase
+      .from("exams")
+      .select("id")
+      .eq("course_id", courseId)
+      .eq("reserved", true)
+      .order("position")
+      .order("id"),
+    supabase
+      .from("mock_exams")
+      .select("reserved_exam_id")
+      .eq("course_id", courseId)
+      .eq("status", "submitted")
+      .not("reserved_exam_id", "is", null),
+  ]);
+  if (reserved.error) failed("Loading the reserved exams", reserved.error);
+  if (mocks.error) failed("Loading the final mock exams", mocks.error);
+  const taken = new Set(mocks.data.map((mock) => mock.reserved_exam_id));
+  return reserved.data.map(({ id }) => ({ id, taken: taken.has(id) }));
+}
+
+/**
+ * The ids of the Course's active reserved exams in order, read with
+ * `supabase`, a Student's session client or the admin client: the reserved
+ * ones that no submitted Mock exam has taken. While they are active, the
+ * tutor, problem generation and every mock but a final one leave their
+ * Exercises and their chunks out.
+ */
+export async function getReservedExams(
+  supabase: Supabase,
+  courseId: string,
+): Promise<string[]> {
+  return (await loadReservedExams(supabase, courseId))
+    .filter(({ taken }) => !taken)
+    .map(({ id }) => id);
 }
 
 /**

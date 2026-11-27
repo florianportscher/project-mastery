@@ -31,6 +31,7 @@ export function exam(id: string, name: string, position: number): FakeRow {
     position,
     confirmed: null,
     asked: false,
+    reserved: false,
   };
 }
 
@@ -142,14 +143,16 @@ function createDb() {
             else if (exam.confirmed === true || asked.includes(id)) {
               exam.confirmed = false;
             }
+            if (exam.confirmed !== true) exam.reserved = false;
             if (asked.includes(id)) exam.asked = true;
           }
-          if (
-            brief.reserved_exam_id &&
-            !exams.includes(brief.reserved_exam_id as string)
-          ) {
-            brief.reserved_exam_id = null;
-            brief.reserved_exam_answered = false;
+        }
+        const reserved = args.reserved_exam_ids as string[] | undefined;
+        if (reserved) {
+          for (const exam of tables.exams) {
+            if (exam.course_id !== args.course_id) continue;
+            exam.reserved =
+              exam.confirmed === true && reserved.includes(exam.id as string);
           }
         }
         if (args.course_language) {

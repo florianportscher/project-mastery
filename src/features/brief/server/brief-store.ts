@@ -28,7 +28,6 @@ import {
   type BriefFields,
   type BriefMaterial,
   type OldExam,
-  type ReservedExam,
 } from "@/features/brief/domain/intake";
 import { loadExamScopes } from "@/features/brief/server/exam-scopes";
 import type { BriefUIMessage } from "@/features/brief/types";
@@ -179,7 +178,7 @@ async function loadBrief(supabase: Supabase, courseId: string) {
   const { data, error } = await supabase
     .from("briefs")
     .select(
-      "exam_date, goal, open_book, formula_sheet, calculator, scope_confirmed, notes, reserved_exam_id, reserved_exam_answered",
+      "exam_date, goal, open_book, formula_sheet, calculator, scope_confirmed, notes, reserved_exam_answered",
     )
     .eq("course_id", courseId)
     .maybeSingle();
@@ -193,11 +192,11 @@ async function loadBrief(supabase: Supabase, courseId: string) {
     calculator: data.calculator,
     scopeConfirmed: data.scope_confirmed,
   };
-  const reservedExam: ReservedExam = {
-    answered: data.reserved_exam_answered === true,
-    examId: data.reserved_exam_id ?? null,
+  return {
+    fields,
+    notes: data.notes,
+    reservedAnswered: data.reserved_exam_answered === true,
   };
-  return { fields, notes: data.notes, reservedExam };
 }
 
 async function loadMaterials(supabase: Supabase, courseId: string) {
@@ -217,7 +216,7 @@ async function loadFoundExams(
   const rows = await allRows("Loading the exams", (from, to) =>
     supabase
       .from("exams")
-      .select("id, name, confirmed, asked")
+      .select("id, name, confirmed, asked, reserved")
       .eq("course_id", courseId)
       .order("position")
       .order("id")
@@ -283,8 +282,13 @@ export async function loadContext(
     name,
     excluded: excluded.has(id),
   }));
+  const { reservedAnswered, ...rest } = brief;
   return {
-    ...brief,
+    ...rest,
+    reservedExam: {
+      answered: reservedAnswered,
+      examIds: foundExams.filter((exam) => exam.reserved).map(({ id }) => id),
+    },
     materials: briefMaterials,
     foundExams,
     exams: confirmedExams(foundExams),
@@ -323,7 +327,6 @@ export type BriefFieldsUpdate = Pick<
   | "formula_sheet"
   | "calculator"
   | "scope_confirmed"
-  | "reserved_exam_id"
   | "reserved_exam_answered"
 >;
 
@@ -332,7 +335,8 @@ export type BriefFieldsUpdate = Pick<
  * `excludedMaterialIds` the Materials the exam excludes, `examIds` the
  * Course's confirmed old exams (others that were, or that are among
  * `askedExamIds`, become rejected) and `language` the Course language,
- * marking the exams among `askedExamIds` asked. All or nothing, in one
+ * marking the exams among `askedExamIds` asked, and `reservedExamIds` the
+ * reserved exams (only confirmed ones count). All or nothing, in one
  * transaction (`save_brief`); throws when it fails.
  */
 export async function saveBrief(
@@ -344,11 +348,13 @@ export async function saveBrief(
     examIds,
     askedExamIds = [],
     language = null,
+    reservedExamIds = null,
   }: {
     excludedMaterialIds: string[] | null;
     examIds: string[] | null;
     askedExamIds?: string[];
     language?: string | null;
+    reservedExamIds?: string[] | null;
   },
 ): Promise<void> {
   const { data, error } = await supabase.rpc("save_brief", {
@@ -360,6 +366,7 @@ export async function saveBrief(
       asked_exam_ids: askedExamIds,
     }),
     ...(language && { course_language: language }),
+    ...(reservedExamIds && { reserved_exam_ids: reservedExamIds }),
   });
   if (error) failed("Saving the Brief", error);
   if (!data) throw new Error("Saving the Brief failed: it does not exist");

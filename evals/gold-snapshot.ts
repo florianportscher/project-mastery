@@ -106,7 +106,9 @@ export function remapSnapshot(
   }
 
   const tables: Record<string, Row[]> = {};
-  const current = withoutChapters(wholeExercises(snapshot.tables));
+  const current = reservedOnExams(
+    withoutChapters(wholeExercises(snapshot.tables)),
+  );
   for (const [table, rows] of Object.entries(current)) {
     tables[table] = rows.map((row) => {
       const next = replaceIds(row, ids) as Row;
@@ -212,6 +214,25 @@ function withoutChapters(tables: Snapshot["tables"]): Snapshot["tables"] {
     knowledge_map_builds: (rest.knowledge_map_builds ?? []).map((build) => ({
       ...build,
       needs_update: true,
+    })),
+  };
+}
+
+/**
+ * The tables of a snapshot from before an exam could be reserved on its own
+ * (#412) as the schema has them now: the Brief's `reserved_exam_id` becomes
+ * the exam's `reserved`.
+ */
+function reservedOnExams(tables: Snapshot["tables"]): Snapshot["tables"] {
+  const briefs = tables.briefs ?? [];
+  if (!briefs.some((brief) => "reserved_exam_id" in brief)) return tables;
+  const reserved = new Set(briefs.map((brief) => brief.reserved_exam_id));
+  return {
+    ...tables,
+    briefs: briefs.map((brief) => withoutKey(brief, "reserved_exam_id")),
+    exams: (tables.exams ?? []).map((exam) => ({
+      ...exam,
+      reserved: reserved.has(exam.id) && exam.confirmed === true,
     })),
   };
 }

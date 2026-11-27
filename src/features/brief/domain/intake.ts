@@ -29,6 +29,8 @@ export type BriefExam = {
   /** The Student's answer: an old exam or not; null before they answered. */
   confirmed: boolean | null;
   asked: boolean;
+  /** Whether the Student keeps it unseen for a final Mock exam. */
+  reserved: boolean;
 };
 
 /** An old exam of the Course: an exam the Student confirmed. */
@@ -36,7 +38,8 @@ export type OldExam = { id: string; name: string };
 
 export type ReservedExam = {
   answered: boolean;
-  examId: string | null;
+  /** The old exams the Student keeps aside, in Course order. */
+  examIds: string[];
 };
 
 /** The Course language that the build writes the Knowledge map in. */

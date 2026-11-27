@@ -11,5 +11,5 @@ export {
   getExamAids,
   getExamFacts,
   getIntakeDone,
-  getReservedExam,
+  getReservedExams,
 } from "./server/queries";
