@@ -77,7 +77,7 @@ What the Student sees of a KC, from its recall at the end of the current UTC day
 _Avoid_: KC state, mastery level, status
 
 **Ranking**:
-The one ordered list of what is worth doing next in a Course, derived on every read from the map, Priority, the replayed recall, the pace and the plan: due Reviews, the plan's Topics with untaught KCs, refreshes of taught KCs, then the Topics that are _if time allows_; in the final stretch (the exam day and the 7 days before it) everything by value per minute. A Topic never comes before an untaught Topic it builds on.
+The one ordered list of what is worth doing next in a Course, derived on every read from the map, Priority, the replayed recall and the plan: due Reviews, the plan's Topics with untaught KCs, refreshes of taught KCs, then the Topics that are _if time allows_; in the final stretch (the exam day and the 7 days before it) everything by value per effort. A Topic never comes before an untaught Topic it builds on.
 _Avoid_: Plan order, queue, schedule
 
 **Readiness**:
@@ -97,7 +97,7 @@ A Student's _pin_ or _skip_ of a Topic, one at a time. A pinned Topic is always 
 _Avoid_: Favourite, hide, exclude (an excluded Material is something else)
 
 **Today card**:
-The head of the Ranking, on the Course map and in a new Chat: the due Reviews with their minutes, then the next Topic with its minutes, or the first 5 items in the final stretch. The Student picks the session's length there: 15, 30 or 45 minutes, or Open, preselected with their last choice in the Course. Its buttons open a new Chat of that length that sends a first message as the Student: "Let's start.", "Let's review." when Reviews are due and "Exam problems please." once a KC is taught.
+The head of the Ranking, on the Course map and in a new Chat: the due Reviews, then the next Topic, or the first 5 items in the final stretch. The Student picks the session's length there: 15, 30 or 45 minutes, or Open, preselected with their last choice in the Course. Its buttons open a new Chat of that length that sends a first message as the Student: "Let's start.", "Let's review." when Reviews are due and "Exam problems please." once a KC is taught.
 _Avoid_: Dashboard, daily plan, agenda
 
 **AI**:
@@ -109,7 +109,7 @@ One ongoing conversation between a Student and the AI within one Course, kept un
 _Avoid_: Conversation, thread
 
 **Dictation**:
-Speaking a message instead of typing it, in a Chat or the Brief. A microphone button records up to 2 minutes, the recording is turned into text and added after what is already in the message box; the Student checks and edits it, and sends it like a typed message. The recording is not stored.
+Speaking a message instead of typing it, in a Chat or the Brief. A microphone button records up to 2 minutes, the recording is turned into text and inserted at the cursor of the message box (at the end in a box never clicked, replacing selected text); the Student checks and edits it, and sends it like a typed message. The recording is not stored.
 _Avoid_: Voice input, speech input, voice message
 
 **Source pane**:
@@ -117,7 +117,7 @@ The pane beside a Chat that shows a Material's own pages, at a Reading section o
 _Avoid_: Viewer, reader, side panel
 
 **Study session**:
-One sitting of study with a start and an end: a Chat, or a Mock exam. Every Chat is one kind of session, ended by the Student, a Session rating or 2 idle hours, and then closed by one model call that writes its notes. A Chat's session has a length the Student chose on the Today card, or none (Open), and a shape the AI follows: an opening with a goal and a plan, teaching a few KCs at a time with one larger task, and a final check on everything new with a short recap.
+One sitting of study with a start and an end: a Chat, or a Mock exam. Every Chat is one kind of session, ended by the Student, a Session rating or 2 idle hours, and then closed by one model call that writes its notes. A Chat's session has a length the Student chose on the Today card, or none (Open), and a shape the AI follows: an opening with a goal and a plan, teaching one idea at a time with a small task each, a task combining them once a few stand, and a short final check of at most four parts with a recap.
 _Avoid_: Lesson, sitting, session alone when a Chat is meant
 
 **Session rating**:

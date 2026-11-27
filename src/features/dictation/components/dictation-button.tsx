@@ -1,12 +1,19 @@
 "use client";
 
 import { MicIcon, SquareIcon } from "lucide-react";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   PromptInputButton,
   usePromptInputController,
 } from "@/components/ai-elements/prompt-input";
 import { Spinner } from "@/components/ui/spinner";
+import { insertAt } from "@/features/dictation/domain/insert-at";
 
 const MAX_SECONDS = 120;
 const TRANSCRIBE_FAILED = "Couldn't transcribe that. Try again.";
@@ -20,6 +27,8 @@ type DictationButtonProps = {
   onBusyChange?: (busy: boolean) => void;
   /** Called with a one-line message, or null when a new attempt starts. */
   onError?: (message: string | null) => void;
+  /** The message box, so the text lands at its cursor. Without it, at the end. */
+  textareaRef?: RefObject<HTMLTextAreaElement | null>;
 };
 
 const noSubscription = () => () => {};
@@ -38,14 +47,15 @@ function formatTime(seconds: number) {
 }
 
 /**
- * Dictation: records the Student's voice and appends the transcript to the
- * message box. Nothing is sent by itself. Renders nothing where the browser
- * cannot record.
+ * Dictation: records the Student's voice and inserts the transcript at the
+ * cursor of the message box. Nothing is sent by itself. Renders nothing where
+ * the browser cannot record.
  */
 export function DictationButton({
   disabled,
   onBusyChange,
   onError,
+  textareaRef,
 }: DictationButtonProps) {
   const { textInput } = usePromptInputController();
   // "starting" waits for microphone access, so a second press is ignored.
@@ -62,9 +72,17 @@ export function DictationButton({
   const mounted = useRef(false);
   // The box's current text, read when the transcript arrives.
   const current = useRef(textInput.value);
+  // Where the caret goes once React has put the inserted text in the box.
+  const caretAfter = useRef<number | null>(null);
   useEffect(() => {
     current.current = textInput.value;
-  }, [textInput.value]);
+    const caret = caretAfter.current;
+    if (caret !== null) {
+      caretAfter.current = null;
+      // No focus(): a phone's keyboard stays closed.
+      textareaRef?.current?.setSelectionRange(caret, caret);
+    }
+  }, [textInput.value, textareaRef]);
 
   useEffect(() => {
     onBusyChange?.(phase !== "idle");
@@ -107,8 +125,15 @@ export function DictationButton({
       const { text } = (await response.json()) as { text: string };
       if (text) {
         const before = current.current;
-        const gap = before && !/\s$/.test(before) ? " " : "";
-        textInput.setInput(before + gap + text);
+        const box = textareaRef?.current;
+        const result = insertAt(
+          before,
+          box ? box.selectionStart : before.length,
+          box ? box.selectionEnd : before.length,
+          text,
+        );
+        if (box) caretAfter.current = result.caret;
+        textInput.setInput(result.text);
       }
     } catch {
       onError?.(TRANSCRIBE_FAILED);

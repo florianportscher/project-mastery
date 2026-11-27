@@ -174,10 +174,8 @@ function wholeExercises(tables: Snapshot["tables"]): Snapshot["tables"] {
   };
 }
 
-function without(row: Row, column: string): Row {
-  return Object.fromEntries(
-    Object.entries(row).filter(([key]) => key !== column),
-  );
+function withoutKey(row: Row, key: string): Row {
+  return Object.fromEntries(Object.entries(row).filter(([k]) => k !== key));
 }
 
 /**
@@ -201,14 +199,16 @@ function withoutChapters(tables: Snapshot["tables"]): Snapshot["tables"] {
   );
   return {
     ...rest,
+    briefs: (rest.briefs ?? []).map((brief) =>
+      withoutKey(brief, "reserved_exam_chapter_id"),
+    ),
+    topics: (rest.topics ?? []).map((topic) =>
+      withoutKey(topic, "chapter_ids"),
+    ),
     chunks: (rest.chunks ?? []).map(({ chapter_id, ...chunk }) => ({
       ...chunk,
       heading: titleOf.get(chapter_id) ?? null,
     })),
-    topics: (rest.topics ?? []).map((row) => without(row, "chapter_ids")),
-    briefs: (rest.briefs ?? []).map((row) =>
-      without(row, "reserved_exam_chapter_id"),
-    ),
     knowledge_map_builds: (rest.knowledge_map_builds ?? []).map((build) => ({
       ...build,
       needs_update: true,

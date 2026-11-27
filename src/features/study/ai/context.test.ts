@@ -47,7 +47,7 @@ function build(overrides: Partial<TutorContextInput> = {}) {
         topicId: "t1",
         untaught: ["k1", "k2"],
         value: 2,
-        minutes: 60,
+        effort: 30,
       },
     ],
     recall: new Map(),
@@ -91,7 +91,7 @@ const review = (kcId: string): RankedItem => ({
   kcId,
   topicId: "t1",
   value: 1,
-  minutes: 2,
+  effort: 1,
 });
 
 test("a first session proposes the next Topic with its sections, stock and notes", () => {
@@ -140,7 +140,7 @@ test("the final stretch names the first items of the ranking instead", () => {
     exam: { examDate: "2026-11-10", goal: "good_grade" },
     ranked: [
       review("k3"),
-      { kind: "topic", topicId: "t1", untaught: ["k1"], value: 1, minutes: 30 },
+      { kind: "topic", topicId: "t1", untaught: ["k1"], value: 1, effort: 15 },
     ],
   });
   expect(text).toContain("The final stretch");

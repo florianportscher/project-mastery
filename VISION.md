@@ -20,7 +20,7 @@ A student gets something useful in the first five minutes, at any point of the s
 
 1. **Upload**: The student uploads course materials: slides, scripts, exercises, old exams.
 2. **Brief**: They tell the AI about the exam: date, format, what the lecturer emphasizes, what to skip, their goals and their current level. The Brief asks as it goes and blocks nothing.
-3. **Plan**: The AI analyzes the materials and old exams, works out what matters most, and builds a learning plan that follows the exam date, the goal and the student's preferences. The plan fits the hours the student has and says honestly what it leaves out.
+3. **Plan**: The AI analyzes the materials and old exams, works out what matters most, and builds a learning plan that follows the exam date, the goal and the student's preferences. The plan says honestly what it leaves out.
 4. **Learn**: The AI tutors the student through the plan, session by session, and keeps adapting it to what the student has mastered, struggles with or wants.
 5. **Ready**: Before the exam, the student practices on realistic mock exams and knows honestly how ready they are, topic by topic.
 

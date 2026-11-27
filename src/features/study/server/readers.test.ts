@@ -217,14 +217,12 @@ describe("getStudyState", () => {
         id: THRUST,
         name: "Thrust equation",
         centralQuestion: null,
-        minutes: 2,
       },
       {
         kind: "topic",
         id: "t2",
         name: "Nozzles",
         centralQuestion: "What does a nozzle do?",
-        minutes: 30,
       },
     ]);
     expect(state).toMatchObject({
@@ -276,45 +274,6 @@ describe("getStudyState", () => {
     );
 
     expect((await getStudyState(COURSE)).lastMockPercent).toBe(75);
-  });
-
-  test("measures the pace from 3 ended teaching sessions' messages", async () => {
-    // Six active minutes each, teaching one KC: 4 between the Student's
-    // messages and 2 to the AI's last reply.
-    [PRIOR, EFFICIENCY, NOZZLE].forEach((kcId, i) => {
-      const [session, chat] = [`s${i}`, `c${i}`];
-      const start = -3 + i;
-      db.tables.study_sessions.push({
-        id: session,
-        course_id: COURSE,
-        chat_id: chat,
-        ended_at: at(start + 0.1),
-      });
-      db.tables.questions.push({ id: `q${i}`, session_id: session });
-      db.tables.attempts.push({
-        ...attempt(kcId, start),
-        question_id: `q${i}`,
-        session_id: session,
-      });
-      db.tables.chat_messages.push(
-        ...[
-          ["user", 0],
-          ["assistant", 1],
-          ["user", 4],
-          ["assistant", 6],
-        ].map(([role, minutes]) => ({
-          id: randomUUID(),
-          chat_id: chat,
-          role,
-          created_at: at(start + (minutes as number) / 1440),
-        })),
-      );
-    });
-
-    expect((await getStudyState(COURSE)).pace).toEqual({
-      minutesPerKc: expect.closeTo(6, 5),
-      minutesPerReview: 2,
-    });
   });
 
   test("has no map without one", async () => {

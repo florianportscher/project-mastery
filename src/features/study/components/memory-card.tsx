@@ -58,6 +58,7 @@ export function MemoryCard({
       </p>
       <Textarea
         aria-label="Memory"
+        spellCheck={false}
         value={value}
         maxLength={MAX_MEMORY_LENGTH}
         rows={6}
