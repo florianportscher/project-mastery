@@ -13,7 +13,7 @@ db_url="${1:?usage: migrate-staging.sh <db-url>}"
 # newest one on staging.
 supabase migration list --remote="$db_url" --output-format json > migration-list.json
 jq -r '.migrations[] | select(.local == "") | .remote' migration-list.json | while read -r version; do
-  [ -n "$version" ] && : > "supabase/migrations/${version}_on_staging.sql"
+  : > "supabase/migrations/${version}_on_staging.sql"
 done
 
 status=0
