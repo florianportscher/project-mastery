@@ -114,7 +114,7 @@ function scheduler(retention: number): FSRS {
  * Attempt of each later UTC day, oldest first. Its other Attempts don't
  * schedule.
  */
-export function kcDays(attempts: ReplayAttempt[]): {
+function kcDays(attempts: ReplayAttempt[]): {
   first: ReplayAttempt[];
   reviews: ReplayAttempt[];
 } | null {
