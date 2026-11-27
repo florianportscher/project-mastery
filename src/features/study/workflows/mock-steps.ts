@@ -84,8 +84,6 @@ export async function planMockExam(
       loadReadyProblems(supabase, courseId),
       getReservedExams(supabase, courseId),
     ]);
-  // The final mock is the first active reserved exam.
-  const reservedId = reservedIds[0] ?? null;
   const [kcRecall, choices] = await Promise.all([
     loadRecall(supabase, courseId, exam, now),
     loadTopicChoices(supabase, courseId),
@@ -114,6 +112,10 @@ export async function planMockExam(
     points: itemMinutes(fields.difficulty),
     predictedSuccess: predictedSuccess(fields.kcs, recall),
   });
+  // The final mock is the next active reserved exam that has Exercises.
+  const reservedId =
+    reservedIds.find((id) => map.exercises.some((e) => e.examId === id)) ??
+    null;
   const exercises = map.exercises.map((exercise) => ({
     ...exercise,
     reserved: reservedIds.includes(exercise.examId ?? ""),
@@ -122,7 +124,7 @@ export async function planMockExam(
   }));
 
   if (inFinalStretch(exam.examDate, now) && reservedId !== null) {
-    // The final mock is the reserved exam's Exercises, in order.
+    // The final mock is that exam's Exercises, in order.
     const final = exercises.filter((e) => e.final);
     const chunks = await questionChunks(supabase, final);
     await setFinal(supabase, mockId, reservedId);

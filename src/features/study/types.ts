@@ -359,8 +359,8 @@ export type MockExamView = {
   durationMinutes: number | null;
   itemCount: number;
   aids: string[];
-  /** Whether it is the reserved exam itself. */
-  final: boolean;
+  /** The name of the reserved exam it is; null for an ordinary mock. */
+  finalExam: string | null;
   /** When its time is up, in progress; null otherwise. */
   deadline: string | null;
   /** The server's time when the page loaded, which the countdown runs from. */

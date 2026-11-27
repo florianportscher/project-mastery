@@ -327,6 +327,63 @@ test("in the final week with a reservation, the mock is that exam's Exercises in
   expect(items().map((i) => i.exercise_id)).toEqual(["x1", "x2"]);
 });
 
+function seedTwoReserved() {
+  seedCourse({ exam: true });
+  const t = db.tables;
+  t.briefs.push({
+    ...owned,
+    exam_date: new Date(Date.now() + 3 * DAY_MS).toISOString().slice(0, 10),
+  });
+  t.exams[0]!.reserved = true;
+  t.exams.push({
+    id: "e2",
+    ...owned,
+    name: "Exam 2026",
+    position: 1,
+    confirmed: true,
+    reserved: true,
+  });
+  t.exercises.find((e) => e.id === "x2")!.exam_id = "e2";
+}
+
+test("a taken reserved exam is skipped, so the next mock is the next one", async () => {
+  seedTwoReserved();
+  useGenerateModel(DRAFT);
+  db.tables.mock_exams.push({
+    ...assembling("other"),
+    id: "taken",
+    course_id: COURSE,
+    status: "submitted",
+    reserved_exam_id: "e1",
+  });
+
+  await assembleMock(MOCK);
+
+  expect(mock()).toMatchObject({ status: "ready", reserved_exam_id: "e2" });
+  expect(items().map((i) => i.exercise_id)).toEqual(["x2"]);
+});
+
+test("a reserved exam without Exercises is skipped", async () => {
+  seedTwoReserved();
+  useGenerateModel(DRAFT);
+  db.tables.exercises.find((e) => e.id === "x1")!.exam_id = "e2";
+
+  await assembleMock(MOCK);
+
+  expect(mock()).toMatchObject({ status: "ready", reserved_exam_id: "e2" });
+  expect(items().map((i) => i.exercise_id)).toEqual(["x1", "x2"]);
+});
+
+test("with two reserved exams the first is the first mock", async () => {
+  seedTwoReserved();
+  useGenerateModel(DRAFT);
+
+  await assembleMock(MOCK);
+
+  expect(mock()).toMatchObject({ reserved_exam_id: "e1" });
+  expect(items().map((i) => i.exercise_id)).toEqual(["x1"]);
+});
+
 test("Mock exam opens the open mock instead of assembling another", async () => {
   const supabase = db as unknown as Supabase;
 

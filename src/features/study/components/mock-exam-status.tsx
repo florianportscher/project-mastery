@@ -92,8 +92,10 @@ export function MockExamStatus({
           <p>
             Aids: {mock.aids.length > 0 ? mock.aids.join(", ") : "none allowed"}
           </p>
-          {mock.final && (
-            <p className="text-muted-foreground">This is your reserved exam.</p>
+          {mock.finalExam !== null && (
+            <p className="text-muted-foreground">
+              This is your reserved exam {mock.finalExam}.
+            </p>
           )}
           <StartButton mockId={mock.id} />
         </>
