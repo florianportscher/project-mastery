@@ -20,19 +20,15 @@ const KIND_NAMES: Record<NextItem["kind"], string> = {
   refresh: "Refresh",
 };
 
-/** Whole minutes, at least 1, such as "about 6 min". */
-const aboutMinutes = (minutes: number) =>
-  `about ${Math.max(1, Math.round(minutes))} min`;
-
 /**
- * The Today card: the head of the ranking. Normally the due Reviews with
- * their minutes, then the next Topic (or refresh) with its minutes; in the
- * final stretch the first 5 items. Its buttons open a new Chat
- * (`chatHref`) that sends a first message as the Student: "Let's start."
+ * The Today card: the head of the ranking. Normally the due Reviews,
+ * then the next Topic (or refresh); in the final stretch the first 5
+ * items. Its buttons open a new Chat (`chatHref`) that sends a first
+ * message as the Student: "Let's start."
  * while anything is ranked, "Let's review." with Reviews due and "Exam
  * problems please." once a KC is taught, for the length the Student picks:
- * 15, 30 or 45 minutes (their last choice preselected) or Open. Without a map or Topics it links
- * to the Course map to build or update it. The page passes the links, since
+ * 15, 30 or 45 minutes (their last choice preselected) or Open. Without a
+ * map or Topics it links to the Course map to build or update it. The page passes the links, since
  * the map and the Chat belong to other features. With `mock`, Mock exam
  * shows once a KC is taught, and Continue mock exam while a mock is open.
  */
@@ -99,7 +95,7 @@ export function TodayCard({
         {ranking.slice(0, FINAL_STRETCH_ITEMS).map((item) => (
           <li key={`${item.kind}-${item.id}`} className="flex flex-col">
             <span className="text-xs text-muted-foreground">
-              {KIND_NAMES[item.kind]} · {aboutMinutes(item.minutes)}
+              {KIND_NAMES[item.kind]}
             </span>
             {name(item)}
           </li>
@@ -107,20 +103,17 @@ export function TodayCard({
       </ol>
     );
   } else {
-    const reviewMinutes = reviews.reduce((sum, item) => sum + item.minutes, 0);
     body = (
       <>
         {reviews.length > 0 && (
           <p>
-            {reviews.length} {reviews.length === 1 ? "review" : "reviews"} due,{" "}
-            {aboutMinutes(reviewMinutes)}
+            {reviews.length} {reviews.length === 1 ? "review" : "reviews"} due
           </p>
         )}
         {next && (
           <div className="flex flex-col gap-0.5">
             <p className="text-xs text-muted-foreground">
-              {next.kind === "topic" ? "Next Topic" : "Refresh"} ·{" "}
-              {aboutMinutes(next.minutes)}
+              {next.kind === "topic" ? "Next Topic" : "Refresh"}
             </p>
             {name(next)}
             {next.centralQuestion !== null && (

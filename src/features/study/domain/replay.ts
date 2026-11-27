@@ -27,8 +27,6 @@ export type ReplayAttempt = {
   createdAt: string;
   result: AttemptResult;
   help: AttemptHelp;
-  /** Seconds from asking to answering its question; null if unanswered. */
-  seconds: number | null;
 };
 
 export type KcRecall = {
@@ -116,7 +114,7 @@ function scheduler(retention: number): FSRS {
  * Attempt of each later UTC day, oldest first. Its other Attempts don't
  * schedule.
  */
-export function kcDays(attempts: ReplayAttempt[]): {
+function kcDays(attempts: ReplayAttempt[]): {
   first: ReplayAttempt[];
   reviews: ReplayAttempt[];
 } | null {

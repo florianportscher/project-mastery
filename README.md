@@ -37,7 +37,7 @@ What works is well known from learning research: testing yourself instead of rer
 1. **Upload** your course materials: slides, lecture notes, exercise sheets and old exams.
 2. **Tell it about the exam** in a short conversation: the date, your goal, what's allowed and what the lecturer stresses.
 3. **Get a map of the course.** The AI breaks your materials into Topics, each made of small things you can learn in one sitting, and puts them in the order you need them.
-4. **Study what the Today card proposes.** Every day it lists the reviews that are due and the next Topic, with an estimate of the minutes.
+4. **Study what the Today card proposes.** Every day it lists the reviews that are due and the next Topic.
 5. **Learn with the tutor.** In a Chat, the tutor asks you questions on the Topic, grades your answers, and teaches from your materials when you're stuck.
 6. **Check you're ready** with practice problems and a timed mock exam, graded like the real one.
 
@@ -59,7 +59,7 @@ The numbers on the map are at 0% because the demo student has barely started: pr
 1. **Upload.** Slides, scripts, exercise sheets and old exams are parsed into searchable chunks by a durable background workflow.
 2. **Brief.** A conversation captures the exam. What else the student says is kept as notes the tutor reads in every Chat.
 3. **Knowledge map.** The AI builds a graph of what the Materials teach: nested Topics, Knowledge components (KCs), the Prerequisites between them and the Exercises that test them.
-4. **Plan.** Plain code, not a model, ranks what is worth doing next from the exam date, the goal, the student's recall and pace. A Today card shows it next to Progress and Readiness.
+4. **Plan.** Plain code, not a model, ranks what is worth doing next from the exam date, the goal and the Student's recall. A Today card shows it next to Progress and Readiness.
 5. **Tutor.** One Study session at a time: the Chat answers from the course, checks the student's answers against answer keys with a math engine, and schedules reviews with the [FSRS](docs/adr/0027-per-day-scheduling-and-one-ranking.md) spaced-repetition algorithm.
 6. **Practice.** Verified generated problems and mock exams, graded against the same answer keys.
 
@@ -75,7 +75,7 @@ The app, the code and the issues share one vocabulary, so a capitalized word suc
 | **Topic**                        | A named group of KCs that the student learns and sees as one, such as "Groups". Topics nest and are ordered by their Prerequisites.          |
 | **Prerequisite**                 | A link saying one KC must be learned before another.                                                                                         |
 | **Course map**                   | The Course's home: its Topics as a graph in Prerequisite order, with the student's numbers on each.                                          |
-| **Today card**                   | What the ranking proposes now: the Reviews that are due, then the next Topic, each with its minutes.                                         |
+| **Today card**                   | What the ranking proposes now: the Reviews that are due, then the next Topic.                                                                |
 | **Progress**                     | How many KCs of the study plan the student has learned, with days in and days left.                                                          |
 | **Readiness**                    | How much of the exam's weight the student is likely to recall on the exam day, from their spaced-repetition model. An estimate, not a grade. |
 | **Study session**, **Chat**      | One sitting of study. A Chat is a tutoring session; it closes with notes the tutor reads next time.                                          |

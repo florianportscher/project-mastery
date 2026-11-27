@@ -1,9 +1,8 @@
 /**
  * The ranking (#250): one ordered list of what is worth doing next in a
  * Course, read on every request from the map, Priority, the replayed cards,
- * the pace and the plan scope. Pure, on UTC days.
+ * and the plan scope. Pure, on UTC days.
  */
-import type { Pace } from "@/features/study/domain/pace";
 import type { PlanTopic, TopicScope } from "@/features/study/domain/plan";
 import {
   daysBetween,
@@ -17,6 +16,10 @@ import {
  */
 const FINAL_STRETCH_DAYS = 7;
 
+/** The effort of a Review or a refresh, and of each untaught KC of a Topic. */
+const REVIEW_EFFORT = 1;
+const UNTAUGHT_KC_EFFORT = 15;
+
 export function inFinalStretch(examDate: string | null, now: Date): boolean {
   if (examDate === null) return false;
   const days = daysBetween(utcDay(now), examDate);
@@ -26,8 +29,8 @@ export function inFinalStretch(examDate: string | null, now: Date): boolean {
 /**
  * A candidate of the ranking: a due KC (a Review), a Topic with untaught
  * KCs, or a taught KC that is not due (a refresh). `value` is Priority ×
- * (1 − recall), summed over a Topic's untaught KCs; `minutes` comes from
- * the pace.
+ * (1 − recall), summed over a Topic's untaught KCs; `effort` is a fixed
+ * weight: 1 per Review or refresh, 15 per untaught KC.
  */
 export type RankedItem =
   | {
@@ -35,7 +38,7 @@ export type RankedItem =
       kcId: string;
       topicId: string;
       value: number;
-      minutes: number;
+      effort: number;
     }
   | {
       kind: "topic";
@@ -43,7 +46,7 @@ export type RankedItem =
       /** Its untaught KCs in teaching order. */
       untaught: string[];
       value: number;
-      minutes: number;
+      effort: number;
     };
 
 type Ranked = {
@@ -62,10 +65,10 @@ type Ranked = {
  * Reviews; ties go in Course order.
  *
  * Normally: due Reviews by value; then in-plan Topics, a started one first,
- * then pinned ones (earliest pin first), then by value per minute; then
+ * then pinned ones (earliest pin first), then by value per effort; then
  * refreshes by value, once no in-plan Topic has untaught KCs; then "if time
  * allows" Topics, ordered like the in-plan ones. In the final stretch
- * everything ranks together by value per minute. Either way a Topic never
+ * everything ranks together by value per effort. Either way a Topic never
  * comes before an untaught Topic in scope that it builds on.
  */
 export function rankNext(input: {
@@ -75,12 +78,11 @@ export function rankNext(input: {
   /** Priority by KC id; a missing one counts as 0. */
   priorities: Record<string, number>;
   recall: Map<string, KcRecall>;
-  pace: Pace;
   scope: TopicScope[];
   examDate: string | null;
   now: Date;
 }): RankedItem[] {
-  const { topics, priorities, recall, pace } = input;
+  const { topics, priorities, recall } = input;
   const scope = new Map(input.scope.map((s) => [s.id, s]));
   const priority = (kcId: string) => priorities[kcId] ?? 0;
   const candidates: Ranked[] = [];
@@ -108,7 +110,7 @@ export function rankNext(input: {
           kcId,
           topicId: topic.id,
           value,
-          minutes: pace.minutesPerReview,
+          effort: REVIEW_EFFORT,
         },
         group: due ? 0 : 2,
         at: [place, index],
@@ -124,7 +126,7 @@ export function rankNext(input: {
         topicId: topic.id,
         untaught,
         value,
-        minutes: untaught.length * pace.minutesPerKc,
+        effort: untaught.length * UNTAUGHT_KC_EFFORT,
       },
       group: inPlan ? 1 : 3,
       at: [place, -1],
@@ -133,14 +135,14 @@ export function rankNext(input: {
     });
   });
 
-  const perMinute = ({ item }: Ranked) =>
-    item.minutes > 0 ? item.value / item.minutes : item.value;
+  const perEffort = ({ item }: Ranked) =>
+    item.effort > 0 ? item.value / item.effort : item.value;
   const courseOrder = (a: Ranked, b: Ranked) =>
     a.at[0] - b.at[0] || a.at[1] - b.at[1];
   let sorted: Ranked[];
   if (inFinalStretch(input.examDate, input.now)) {
     sorted = candidates.toSorted(
-      (a, b) => perMinute(b) - perMinute(a) || courseOrder(a, b),
+      (a, b) => perEffort(b) - perEffort(a) || courseOrder(a, b),
     );
   } else {
     const teaching = candidates.some((c) => c.group === 1);
@@ -152,7 +154,7 @@ export function rankNext(input: {
           (a.item.kind === "topic"
             ? Number(b.started) - Number(a.started) ||
               a.pinnedAt - b.pinnedAt ||
-              perMinute(b) - perMinute(a)
+              perEffort(b) - perEffort(a)
             : b.item.value - a.item.value) ||
           courseOrder(a, b),
       );

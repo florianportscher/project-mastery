@@ -25,7 +25,6 @@ const attempt = (
   createdAt,
   result,
   help,
-  seconds: null,
 });
 
 /** KC `k`'s recall at `now`, without an exam and with no goal. */

@@ -4,7 +4,6 @@ import type {
   Goal,
 } from "@/features/study/domain/replay";
 import type { MockStatus } from "@/features/study/domain/mock-exam";
-import type { Pace } from "@/features/study/domain/pace";
 import type { Progress, TopicScope } from "@/features/study/domain/plan";
 import type { ProblemSource } from "@/features/study/domain/exercises";
 import type { RecallBand } from "@/features/study/domain/recall-band";
@@ -177,8 +176,6 @@ export type NextItem = {
   name: string;
   /** The Topic's central question; null for a KC. */
   centralQuestion: string | null;
-  /** At the Student's pace. */
-  minutes: number;
 };
 
 /** Where the Student stands on a Topic with KCs of its own. */
@@ -213,7 +210,6 @@ export type StudyState = {
   /** The latest graded Mock exam's score, 0 to 100; null without one. */
   lastMockPercent: number | null;
   taught: boolean;
-  pace: Pace;
   /**
    * The length of the Student's newest session in the Course that has one,
    * which the Today card preselects; null without one.

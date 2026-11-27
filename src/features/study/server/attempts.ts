@@ -28,7 +28,7 @@ export async function loadCourseAttempts(
     supabase
       .from("attempts")
       .select(
-        "kc_id, session_id, result, help, created_at, questions!inner(exercise_id, asked_at, answered_at), study_sessions!inner(course_id)",
+        "kc_id, session_id, result, help, created_at, questions!inner(exercise_id), study_sessions!inner(course_id)",
       )
       .eq("study_sessions.course_id", courseId)
       .order("created_at")
@@ -42,11 +42,6 @@ export async function loadCourseAttempts(
     result: row.result as AttemptResult,
     help: row.help as AttemptHelp,
     exerciseId: row.questions.exercise_id,
-    seconds: row.questions.answered_at
-      ? (Date.parse(row.questions.answered_at) -
-          Date.parse(row.questions.asked_at)) /
-        1000
-      : null,
   }));
 }
 
