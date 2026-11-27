@@ -188,7 +188,7 @@ export async function sendMessage(
  * choice part. A Question without parts, or none open, gets `text` as a
  * plain message.
  */
-export async function answerOpenQuestion(
+async function answerOpenQuestion(
   client: Supabase,
   studentId: string,
   chat: { chatId: string; courseId: string },

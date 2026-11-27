@@ -13,7 +13,7 @@ export const chatNotFoundMessage = "This chat does not exist.";
 export const MAX_PART_ANSWER_LENGTH = 1500;
 
 /** What a Submit sends: the Student's answer to each part of a Question. */
-export const submittedAnswerSchema = z.object({
+const submittedAnswerSchema = z.object({
   questionId: z.uuid(),
   parts: z
     .array(

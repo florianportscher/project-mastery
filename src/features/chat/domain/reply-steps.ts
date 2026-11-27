@@ -32,7 +32,7 @@ export type ReplyStep = {
   detail: StepDetail | null;
 };
 
-export type AskedPart = {
+type AskedPart = {
   /** 1 to 6, in order. */
   position: number;
   /** Markdown with LaTeX. */
