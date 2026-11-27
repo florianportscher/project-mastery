@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { createRef } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import {
   PromptInputProvider,
@@ -74,6 +75,29 @@ test("appends the transcript after the typed text and reports busy", async () =>
   expect(await screen.findByDisplayValue("Hello A is singular.")).toBeTruthy();
   expect(onBusyChange).toHaveBeenCalledWith(true);
   expect(onBusyChange).toHaveBeenLastCalledWith(false);
+});
+
+test("inserts the transcript at the cursor, replacing a selection", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(Response.json({ text: "Yes." })),
+  );
+  const ref = createRef<HTMLTextAreaElement>();
+  render(
+    <TooltipProvider>
+      <PromptInputProvider>
+        <PromptInputTextarea aria-label="Message" ref={ref} />
+        <DictationButton textareaRef={ref} />
+      </PromptInputProvider>
+    </TooltipProvider>,
+  );
+  const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+  fireEvent.change(box, { target: { value: "Question: done" } });
+  box.setSelectionRange(10, 14);
+  await dictate();
+  expect(await screen.findByDisplayValue("Question: Yes.")).toBeTruthy();
+  expect(box.selectionStart).toBe(14);
+  expect(box.selectionEnd).toBe(14);
 });
 
 test("a failed transcription shows the error line and leaves the box", async () => {

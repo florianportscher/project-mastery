@@ -134,6 +134,7 @@ export function Chat({
   const [inputError, setInputError] = useState<string | null>(null);
   // True while the Student dictates; Send waits for the text.
   const [dictating, setDictating] = useState(false);
+  const messageBox = useRef<HTMLTextAreaElement>(null);
   const [endedHere, setEndedHere] = useState(false);
   const [dailyLimit, setDailyLimit] = useState(initialDailyLimit);
   const [opened, setOpened] = useState<MaterialListItem | null>(null);
@@ -437,6 +438,7 @@ export function Chat({
                 <PromptInputBody>
                   <PromptInputTextarea
                     aria-label="Message"
+                    ref={messageBox}
                     spellCheck={false}
                     aria-invalid={inputError !== null}
                     aria-describedby={
@@ -476,6 +478,7 @@ export function Chat({
                   {/* While a reply is on its way, the button is Stop. */}
                   <div className="flex items-center gap-1">
                     <DictationButton
+                      textareaRef={messageBox}
                       disabled={limitReached}
                       onBusyChange={setDictating}
                       onError={setInputError}

@@ -4,7 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { CircleAlertIcon, RotateCcwIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Conversation,
   ConversationContent,
@@ -52,6 +52,7 @@ export function Brief({ brief, dailyLimit: initialDailyLimit }: BriefProps) {
   const [inputError, setInputError] = useState<string | null>(null);
   // True while the Student dictates; Send waits for the text.
   const [dictating, setDictating] = useState(false);
+  const messageBox = useRef<HTMLTextAreaElement>(null);
   const [dailyLimit, setDailyLimit] = useState(initialDailyLimit);
   const limitReached = dailyLimit.level === "reached";
   const {
@@ -161,6 +162,7 @@ export function Brief({ brief, dailyLimit: initialDailyLimit }: BriefProps) {
             <PromptInputBody>
               <PromptInputTextarea
                 aria-label="Message"
+                ref={messageBox}
                 spellCheck={false}
                 aria-invalid={inputError !== null}
                 aria-describedby={inputError ? "brief-input-error" : undefined}
@@ -173,6 +175,7 @@ export function Brief({ brief, dailyLimit: initialDailyLimit }: BriefProps) {
               <span />
               <div className="flex items-center gap-1">
                 <DictationButton
+                  textareaRef={messageBox}
                   disabled={limitReached}
                   onBusyChange={setDictating}
                   onError={setInputError}
