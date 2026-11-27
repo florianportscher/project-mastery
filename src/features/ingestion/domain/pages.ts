@@ -22,9 +22,8 @@ export function missingPages(
 }
 
 /**
- * Whether a parse read no page: some page is stored `unreadable` and none has
- * an answer (units, `titles` or `uncovered`). `overlay` and `blank` pages had
- * no call and count neither way.
+ * `overlay` and `blank` pages had no model call, so they count neither as a
+ * read nor as a failure.
  */
 export function noPageRead(skips: readonly (string | null)[]): boolean {
   const answered = skips.some(
