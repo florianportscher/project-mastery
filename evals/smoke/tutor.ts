@@ -48,6 +48,8 @@ export async function sendMessage(
   chat: { chatId: string; courseId: string },
   text: string,
   log: (line: string) => void = console.info,
+  /** A Submit's answer, sent as the message's metadata. */
+  answer?: { questionId: string; parts: unknown[] },
 ): Promise<{
   calls: ToolCall[];
   text: string;
@@ -68,6 +70,7 @@ export async function sendMessage(
           id: randomUUID(),
           role: "user",
           parts: [{ type: "text", text }],
+          ...(answer ? { metadata: { answer } } : {}),
         },
       }),
     }),
@@ -180,6 +183,54 @@ export async function sendMessage(
 }
 
 /**
+ * Answers the Chat's open Question as the card's Submit does: `text` in
+ * the first part, the other parts left empty, and the first option for a
+ * choice part. A Question without parts, or none open, gets `text` as a
+ * plain message.
+ */
+export async function answerOpenQuestion(
+  client: Supabase,
+  studentId: string,
+  chat: { chatId: string; courseId: string },
+  text: string,
+): ReturnType<typeof sendMessage> {
+  const { data: session } = await client
+    .from("study_sessions")
+    .select("id")
+    .eq("chat_id", chat.chatId)
+    .maybeSingle();
+  const { data: question } = session
+    ? await client
+        .from("questions")
+        .select("id, answered_at, graded_at, question_parts(position, form)")
+        .eq("session_id", session.id)
+        .order("asked_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : { data: null };
+  const open =
+    question &&
+    !question.answered_at &&
+    !question.graded_at &&
+    question.question_parts.length > 0;
+  if (!open) return sendMessage(client, studentId, chat, text);
+  const parts = question.question_parts
+    .toSorted((a, b) => a.position - b.position)
+    .map(({ position, form }) => ({
+      position,
+      text: position === 1 ? text : "",
+      choice: form === "choice" ? 0 : null,
+    }));
+  const rendered = parts
+    .map((part) => `Part ${part.position}: ${part.text}`)
+    .join("\n\n");
+  return sendMessage(client, studentId, chat, rendered, console.info, {
+    questionId: question.id,
+    parts,
+  });
+}
+
+/**
  * Seeds the gold course (`seedGoldCourse`) and teaches two KCs a few days
  * ago, so both are due. Then sends a greeting, an answer, a preference, a
  * request for a numeric Exercise and its key, a wish to read and a request
@@ -265,7 +316,7 @@ export const tutorSmoke: SmokeCheck = {
 
     const chat = { chatId: randomUUID(), courseId: course.id };
     const first = await sendMessage(client, studentId, chat, GREETING);
-    const second = await sendMessage(client, studentId, chat, answer);
+    const second = await answerOpenQuestion(client, studentId, chat, answer);
     const third = await sendMessage(client, studentId, chat, PREFERENCE);
     // In another Chat the Student asks for an Exercise with a numeric key on
     // the KCs studied so far, and answers it.
@@ -277,7 +328,7 @@ export const tutorSmoke: SmokeCheck = {
       exerciseChat,
       `Can you give me the exercise from ${target.label}? It starts: "${target.markdown.slice(0, 120)}". I want to practise it.`,
     );
-    const fifth = await sendMessage(
+    const fifth = await answerOpenQuestion(
       client,
       studentId,
       exerciseChat,
@@ -309,11 +360,26 @@ export const tutorSmoke: SmokeCheck = {
     const silent = replies.filter(
       (reply) => reply.text === "" && reply.calls.length === 0,
     );
+    // A graded Question with parts has a result on every part, and a part
+    // of a Question that was submitted keeps its answer row.
+    const { data: parts, error } = await supabase
+      .from("question_parts")
+      .select("result, questions!inner(graded_at)")
+      .eq("owner", studentId);
+    if (error) throw new Error(error.message);
+    const ungraded = parts.filter(
+      (part) => part.questions.graded_at !== null && part.result === null,
+    );
     return [
       result(
         "every message got a reply",
         silent.length === 0,
         `${silent.length} of ${replies.length} silent`,
+      ),
+      result(
+        "graded parts have a result",
+        ungraded.length === 0,
+        `${parts.length} parts stored, ${ungraded.length} graded without a result`,
       ),
     ];
   },
