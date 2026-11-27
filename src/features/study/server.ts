@@ -20,6 +20,8 @@ export { getMockExam, getOpenMockExam } from "./server/mock-exams";
 export { loadProblemFlags } from "./server/problems";
 export {
   answerRefusedMessage,
+  moveRefusal,
+  recordMove,
   recordAnswer,
   submitAnswer,
   submitRefusal,

@@ -124,8 +124,8 @@ const openQuestion: QuestionToGrade = {
   kcIds: ["kc-a", "kc-b"],
   retiredKcIds: [],
   parts: [
-    { position: 1, kcId: "kc-a" },
-    { position: 2, kcId: "kc-b" },
+    { position: 1, kcId: "kc-a", hints: 0, solutionShown: false },
+    { position: 2, kcId: "kc-b", hints: 0, solutionShown: false },
   ],
   answered: true,
   graded: false,
@@ -189,11 +189,10 @@ describe("grade", () => {
     expect(saved).toEqual([
       expect.objectContaining({
         questionId: "q-1",
-        help: "some",
         parts: results("full", "wrong"),
         results: [
-          { kcId: "kc-a", result: "full" },
-          { kcId: "kc-b", result: "wrong" },
+          expect.objectContaining({ kcId: "kc-a", result: "full" }),
+          expect.objectContaining({ kcId: "kc-b", result: "wrong" }),
         ],
       }),
     ]);
@@ -201,15 +200,17 @@ describe("grade", () => {
 
   test("a KC's Attempt is its worst answered part; a KC with only unanswered parts gets none", async () => {
     const parts = [1, 2, 3].map((position) => ({
+      ...openQuestion.parts[0]!,
       position,
       kcId: position < 3 ? "kc-a" : "kc-b",
     }));
     await grade({ ...open, parts }, results("full", "partial", "unanswered"));
-    expect(saved[0]?.results).toEqual([{ kcId: "kc-a", result: "partial" }]);
+    const worst = () => saved[0]?.results.map((r) => [r.kcId, r.result]);
+    expect(worst()).toEqual([["kc-a", "partial"]]);
     await grade({ ...open, parts }, results("unanswered", "wrong", "full"));
-    expect(saved[0]?.results).toEqual([
-      { kcId: "kc-a", result: "wrong" },
-      { kcId: "kc-b", result: "full" },
+    expect(worst()).toEqual([
+      ["kc-a", "wrong"],
+      ["kc-b", "full"],
     ]);
   });
 
@@ -255,7 +256,9 @@ describe("grade", () => {
 
   test("grades the parts of KCs retired since the ask, without Attempts", async () => {
     await grade({ ...open, kcIds: ["kc-a"], retiredKcIds: ["kc-b"] });
-    expect(saved[0]?.results).toEqual([{ kcId: "kc-a", result: "full" }]);
+    expect(saved[0]?.results).toEqual([
+      expect.objectContaining({ kcId: "kc-a", result: "full" }),
+    ]);
     await grade({ ...open, kcIds: [], retiredKcIds: ["kc-a", "kc-b"] });
     expect(saved[0]).toMatchObject({
       parts: results("full", "wrong"),
@@ -303,15 +306,8 @@ describe("grade", () => {
     const legacy = { ...open, parts: [] };
     await expect(grade(legacy, results("full"))).rejects.toThrow("2 is KC id");
     await grade(legacy, results("full", "wrong"));
-    expect(saved).toEqual([
-      expect.objectContaining({
-        parts: [],
-        results: [
-          { kcId: "kc-a", result: "full" },
-          { kcId: "kc-b", result: "wrong" },
-        ],
-      }),
-    ]);
+    expect(saved[0]).toMatchObject({ parts: [] });
+    expect(saved[0]?.results.map((r) => r.kcId)).toEqual(["kc-a", "kc-b"]);
   });
 
   describe("the answer check", () => {

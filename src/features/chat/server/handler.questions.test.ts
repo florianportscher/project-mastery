@@ -13,6 +13,7 @@ import {
   MAP,
   STUDENT,
   db,
+  moveMessage,
   seedMap,
   send,
   submitMessage,
@@ -201,6 +202,57 @@ test("a Submit is refused for a Question that is answered, or isn't the newest",
   expect(missingPart.refusal).toContain("parts");
   expect(db.tables.questions[0]!.answered_at).toBe(answered);
   expect(db.tables.question_parts[0]!.answer_text).toBe("Mass flow.");
+});
+
+test("a press counts a hint or the shown solution on its part, and the reply's context has it", async () => {
+  const chatId = await useAskedChat();
+  const questionId = newestQuestion().id;
+  const press = (kind: "hint" | "solution", position: number, draft?: string) =>
+    send({ chatId, message: moveMessage(questionId, kind, position, draft) });
+
+  useMockModels({ chat: mockTextModel("Which step comes first?") });
+  expect((await press("hint", 1, "Mass flow")).status).toBe(200);
+  useMockModels({ chat: mockTextModel("Use the rule.") });
+  await press("hint", 1);
+  const model = mockTextModel("Here it is.");
+  useMockModels({ chat: model });
+  expect((await press("solution", 2)).text).toBe("Here it is.");
+
+  const parts = db.tables.question_parts.toSorted(
+    (a, b) => (a.position as number) - (b.position as number),
+  );
+  expect(parts.map((p) => p.hints)).toEqual([2, 0]);
+  expect(parts.map((p) => p.solution_shown_at !== null)).toEqual([false, true]);
+  expect(newestQuestion().answered_at).toBeNull();
+  expect(newestUserText(model)).toContain("Part 2: Part 2? (solution shown)");
+  expect(newestUserText(model)).toContain("Part 1: Part 1? (2 hints given)");
+});
+
+test("a press is refused for a part with its solution shown, an answered Question, one that isn't the newest and a missing part", async () => {
+  const chatId = await useAskedChat();
+  const questionId = newestQuestion().id;
+  const usePress = (
+    id: unknown,
+    kind: "hint" | "solution",
+    position: number,
+  ) => {
+    useMockModels({ chat: mockTextModel("Reply.") });
+    return send({ chatId, message: moveMessage(id, kind, position) });
+  };
+
+  await usePress(questionId, "solution", 1);
+  const refused = [
+    await usePress(questionId, "hint", 1),
+    await usePress(questionId, "solution", 1),
+    await usePress(questionId, "hint", 3),
+    await usePress(randomUUID(), "hint", 2),
+  ];
+  expect(refused.map(({ status }) => status)).toEqual([409, 409, 409, 409]);
+  expect(refused[0]!.refusal).toContain("can't be given");
+
+  await useSubmit(chatId, mockTextModel("Thanks."));
+  expect((await usePress(questionId, "hint", 2)).status).toBe(409);
+  expect(db.tables.question_parts.map((p) => p.hints)).toEqual([0, 0]);
 });
 
 test("a choice part stores its options, the picked option and the why; a pick outside the options is refused", async () => {

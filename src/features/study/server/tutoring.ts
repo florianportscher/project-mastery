@@ -170,11 +170,10 @@ function tutorToolActions(
         sessionEnded: end !== null,
       };
     },
-    async saveGrade({ questionId, help, parts, results, check }) {
+    async saveGrade({ questionId, parts, results, check }) {
       const saved = await saveAttempts(supabase, {
         questionId,
         sessionId: session(),
-        help,
         parts,
         results,
         check,

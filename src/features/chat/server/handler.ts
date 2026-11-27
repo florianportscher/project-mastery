@@ -56,7 +56,9 @@ import {
   closeIdleSession,
   endIdleSessions,
   endsReply,
+  moveRefusal,
   recordAnswer,
+  recordMove,
   renderTutorContext,
   sessionEndedMessage,
   setSessionMinutes,
@@ -92,7 +94,9 @@ import { flushTraces, withTraceAttributes } from "@/lib/tracing";
  *    graded Mock exam the request names, or mark the new reply as the
  *    Chat's latest, then store the Student's message; a Question card's
  *    Submit, refused unless it answers the open Question, or a message
- *    with a photo is also stored as that Question's answer
+ *    with a photo is also stored as that Question's answer; a press of
+ *    Hint or Show the solution, refused unless it is on a part of the open
+ *    Question, is counted on that part
  * 5. stream the reply from the full stored history, the tutor context in
  *    front of the newest message
  * 6. on end, record the call's usage and store the reply with its model,
@@ -171,6 +175,12 @@ export async function respondInChat({
     const refusal = await submitRefusal(supabase, chatId, answer);
     if (refusal) return refuse(409, refusal);
   }
+  // A press of Hint or Show the solution is on the open Question's part.
+  const move = message.metadata?.move;
+  if (!resent && move) {
+    const refusal = await moveRefusal(supabase, chatId, move);
+    if (refusal) return refuse(409, refusal);
+  }
 
   // The reply's id, marked as the Chat's latest before the Student's message
   // is stored, so a stopped reply still ending from an earlier request can
@@ -220,6 +230,9 @@ export async function respondInChat({
         });
         return refuse(409, answerRefusedMessage);
       }
+    } else if (move) {
+      // Counted before the reply, so the context it reads has the press.
+      await recordMove(supabase, chat.id, move);
     } else if (message.parts.some(({ type }) => type === "data-material")) {
       await recordAnswer(supabase, chat.id, sent);
     }

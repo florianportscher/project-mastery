@@ -294,6 +294,7 @@ export type Database = {
           created_at: string;
           id: string;
           model_id: string | null;
+          move: Json | null;
           parts: NonNullable<Json>;
           role: string;
           stopped: boolean;
@@ -306,6 +307,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           model_id?: string | null;
+          move?: Json | null;
           parts: NonNullable<Json>;
           role: string;
           stopped?: boolean;
@@ -317,6 +319,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           model_id?: string | null;
+          move?: Json | null;
           parts?: NonNullable<Json>;
           role?: string;
           stopped?: boolean;
@@ -1728,6 +1731,7 @@ export type Database = {
           answer_text: string | null;
           choice: number | null;
           form: string;
+          hints: number;
           kc_id: string | null;
           note: string | null;
           options: string[] | null;
@@ -1736,12 +1740,14 @@ export type Database = {
           prompt: string;
           question_id: string;
           result: string | null;
+          solution_shown_at: string | null;
         };
         ComputedFields: never;
         Insert: {
           answer_text?: string | null;
           choice?: number | null;
           form: string;
+          hints?: number;
           kc_id?: string | null;
           note?: string | null;
           options?: string[] | null;
@@ -1750,11 +1756,13 @@ export type Database = {
           prompt: string;
           question_id: string;
           result?: string | null;
+          solution_shown_at?: string | null;
         };
         Update: {
           answer_text?: string | null;
           choice?: number | null;
           form?: string;
+          hints?: number;
           kc_id?: string | null;
           note?: string | null;
           options?: string[] | null;
@@ -1763,6 +1771,7 @@ export type Database = {
           prompt?: string;
           question_id?: string;
           result?: string | null;
+          solution_shown_at?: string | null;
         };
         Relationships: [
           {
@@ -2269,6 +2278,10 @@ export type Database = {
       };
       record_parse_start_failure: {
         Args: { material_id: string };
+        Returns: boolean;
+      };
+      record_question_move: {
+        Args: { p_kind: string; p_position: number; p_question_id: string };
         Returns: boolean;
       };
       release_mock_exam: { Args: { p_mock_id: string }; Returns: boolean };

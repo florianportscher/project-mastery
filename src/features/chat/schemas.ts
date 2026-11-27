@@ -28,12 +28,28 @@ const submittedAnswerSchema = z.object({
 });
 
 /**
+ * What a Hint or Show the solution press sends: the Question and part it
+ * is on, and for a hint the Student's work on the part so far.
+ */
+const pressedMoveSchema = z.object({
+  kind: z.enum(["hint", "solution"]),
+  questionId: z.uuid(),
+  position: z.number().int().min(1).max(6),
+  draft: z
+    .string()
+    .max(MAX_PART_ANSWER_LENGTH + 200)
+    .optional(),
+});
+
+/**
  * A message's metadata (see `ChatMessageMetadata`): what the server attaches
- * to AI messages, and a Submit's answer on a Student message.
+ * to AI messages, and a Submit's answer or a press's move on a Student
+ * message.
  */
 export const chatMessageMetadataSchema = z
   .object({
     answer: submittedAnswerSchema.optional(),
+    move: pressedMoveSchema.optional(),
     modelId: z.string().optional(),
     stopped: z.boolean().optional(),
     // Built by the server and only displayed, so only its shape is checked.
@@ -94,7 +110,12 @@ const studentMessageSchema = z.object({
         MAX_ATTACHED_MATERIALS,
       tooManyMaterialsMessage,
     ),
-  metadata: z.object({ answer: submittedAnswerSchema }).optional(),
+  metadata: z
+    .object({
+      answer: submittedAnswerSchema.optional(),
+      move: pressedMoveSchema.optional(),
+    })
+    .optional(),
 });
 
 /**

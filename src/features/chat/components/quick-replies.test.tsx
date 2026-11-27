@@ -14,6 +14,13 @@ test("each button sends its fixed message", () => {
   expect(onSend).toHaveBeenCalledWith("Let's wrap up.");
 });
 
+test("shows nothing while a Question is open", () => {
+  render(
+    <QuickReplies replies={replies} visible questionOpen onSend={vi.fn()} />,
+  );
+  expect(screen.queryByRole("button")).toBeNull();
+});
+
 test("shows nothing while hidden", () => {
   render(<QuickReplies replies={replies} visible={false} onSend={vi.fn()} />);
   expect(screen.queryByRole("button")).toBeNull();

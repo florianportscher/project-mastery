@@ -74,7 +74,12 @@ export type TutorContextInput = {
       prompt: string;
       kcIds: string[];
       /** Its parts in order; empty for a Question without parts. */
-      parts: Array<{ position: number; prompt: string }>;
+      parts: Array<{
+        position: number;
+        prompt: string;
+        hints: number;
+        solutionShown: boolean;
+      }>;
       answered: boolean;
       gradedAt: string | null;
     }>;

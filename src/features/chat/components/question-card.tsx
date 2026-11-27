@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { chatMarkdownComponents } from "@/features/chat/components/citation-link";
+import type { PressedMove } from "@/features/chat/types";
 import {
   answerText,
   optionLetter,
+  partWork,
   VERDICT_LABELS,
   type QuestionState,
 } from "@/features/chat/domain/question-states";
@@ -30,6 +32,8 @@ export type QuestionAnswering = {
   disabled: boolean;
   /** `text` is the Submit's message text, as the model reads it. */
   onSubmit: (questionId: string, parts: PartAnswer[], text: string) => void;
+  /** A press of a part's Hint or Show the solution; `draft` is the work so far. */
+  onMove: (move: PressedMove) => void;
 };
 
 const VERDICT_STYLES: Record<PartResult, string> = {
@@ -179,6 +183,53 @@ export function QuestionCard({
                     />
                   ) : (
                     <Input {...field} />
+                  )}
+                  {state?.solutionShown.has(position) ? (
+                    <p className="text-sm text-muted-foreground">
+                      Solution shown
+                    </p>
+                  ) : (
+                    state?.open && (
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={!editable}
+                          onClick={() =>
+                            answering.onMove({
+                              kind: "hint",
+                              questionId: question.id,
+                              position,
+                              draft: partWork(
+                                {
+                                  position,
+                                  text: textOf(position),
+                                  choice: choiceOf(position),
+                                },
+                                parts,
+                              ).slice(0, MAX_PART_ANSWER_LENGTH + 200),
+                            })
+                          }
+                        >
+                          Hint
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={!editable}
+                          onClick={() =>
+                            answering.onMove({
+                              kind: "solution",
+                              questionId: question.id,
+                              position,
+                            })
+                          }
+                        >
+                          Show the solution
+                        </Button>
+                      </div>
+                    )
                   )}
                   {verdict && (
                     <p className="flex flex-wrap items-baseline gap-2 text-sm">
