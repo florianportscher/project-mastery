@@ -85,7 +85,7 @@ describe("rankNext", () => {
   });
 
   test("never passes an anchor Topic, which comes just before the Topic that builds on it", () => {
-    // t1 ranks first and builds on t3, whose value per minute is lowest.
+    // t1 ranks first and builds on t3, whose value per effort is lowest.
     const items = rank({
       priorities: { a: 0.6, b: 0.6, c: 0.5, d: 0.2 },
       prerequisites: [{ from: "d", to: "a" }],
@@ -125,7 +125,7 @@ describe("rankNext", () => {
 
   test("ranks equal Priorities in Course order", () => {
     const equal = { a: 1, b: 1, c: 1, d: 1 };
-    // Every Topic is worth the same per minute.
+    // Every Topic is worth the same per effort.
     expect(names(rank({ priorities: equal }))).toEqual([
       "topic:t1",
       "topic:t2",

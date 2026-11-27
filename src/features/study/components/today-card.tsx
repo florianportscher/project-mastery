@@ -22,12 +22,13 @@ const KIND_NAMES: Record<NextItem["kind"], string> = {
 
 /**
  * The Today card: the head of the ranking. Normally the due Reviews,
- * then the next Topic (or refresh); in the final stretch the first 5 items. Its buttons open a new Chat
- * (`chatHref`) that sends a first message as the Student: "Let's start."
+ * then the next Topic (or refresh); in the final stretch the first 5
+ * items. Its buttons open a new Chat (`chatHref`) that sends a first
+ * message as the Student: "Let's start."
  * while anything is ranked, "Let's review." with Reviews due and "Exam
  * problems please." once a KC is taught, for the length the Student picks:
- * 15, 30 or 45 minutes (their last choice preselected) or Open. Without a map or Topics it links
- * to the Course map to build or update it. The page passes the links, since
+ * 15, 30 or 45 minutes (their last choice preselected) or Open. Without a
+ * map or Topics it links to the Course map to build or update it. The page passes the links, since
  * the map and the Chat belong to other features. With `mock`, Mock exam
  * shows once a KC is taught, and Continue mock exam while a mock is open.
  */

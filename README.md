@@ -59,7 +59,7 @@ The numbers on the map are at 0% because the demo student has barely started: pr
 1. **Upload.** Slides, scripts, exercise sheets and old exams are parsed into searchable chunks by a durable background workflow.
 2. **Brief.** A conversation captures the exam. What else the student says is kept as notes the tutor reads in every Chat.
 3. **Knowledge map.** The AI builds a graph of what the Materials teach: nested Topics, Knowledge components (KCs), the Prerequisites between them and the Exercises that test them.
-4. **Plan.** Plain code, not a model, ranks what is worth doing next from the exam date, the goal, the student's recall. A Today card shows it next to Progress and Readiness.
+4. **Plan.** Plain code, not a model, ranks what is worth doing next from the exam date, the goal and the Student's recall. A Today card shows it next to Progress and Readiness.
 5. **Tutor.** One Study session at a time: the Chat answers from the course, checks the student's answers against answer keys with a math engine, and schedules reviews with the [FSRS](docs/adr/0027-per-day-scheduling-and-one-ranking.md) spaced-repetition algorithm.
 6. **Practice.** Verified generated problems and mock exams, graded against the same answer keys.
 
