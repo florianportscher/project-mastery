@@ -36,7 +36,7 @@ export type BriefExam = {
 /** An old exam of the Course: an exam the Student confirmed. */
 export type OldExam = { id: string; name: string };
 
-export type ReservedExam = {
+type ReservedExam = {
   answered: boolean;
   /** The old exams the Student keeps aside, in Course order. */
   examIds: string[];
