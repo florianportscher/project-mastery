@@ -82,6 +82,13 @@ describe("a tool result", () => {
     expect(foundExam(KLAUSUR_2023).reserved).toBe(true);
     expect(foundExam(EXAM_2024).reserved).toBe(false);
 
+    // Only unknown ids change nothing.
+    useMockModels({
+      brief: toolModel("saveBrief", { reservedExamIds: ["not-an-exam"] }),
+    });
+    await send({ courseId: COURSE, message: userMessage("…") });
+    expect(foundExam(KLAUSUR_2023).reserved).toBe(true);
+
     useMockModels({ brief: toolModel("saveBrief", { reservedExamIds: [] }) });
     await send({ courseId: COURSE, message: userMessage("…") });
     expect(foundExam(KLAUSUR_2023).reserved).toBe(false);

@@ -66,14 +66,20 @@ export function briefToolActions(
         exams.kept ?? context.exams.map(({ id }) => id),
       );
       const reserved = known(oldExamIds)(given(input.reservedExamIds));
-      if (reserved.kept) fields.reserved_exam_answered = true;
+      // A list of only unknown ids changes nothing: it must not clear the
+      // reservations the Student already has.
+      const reservedKept =
+        reserved.kept?.length === 0 && reserved.unknown.length > 0
+          ? null
+          : reserved.kept;
+      if (reservedKept) fields.reserved_exam_answered = true;
 
       await saveBrief(supabase, courseId, fields, {
         excludedMaterialIds: excluded.kept,
         examIds: exams.kept,
         askedExamIds,
         language: given(input.courseLanguage)?.trim() || null,
-        reservedExamIds: reserved.kept,
+        reservedExamIds: reservedKept,
       });
       const ignored = [
         excluded.unknown.length > 0 &&
