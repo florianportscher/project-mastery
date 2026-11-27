@@ -25,6 +25,7 @@ import {
   cancelReply,
   createChat,
   deleteChat,
+  deleteMessage,
   findChat,
   hasMessage,
   loadMessages,
@@ -51,6 +52,7 @@ import {
   materialReferenceSchema,
 } from "@/features/courses/server";
 import {
+  answerRefusedMessage,
   closeIdleSession,
   endIdleSessions,
   endsReply,
@@ -208,8 +210,17 @@ export async function respondInChat({
     // A Submit, or a message with a photo, answers the open Question; a
     // typed message is a side question.
     const sent = { messageId: message.id, text: messageText(message.parts) };
-    if (answer) await submitAnswer(supabase, { ...answer, ...sent });
-    else if (message.parts.some(({ type }) => type === "data-material")) {
+    if (answer) {
+      // Answered in the meantime, by a second Submit: take this one back.
+      if (!(await submitAnswer(supabase, { ...answer, ...sent }))) {
+        await deleteMessage(supabase, message.id);
+        await cancelReply(supabase, chat.id, {
+          replyId,
+          previousReplyId: existing?.latestReplyId ?? null,
+        });
+        return refuse(409, answerRefusedMessage);
+      }
+    } else if (message.parts.some(({ type }) => type === "data-material")) {
       await recordAnswer(supabase, chat.id, sent);
     }
   }

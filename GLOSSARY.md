@@ -126,10 +126,11 @@ _Avoid_: Feedback, score, review (a Review asks about a due KC)
 
 **Question**:
 One graded ask the AI puts to a Student in a Study session, such as a recall question or a Problem, with the KCs it tests. It shows inline in the Chat as a case with its Parts. What the Student submits, or a photo they send, is its answer. Grading its answer gives Attempts.
+_Avoid_: Quiz, prompt, task
 
 **Part**:
-One piece of a Question with its own answer field (short, long, or a choice with a "Why?" field), its own KC and its own verdict: Right, Partly right, Not right or Not answered, with a one-line note. A Part not right or not answered comes back alone as a new Question with the same case. _Avoid_: sub-question, item
-_Avoid_: Quiz, prompt, task
+One piece of a Question with its own answer field (short, long, or a choice with a "Why?" field), its own KC and its own verdict: Right, Partly right, Not right or Not answered, with a one-line note. A Part not right or not answered comes back alone as a new Question with the same case.
+_Avoid_: Sub-question, item
 
 **Mock exam**:
 A timed Study session without help, assembled from old exams or from Problems in the exam's style, and graded afterwards per Problem.

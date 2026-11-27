@@ -376,7 +376,7 @@ export async function saveReply(
   return true;
 }
 
-async function deleteMessage(supabase: Supabase, messageId: string) {
+export async function deleteMessage(supabase: Supabase, messageId: string) {
   const { error } = await supabase
     .from("chat_messages")
     .delete()

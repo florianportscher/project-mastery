@@ -441,21 +441,36 @@ async function grade(
       "The Student has not answered this question yet: wait for their answer.",
     );
   }
-  if (question.parts.length === 0) {
-    throw new TutorToolError(
-      "This question has no parts, so it can't be graded: close it with closeQuestion, and ask again with parts.",
-    );
+  // A Question from before parts has none: each live KC it tests stands in
+  // as a part, by its place in the list. Without a live KC nothing is recorded.
+  const legacy = question.parts.length === 0;
+  if (legacy && question.kcIds.length === 0) {
+    if (!(await actions.closeQuestion(question.id))) {
+      throw new TutorToolError(alreadyGraded);
+    }
+    return {
+      questionId: question.id,
+      parts: [],
+      kcs: [],
+      help: input.help,
+      check: null,
+    };
   }
+  const gradedParts = legacy
+    ? question.kcIds.map((kcId, index) => ({ position: index + 1, kcId }))
+    : question.parts;
   const help = input.help;
   const positions = input.results.map(({ position }) => position);
-  const expected = question.parts.map(({ position }) => position);
+  const expected = gradedParts.map(({ position }) => position);
   if (
     new Set(positions).size < positions.length ||
     positions.length !== expected.length ||
     positions.some((position) => !expected.includes(position))
   ) {
     throw new TutorToolError(
-      `Give one result for each part of the question, by its position, each once: ${expected.join(", ")}.`,
+      legacy
+        ? `This question has no parts: give one result for each KC it tests, by position, each once: ${gradedParts.map(({ position, kcId }) => `${position} is KC id ${kcId}`).join(", ")}.`
+        : `Give one result for each part of the question, by its position, each once: ${expected.join(", ")}.`,
     );
   }
   const keys = question.finalAnswers ?? [];
@@ -484,8 +499,8 @@ async function grade(
   const kcs = await actions.saveGrade({
     questionId: question.id,
     help,
-    parts,
-    results: attemptsFromParts(question, parts),
+    parts: legacy ? [] : parts,
+    results: attemptsFromParts(gradedParts, parts, question.kcIds),
     check,
   });
   if (!kcs) throw new TutorToolError(alreadyGraded);
@@ -504,13 +519,14 @@ const SEVERITY: Record<AttemptResult, number> = {
  * none.
  */
 function attemptsFromParts(
-  question: QuestionToGrade,
+  questionParts: Array<{ position: number; kcId: string | null }>,
   graded: GradedPart[],
+  liveKcIds: string[],
 ): Array<{ kcId: string; result: AttemptResult }> {
   const worst = new Map<string, AttemptResult>();
-  for (const { position, kcId } of question.parts) {
+  for (const { position, kcId } of questionParts) {
     const result = graded.find((part) => part.position === position)?.result;
-    if (!kcId || !question.kcIds.includes(kcId)) continue;
+    if (!kcId || !liveKcIds.includes(kcId)) continue;
     if (result === undefined || result === "unanswered") continue;
     const before = worst.get(kcId);
     if (before === undefined || SEVERITY[result] < SEVERITY[before]) {

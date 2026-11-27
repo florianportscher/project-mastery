@@ -294,15 +294,24 @@ describe("grade", () => {
       ],
       "each once",
     ],
-    [
-      "a question without parts",
-      { ...open, parts: [] },
-      undefined,
-      "close it with closeQuestion",
-    ],
   ])("refuses %s", async (_, question, given, message) => {
     await expect(grade(question, given)).rejects.toThrow(message);
     expect(saved).toEqual([]);
+  });
+
+  test("grades a question without parts per KC, as before parts", async () => {
+    const legacy = { ...open, parts: [] };
+    await expect(grade(legacy, results("full"))).rejects.toThrow("2 is KC id");
+    await grade(legacy, results("full", "wrong"));
+    expect(saved).toEqual([
+      expect.objectContaining({
+        parts: [],
+        results: [
+          { kcId: "kc-a", result: "full" },
+          { kcId: "kc-b", result: "wrong" },
+        ],
+      }),
+    ]);
   });
 
   describe("the answer check", () => {

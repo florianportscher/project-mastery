@@ -282,7 +282,7 @@ async function storeAnswer(
   const { data, error } = await supabase
     .from("questions")
     .update({
-      answer_text: answer.text.slice(0, MAX_ANSWER_TEXT) || null,
+      answer_text: answer.text || null,
       answer_message_id: answer.messageId,
       answered_at: new Date().toISOString(),
     })
@@ -293,8 +293,6 @@ async function storeAnswer(
   if (error) failed("Saving the answer", error);
   return data.length > 0;
 }
-
-const MAX_ANSWER_TEXT = 20_000;
 
 /**
  * Records the Student's Chat message `messageId` that sends a photo, or
@@ -359,8 +357,8 @@ export async function submitRefusal(
 
 /**
  * Stores a Submit: the Question's answer, as the message `messageId` and its
- * text, and each part's answer, an empty field as null. Nothing is stored
- * when the Question was answered or graded in the meantime.
+ * text, and each part's answer, an empty field as null. False, storing
+ * nothing, when the Question was answered or graded in the meantime.
  */
 export async function submitAnswer(
   supabase: Supabase,
@@ -370,8 +368,8 @@ export async function submitAnswer(
     text: string;
     parts: PartAnswer[];
   },
-): Promise<void> {
-  if (!(await storeAnswer(supabase, answer.questionId, answer))) return;
+): Promise<boolean> {
+  if (!(await storeAnswer(supabase, answer.questionId, answer))) return false;
   const errors = await Promise.all(
     answer.parts.map(async ({ position, text, choice }) => {
       const { error } = await supabase
@@ -384,4 +382,5 @@ export async function submitAnswer(
   );
   const error = errors.find((e) => e !== null);
   if (error) failed("Saving the answers to the parts", error);
+  return true;
 }
