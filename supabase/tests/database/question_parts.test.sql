@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(8);
+select plan(12);
 
 insert into auth.users (id, email)
 values
@@ -60,6 +60,27 @@ select throws_ok(
 select throws_ok(
   $$update public.question_parts set note = repeat('x', 301)$$,
   '23514', null, 'a note over 300 characters is refused');
+
+select is(
+  (select public.record_question_move('dddddddd-0000-0000-0000-000000000001', 1::smallint, 'hint')
+    and public.record_question_move('dddddddd-0000-0000-0000-000000000001', 1::smallint, 'hint')),
+  true, 'two presses of Hint are both counted');
+select is(
+  (select hints from public.question_parts where position = 1),
+  2::smallint, 'each press added one hint');
+
+update public.questions set answered_at = now()
+where id = 'dddddddd-0000-0000-0000-000000000001';
+select is(
+  public.record_question_move('dddddddd-0000-0000-0000-000000000001', 1::smallint, 'hint'),
+  false, 'a press on an answered Question counts nothing');
+update public.questions set answered_at = null
+where id = 'dddddddd-0000-0000-0000-000000000001';
+
+select public.record_question_move('dddddddd-0000-0000-0000-000000000001', 1::smallint, 'solution');
+select is(
+  public.record_question_move('dddddddd-0000-0000-0000-000000000001', 1::smallint, 'hint'),
+  false, 'a press on a part with its solution shown counts nothing');
 
 set local request.jwt.claims = '{"sub": "22222222-2222-2222-2222-222222222222", "role": "authenticated"}';
 

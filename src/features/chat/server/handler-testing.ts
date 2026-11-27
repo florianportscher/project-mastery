@@ -165,6 +165,30 @@ function createDb() {
         session.planned_minutes = args.p_minutes;
         return true;
       },
+      // As the real function: one more hint, or the solution shown, on a
+      // part of an open Question whose solution is not shown.
+      record_question_move: (args, tables) => {
+        const question = tables.questions.find(
+          (row) => row.id === args.p_question_id && row.owner === signedIn,
+        );
+        const part = tables.question_parts.find(
+          (row) =>
+            row.question_id === args.p_question_id &&
+            row.position === args.p_position,
+        );
+        if (
+          !question ||
+          !part ||
+          question.answered_at ||
+          question.graded_at ||
+          part.solution_shown_at
+        ) {
+          return false;
+        }
+        if (args.p_kind === "hint") part.hints = (part.hints as number) + 1;
+        else part.solution_shown_at = new Date().toISOString();
+        return true;
+      },
       // Records each generate trigger in `problem_runs` and lets none start,
       // so no workflow runs in these tests.
       queue_problem_run: (args, tables) => {

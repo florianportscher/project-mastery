@@ -371,7 +371,7 @@ export async function submitRefusal(
   return null;
 }
 
-export const moveRefusedMessage =
+const moveRefusedMessage =
   "This part's help can't be given now: the question is no longer open, or the solution of the part is shown.";
 
 /**
@@ -402,8 +402,10 @@ export async function moveRefusal(
 }
 
 /**
- * Counts a press on its part: one more hint, or the solution shown, set
- * once. Refusals are checked by `moveRefusal` before.
+ * Counts a press on its part in one statement: one more hint, or the
+ * solution shown. Nothing is counted when the Question was answered or
+ * graded in the meantime, or the part's solution is shown. Refusals are
+ * checked by `moveRefusal` before.
  */
 export async function recordMove(
   supabase: Supabase,
@@ -411,19 +413,12 @@ export async function recordMove(
   move: { kind: "hint" | "solution"; questionId: string; position: number },
 ): Promise<void> {
   const newest = await newestChatQuestion(supabase, chatId);
-  const part = newest?.question_parts.find(
-    ({ position }) => position === move.position,
-  );
-  if (!newest || newest.id !== move.questionId || !part) return;
-  const { error } = await supabase
-    .from("question_parts")
-    .update(
-      move.kind === "hint"
-        ? { hints: part.hints + 1 }
-        : { solution_shown_at: new Date().toISOString() },
-    )
-    .eq("question_id", move.questionId)
-    .eq("position", move.position);
+  if (!newest || newest.id !== move.questionId) return;
+  const { error } = await supabase.rpc("record_question_move", {
+    p_question_id: move.questionId,
+    p_position: move.position,
+    p_kind: move.kind,
+  });
   if (error) failed("Saving the press", error);
 }
 

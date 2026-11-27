@@ -2280,6 +2280,10 @@ export type Database = {
         Args: { material_id: string };
         Returns: boolean;
       };
+      record_question_move: {
+        Args: { p_kind: string; p_position: number; p_question_id: string };
+        Returns: boolean;
+      };
       release_mock_exam: { Args: { p_mock_id: string }; Returns: boolean };
       release_problem_run: { Args: { p_course_id: string }; Returns: boolean };
       replace_material_chunks: {

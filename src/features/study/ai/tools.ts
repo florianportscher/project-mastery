@@ -138,7 +138,7 @@ const gradeInputSchema = z.object({
   help: z
     .enum(["none", "some", "solution_shown"])
     .describe(
-      "How much you helped on this question: none when the Student answered without hints, some (hints or corrections before the answer, and the first task on KCs you explained just before it), or solution_shown when you showed or walked through the solution, before the answer or in this reply.",
+      "How much you helped on this question: none when the Student answered without your hints, some (hints or corrections before the answer, and the first task on KCs you explained just before it), or solution_shown when you showed or walked through the solution, before the answer or in this reply.",
     ),
   finalValues: z
     .array(
@@ -522,11 +522,7 @@ async function grade(
     check,
   });
   if (!kcs) throw new TutorToolError(alreadyGraded);
-  const help = results.reduce<AttemptHelp>(
-    (most, r) => (HELP_LEVEL[r.help] > HELP_LEVEL[most] ? r.help : most),
-    input.help,
-  );
-  return { questionId: question.id, parts, kcs, help, check };
+  return { questionId: question.id, parts, kcs, help: input.help, check };
 }
 
 const HELP_LEVEL: Record<AttemptHelp, number> = {
