@@ -49,17 +49,6 @@ export function materialLanguageAndNotes(answers: readonly PageAnswer[]): {
   };
 }
 
-/**
- * The Course language: the most common language of its Materials in
- * Course order, the earlier one on a tie; English when none has one.
- */
-export function courseLanguage(languages: ReadonlyArray<string | null>) {
-  return (
-    mostCommon(languages.flatMap((language) => (language ? [language] : []))) ??
-    "English"
-  );
-}
-
 /** Where a Course language comes from. */
 export type CourseLanguageSource = "chosen" | "materials" | "fallback";
 
