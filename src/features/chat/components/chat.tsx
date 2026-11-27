@@ -35,7 +35,10 @@ import {
 } from "@/features/chat/components/chat-message";
 import { MessageActionRow } from "@/features/chat/components/message-action-row";
 import type { QuestionAnswering } from "@/features/chat/components/question-card";
-import { questionStates } from "@/features/chat/domain/question-states";
+import {
+  moveText,
+  questionStates,
+} from "@/features/chat/domain/question-states";
 import { replyIsEmpty } from "@/features/chat/domain/reply-steps";
 import { chatLabel } from "@/features/chat/domain/chat-label";
 import { SessionStrip } from "@/features/chat/components/session-strip";
@@ -283,6 +286,14 @@ export function Chat({
         metadata: { answer: { questionId, parts } },
       });
     },
+    onMove: (move) => {
+      setInputError(null);
+      clearError();
+      void sendMessage({
+        text: moveText(move.kind, move.position, move.draft ?? ""),
+        metadata: { move },
+      });
+    },
   };
 
   async function handleSubmit({ text }: { text: string }) {
@@ -437,6 +448,7 @@ export function Chat({
             />
             <QuickReplies
               replies={QUICK_REPLIES}
+              questionOpen={[...questions.values()].some(({ open }) => open)}
               visible={
                 !isBusy &&
                 !limitReached &&

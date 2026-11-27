@@ -24,9 +24,22 @@ export type ChatMessageMetadata = {
    * each of its parts. The Chat shows it in the card, not as a message.
    */
   answer?: SubmittedAnswer;
+  /**
+   * On a Student message sent by a part's Hint or Show the solution button.
+   * The Chat shows it as a small bubble.
+   */
+  move?: PressedMove;
 };
 
 export type SubmittedAnswer = { questionId: string; parts: PartAnswer[] };
+
+export type PressedMove = {
+  kind: "hint" | "solution";
+  questionId: string;
+  position: number;
+  /** The Student's work on the part so far; for a hint only. */
+  draft?: string;
+};
 
 /** The custom data parts of Chat messages, by name without `data-`. */
 type ChatDataParts = {

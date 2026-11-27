@@ -13,6 +13,8 @@ export type QuestionState = {
    * answered, graded or closed.
    */
   open: boolean;
+  /** The positions whose Show the solution the Student pressed. */
+  solutionShown: Set<number>;
 };
 
 /** What the card says for each part's result. */
@@ -40,7 +42,12 @@ export function questionStates(
   for (const message of messages) {
     if (message.role === "user") {
       const answer = message.metadata?.answer;
-      if (answer) {
+      const move = message.metadata?.move;
+      if (move) {
+        if (move.kind === "solution") {
+          states.get(move.questionId)?.solutionShown.add(move.position);
+        }
+      } else if (answer) {
         const state = states.get(answer.questionId);
         if (state) {
           state.answers = new Map(answer.parts.map((p) => [p.position, p]));
@@ -61,6 +68,7 @@ export function questionStates(
           answers: null,
           verdicts: null,
           open: false,
+          solutionShown: new Set(),
           done: false,
         });
         newest = id;
@@ -94,21 +102,48 @@ export function answerText(
   asked: Array<{ position: number; options: string[] | null }>,
 ): string {
   return parts
-    .map(({ position, text, choice }) => {
-      const option =
-        choice === null
-          ? undefined
-          : asked.find((part) => part.position === position)?.options?.[choice];
-      const why = text.trim();
-      const answer = [
-        option === undefined ? "" : `${optionLetter(choice!)}) ${option}`,
-        why === "" ? "" : option === undefined ? why : `Why: ${why}`,
-      ]
-        .filter((line) => line !== "")
-        .join(" ");
-      return `Part ${position}: ${answer === "" ? "(not answered)" : answer}`;
-    })
+    .map(
+      (part) =>
+        `Part ${part.position}: ${partWork(part, asked) || "(not answered)"}`,
+    )
     .join("\n\n");
+}
+
+/** What the Student has put in a part: its option and text; "" for nothing. */
+export function partWork(
+  { position, text, choice }: PartAnswer,
+  asked: Array<{ position: number; options: string[] | null }>,
+): string {
+  const option =
+    choice === null
+      ? undefined
+      : asked.find((part) => part.position === position)?.options?.[choice];
+  const why = text.trim();
+  return [
+    option === undefined ? "" : `${optionLetter(choice!)}) ${option}`,
+    why === "" ? "" : option === undefined ? why : `Why: ${why}`,
+  ]
+    .filter((line) => line !== "")
+    .join(" ");
+}
+
+/** The text of a press, as the model reads it. */
+export function moveText(
+  kind: "hint" | "solution",
+  position: number,
+  draft: string,
+): string {
+  if (kind === "solution") return `Show the solution of part ${position}.`;
+  return draft === ""
+    ? `Hint on part ${position}.`
+    : `Hint on part ${position}. My work so far: ${draft}`;
+}
+
+/** What the Chat shows in place of a press's message. */
+export function moveLabel(kind: "hint" | "solution", position: number): string {
+  return kind === "hint"
+    ? `Hint on part ${position}`
+    : `Solution of part ${position}`;
 }
 
 /** An option's letter on the card: A for the first. */

@@ -177,7 +177,14 @@ export type QuestionToGrade = {
    * Its parts in order, each with the KC it tests (null once deleted);
    * empty for a Question without parts.
    */
-  parts: Array<{ position: number; kcId: string | null }>;
+  parts: Array<{
+    position: number;
+    kcId: string | null;
+    /** The hints the Student pressed for it. */
+    hints: number;
+    /** Whether they pressed Show the solution for it. */
+    solutionShown: boolean;
+  }>;
   answered: boolean;
   graded: boolean;
   /** Whether its Study session has ended, which closes it for grading. */
@@ -262,9 +269,8 @@ export type TutorToolActions = {
    */
   saveGrade: (grade: {
     questionId: string;
-    help: AttemptHelp;
     parts: GradedPart[];
-    results: Array<{ kcId: string; result: AttemptResult }>;
+    results: Array<{ kcId: string; result: AttemptResult; help: AttemptHelp }>;
     check: FinalValueCheck;
   }) => Promise<GradedKc[] | null>;
   /**
@@ -457,9 +463,13 @@ async function grade(
     };
   }
   const gradedParts = legacy
-    ? question.kcIds.map((kcId, index) => ({ position: index + 1, kcId }))
+    ? question.kcIds.map((kcId, index) => ({
+        position: index + 1,
+        kcId,
+        hints: 0,
+        solutionShown: false,
+      }))
     : question.parts;
-  const help = input.help;
   const positions = input.results.map(({ position }) => position);
   const expected = gradedParts.map(({ position }) => position);
   if (
@@ -486,25 +496,56 @@ async function grade(
     );
   }
   const check = worstCheck(checked.checks);
+  const shown = new Set(
+    gradedParts.flatMap((part) => (part.solutionShown ? [part.position] : [])),
+  );
   const parts = input.results
     .map(({ position, result, note }) => ({
       position,
-      result:
-        check === "mismatch" && result === "full"
+      // A part whose solution was shown is wrong, whatever the answer.
+      result: shown.has(position)
+        ? ("wrong" as const)
+        : check === "mismatch" && result === "full"
           ? ("partial" as const)
           : result,
       note,
     }))
     .toSorted((a, b) => a.position - b.position);
+  const helpOf = new Map(
+    gradedParts.map((part) => [part.position, partHelp(part, input.help)]),
+  );
+  const results = attemptsFromParts(gradedParts, parts, question.kcIds, helpOf);
   const kcs = await actions.saveGrade({
     questionId: question.id,
-    help,
     parts: legacy ? [] : parts,
-    results: attemptsFromParts(gradedParts, parts, question.kcIds),
+    results,
     check,
   });
   if (!kcs) throw new TutorToolError(alreadyGraded);
+  const help = results.reduce<AttemptHelp>(
+    (most, r) => (HELP_LEVEL[r.help] > HELP_LEVEL[most] ? r.help : most),
+    input.help,
+  );
   return { questionId: question.id, parts, kcs, help, check };
+}
+
+const HELP_LEVEL: Record<AttemptHelp, number> = {
+  none: 0,
+  some: 1,
+  solution_shown: 2,
+};
+
+/**
+ * The help a part got, from the Student's presses: a shown solution is
+ * `solution_shown`, a hint at least `some`, otherwise what `grade` says.
+ */
+function partHelp(
+  part: { hints: number; solutionShown: boolean },
+  graded: AttemptHelp,
+): AttemptHelp {
+  if (part.solutionShown) return "solution_shown";
+  if (part.hints > 0 && HELP_LEVEL[graded] < HELP_LEVEL.some) return "some";
+  return graded;
 }
 
 const SEVERITY: Record<AttemptResult, number> = {
@@ -522,8 +563,10 @@ function attemptsFromParts(
   questionParts: Array<{ position: number; kcId: string | null }>,
   graded: GradedPart[],
   liveKcIds: string[],
-): Array<{ kcId: string; result: AttemptResult }> {
+  helpOf: Map<number, AttemptHelp>,
+): Array<{ kcId: string; result: AttemptResult; help: AttemptHelp }> {
   const worst = new Map<string, AttemptResult>();
+  const help = new Map<string, AttemptHelp>();
   for (const { position, kcId } of questionParts) {
     const result = graded.find((part) => part.position === position)?.result;
     if (!kcId || !liveKcIds.includes(kcId)) continue;
@@ -532,8 +575,17 @@ function attemptsFromParts(
     if (before === undefined || SEVERITY[result] < SEVERITY[before]) {
       worst.set(kcId, result);
     }
+    // The most help of its parts.
+    const given = helpOf.get(position) ?? "none";
+    if (HELP_LEVEL[given] > HELP_LEVEL[help.get(kcId) ?? "none"]) {
+      help.set(kcId, given);
+    }
   }
-  return [...worst].map(([kcId, result]) => ({ kcId, result }));
+  return [...worst].map(([kcId, result]) => ({
+    kcId,
+    result,
+    help: help.get(kcId) ?? "none",
+  }));
 }
 
 export type TutorTools = ReturnType<typeof tutorTools>;

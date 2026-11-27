@@ -198,7 +198,10 @@ test("a Student who redirected: today's checks touch another Topic, whose notes 
         {
           prompt: "And k1?",
           kcIds: ["k1"],
-          parts: [{ position: 1, prompt: "Name it." }],
+          parts: [
+            { position: 1, prompt: "Name it.", hints: 2, solutionShown: false },
+            { position: 2, prompt: "Prove it.", hints: 0, solutionShown: true },
+          ],
           answered: false,
           gradedAt: null,
         },
@@ -209,7 +212,7 @@ test("a Student who redirected: today's checks touch another Topic, whose notes 
   expect(text).toContain("Shown without help today: KC k3 (KC id k3).");
   expect(text).toContain("Last graded Question 5 minutes ago.");
   expect(text).toContain(
-    "Open Question, not answered, on KC k1 (KC id k1):\n> And k1?\nPart 1: Name it.",
+    "Open Question, not answered, on KC k1 (KC id k1):\n> And k1?\nPart 1: Name it. (2 hints given)\nPart 2: Prove it. (solution shown)",
   );
   expect(text).toContain("## Topic notes: Topic t2\nNever shown.");
   expect(text).toContain(

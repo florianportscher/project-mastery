@@ -294,6 +294,15 @@ type ToolPart = {
   output?: { type?: string };
 };
 
+/** Whether a Student message is a press of a part's Hint or Show the solution. */
+function isPress(message: Prompt[number]): boolean {
+  const content: unknown = message.content;
+  const text = Array.isArray(content)
+    ? (content as Part[]).map((part) => part.text ?? "").join(" ")
+    : "";
+  return /^(Hint on part|Show the solution of part) \d/.test(text);
+}
+
 /**
  * Whether the reply before the Student's last message asked a question that
  * succeeded and no grade followed: the one that message answers.
@@ -301,7 +310,8 @@ type ToolPart = {
 function openQuestion(prompt: Prompt): boolean {
   let asked = false;
   for (const message of prompt.toReversed().slice(1)) {
-    if (message.role === "user") return false;
+    // A press of Hint or Show the solution leaves the Question open.
+    if (message.role === "user" && !isPress(message)) return false;
     if (!Array.isArray(message.content)) continue;
     for (const part of (message.content as ToolPart[]).toReversed()) {
       if (part.type === "tool-result" && part.toolName === "grade") {

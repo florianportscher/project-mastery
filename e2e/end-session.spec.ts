@@ -28,14 +28,42 @@ test("a session from the Today card: a question answered in its card is graded p
   await expect(question).toContainText("two plus two");
   // The card sends nothing while a reply streams: wait for its end.
   await expect(page.getByRole("button", { name: "Regenerate" })).toBeVisible();
-  // One part filled, one left empty.
+  const parts = question.getByTestId("question-part");
+  // While the Question is open, each part has its help and the quick
+  // replies are gone.
+  await expect(
+    parts.nth(0).getByRole("button", { name: "Hint" }),
+  ).toBeVisible();
+  await expect(page.getByRole("group", { name: "Quick replies" })).toBeHidden();
+  // A hint on part 1 with its work so far, the solution of part 2.
   await question.getByRole("textbox", { name: "Part 1" }).fill("4");
+  await parts.nth(0).getByRole("button", { name: "Hint" }).click();
+  await expect(page.getByText("Hint on part 1", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('Mock reply to "Hint on part 1. My work so far: 4"', {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Regenerate" })).toBeVisible();
+  await parts.nth(1).getByRole("button", { name: "Show the solution" }).click();
+  await expect(parts.nth(1)).toContainText("Solution shown");
+  await expect(
+    page.getByText('Mock reply to "Show the solution of part 2."', {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Regenerate" })).toBeVisible();
+  await expect(parts.nth(1).getByRole("button", { name: "Hint" })).toBeHidden();
+
   await question.getByRole("button", { name: "Submit" }).click();
 
-  const parts = question.getByTestId("question-part");
   await expect(parts.nth(0)).toContainText("Right");
   await expect(parts.nth(0)).toContainText("Mock note: right.");
-  await expect(parts.nth(1)).toContainText("Not answered");
+  // A shown solution is stored wrong, though the part was left empty.
+  await expect(parts.nth(1)).toContainText("Not right");
+  await expect(
+    page.getByRole("group", { name: "Quick replies" }),
+  ).toBeVisible();
   // The card keeps the answer; the Submit shows no message of its own.
   await expect(question.getByRole("textbox", { name: "Part 1" })).toHaveValue(
     "4",
@@ -44,7 +72,7 @@ test("a session from the Today card: a question answered in its card is graded p
     question.getByRole("textbox", { name: "Part 1" }),
   ).toBeDisabled();
   await expect(question.getByRole("button", { name: "Submit" })).toBeHidden();
-  await expect(page.getByText("Part 1: 4")).toBeHidden();
+  await expect(page.getByText(/^Part 1: 4/)).toBeHidden();
   await expect(
     page
       .getByTestId("session-strip")
@@ -59,7 +87,8 @@ test("a session from the Today card: a question answered in its card is graded p
     .getByRole("listitem");
   await expect(checked).toHaveCount(1);
   await expect(checked).toContainText("Thrust equation");
-  await expect(checked).toContainText("On your own");
+  // Its second part's solution was shown, so the KC is not yet.
+  await expect(checked).toContainText("Not yet");
 });
 
 test("End session makes the Chat read-only, and Start new session opens a new one", async ({

@@ -83,7 +83,14 @@ type SessionFacts = {
     prompt: string;
     kcs: Array<{ id: string; name: string }>;
     /** Its parts in order; empty for a Question without parts. */
-    parts: Array<{ position: number; prompt: string }>;
+    parts: Array<{
+      position: number;
+      prompt: string;
+      /** The hints the Student pressed for it. */
+      hints: number;
+      /** Whether the Student pressed Show the solution for it. */
+      solutionShown: boolean;
+    }>;
     answered: boolean;
   } | null;
   /** Since the session's last graded Question; null without one. */

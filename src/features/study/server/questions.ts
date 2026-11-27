@@ -54,7 +54,12 @@ export async function loadSessionQuestions(
   Array<{
     prompt: string;
     kcIds: string[];
-    parts: Array<{ position: number; prompt: string }>;
+    parts: Array<{
+      position: number;
+      prompt: string;
+      hints: number;
+      solutionShown: boolean;
+    }>;
     answered: boolean;
     gradedAt: string | null;
   }>
@@ -62,7 +67,7 @@ export async function loadSessionQuestions(
   const { data, error } = await supabase
     .from("questions")
     .select(
-      "prompt, answered_at, graded_at, question_kcs(kc_id), question_parts(position, prompt)",
+      "prompt, answered_at, graded_at, question_kcs(kc_id), question_parts(position, prompt, hints, solution_shown_at)",
     )
     .eq("session_id", sessionId)
     .order("asked_at")
@@ -71,7 +76,14 @@ export async function loadSessionQuestions(
   return data.map((row) => ({
     prompt: row.prompt,
     kcIds: row.question_kcs.map(({ kc_id }) => kc_id),
-    parts: row.question_parts.toSorted((a, b) => a.position - b.position),
+    parts: row.question_parts
+      .toSorted((a, b) => a.position - b.position)
+      .map(({ position, prompt, hints, solution_shown_at }) => ({
+        position,
+        prompt,
+        hints,
+        solutionShown: solution_shown_at !== null,
+      })),
     answered: row.answered_at !== null,
     gradedAt: row.graded_at,
   }));
@@ -141,7 +153,7 @@ export async function findNewestQuestion(
   const { data, error } = await supabase
     .from("questions")
     .select(
-      "id, answered_at, graded_at, question_kcs(kc_id), question_parts(position, kc_id), exercises(final_answers), problems(final_answers)",
+      "id, answered_at, graded_at, question_kcs(kc_id), question_parts(position, kc_id, hints, solution_shown_at), exercises(final_answers), problems(final_answers)",
     )
     .eq("session_id", sessionId)
     .order("asked_at", { ascending: false })
@@ -161,7 +173,12 @@ export async function findNewestQuestion(
     id: data.id,
     kcIds: data.question_kcs.map(({ kc_id }) => kc_id),
     parts: data.question_parts
-      .map(({ position, kc_id }) => ({ position, kcId: kc_id }))
+      .map(({ position, kc_id, hints, solution_shown_at }) => ({
+        position,
+        kcId: kc_id,
+        hints,
+        solutionShown: solution_shown_at !== null,
+      }))
       .toSorted((a, b) => a.position - b.position),
     answered: data.answered_at !== null,
     graded: data.graded_at !== null,
@@ -179,9 +196,8 @@ export async function saveAttempts(
   grade: {
     questionId: string;
     sessionId: string;
-    help: AttemptHelp;
     parts: GradedPart[];
-    results: Array<{ kcId: string; result: AttemptResult }>;
+    results: Array<{ kcId: string; result: AttemptResult; help: AttemptHelp }>;
     /** The worst answer check, stored on every attempt; null without keys. */
     check: FinalValueCheck;
   },
@@ -219,12 +235,12 @@ export async function saveAttempts(
   }
   if (grade.results.length === 0) return true;
   const { error: attemptsError } = await supabase.from("attempts").insert(
-    grade.results.map(({ kcId, result }) => ({
+    grade.results.map(({ kcId, result, help }) => ({
       question_id: grade.questionId,
       session_id: grade.sessionId,
       kc_id: kcId,
       result,
-      help: grade.help,
+      help,
       check: grade.check,
     })),
   );
@@ -258,7 +274,7 @@ async function newestChatQuestion(supabase: Supabase, chatId: string) {
   const { data, error } = await supabase
     .from("questions")
     .select(
-      "id, answered_at, graded_at, question_parts(position, options), study_sessions!inner(chat_id)",
+      "id, answered_at, graded_at, question_parts(position, options, hints, solution_shown_at), study_sessions!inner(chat_id)",
     )
     .eq("study_sessions.chat_id", chatId)
     .order("asked_at", { ascending: false })
@@ -353,6 +369,62 @@ export async function submitRefusal(
   });
   if (badChoice) return "This answer doesn't match the question's parts.";
   return null;
+}
+
+export const moveRefusedMessage =
+  "This part's help can't be given now: the question is no longer open, or the solution of the part is shown.";
+
+/**
+ * Why a press of Hint or Show the solution is refused, or null when it may
+ * be stored: it must be on a part of the newest Question of the Chat's
+ * session, unanswered and ungraded, whose solution is not shown.
+ */
+export async function moveRefusal(
+  supabase: Supabase,
+  chatId: string,
+  move: { questionId: string; position: number },
+): Promise<string | null> {
+  const newest = await newestChatQuestion(supabase, chatId);
+  const part = newest?.question_parts.find(
+    ({ position }) => position === move.position,
+  );
+  if (
+    !newest ||
+    newest.id !== move.questionId ||
+    newest.answered_at !== null ||
+    newest.graded_at !== null ||
+    !part ||
+    part.solution_shown_at !== null
+  ) {
+    return moveRefusedMessage;
+  }
+  return null;
+}
+
+/**
+ * Counts a press on its part: one more hint, or the solution shown, set
+ * once. Refusals are checked by `moveRefusal` before.
+ */
+export async function recordMove(
+  supabase: Supabase,
+  chatId: string,
+  move: { kind: "hint" | "solution"; questionId: string; position: number },
+): Promise<void> {
+  const newest = await newestChatQuestion(supabase, chatId);
+  const part = newest?.question_parts.find(
+    ({ position }) => position === move.position,
+  );
+  if (!newest || newest.id !== move.questionId || !part) return;
+  const { error } = await supabase
+    .from("question_parts")
+    .update(
+      move.kind === "hint"
+        ? { hints: part.hints + 1 }
+        : { solution_shown_at: new Date().toISOString() },
+    )
+    .eq("question_id", move.questionId)
+    .eq("position", move.position);
+  if (error) failed("Saving the press", error);
 }
 
 /**

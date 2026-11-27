@@ -216,6 +216,8 @@ function createDb() {
         choice: null,
         result: null,
         note: null,
+        hints: 0,
+        solution_shown_at: null,
       }),
       // Recorded now, as in the database, so the FSRS replay reads it today.
       attempts: () => ({
@@ -339,6 +341,23 @@ export function submitMessage(
         .join("\n\n"),
     ),
     metadata: { answer: { questionId, parts } },
+  };
+}
+
+/** A part's Hint or Show the solution press, as the Chat sends it. */
+export function moveMessage(
+  questionId: unknown,
+  kind: "hint" | "solution",
+  position: number,
+  draft?: string,
+) {
+  return {
+    ...userMessage(
+      kind === "hint"
+        ? `Hint on part ${position}. My work so far: ${draft ?? ""}`
+        : `Show the solution of part ${position}.`,
+    ),
+    metadata: { move: { kind, questionId, position, draft } },
   };
 }
 

@@ -8,6 +8,7 @@ import { MessageActionRow } from "@/features/chat/components/message-action-row"
 import type { QuestionAnswering } from "@/features/chat/components/question-card";
 import { ReplyFooter } from "@/features/chat/components/reply-footer";
 import { ReplyParts } from "@/features/chat/components/reply-parts";
+import { moveLabel } from "@/features/chat/domain/question-states";
 import { replyActivity } from "@/features/chat/domain/reply-activity";
 import type { ChatUIMessage } from "@/features/chat/types";
 import type { MaterialListItem } from "@/features/courses";
@@ -25,7 +26,11 @@ export function StudentMessage({
   materialsById: Map<string, MaterialListItem>;
   onOpenMaterial: (material: MaterialListItem) => void;
 }) {
-  const text = messageText(message.parts);
+  // A press shows as a small bubble, not its full text.
+  const move = message.metadata?.move;
+  const text = move
+    ? moveLabel(move.kind, move.position)
+    : messageText(message.parts);
   return (
     <Message from="user">
       <MessageContent data-testid="message-text" className="wrap-break-word">
