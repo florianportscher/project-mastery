@@ -95,9 +95,12 @@ function describeFoundExams({ foundExams }: BriefContext): string {
 }
 
 function describeLanguage({ language }: BriefContext): string {
-  return language.chosen
-    ? `The Course language, which the Knowledge map is written in: ${language.name}, as the Student asked.`
-    : `The Course language, which the Knowledge map is written in: ${language.name}, the Materials' own. The Student may ask for another.`;
+  if (language.source === "fallback") {
+    return "The Course language, which the Knowledge map and the Chats are written in, is not known until a Material is parsed. The Student may already ask for one.";
+  }
+  return language.source === "chosen"
+    ? `The Course language, which the Knowledge map and the Chats are written in: ${language.name}, as the Student asked.`
+    : `The Course language, which the Knowledge map and the Chats are written in: ${language.name}, the Materials' own. The Student may ask for another.`;
 }
 
 function describeTopics({ topics, examScopes }: BriefContext): string {

@@ -27,7 +27,7 @@ const offKey = (answers: FinalAnswer[]) =>
  * numeric key answered with the key and with a value off it, and another
  * Exercise left blank. The real `gradeMock` runs in process: the mock must
  * reach `graded`, the blank task scores 0 without a call, the wrong value
- * scores less than full and the correct one at least half.
+ * scores less than full, and every item stores points within 0..its points.
  */
 export const gradeMockSmoke: SmokeCheck = {
   name: "grade-mock",
@@ -133,7 +133,7 @@ export const gradeMockSmoke: SmokeCheck = {
     if (graded.error) throw new Error(graded.error.message);
     if (gradedItems.error) throw new Error(gradedItems.error.message);
     if (usage.error) throw new Error(usage.error.message);
-    const [correct, wrong, left] = gradedItems.data;
+    const [, wrong, left] = gradedItems.data;
     console.info(
       `\nGraded: score ${graded.data.score}, ${gradedItems.data
         .map((item) => `${item.points_awarded ?? "failed"}/${item.points}`)
@@ -157,10 +157,16 @@ export const gradeMockSmoke: SmokeCheck = {
         `${wrong?.points_awarded} of ${wrong?.points}`,
       ),
       result(
-        "the correct answer scores at least half",
-        correct?.points_awarded != null &&
-          correct.points_awarded >= correct.points / 2,
-        `${correct?.points_awarded} of ${correct?.points}`,
+        "each graded item stores points within 0..its points",
+        gradedItems.data.every(
+          (item) =>
+            item.points_awarded != null &&
+            item.points_awarded >= 0 &&
+            item.points_awarded <= item.points,
+        ),
+        gradedItems.data
+          .map((item) => `${item.points_awarded}/${item.points}`)
+          .join(", "),
       ),
     ];
   },

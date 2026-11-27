@@ -5,7 +5,10 @@ import {
   type GradeExamInput,
 } from "@/features/study/ai/grade-exam-call";
 import { z } from "zod";
-import { loadChunkSources } from "@/features/ingestion/server";
+import {
+  loadChunkSources,
+  loadCourseLanguage,
+} from "@/features/ingestion/server";
 import {
   answerKeySchema,
   checkEachAnswer,
@@ -99,6 +102,7 @@ export async function gradeMockItem(itemId: string): Promise<void> {
       answer,
       kcs: await loadKcs(supabase, question?.kcIds ?? []),
       finalResults: keys.map(({ label }) => label),
+      courseLanguage: (await loadCourseLanguage(supabase, mock.course_id)).name,
     });
     const result = await meteredGenerate(
       supabase,

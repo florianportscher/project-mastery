@@ -43,8 +43,8 @@ export type ReservedExam = {
 type CourseLanguage = {
   /** An English name, such as German. */
   name: string;
-  /** Whether the Student asked for it, rather than the Materials' own. */
-  chosen: boolean;
+  /** The Student's choice, the Materials' own, or English before any Material is parsed. */
+  source: "chosen" | "materials" | "fallback";
 };
 
 /**
