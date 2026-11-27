@@ -50,6 +50,8 @@ export async function sendMessage(
   log: (line: string) => void = console.info,
   /** A Submit's answer, sent as the message's metadata. */
   answer?: { questionId: string; parts: unknown[] },
+  /** A Hint press, sent as the message's metadata. */
+  move?: { kind: "hint"; questionId: string; position: number; draft: string },
 ): Promise<{
   calls: ToolCall[];
   text: string;
@@ -71,6 +73,7 @@ export async function sendMessage(
           role: "user",
           parts: [{ type: "text", text }],
           ...(answer ? { metadata: { answer } } : {}),
+          ...(move ? { metadata: { move } } : {}),
         },
       }),
     }),
@@ -231,6 +234,67 @@ async function answerOpenQuestion(
 }
 
 /**
+ * Presses Hint on the first part of the Chat's open Question, as the card
+ * does, and reports the reply, the stored presses and whether the Question
+ * is still open. Null when no Question with parts is open.
+ */
+async function pressHint(
+  client: Supabase,
+  studentId: string,
+  chat: { chatId: string; courseId: string },
+) {
+  const { data: session } = await client
+    .from("study_sessions")
+    .select("id")
+    .eq("chat_id", chat.chatId)
+    .maybeSingle();
+  const { data: question } = session
+    ? await client
+        .from("questions")
+        .select("id, answered_at, graded_at, question_parts(position)")
+        .eq("session_id", session.id)
+        .order("asked_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : { data: null };
+  const first = question?.question_parts.toSorted(
+    (a, b) => a.position - b.position,
+  )[0];
+  if (!question || !first || question.answered_at || question.graded_at) {
+    return null;
+  }
+  const reply = await sendMessage(
+    client,
+    studentId,
+    chat,
+    `Hint on part ${first.position}.`,
+    console.info,
+    undefined,
+    {
+      kind: "hint",
+      questionId: question.id,
+      position: first.position,
+      draft: "",
+    },
+  );
+  const { data: presses } = await client
+    .from("chat_messages")
+    .select("id")
+    .eq("chat_id", chat.chatId)
+    .not("move", "is", null);
+  const { data: after } = await client
+    .from("questions")
+    .select("answered_at")
+    .eq("id", question.id)
+    .single();
+  return {
+    reply,
+    stored: presses?.length ?? 0,
+    open: after?.answered_at === null,
+  };
+}
+
+/**
  * Seeds the gold course (`seedGoldCourse`) and teaches two KCs a few days
  * ago, so both are due. Then sends a greeting, an answer, a preference, a
  * request for a numeric Exercise and its key, a wish to read and a request
@@ -245,7 +309,7 @@ export const tutorSmoke: SmokeCheck = {
   // The spec's budget. The check counts `ai_usage` rows, and a reply's steps
   // are recorded as one row (task `chat`), with a title per Chat the only
   // others.
-  maxCalls: 18,
+  maxCalls: 19,
   async run({ supabase, studentId }) {
     const gold = await seedGoldCourse(supabase, studentId);
     const course = { id: gold.courseId };
@@ -316,6 +380,8 @@ export const tutorSmoke: SmokeCheck = {
 
     const chat = { chatId: randomUUID(), courseId: course.id };
     const first = await sendMessage(client, studentId, chat, GREETING);
+    // A Hint press on the open Question's first part, before the answer.
+    const pressed = await pressHint(client, studentId, chat);
     const second = await answerOpenQuestion(client, studentId, chat, answer);
     const third = await sendMessage(client, studentId, chat, PREFERENCE);
     // In another Chat the Student asks for an Exercise with a numeric key on
@@ -349,6 +415,7 @@ export const tutorSmoke: SmokeCheck = {
 
     const replies = [
       opening,
+      ...(pressed ? [pressed.reply] : []),
       first,
       second,
       third,
@@ -371,6 +438,15 @@ export const tutorSmoke: SmokeCheck = {
       (part) => part.questions.graded_at !== null && part.result === null,
     );
     return [
+      result(
+        "the Hint press is stored, answered, and the Question stays open",
+        // No Question open when the press was due: nothing to press.
+        !pressed ||
+          (pressed.stored === 1 && pressed.reply.text !== "" && pressed.open),
+        pressed
+          ? `${pressed.stored} press stored, reply ${pressed.reply.text === "" ? "empty" : "has text"}, ${pressed.open ? "still open" : "answered"}`
+          : "no Question was open, press skipped",
+      ),
       result(
         "every message got a reply",
         silent.length === 0,
